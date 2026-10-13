@@ -36,7 +36,23 @@ sh tools/build.sh                 # 윈도우 빌드
 sh tools/autoshot.sh              # 빌드 실행 → Screenshots/ 에 20장 자동 촬영 후 종료
 sh tools/balance.sh               # 밸런스 리포트 (전체)
 sh tools/balance.sh -simSummary   # 밸런스 리포트 (대물급만)
+sh tools/test.sh                  # 게임 규칙 단위 테스트 (EditMode, Logs/test-results.xml)
 ```
+
+## 단위 테스트 (`Assets/Editor/Tests`)
+
+`com.unity.test-framework`의 EditMode 테스트. 게임 코드는 asmdef 없이 Assembly-CSharp에 있어서 테스트도 Editor 폴더(Assembly-CSharp-Editor)에 둔다.
+
+| 묶음 | 확인하는 것 |
+|---|---|
+| `FishFightTests` | 작은 붕어는 입문 장비로 잡힌다, 대물일수록 오래 걸린다, 그루퍼를 입문 장비로 무작정 감으면 줄이 끊어진다, 센 낚싯대가 HP를 더 깎는다 |
+| `BiteSelectorTests` | 그 맵에 사는 고기만 문다, 그루퍼는 어군 안에서만, 맞는 미끼가 유리하다, 길이는 최소~최대 안 |
+| `TournamentRulesTests` | 세 미션 점수·동점, AI 시뮬레이션은 날짜마다 같다, 실력 차이, 시간대·엠블럼·대회 맵 |
+| `RodUpgradeTests` | 강화 성능(+10 = 힘 1.3배), 확률은 내려가고 비용은 오른다, +7부터 하락 |
+| `PlayerProfileTests` | 레벨업, 아이템, 판매가, 도감 최고 기록 |
+| `SettingsTests` | 키를 겹치게 바꾸면 맞바꾼다, 바꿀 수 없는 키 |
+
+에디터에서는 Window > General > Test Runner > EditMode.
 
 Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.exe" sh tools/build.sh`처럼 덮어쓴다.
 에디터에 같은 프로젝트가 열려 있으면 배치모드가 실패하니 먼저 닫는다.
