@@ -33,6 +33,7 @@ namespace Fishing.EditorTools
 
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AlwaysIncludeShaders();
+            EnsurePostFx();
 
             PlayerSettings.productName = "Project Fishing - 청풍명월 솔로";
             PlayerSettings.companyName = "didrnrgus";
@@ -63,11 +64,34 @@ namespace Fishing.EditorTools
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        const string PostFxConfigPath = "Assets/Resources/PostFxConfig.asset";
+
+        /// <summary>후처리 리소스를 Resources에서 찾을 수 있게 참조 에셋을 만든다 (빌드에 셰이더가 들어가게).</summary>
+        static void EnsurePostFx()
+        {
+            var res = AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.PostProcessing.PostProcessResources>(
+                "Packages/com.unity.postprocessing/PostProcessing/PostProcessResources.asset");
+            if (res == null) { Debug.LogWarning("[Setup] Post Processing 패키지가 없습니다."); return; }
+            var cfg = AssetDatabase.LoadAssetAtPath<PostFxConfig>(PostFxConfigPath);
+            if (cfg == null)
+            {
+                cfg = ScriptableObject.CreateInstance<PostFxConfig>();
+                AssetDatabase.CreateAsset(cfg, PostFxConfigPath);
+            }
+            if (cfg.resources != res)
+            {
+                cfg.resources = res;
+                EditorUtility.SetDirty(cfg);
+                AssetDatabase.SaveAssets();
+            }
+        }
+
         [MenuItem("Fishing/Build Windows")]
         public static void BuildWindows()
         {
             if (!File.Exists(ScenePath)) Setup();
             else AlwaysIncludeShaders();
+            EnsurePostFx();
             FontSetup.Ensure();
             var options = new BuildPlayerOptions
             {
