@@ -41,3 +41,6 @@ crashlytics-build.properties
 
 # 자동 스크린샷/빌드 산출물
 /Screenshots/
+
+# Python 캐시 (tools/blender)
+__pycache__/

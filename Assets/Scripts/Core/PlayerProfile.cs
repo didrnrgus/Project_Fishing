@@ -283,14 +283,14 @@ namespace Fishing.Core
             look.Glasses = glass != null && glass.Style >= 0;
             if (look.Glasses) look.GlassesColor = glass.Color;
             var top = CostumeDatabase.Get(Worn(CostumeSlot.Top));
-            if (top != null) look.Shirt = top.Color;
+            if (top != null) { look.Shirt = top.Color; look.TopModel = top.Model ?? look.TopModel; look.TopPattern = top.Pattern; }
             var vest = CostumeDatabase.Get(Worn(CostumeSlot.Vest));
             look.Vest = vest != null && vest.Style >= 0;
-            if (look.Vest) look.VestColor = vest.Color;
+            if (look.Vest) { look.VestColor = vest.Color; look.VestModel = vest.Model ?? look.VestModel; }
             var bottom = CostumeDatabase.Get(Worn(CostumeSlot.Bottom));
-            if (bottom != null) look.Pants = bottom.Color;
+            if (bottom != null) { look.Pants = bottom.Color; look.BottomModel = bottom.Model ?? look.BottomModel; look.BottomPattern = bottom.Pattern; }
             var shoes = CostumeDatabase.Get(Worn(CostumeSlot.Shoes));
-            if (shoes != null) look.Shoes = shoes.Color;
+            if (shoes != null) { look.Shoes = shoes.Color; look.ShoeModel = shoes.Model ?? look.ShoeModel; }
             return look;
         }
 

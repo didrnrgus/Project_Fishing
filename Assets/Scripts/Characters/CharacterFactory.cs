@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Fishing.Characters
 {
-    /// <summary>캐릭터 외형. 옷은 베이스 모델 위에 셰이더로 입힌다.</summary>
+    /// <summary>캐릭터 외형. 옷은 Angler FBX 안의 옷 메쉬를 골라 켜고 색을 입힌다.</summary>
     public class CharacterLook
     {
         public bool Female;
@@ -24,6 +24,13 @@ namespace Fishing.Characters
         public Color GlassesColor = new Color(0.08f, 0.08f, 0.1f);
         public bool Vest = true;
         public Color VestColor = new Color(0.25f, 0.4f, 0.3f);
+        // 옷 메쉬 (CharacterFactory.Garments)
+        public string TopModel = "Top_Tee";
+        public int TopPattern;
+        public string VestModel = "Vest_Fishing";
+        public string BottomModel = "Pants_Cargo";
+        public int BottomPattern;
+        public string ShoeModel = "Shoes_Sneaker";
         public string Name;
         public string Title;
 
@@ -31,32 +38,36 @@ namespace Fishing.Characters
     }
 
     /// <summary>
-    /// Quaternius Universal Base Characters(CC0)로 사람을 만든다.
-    ///  - 뼈 가중치로 셔츠/바지/신발 마스크를 버텍스 컬러에 굽고 Fishing/Clothed 셰이더로 입힌다
-    ///  - Head 뼈에 리깅된 머리카락을 뼈 이름으로 다시 연결한다
-    ///  - 모자·조끼는 프리미티브로 덧붙인다
+    /// 낚시꾼 캐릭터를 만든다. 모델은 tools/blender/build_characters.py가 Quaternius Universal Base Characters(CC0)로 만든
+    /// Resources/Characters/Angler_Male·Angler_Female.fbx:
+    ///  - 근육질 Superhero 몸을 보통 체형으로 다듬은 Body
+    ///  - 같은 뼈에 스키닝된 옷 메쉬(반팔·긴팔·래시가드, 낚시조끼·구명조끼, 카고·청바지·웨이더, 운동화·장화, 모자 3종, 선글라스)
+    /// 고른 옷만 남기고 나머지는 지운다. 몸(Fishing/Skin)은 입은 옷 속 피부를 잘라내 살이 옷을 뚫지 않는다.
     /// </summary>
     public static class CharacterFactory
     {
         public const float TargetHeight = 1.76f;
 
-        static readonly HashSet<string> ShirtBones = new HashSet<string>
-            { "spine_01", "spine_02", "spine_03", "clavicle_l", "clavicle_r", "upperarm_l", "upperarm_r" };
-        static readonly HashSet<string> PantsBones = new HashSet<string>
-            { "pelvis", "thigh_l", "thigh_r", "calf_l", "calf_r" };
-        static readonly HashSet<string> VestBones = new HashSet<string> { "spine_01", "spine_02", "spine_03" };
-        static readonly HashSet<string> ShoeBones = new HashSet<string>
-            { "foot_l", "foot_r", "ball_l", "ball_r", "ball_leaf_l", "ball_leaf_r" };
+        public static readonly string[] Garments =
+        {
+            "Top_Tee", "Top_Long", "Top_Rash", "Vest_Fishing", "Vest_Life", "Pants_Cargo", "Pants_Jeans", "Pants_Wader",
+            "Shoes_Sneaker", "Shoes_Boots", "Hat_Bucket", "Hat_Cap", "Hat_Straw", "Glasses",
+        };
 
-        static readonly Dictionary<string, Mesh> ClothedMeshCache = new Dictionary<string, Mesh>();
+        static readonly string[] HatModels = { "Hat_Bucket", "Hat_Cap", "Hat_Straw" };
 
-        public static bool Available => Resources.Load<GameObject>("Characters/Superhero_Male_FullBody") != null;
+        /// <summary>장화 윗단(무릎 아래 약 0.45m)보다 낮은 바지는 장화 속에 들어간 것으로 보고 그리지 않는다.</summary>
+        const float BootTuckHeight = 0.4f;
+
+        static string ModelName(bool female) => female ? "Angler_Female" : "Angler_Male";
+
+        public static bool Available => Resources.Load<GameObject>("Characters/" + ModelName(false)) != null;
 
         /// <summary>캐릭터를 만든다. 반환값의 루트에 Animator와 CharacterAnimator가 붙어 있다. 발이 원점.</summary>
         public static GameObject Create(CharacterLook look, Transform parent)
         {
-            string model = look.Female ? "Superhero_Female_FullBody" : "Superhero_Male_FullBody";
-            var prefab = Resources.Load<GameObject>("Characters/" + model);
+            string model = ModelName(look.Female);
+            var prefab = Resources.Load<GameObject>("Characters/" + model) ?? Resources.Load<GameObject>("Characters/" + ModelName(false));
             var go = Object.Instantiate(prefab, parent, false);
             go.transform.localRotation = Quaternion.Euler(0f, 180f, 0f); // 모델이 -Z를 보고 있어서 게임 정면(+Z)으로 돌린다
             go.name = "Character_" + (look.Name ?? model);
@@ -67,26 +78,29 @@ namespace Fishing.Characters
             var bones = new Dictionary<string, Transform>();
             foreach (var t in go.GetComponentsInChildren<Transform>(true)) bones[t.name] = t;
 
+            var wear = new HashSet<string> { look.TopModel, look.BottomModel, look.ShoeModel };
+            if (look.Vest) wear.Add(look.VestModel);
+            if (look.Hat) wear.Add(HatModels[Mathf.Clamp(look.HatStyle, 0, HatModels.Length - 1)]);
+            if (look.Glasses) wear.Add("Glasses");
+            bool boots = look.ShoeModel == "Shoes_Boots";
+            bool longSleeve = look.TopModel == "Top_Long" || look.TopModel == "Top_Rash";
+
             foreach (var smr in go.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
                 smr.updateWhenOffscreen = true;
-                if (smr.name.Contains("Eyebrows")) smr.sharedMaterial = Mats.Lit(look.HairColor * 0.8f, 0.1f);
-                else if (smr.name.Contains("Eyes")) smr.sharedMaterial = TexturedMat("Characters/Textures/T_Eye_Brown", Color.white, 0.8f);
-                else
+                string n = smr.name;
+                if (n.StartsWith("Eyebrows")) smr.sharedMaterial = Mats.Lit(look.HairColor * 0.8f, 0.1f);
+                else if (n.StartsWith("Eyes")) smr.sharedMaterial = TexturedMat("Characters/Textures/T_Eye_Brown", Color.white, 0.8f);
+                else if (n == "Body") smr.sharedMaterial = SkinMaterial(look, longSleeve);
+                else if (System.Array.IndexOf(Garments, n) >= 0)
                 {
-                    smr.sharedMesh = ClothedMesh(smr, model);
-                    smr.sharedMaterial = ClothesMaterial(look);
+                    if (!wear.Contains(n)) { Object.Destroy(smr.gameObject); continue; }
+                    smr.sharedMaterial = GarmentMaterial(n, look, boots);
                 }
             }
 
             AttachHair(go, bones, look.Hair, look.HairColor, look.Female ? "Characters/Hair/T_Hair_2_BaseColor" : "Characters/Hair/T_Hair_1_BaseColor");
             if (look.Beard) AttachHair(go, bones, "Hair_Beard", look.HairColor, "Characters/Hair/T_Hair_1_BaseColor");
-
-            if (bones.TryGetValue("Head", out var head))
-            {
-                if (look.Hat) AttachHat(head, look.HatStyle, look.HatColor, go.transform.lossyScale.x);
-                if (look.Glasses) AttachGlasses(head, look.GlassesColor, go.transform.lossyScale.x);
-            }
 
             var anim = go.GetComponent<Animator>();
             if (anim == null) anim = go.AddComponent<Animator>();
@@ -101,55 +115,78 @@ namespace Fishing.Characters
             return m;
         }
 
-        static Material ClothesMaterial(CharacterLook look)
+        static Material SkinMaterial(CharacterLook look, bool longSleeve)
         {
-            var m = new Material(Shader.Find("Fishing/Clothed"));
+            var m = new Material(Shader.Find("Fishing/Skin"));
             string tex = look.Female
                 ? (look.DarkSkin ? "Characters/Textures/T_Superhero_Female_Dark_BaseColor" : "Characters/Textures/T_Superhero_Female_Light_BaseColor")
                 : (look.DarkSkin ? "Characters/Textures/T_Superhero_Male_Dark" : "Characters/Textures/T_Superhero_Male_Ligh");
             m.mainTexture = Resources.Load<Texture2D>(tex);
-            m.SetColor("_ShirtColor", look.Shirt);
-            m.SetColor("_PantsColor", look.Pants);
-            m.SetColor("_ShoeColor", look.Shoes);
-            m.SetColor("_VestColor", look.VestColor);
-            m.SetFloat("_VestAmount", look.Vest ? 1f : 0f);
+            // 상의·하의·신발은 늘 입는다. 긴소매일 때만 팔뚝까지 잘라낸다.
+            m.SetVector("_Clip", new Vector4(1f, 1f, 1f, longSleeve ? 1f : 0f));
             return m;
         }
 
-        /// <summary>뼈 가중치로 옷 마스크를 구운 메쉬 사본. 모델별로 한 번만 만든다.</summary>
-        static Mesh ClothedMesh(SkinnedMeshRenderer smr, string model)
+        /// <summary>옷 머티리얼. 트림(목 리브·밑창·지퍼 등)과 보조 원단 색은 옷마다 정한다.</summary>
+        static Material GarmentMaterial(string model, CharacterLook look, bool boots)
         {
-            string key = model + "/" + smr.name;
-            if (ClothedMeshCache.TryGetValue(key, out var cached)) return cached;
-            var src = smr.sharedMesh;
-            if (!src.isReadable) return src;
-            var mesh = Object.Instantiate(src);
-            var weights = mesh.boneWeights;
-            var bones = smr.bones;
-            var colors = new Color[mesh.vertexCount];
-            for (int i = 0; i < colors.Length; i++)
+            Color main, trim, pattern;
+            int mode = 0;
+            float gloss = 0.1f, clipBelow = -1f;
+            switch (model)
             {
-                var w = weights[i];
-                float shirt = 0f, pants = 0f, shoes = 0f, vest = 0f;
-                Accumulate(bones, w.boneIndex0, w.weight0, ref shirt, ref pants, ref shoes, ref vest);
-                Accumulate(bones, w.boneIndex1, w.weight1, ref shirt, ref pants, ref shoes, ref vest);
-                Accumulate(bones, w.boneIndex2, w.weight2, ref shirt, ref pants, ref shoes, ref vest);
-                Accumulate(bones, w.boneIndex3, w.weight3, ref shirt, ref pants, ref shoes, ref vest);
-                colors[i] = new Color(shirt, pants, shoes, vest);
+                case "Top_Tee":
+                case "Top_Long":
+                    main = look.Shirt; trim = main * 0.82f; pattern = Color.Lerp(main * 0.45f, Color.white, look.TopPattern == 3 ? 0.9f : 0f);
+                    mode = look.TopPattern;
+                    break;
+                case "Top_Rash":
+                    main = look.Shirt; trim = Color.Lerp(main, new Color(0.35f, 0.7f, 0.95f), 0.7f); pattern = main; gloss = 0.35f;
+                    break;
+                case "Vest_Life":
+                    main = look.VestColor; trim = new Color(0.12f, 0.12f, 0.13f); pattern = main; gloss = 0.3f;
+                    break;
+                case "Vest_Fishing":
+                    main = look.VestColor; trim = main * 0.62f; pattern = main * 0.55f;
+                    break;
+                case "Pants_Wader":
+                    main = look.Pants; trim = new Color(0.1f, 0.1f, 0.1f); pattern = main; gloss = 0.35f; mode = look.BottomPattern;
+                    break;
+                case "Pants_Cargo":
+                case "Pants_Jeans":
+                    main = look.Pants; trim = main * 0.75f; pattern = main * 0.6f; mode = look.BottomPattern;
+                    break;
+                case "Shoes_Sneaker":
+                    main = look.Shoes; trim = new Color(0.92f, 0.92f, 0.9f); pattern = main; gloss = 0.25f;
+                    break;
+                case "Shoes_Boots":
+                    main = look.Shoes; trim = main * 0.7f; pattern = main; gloss = 0.45f;
+                    break;
+                case "Hat_Straw":
+                    main = look.HatColor; trim = new Color(0.75f, 0.15f, 0.12f); pattern = main; mode = 4;
+                    break;
+                case "Hat_Bucket":
+                case "Hat_Cap":
+                    main = look.HatColor; trim = main * (model == "Hat_Cap" ? 0.8f : 0.6f); pattern = main;
+                    break;
+                case "Glasses":
+                    main = look.GlassesColor; trim = new Color(0.04f, 0.04f, 0.05f); pattern = main; gloss = 0.9f;
+                    break;
+                default:
+                    main = Color.gray; trim = Color.gray; pattern = Color.gray;
+                    break;
             }
-            mesh.colors = colors;
-            ClothedMeshCache[key] = mesh;
-            return mesh;
-        }
+            if (boots && model.StartsWith("Pants")) clipBelow = BootTuckHeight;
 
-        static void Accumulate(Transform[] bones, int index, float weight, ref float shirt, ref float pants, ref float shoes, ref float vest)
-        {
-            if (weight <= 0f || index < 0 || index >= bones.Length || bones[index] == null) return;
-            string n = bones[index].name;
-            if (VestBones.Contains(n)) vest += weight;
-            if (ShirtBones.Contains(n)) shirt += weight;
-            else if (PantsBones.Contains(n)) pants += weight;
-            else if (ShoeBones.Contains(n)) shoes += weight;
+            var m = new Material(Shader.Find("Fishing/Garment"));
+            m.SetColor("_Color", main);
+            m.SetColor("_TrimColor", trim);
+            m.SetColor("_PatternColor", pattern);
+            m.SetFloat("_Pattern", mode);
+            m.SetFloat("_ClipBelow", clipBelow);
+            m.SetFloat("_Glossiness", gloss);
+            if (model == "Glasses") m.SetFloat("_Metallic", 0.4f);
+            return m;
         }
 
         /// <summary>Head 뼈에 리깅된 머리카락 메쉬를 캐릭터 뼈에 다시 연결한다.</summary>
@@ -170,81 +207,6 @@ namespace Fishing.Characters
                 smr.updateWhenOffscreen = true;
             }
             Object.Destroy(tmp);
-        }
-
-        /// <summary>낚시 모자(벙거지). 모델의 기본 자세에서 머리 위에 월드 기준으로 배치한 뒤 Head 뼈에 붙인다.</summary>
-        static void AttachHat(Transform head, int style, Color color, float scale)
-        {
-            if (style == 1) { AttachCap(head, color, scale); return; }
-            if (style == 2) { AttachStrawHat(head, color, scale); return; }
-            AttachBucketHat(head, color, scale);
-        }
-
-        /// <summary>야구모자: 둥근 크라운 + 앞챙.</summary>
-        static void AttachCap(Transform head, Color color, float scale)
-        {
-            var hat = new GameObject("Cap").transform;
-            hat.position = head.position + Vector3.up * 0.17f * scale / 0.92f;
-            hat.rotation = Quaternion.LookRotation(Facing(head));
-            var mat = Mats.Lit(color, 0.2f);
-            Mats.Prim(PrimitiveType.Sphere, "Crown", hat, new Vector3(0f, 0.02f, -0.005f), new Vector3(0.215f, 0.15f, 0.235f), mat, false);
-            Mats.Prim(PrimitiveType.Cube, "Visor", hat, new Vector3(0f, -0.015f, 0.14f), new Vector3(0.17f, 0.012f, 0.11f), mat, false, Quaternion.Euler(-8f, 0f, 0f));
-            Mats.Prim(PrimitiveType.Sphere, "Button", hat, new Vector3(0f, 0.095f, 0f), Vector3.one * 0.025f, Mats.Lit(color * 0.7f), false);
-            hat.SetParent(head, true);
-        }
-
-        /// <summary>밀짚모자: 넓은 챙 + 리본.</summary>
-        static void AttachStrawHat(Transform head, Color color, float scale)
-        {
-            var hat = new GameObject("StrawHat").transform;
-            hat.position = head.position + Vector3.up * 0.2f * scale / 0.92f;
-            hat.rotation = Quaternion.identity;
-            var mat = Mats.Lit(color, 0.05f);
-            Mats.Prim(PrimitiveType.Cylinder, "Brim", hat, new Vector3(0f, 0f, 0.01f), new Vector3(0.5f, 0.006f, 0.5f), mat, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Crown", hat, new Vector3(0f, 0.055f, 0.01f), new Vector3(0.21f, 0.055f, 0.21f), mat, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Ribbon", hat, new Vector3(0f, 0.022f, 0.01f), new Vector3(0.215f, 0.014f, 0.215f), Mats.Lit(new Color(0.75f, 0.15f, 0.12f)), false);
-            hat.SetParent(head, true);
-        }
-
-        /// <summary>캐릭터가 실제로 보는 방향. 모델이 원래 -Z를 보고 180도 돌려 붙였으므로 Animator 기준 -forward.</summary>
-        static Vector3 Facing(Transform head)
-        {
-            var anim = head.GetComponentInParent<Animator>();
-            var f = anim != null ? -anim.transform.forward : head.root.forward;
-            f.y = 0f;
-            return f.sqrMagnitude > 0.001f ? f.normalized : Vector3.forward;
-        }
-
-        /// <summary>선글라스: 렌즈 둘 + 다리.</summary>
-        static void AttachGlasses(Transform head, Color color, float scale)
-        {
-            var g = new GameObject("Glasses").transform;
-            var fwd = Facing(head);
-            g.position = head.position + Vector3.up * 0.1f * scale / 0.92f + fwd * 0.095f * scale / 0.92f;
-            g.rotation = Quaternion.LookRotation(fwd);
-            var lens = Mats.Lit(color, 0.95f, 0.5f);
-            var frame = Mats.Lit(new Color(0.05f, 0.05f, 0.05f), 0.6f);
-            foreach (int side in new[] { -1, 1 })
-            {
-                Mats.Prim(PrimitiveType.Cube, "Lens", g, new Vector3(side * 0.036f, 0f, 0f), new Vector3(0.058f, 0.032f, 0.006f), lens, false);
-                Mats.Prim(PrimitiveType.Cube, "Arm", g, new Vector3(side * 0.07f, 0.005f, -0.05f), new Vector3(0.004f, 0.006f, 0.1f), frame, false);
-            }
-            Mats.Prim(PrimitiveType.Cube, "Bridge", g, new Vector3(0f, 0.008f, 0f), new Vector3(0.02f, 0.005f, 0.005f), frame, false);
-            g.SetParent(head, true);
-        }
-
-        static void AttachBucketHat(Transform head, Color color, float scale)
-        {
-            // Head 뼈는 두개골 아래쪽에 있어서 원본 기준 약 0.22m 위가 정수리다
-            var hat = new GameObject("BucketHat").transform;
-            hat.position = head.position + Vector3.up * 0.2f * scale / 0.92f;
-            hat.rotation = Quaternion.identity;
-            var mat = Mats.Lit(color, 0.1f);
-            var band = Mats.Lit(color * 0.6f, 0.1f);
-            Mats.Prim(PrimitiveType.Cylinder, "Brim", hat, new Vector3(0f, 0f, 0.01f), new Vector3(0.36f, 0.008f, 0.36f), mat, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Crown", hat, new Vector3(0f, 0.06f, 0.01f), new Vector3(0.22f, 0.06f, 0.22f), mat, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Band", hat, new Vector3(0f, 0.025f, 0.01f), new Vector3(0.225f, 0.012f, 0.225f), band, false);
-            hat.SetParent(head, true);
         }
 
         /// <summary>머리 위 이름표(+칭호). 카메라를 향하게는 사용하는 쪽에서 돌린다.</summary>
