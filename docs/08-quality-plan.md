@@ -107,7 +107,7 @@ bpyenv/Scripts/python -I tools/blender/build_characters.py --preview --only male
 ## 4. 캐릭터 남은 개선점 (우선순위 순)
 
 1. **자연스러운 대기 자세** — 지금 `Idle_Loop`(UAL)은 주먹 쥔 슈퍼히어로 자세다. 무료 **Human Basic Motions FREE**(Kevin Iglesias, Asset Store)의 idle/walk/run/turn(남·녀 버전)을 넣고 `CharacterAnimator`가 클립을 두 라이브러리에서 찾게 한다(휴머노이드 리타깃이라 그대로 붙는다). 옛 "Basic Motions FREE"는 단종이니 이름 주의.
-2. **음영(AO) 굽기** — 옷 버텍스 컬러 G에 Cycles AO를 구우면(겨드랑이·주머니 테두리·조끼 아래) 확 입체적이 된다. `bpy.ops.object.bake(type='AO', target='VERTEX_COLORS')`를 `make_object` 끝에 추가.
+2. ~~**음영(AO) 굽기**~~ — 완료: `garments.bake_ao`가 휴식 자세에서 법선 반구로 광선 14개를 쏴 옷 버텍스 컬러 G에 곱한다(세기 0.6, 거리 12cm). 주머니·버클처럼 각진 면은 제외. 더 진하게/연하게는 `strength`.
 3. **장갑** — 원작 1인칭에서 검정·주황 장갑을 꼈다. 손 영역 껍데기(오프셋 3mm, 손가락 끝 없는 반장갑)를 `garments.py`에 추가하고 1인칭 팔에도 적용.
 4. **운동화 모양** — 아직 발 모양 껍데기라 슬리퍼처럼 각져 보인다. 앞코를 둥근 박스로 다시 만들고(발 축 기준 단면을 타원으로 맞추기), 끈·로고 트림 추가.
 5. **체크 남방 깃** — `Top_Long`에 셔츠 깃(목둘레 띠 + 접힌 깃 두 장) 메쉬를 붙인 `Top_Shirt`를 따로 만들기.
@@ -150,7 +150,7 @@ bpyenv/Scripts/python -I tools/blender/build_characters.py --preview --only male
 - [ ] 문제 있으면 2장 표대로 고치거나 `garments.py` 수정 후 3장으로 재생성
 - [ ] Post Processing 패키지 + 코드로 볼륨/레이어 (블룸, ACES, AO, SMAA, 시간대별 그레이딩)
 - [ ] Human Basic Motions FREE 임포트 → `CharacterAnimator`에 두 번째 클립 라이브러리, Idle/Walk/Run 교체
-- [ ] 4장 2(AO 굽기)·3(장갑)·4(운동화) → 재생성
+- [ ] 4장 3(장갑)·4(운동화) → 재생성 (AO는 완료)
 - [ ] 둔치 나무·풀 교체(Hand Painted Nature Pack), 데크·둔치 텍스처(Poly Haven)
 - [ ] 흐림/비 하늘 큐브맵 섞기, 반사 프로브
 - [ ] (선택) VRoid 시험 모델 하나 만들어 비교

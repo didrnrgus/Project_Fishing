@@ -101,6 +101,9 @@ def build(gender):
     made['Hat_Cap'] = G.hat(b, 'Hat_Cap', 'cap')
     made['Hat_Straw'] = G.hat(b, 'Hat_Straw', 'straw')
     made['Glasses'] = G.glasses(b, 'Glasses')
+    # 음영(AO): 겨드랑이·가랑이·주머니 테두리·모자 챙 밑이 어두워져 옷이 납작해 보이지 않는다
+    for obj in made.values():
+        G.bake_ao(obj, b)
     return arm, body, made, objs
 
 
