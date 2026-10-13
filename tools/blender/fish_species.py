@@ -1,0 +1,310 @@
+"""
+어종별 설계 시트 (docs/09-art-plan.md 3-3, 부록) → 수치.
+
+모든 길이는 몸 전체 길이(주둥이 끝 ~ 꼬리지느러미 끝) = 1 기준이다.
+  depth   : 가장 높은 곳의 몸 높이 / 길이        width : 몸 폭 / 길이
+  tmax    : 몸이 가장 높은 위치 (몸통 구간 0~1)   body_end : 몸통이 끝나고 꼬리지느러미가 시작하는 위치 (0~1)
+  ped     : 꼬리자루 높이 / 최대 높이              arch  : 위쪽 비율 (0.5 = 위아래 대칭, 클수록 등이 솟음)
+  snout   : 머리 둥근 정도 (작을수록 뭉툭)          mouth : 주둥이 높이 (-1 아래 ~ +1 위, 0 가운데)
+  xsec    : 단면 지수 (2 = 타원, 작을수록 위아래가 뾰족한 납작한 몸)
+  fins    : 지느러미. kind = dorsal/anal/caudal/pectoral/pelvic/adipose, s = 몸통 구간(시작, 끝), h = 높이(최대 몸높이 배율),
+            prof = 모양(제어점), spiny = 가시 지느러미(막이 오목하게 파임), group = 텍스처 칸(up/low)
+  eye     : s(위치), z(머리 높이 비율 -1~1), r(반지름/길이), iris(홍채 색)
+  barbels : (s, z, 길이, 굵기, 방향) 수염
+  colors  : back/side/belly, 무늬 patterns, fin_up/fin_low (지느러미 색: 밑동, 끝, 알파)
+  anim    : amp(꼬리 흔드는 폭 배율), freq(빈도 배율) — Unity에서 재생 속도로 쓴다
+"""
+
+# ---------------- 틀 (docs/09-art-plan.md 3-2) ----------------
+
+def _fin(kind, s=(0, 0), h=0.5, prof=None, spiny=False, group=None, **kw):
+    d = dict(kind=kind, s=s, h=h, prof=prof, spiny=spiny, group=group or ('up' if kind in ('dorsal', 'caudal', 'adipose') else 'low'))
+    d.update(kw)
+    return d
+
+
+TEMPLATES = {
+    # A. 잉어형: 두툼한 몸, 둥근 등, 작은 입, 꼬리 갈라짐
+    'A': dict(depth=0.27, width=0.14, tmax=0.4, body_end=0.8, ped=0.42, arch=0.6, snout=0.6, mouth=-0.1, xsec=2.0, scales=36,
+              fins=[_fin('dorsal', (0.36, 0.72), 0.5, prof=[(0, 0.35), (0.12, 1.0), (0.4, 0.55), (1, 0.4)]),
+                    _fin('anal', (0.72, 0.82), 0.48, prof=[(0, 0.5), (0.2, 1.0), (1, 0.45)]),
+                    _fin('caudal', h=0.24, shape='fork'),
+                    _fin('pectoral', s=(0.24, 0.24), h=0.13),
+                    _fin('pelvic', s=(0.5, 0.5), h=0.1)],
+              eye=dict(s=0.1, z=0.25, r=0.018), anim=dict(amp=0.9, freq=0.85)),
+    # B. 날씬한 잉어형: 길고 납작한 몸, 큰 비늘, 은색
+    'B': dict(depth=0.2, width=0.1, tmax=0.42, body_end=0.79, ped=0.38, arch=0.55, snout=0.7, mouth=0.05, xsec=1.9, scales=46,
+              fins=[_fin('dorsal', (0.47, 0.58), 0.62, prof=[(0, 0.6), (0.15, 1.0), (1, 0.35)]),
+                    _fin('anal', (0.66, 0.8), 0.45, prof=[(0, 0.7), (0.2, 1.0), (1, 0.4)]),
+                    _fin('caudal', h=0.26, shape='deepfork'),
+                    _fin('pectoral', s=(0.22, 0.22), h=0.12),
+                    _fin('pelvic', s=(0.5, 0.5), h=0.09)],
+              eye=dict(s=0.1, z=0.2, r=0.02), anim=dict(amp=1.0, freq=1.2)),
+    # C. 농어형: 가시 있는 등지느러미, 큰 입
+    'C': dict(depth=0.27, width=0.14, tmax=0.36, body_end=0.82, ped=0.4, arch=0.55, snout=0.72, mouth=0.15, xsec=2.0, scales=60,
+              fins=[_fin('dorsal', (0.27, 0.55), 0.45, prof=[(0, 0.35), (0.25, 1.0), (0.85, 0.55), (1, 0.4)], spiny=True),
+                    _fin('dorsal', (0.55, 0.78), 0.5, prof=[(0, 0.75), (0.3, 1.0), (1, 0.4)]),
+                    _fin('anal', (0.6, 0.78), 0.45, prof=[(0, 0.5), (0.3, 1.0), (1, 0.45)]),
+                    _fin('caudal', h=0.24, shape='truncate'),
+                    _fin('pectoral', s=(0.26, 0.26), h=0.14),
+                    _fin('pelvic', s=(0.3, 0.3), h=0.12)],
+              eye=dict(s=0.12, z=0.35, r=0.02), anim=dict(amp=1.0, freq=1.0)),
+    # D. 도미형: 높고 옆으로 납작한 몸
+    'D': dict(depth=0.4, width=0.12, tmax=0.4, body_end=0.8, ped=0.3, arch=0.62, snout=0.5, mouth=-0.25, xsec=1.6, scales=50,
+              fins=[_fin('dorsal', (0.3, 0.62), 0.38, prof=[(0, 0.4), (0.18, 1.0), (1, 0.6)], spiny=True),
+                    _fin('dorsal', (0.62, 0.8), 0.32, prof=[(0, 0.75), (1, 0.55)]),
+                    _fin('anal', (0.62, 0.8), 0.32, prof=[(0, 0.7), (0.2, 1.0), (1, 0.5)], spiny=True),
+                    _fin('caudal', h=0.26, shape='fork'),
+                    _fin('pectoral', s=(0.3, 0.3), h=0.2, long=True),
+                    _fin('pelvic', s=(0.35, 0.35), h=0.12)],
+              eye=dict(s=0.15, z=0.4, r=0.022), anim=dict(amp=0.8, freq=1.0)),
+    # E. 유선형: 방추형 몸, 작은 꼬리자루, 갈라진 꼬리
+    'E': dict(depth=0.2, width=0.13, tmax=0.4, body_end=0.79, ped=0.2, arch=0.52, snout=0.75, mouth=0.05, xsec=2.2, scales=0,
+              fins=[_fin('dorsal', (0.3, 0.45), 0.35, prof=[(0, 1.0), (1, 0.25)], spiny=True),
+                    _fin('dorsal', (0.56, 0.64), 0.32, prof=[(0, 1.0), (1, 0.35)]),
+                    _fin('anal', (0.6, 0.68), 0.28, prof=[(0, 1.0), (1, 0.35)]),
+                    _fin('caudal', h=0.3, shape='deepfork'),
+                    _fin('pectoral', s=(0.25, 0.25), h=0.12),
+                    _fin('pelvic', s=(0.33, 0.33), h=0.07)],
+              eye=dict(s=0.1, z=0.25, r=0.022), anim=dict(amp=1.1, freq=1.4)),
+    # F. 납작한 고기: 두 눈이 한쪽에. 옆으로 누운 몸 (side = 'left' 광어 / 'right' 가자미)
+    'F': dict(depth=0.42, width=0.07, tmax=0.45, body_end=0.85, ped=0.25, arch=0.5, snout=0.55, mouth=0.0, xsec=1.5, scales=0,
+              fins=[_fin('dorsal', (0.08, 0.94), 0.2, prof=[(0, 0.4), (0.5, 1.0), (1, 0.4)]),
+                    _fin('anal', (0.3, 0.94), 0.2, prof=[(0, 0.4), (0.5, 1.0), (1, 0.4)]),
+                    _fin('caudal', h=0.18, shape='round'),
+                    _fin('pectoral', s=(0.24, 0.24), h=0.08),
+                    _fin('pelvic', s=(0.26, 0.26), h=0.05)],
+              eye=dict(s=0.12, z=0.3, r=0.02), flat='left', anim=dict(amp=0.7, freq=0.9)),
+    # G. 장어형: 아주 길고 지느러미가 몸을 따라 이어진다
+    'G': dict(depth=0.07, width=0.065, tmax=0.4, body_end=0.97, ped=0.55, arch=0.5, snout=0.7, mouth=0.0, xsec=2.2, scales=0,
+              fins=[_fin('dorsal', (0.32, 1.0), 0.45, prof=[(0, 0.2), (0.2, 0.8), (1, 1.0)]),
+                    _fin('anal', (0.45, 1.0), 0.45, prof=[(0, 0.2), (0.2, 0.8), (1, 1.0)]),
+                    _fin('caudal', h=0.05, shape='point'),
+                    _fin('pectoral', s=(0.1, 0.1), h=0.05)],
+              eye=dict(s=0.04, z=0.35, r=0.007), bones=14, anim=dict(amp=1.3, freq=0.8)),
+    # H. 메기형: 넓적한 머리, 수염, 비늘 없음
+    'H': dict(depth=0.17, width=0.16, head_w=1.25, tmax=0.28, body_end=0.86, ped=0.45, arch=0.55, snout=0.45, mouth=0.0, xsec=2.2, scales=0,
+              fins=[_fin('dorsal', (0.3, 0.35), 0.28),
+                    _fin('anal', (0.45, 0.98), 0.35, prof=[(0, 0.6), (0.3, 1.0), (1, 0.8)]),
+                    _fin('caudal', h=0.14, shape='truncate'),
+                    _fin('pectoral', s=(0.18, 0.18), h=0.11),
+                    _fin('pelvic', s=(0.42, 0.42), h=0.07)],
+              eye=dict(s=0.06, z=0.45, r=0.008), anim=dict(amp=0.9, freq=0.7)),
+}
+
+
+def P(back, side, belly, **kw):
+    d = dict(back=back, side=side, belly=belly)
+    d.update(kw)
+    return d
+
+
+# fin_up/fin_low = (밑동 색, 끝 색, 끝 알파)
+SPECIES = {
+    # ===== A. 잉어형 =====
+    'crucian': dict(type='A', name='붕어', depth=0.33, tmax=0.42, scales=30, mouth=-0.05,
+                    colors=P('#3e4a2c', '#9a8a4e', '#d8cfa0', silver=0.25, fin_up=('#4a4a34', '#2e2e22', 0.85), fin_low=('#7a6a44', '#5a4a30', 0.8),
+                             patterns=[('scale_edge', 0.5)]),
+                    eye=dict(iris='#c8a040')),
+    'carp': dict(type='A', name='잉어', depth=0.27, scales=36,
+                 barbels=[(0.03, -0.25, 0.04, 0.004, 'down'), (0.05, -0.15, 0.025, 0.003, 'side')],
+                 colors=P('#3c4228', '#a9884a', '#e2d6a2', silver=0.15, fin_up=('#4c4630', '#3a3424', 0.85), fin_low=('#a8643a', '#c4502a', 0.85),
+                          patterns=[('scale_edge', 0.75)]),
+                 eye=dict(iris='#d8a838')),
+    'goldkoi': dict(type='A', name='황금 비단잉어', depth=0.27, scales=36,
+                    barbels=[(0.03, -0.25, 0.04, 0.004, 'down'), (0.05, -0.15, 0.025, 0.003, 'side')],
+                    colors=P('#e0901a', '#f6b832', '#ffe08a', silver=0.6, metallic=0.7, fin_up=('#f0a830', '#ffe4a0', 0.75), fin_low=('#f0a830', '#ffe8b0', 0.75),
+                             patterns=[('scale_edge', 0.4), ('sheen', 0.6)]),
+                    eye=dict(iris='#202020')),
+    'nuchi': dict(type='A', name='누치', depth=0.21, width=0.12, tmax=0.38, mouth=-0.4, snout=0.75, scales=48,
+                  fins=[_fin('dorsal', (0.38, 0.5), 0.62, prof=[(0, 0.5), (0.15, 1.0), (1, 0.35)]),
+                        _fin('anal', (0.7, 0.8), 0.45), _fin('caudal', h=0.24, shape='deepfork'),
+                        _fin('pectoral', s=(0.22, 0.22), h=0.12), _fin('pelvic', s=(0.5, 0.5), h=0.09)],
+                  barbels=[(0.04, -0.4, 0.03, 0.003, 'down')],
+                  colors=P('#5e6460', '#b6b8ac', '#ecebe2', silver=0.6, fin_up=('#7a7a70', '#9a9a90', 0.7), fin_low=('#b0a890', '#d0c8b0', 0.7),
+                           patterns=[('spots', dict(n=9, r=(6, 9), color='#3a3e3a', v=(0.45, 0.6), u=(0.25, 0.85), row=True))]),
+                  eye=dict(iris='#c0c0b0')),
+    # ===== B. 날씬한 잉어형 =====
+    'zacco': dict(type='B', name='피라미', depth=0.22,
+                  fins=[_fin('dorsal', (0.47, 0.58), 0.6), _fin('anal', (0.64, 0.8), 0.7, prof=[(0, 0.8), (0.3, 1.0), (1, 0.6)]),
+                        _fin('caudal', h=0.26, shape='deepfork'), _fin('pectoral', s=(0.22, 0.22), h=0.12), _fin('pelvic', s=(0.5, 0.5), h=0.1)],
+                  colors=P('#4a6a72', '#b8c8c8', '#f0f0ea', silver=0.75, fin_up=('#8aa0a0', '#c0d0d0', 0.6), fin_low=('#d8b850', '#e8a860', 0.75),
+                           patterns=[('bands', dict(n=10, u=(0.3, 0.88), w=0.035, color='#4a7c8c', v=(0.15, 0.85), a=0.55)),
+                                     ('bands', dict(n=10, u=(0.33, 0.91), w=0.02, color='#e88a8a', v=(0.2, 0.75), a=0.35))]),
+                  eye=dict(iris='#e8c070')),
+    'kkeuri': dict(type='B', name='끄리', depth=0.22, mouth=0.15, snout=0.8,
+                   colors=P('#3a5864', '#b0bcc0', '#eef0ec', silver=0.75, fin_up=('#6a7a80', '#8a9aa0', 0.65), fin_low=('#d88a5a', '#e8a070', 0.75),
+                            patterns=[('stripe', dict(v=0.55, w=0.05, color='#3a5a7a', a=0.35)), ('mouthline', 0.8)]),
+                   eye=dict(iris='#d0c0a0')),
+    'skygager': dict(type='B', name='강준치', depth=0.22, width=0.08, mouth=0.6, snout=0.85, arch=0.45, scales=70,
+                     fins=[_fin('dorsal', (0.5, 0.6), 0.55), _fin('anal', (0.6, 0.8), 0.4, prof=[(0, 1.0), (1, 0.4)]),
+                           _fin('caudal', h=0.26, shape='deepfork'), _fin('pectoral', s=(0.22, 0.22), h=0.13), _fin('pelvic', s=(0.48, 0.48), h=0.09)],
+                     colors=P('#566a74', '#c8d0d4', '#f4f4f2', silver=0.85, fin_up=('#90a0a8', '#b0c0c8', 0.6), fin_low=('#d0b0a0', '#e0c0b0', 0.6)),
+                     eye=dict(iris='#e0e0d0')),
+    'mullet': dict(type='B', name='숭어', depth=0.2, width=0.13, snout=0.6, mouth=-0.05, scales=40, xsec=2.2,
+                   fins=[_fin('dorsal', (0.34, 0.42), 0.35, prof=[(0, 1.0), (1, 0.3)], spiny=True), _fin('dorsal', (0.58, 0.66), 0.38),
+                         _fin('anal', (0.6, 0.7), 0.35), _fin('caudal', h=0.25, shape='emarg'),
+                         _fin('pectoral', s=(0.22, 0.32), h=0.1), _fin('pelvic', s=(0.36, 0.36), h=0.08)],
+                   colors=P('#3e505a', '#9aa8ae', '#e8ecec', silver=0.7, fin_up=('#5a6a72', '#7a8a92', 0.7), fin_low=('#8a9aa0', '#aab4b8', 0.6),
+                            patterns=[('hstripes', dict(n=6, v=(0.45, 0.85), w=0.012, color='#3a4a54', a=0.45))]),
+                   eye=dict(iris='#c0b080')),
+    # ===== C. 농어형 =====
+    'mandarin': dict(type='C', name='쏘가리', depth=0.28, mouth=0.25, snout=0.8, scales=90,
+                     colors=P('#6a5a30', '#c8aa5a', '#ece0b0', silver=0.1, fin_up=('#8a7a40', '#6a5a30', 0.9), fin_low=('#b09a58', '#c8b070', 0.85),
+                              patterns=[('rosettes', dict(n=46, r=(8, 16), color='#2e2814', v=(0.25, 1.0))), ('eyeline', dict(color='#2e2814', w=0.03)),
+                                        ('finspots', '#3a3018')]),
+                     eye=dict(iris='#d8a020')),
+    'bass': dict(type='C', name='배스', depth=0.26, mouth=0.2, snout=0.85, scales=65,
+                 fins=[_fin('dorsal', (0.27, 0.5), 0.4, prof=[(0, 0.5), (0.3, 1.0), (1, 0.3)], spiny=True),
+                       _fin('dorsal', (0.5, 0.76), 0.5, prof=[(0, 0.6), (0.3, 1.0), (1, 0.45)]),
+                       _fin('anal', (0.6, 0.78), 0.42), _fin('caudal', h=0.24, shape='emarg'),
+                       _fin('pectoral', s=(0.26, 0.26), h=0.14), _fin('pelvic', s=(0.3, 0.3), h=0.11)],
+                 colors=P('#2f4422', '#7a8a4a', '#e6e2c0', silver=0.15, fin_up=('#4a5a30', '#3a4a26', 0.85), fin_low=('#7a8050', '#8a9060', 0.8),
+                          patterns=[('blotchline', dict(v=0.55, color='#1e2a14', w=0.08)), ('mottle', dict(color='#3a4a24', a=0.4))]),
+                 eye=dict(iris='#b03020')),
+    'bluegill': dict(type='C', name='블루길', depth=0.44, width=0.12, tmax=0.42, mouth=0.0, snout=0.5, xsec=1.6, arch=0.55, scales=45,
+                     fins=[_fin('dorsal', (0.3, 0.55), 0.3, spiny=True), _fin('dorsal', (0.55, 0.8), 0.36),
+                           _fin('anal', (0.55, 0.8), 0.32), _fin('caudal', h=0.22, shape='emarg'),
+                           _fin('pectoral', s=(0.3, 0.3), h=0.18, long=True), _fin('pelvic', s=(0.33, 0.33), h=0.1)],
+                     colors=P('#2e4a4e', '#6a8a7a', '#d8b860', silver=0.15, fin_up=('#3a5050', '#2a3a3a', 0.8), fin_low=('#7a7a5a', '#8a8a6a', 0.75),
+                              patterns=[('bands', dict(n=7, u=(0.25, 0.85), w=0.06, color='#283a3c', v=(0.3, 1.0), a=0.5)),
+                                        ('earflap', '#101820'), ('throat', '#d89040')]),
+                     eye=dict(iris='#202020')),
+    'seabass': dict(type='C', name='농어', depth=0.23, width=0.12, mouth=0.25, snout=0.85, scales=80,
+                    colors=P('#4a5a68', '#b4bec4', '#f0f2f0', silver=0.8, fin_up=('#6a7a84', '#4a5a64', 0.75), fin_low=('#c0c4c4', '#d0d4d4', 0.6),
+                             patterns=[('spots', dict(n=30, r=(2, 4), color='#2a323a', v=(0.7, 1.0), u=(0.2, 0.7)))]),
+                    eye=dict(iris='#d8d0b0')),
+    'rockfish': dict(type='C', name='볼락', depth=0.3, mouth=0.25, eye=dict(s=0.12, z=0.4, r=0.03, iris='#c09040'),
+                     colors=P('#3a2e26', '#7a5e46', '#c8a888', silver=0.1, fin_up=('#4a3a30', '#3a2e26', 0.85), fin_low=('#6a5040', '#7a6050', 0.85),
+                              patterns=[('bands', dict(n=5, u=(0.3, 0.85), w=0.07, color='#2a201a', v=(0.35, 1.0), a=0.5)), ('mottle', dict(color='#5a4232', a=0.3))])),
+    'scorpionfish': dict(type='C', name='쏨뱅이', depth=0.3, width=0.16, head_w=1.15, mouth=0.15, snout=0.65,
+                         eye=dict(s=0.12, z=0.45, r=0.025, iris='#d06030'),
+                         colors=P('#7a3020', '#b8583a', '#e8b49a', silver=0.0, fin_up=('#a04a30', '#d07050', 0.85), fin_low=('#c06040', '#d88060', 0.85),
+                                  patterns=[('mottle', dict(color='#5a1e14', a=0.6, scale=0.07)), ('spots', dict(n=40, r=(3, 6), color='#f0d0b0', v=(0.2, 0.9), a=0.6)),
+                                            ('finspots', '#6a2014')])),
+    'jacopever': dict(type='C', name='우럭', depth=0.29, width=0.15, mouth=0.3, snout=0.7,
+                      eye=dict(s=0.12, z=0.42, r=0.026, iris='#b08040'),
+                      colors=P('#2e2e2a', '#5e5c52', '#b8b4a4', silver=0.05, fin_up=('#3a3a34', '#2a2a26', 0.9), fin_low=('#4a4a42', '#3a3a34', 0.85),
+                               patterns=[('mottle', dict(color='#22221e', a=0.55, scale=0.06)), ('eyeline', dict(color='#1a1a18', w=0.025, n=3))])),
+    'greenling': dict(type='C', name='쥐노래미', depth=0.22, width=0.12, mouth=0.0, snout=0.75, scales=95,
+                      fins=[_fin('dorsal', (0.24, 0.55), 0.35, spiny=True), _fin('dorsal', (0.55, 0.82), 0.4),
+                            _fin('anal', (0.5, 0.82), 0.35), _fin('caudal', h=0.22, shape='truncate'),
+                            _fin('pectoral', s=(0.24, 0.24), h=0.15), _fin('pelvic', s=(0.3, 0.3), h=0.1)],
+                      colors=P('#5a4a30', '#8a7650', '#d0c4a0', silver=0.05, fin_up=('#6a5a3a', '#5a4a2e', 0.85), fin_low=('#7a6a48', '#8a7a58', 0.8),
+                               patterns=[('mottle', dict(color='#3a2e1e', a=0.55, scale=0.05)), ('stripe', dict(v=0.8, w=0.02, color='#c8b890', a=0.4))]),
+                      eye=dict(iris='#a08050')),
+    'giantgrouper': dict(type='C', name='자이언트 그루퍼', depth=0.3, width=0.17, head_w=1.1, mouth=0.25, snout=0.75, scales=110,
+                         fins=[_fin('dorsal', (0.28, 0.58), 0.3, spiny=True), _fin('dorsal', (0.58, 0.8), 0.4),
+                               _fin('anal', (0.62, 0.8), 0.4), _fin('caudal', h=0.22, shape='round'),
+                               _fin('pectoral', s=(0.26, 0.26), h=0.16), _fin('pelvic', s=(0.3, 0.3), h=0.12)],
+                         colors=P('#2e2a22', '#5e5240', '#a49478', silver=0.05, fin_up=('#3e382c', '#2a261e', 0.9), fin_low=('#4e4636', '#3a3428', 0.9),
+                                  patterns=[('obliquebands', dict(n=6, color='#1e1a14', a=0.55)), ('mottle', dict(color='#3a3226', a=0.4)),
+                                            ('spots', dict(n=60, r=(2, 4), color='#c8b898', v=(0.2, 0.9), a=0.35))]),
+                         eye=dict(s=0.1, z=0.42, r=0.015, iris='#806040'), anim=dict(amp=0.8, freq=0.7)),
+    # ===== D. 도미형 =====
+    'blackseabream': dict(type='D', name='감성돔', depth=0.4,
+                          colors=P('#2e3438', '#8a9298', '#dcdfe0', silver=0.65, fin_up=('#3a4044', '#2a3034', 0.85), fin_low=('#4a5054', '#3a4044', 0.8),
+                                   patterns=[('bands', dict(n=6, u=(0.25, 0.8), w=0.05, color='#3a4248', v=(0.3, 1.0), a=0.25)),
+                                             ('hstripes', dict(n=8, v=(0.25, 0.8), w=0.01, color='#5a6268', a=0.4))]),
+                          eye=dict(iris='#c0b080')),
+    'redseabream': dict(type='D', name='참돔', depth=0.38, width=0.12, mouth=-0.15,
+                        colors=P('#c0464a', '#e88a86', '#f6e4dc', silver=0.4, fin_up=('#d06a6a', '#e89090', 0.75), fin_low=('#e8a0a0', '#f0c0c0', 0.7),
+                                 patterns=[('spots', dict(n=90, r=(2, 4), color='#5ac8f0', v=(0.4, 1.0), u=(0.1, 0.85), a=0.85))]),
+                        eye=dict(iris='#e0b040')),
+    'beakfish': dict(type='D', name='돌돔', depth=0.44, width=0.13, mouth=-0.1, snout=0.45,
+                     colors=P('#4a4e50', '#9ea2a0', '#d8dad4', silver=0.25, fin_up=('#2a2e30', '#1e2224', 0.9), fin_low=('#3a3e40', '#2a2e30', 0.9),
+                              patterns=[('bands', dict(n=7, u=(0.08, 0.9), w=0.075, color='#16181a', v=(0.0, 1.0), a=0.9, taper=True))]),
+                     eye=dict(iris='#c0b090')),
+    'opaleye': dict(type='D', name='벵에돔', depth=0.38, width=0.13, snout=0.4, mouth=-0.05,
+                    fins=[_fin('dorsal', (0.32, 0.6), 0.3, spiny=True), _fin('dorsal', (0.6, 0.8), 0.32),
+                          _fin('anal', (0.62, 0.8), 0.3), _fin('caudal', h=0.24, shape='emarg'),
+                          _fin('pectoral', s=(0.3, 0.3), h=0.15), _fin('pelvic', s=(0.36, 0.36), h=0.11)],
+                    colors=P('#1e2a28', '#3a4a46', '#6a7a74', silver=0.15, fin_up=('#1e2624', '#141a18', 0.9), fin_low=('#2a3432', '#1e2624', 0.9),
+                             patterns=[('scale_dots', dict(color='#101614', a=0.5))]),
+                    eye=dict(iris='#4a90b0')),
+    'filefish': dict(type='D', name='쥐치', depth=0.5, width=0.1, tmax=0.45, body_end=0.82, snout=0.8, mouth=0.1, xsec=1.6, scales=0,
+                     fins=[_fin('dorsal', (0.22, 0.25), 0.45, prof=[(0, 1.0), (1, 0.9)], spine=True),
+                           _fin('dorsal', (0.52, 0.8), 0.25, prof=[(0, 0.7), (0.3, 1.0), (1, 0.6)]),
+                           _fin('anal', (0.52, 0.8), 0.25, prof=[(0, 0.7), (0.3, 1.0), (1, 0.6)]),
+                           _fin('caudal', h=0.2, shape='round'), _fin('pectoral', s=(0.28, 0.28), h=0.08)],
+                     eye=dict(s=0.2, z=0.5, r=0.025, iris='#80a040'),
+                     colors=P('#6a6a4a', '#a4a07a', '#d8d4b8', silver=0.05, fin_up=('#c0b890', '#d8d0a8', 0.6), fin_low=('#c0b890', '#d8d0a8', 0.6),
+                              patterns=[('mottle', dict(color='#4a4a32', a=0.5, scale=0.05)), ('hstripes', dict(n=5, v=(0.3, 0.8), w=0.015, color='#5a5a40', a=0.4))])),
+    # ===== E. 유선형 =====
+    'mackerel': dict(type='E', name='고등어',
+                     colors=P('#1e5a5a', '#9ab8b8', '#f2f4f2', silver=0.8, metallic=0.35, fin_up=('#3a5a5a', '#5a7a7a', 0.7), fin_low=('#9aaaaa', '#b8c4c4', 0.6),
+                              patterns=[('waves', dict(color='#0e2a32', v=(0.62, 1.0), a=0.9)), ('finlets', True)]),
+                     eye=dict(iris='#202a2a')),
+    'horsemackerel': dict(type='E', name='전갱이', depth=0.22, width=0.11,
+                          colors=P('#4a6a6e', '#b8c8c4', '#f2f2ee', silver=0.85, metallic=0.3, fin_up=('#6a8080', '#8aa0a0', 0.65), fin_low=('#d8d0a0', '#e0d8b0', 0.6),
+                                   patterns=[('scutes', dict(color='#8a9a96', a=0.7)), ('earflap', '#1a2224')]),
+                          eye=dict(r=0.026, iris='#d8d0b0')),
+    'halfbeak': dict(type='E', name='학꽁치', depth=0.1, width=0.08, tmax=0.5, body_end=0.86, ped=0.4, snout=0.95, beak=0.12,
+                     fins=[_fin('dorsal', (0.72, 0.84), 0.45), _fin('anal', (0.7, 0.84), 0.45),
+                           _fin('caudal', h=0.13, shape='fork'), _fin('pectoral', s=(0.24, 0.24), h=0.07), _fin('pelvic', s=(0.6, 0.6), h=0.05)],
+                     colors=P('#4a7a7a', '#c0d8d4', '#f6f8f4', silver=0.85, metallic=0.3, fin_up=('#8aa0a0', '#a0b8b8', 0.55), fin_low=('#b8c8c8', '#d0dcdc', 0.5),
+                              patterns=[('stripe', dict(v=0.55, w=0.05, color='#d0e8f0', a=0.6))]),
+                     eye=dict(s=0.16, z=0.3, r=0.012, iris='#d0d0c0'), anim=dict(amp=1.2, freq=1.3)),
+    # ===== F. 납작한 고기 =====
+    'flounder': dict(type='F', name='광어', flat='left', depth=0.42, mouth=0.1, snout=0.6,
+                     colors=P('#4a4030', '#6e6248', '#f2f0e8', silver=0.0, fin_up=('#5a4e3a', '#4a4030', 0.9), fin_low=('#6a5e48', '#5a4e3a', 0.9),
+                              patterns=[('mottle', dict(color='#2e281e', a=0.5, scale=0.05)), ('spots', dict(n=50, r=(3, 7), color='#d8ccb0', v=(0.1, 1.0), a=0.35))]),
+                     eye=dict(iris='#c0a050', r=0.022)),
+    'marbledflounder': dict(type='F', name='문치가자미', flat='right', depth=0.45, snout=0.5, mouth=0.0, ped=0.3,
+                            colors=P('#4a4234', '#6a604c', '#f4f2ec', silver=0.0, fin_up=('#5a5040', '#4a4234', 0.9), fin_low=('#5a5040', '#4a4234', 0.9),
+                                     patterns=[('spots', dict(n=40, r=(5, 11), color='#2a241c', v=(0.05, 1.0), a=0.55)), ('mottle', dict(color='#3a3428', a=0.3))]),
+                            eye=dict(iris='#a08040', r=0.02)),
+    # ===== G. 장어형 =====
+    'eel': dict(type='G', name='뱀장어',
+                colors=P('#2a3020', '#4e5636', '#d8d4a8', silver=0.1, fin_up=('#3a4228', '#2a3020', 0.9), fin_low=('#c0bc98', '#a8a480', 0.85)),
+                eye=dict(iris='#a0a080')),
+    'conger': dict(type='G', name='붕장어', depth=0.075, mouth=0.1,
+                   colors=P('#4a463c', '#8a8270', '#ece8dc', silver=0.1, fin_up=('#3a362e', '#1a1814', 0.9), fin_low=('#d8d4c8', '#2a2620', 0.85),
+                            patterns=[('pores', dict(color='#f8f6ee', v=0.55, n=40)), ('pores', dict(color='#f8f6ee', v=0.85, n=24))]),
+                   eye=dict(r=0.009, iris='#c0b090')),
+    # ===== H. 메기형 =====
+    'catfish': dict(type='H', name='메기',
+                    barbels=[(0.03, 0.1, 0.12, 0.004, 'side'), (0.025, -0.35, 0.05, 0.003, 'down')],
+                    colors=P('#2a2a20', '#5a5640', '#d8d4bc', silver=0.0, fin_up=('#3a3a2c', '#2a2a20', 0.9), fin_low=('#4a4a38', '#3a3a2c', 0.9),
+                             patterns=[('mottle', dict(color='#1e1e16', a=0.6, scale=0.06))]),
+                    eye=dict(iris='#a09060')),
+    'bagrid': dict(type='H', name='동자개', depth=0.2, width=0.13, head_w=1.15, tmax=0.3, body_end=0.82,
+                   fins=[_fin('dorsal', (0.3, 0.38), 0.55, prof=[(0, 1.0), (1, 0.6)], spine=True),
+                         _fin('adipose', (0.66, 0.8), 0.18, prof=[(0, 0.4), (0.4, 1.0), (1, 0.5)]),
+                         _fin('anal', (0.62, 0.8), 0.32), _fin('caudal', h=0.22, shape='fork'),
+                         _fin('pectoral', s=(0.17, 0.17), h=0.14, spine=True), _fin('pelvic', s=(0.42, 0.42), h=0.08)],
+                   barbels=[(0.03, 0.15, 0.06, 0.003, 'side'), (0.035, 0.35, 0.035, 0.002, 'up'),
+                            (0.025, -0.3, 0.04, 0.002, 'down'), (0.03, -0.4, 0.03, 0.002, 'down')],
+                   colors=P('#5a4a1e', '#c8a040', '#f0dc8a', silver=0.0, fin_up=('#a08030', '#6a5420', 0.85), fin_low=('#c8a040', '#a08030', 0.85),
+                            patterns=[('blotches', dict(color='#2e2410', a=0.75))]),
+                   eye=dict(iris='#c0a040')),
+    'snakehead': dict(type='H', name='가물치', depth=0.15, width=0.13, head_w=1.0, tmax=0.4, body_end=0.83, ped=0.75, snout=0.65, mouth=0.1, scales=70,
+                      fins=[_fin('dorsal', (0.3, 0.98), 0.32, prof=[(0, 0.6), (0.2, 1.0), (1, 0.9)]),
+                            _fin('anal', (0.55, 0.98), 0.3, prof=[(0, 0.6), (0.2, 1.0), (1, 0.9)]),
+                            _fin('caudal', h=0.15, shape='round'), _fin('pectoral', s=(0.24, 0.24), h=0.11), _fin('pelvic', s=(0.33, 0.33), h=0.07)],
+                      colors=P('#2e3424', '#6a6c4a', '#d8d6c0', silver=0.0, fin_up=('#3a3e2c', '#4a4e38', 0.9), fin_low=('#4a4e38', '#5a5e48', 0.9),
+                               patterns=[('blotchrows', dict(color='#16180e', a=0.8)), ('eyeline', dict(color='#16180e', w=0.025, n=2))]),
+                      eye=dict(s=0.07, z=0.4, r=0.012, iris='#c0a050')),
+}
+
+# 잡동사니 (Unity에서 모양을 코드로 만드는 대신 여기서 같이 모델링한다)
+JUNK = ['can', 'trap', 'box', 'fishcan', 'robotfish', 'shoe']
+
+
+def resolve(sid):
+    """틀 + 어종 덮어쓰기 → 완성된 파라미터."""
+    sp = SPECIES[sid]
+    t = TEMPLATES[sp['type']]
+    d = {k: (list(v) if isinstance(v, list) else (dict(v) if isinstance(v, dict) else v)) for k, v in t.items()}
+    for k, v in sp.items():
+        if k in ('eye', 'anim') and isinstance(v, dict):
+            d[k] = dict(d.get(k, {}), **v)
+        else:
+            d[k] = v
+    d['id'] = sid
+    d.setdefault('head_w', 1.0)
+    d.setdefault('barbels', [])
+    d.setdefault('bones', 6)
+    d.setdefault('flat', None)
+    d.setdefault('beak', 0.0)
+    return d

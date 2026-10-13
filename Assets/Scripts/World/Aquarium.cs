@@ -111,6 +111,7 @@ namespace Fishing.World
                 float shown = Mathf.Lerp(12f, 45f, Mathf.InverseLerp(s.MinLen, Mathf.Max(s.MaxLen, s.MinLen + 1f), f.length));
                 var model = FishModels.Create(s, shown, holder);
                 model.transform.localRotation = Quaternion.identity;
+                FishModels.Play(model, FishModels.SwimSlow, Random.Range(0.85f, 1.15f), 0f);
                 _swimmers.Add((holder, RandomInside(), Random.Range(0.18f, 0.32f)));
             }
 
@@ -168,7 +169,7 @@ namespace Fishing.World
                 var to = target - t.localPosition;
                 if (to.magnitude < 0.08f) { _swimmers[i] = (t, RandomInside(), speed); continue; }
                 t.localPosition += to.normalized * sp * Time.deltaTime;
-                var look = Quaternion.LookRotation(to.normalized) * Quaternion.Euler(0f, 90f, 0f);
+                var look = Quaternion.LookRotation(to.normalized); // 모델 머리 = +Z
                 t.localRotation = Quaternion.Slerp(t.localRotation, look, Time.deltaTime * 3f);
             }
             foreach (var b in _bubbles)

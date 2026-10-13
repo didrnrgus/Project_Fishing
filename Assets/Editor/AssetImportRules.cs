@@ -8,7 +8,9 @@ namespace Fishing.EditorTools
     ///  - Resources/Characters/Angler_*.fbx: tools/blender/build_characters.py가 만든 낚시꾼(몸 + 옷 메쉬)
     ///  - ThirdParty/Quaternius/Source: 그 원본 Superhero FBX. 런타임에는 안 쓰므로 가볍게(애니메이션·머티리얼 없음)
     ///  - 이름에 "Loop"가 들어간 클립은 반복 재생
-    ///  - Resources/Fish: 레거시 애니메이션 (헤엄 클립 하나라서 Animation 컴포넌트로 충분)
+    ///  - Resources/Fish: 레거시 애니메이션 (Animation 컴포넌트). Fish/Species는 build_fish.py가 만든 어종별 모델(클립 5개)
+    ///  - Resources/Fish/Textures: *_n = 노멀 맵, *_m = 금속성·매끈함(선형), 나머지 = 알베도(알파 = 지느러미)
+    ///  - Resources/Icons: UI 스프라이트 (투명 배경, 밉맵 없음)
     /// </summary>
     public class AssetImportRules : AssetPostprocessor
     {
@@ -42,6 +44,14 @@ namespace Fishing.EditorTools
             {
                 importer.animationType = ModelImporterAnimationType.Legacy;
                 importer.materialImportMode = ModelImporterMaterialImportMode.None;
+                if (assetPath.Contains("Resources/Fish/Species/"))
+                {
+                    importer.importBlendShapes = false;
+                    importer.importCameras = false;
+                    importer.importLights = false;
+                    importer.isReadable = false;
+                    importer.optimizeMeshVertices = true;
+                }
             }
             else if (assetPath.Contains("Resources/Kenney/"))
             {
@@ -50,6 +60,35 @@ namespace Fishing.EditorTools
                 importer.importAnimation = false;
                 importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
                 importer.addCollider = false;
+            }
+        }
+
+        void OnPreprocessTexture()
+        {
+            var importer = (TextureImporter)assetImporter;
+            if (assetPath.Contains("Resources/Fish/Textures/"))
+            {
+                if (assetPath.EndsWith("_n.png"))
+                    importer.textureType = TextureImporterType.NormalMap;
+                else
+                {
+                    importer.textureType = TextureImporterType.Default;
+                    importer.sRGBTexture = !assetPath.EndsWith("_m.png");
+                    importer.alphaIsTransparency = false;
+                }
+                importer.mipmapEnabled = true;
+                importer.wrapMode = UnityEngine.TextureWrapMode.Clamp;
+                // 노멀·금속성은 작게 (빌드 크기): 알베도 1024, 노멀 512, 금속성 256
+                importer.maxTextureSize = assetPath.EndsWith("_n.png") ? 512 : assetPath.EndsWith("_m.png") ? 256 : 1024;
+            }
+            else if (assetPath.Contains("Resources/Icons/"))
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spriteImportMode = SpriteImportMode.Single;
+                importer.alphaIsTransparency = true;
+                importer.mipmapEnabled = false;
+                importer.wrapMode = UnityEngine.TextureWrapMode.Clamp;
+                importer.maxTextureSize = 256;
             }
         }
 
