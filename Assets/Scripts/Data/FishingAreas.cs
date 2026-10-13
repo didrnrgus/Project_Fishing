@@ -17,7 +17,7 @@ namespace Fishing.Data
 
     /// <summary>
     /// 원작 "낚시터 목록(KOREA)" 화면의 국내 낚시터 11곳 (원작 한국 코스 1~24레벨).
-    /// 지금은 한강(Lv.1)과 홍현 앞바다(Lv.5, 배를 받는 레벨)가 열려 있다.
+    /// 지금은 한강(Lv.1), 홍현 앞바다(Lv.5, 배를 받는 레벨), 서천 앞바다(Lv.6, 대회 장소)가 열려 있다.
     /// 위치는 지도에 찍을 대략적인 좌표다.
     /// </summary>
     public static class FishingAreas
@@ -29,7 +29,8 @@ namespace Fishing.Data
             new FishingArea { Id = "samcheok", Name = "삼척 앞바다", Lon = 129.3f, Lat = 37.42f, Level = 14, Desc = "동해의 차가운 바다." },
             new FishingArea { Id = "cheongjin", Name = "청진포구", Lon = 129.78f, Lat = 41.78f, Level = 22, Desc = "북쪽 끝 항구." },
             new FishingArea { Id = "deungdae", Name = "동해 등대섬", Lon = 129.55f, Lat = 36.95f, Level = 16, Desc = "등대가 서 있는 작은 섬." },
-            new FishingArea { Id = "seocheon", Name = "서천 앞바다", Lon = 126.6f, Lat = 36.05f, Level = 6, Desc = "노을이 아름다운 서해 바다." },
+            new FishingArea { Id = "seocheon", Name = "서천 앞바다", Lon = 126.6f, Lat = 36.05f, Open = true, Level = 6, MapId = "seocheon",
+                Desc = "노을이 아름다운 서해 바다. 홍원항 흰·빨간 등대, 춘장대 갯벌, 동백정. 물때(밀물·썰물)를 읽어야 한다. 조합 낚시 대회가 열리는 곳." },
             new FishingArea { Id = "yeongheung", Name = "영흥도", Lon = 126.45f, Lat = 37.25f, Level = 9, Desc = "흐린 날이면 안개가 짙게 깔리는 섬." },
             new FishingArea { Id = "taean", Name = "태안반도 연안", Lon = 126.15f, Lat = 36.75f, Level = 11, Desc = "맑은 날 바다가 유난히 푸르다." },
             new FishingArea { Id = "honghyeon", Name = "홍현 앞바다", Lon = 127.95f, Lat = 34.73f, Open = true, Level = 5, MapId = "honghyeon",

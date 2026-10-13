@@ -7,6 +7,19 @@ namespace Fishing.World
     public static class WaterSurface
     {
         public static Material Material { get; private set; }
+        /// <summary>지금 맵의 수면 (물때가 이걸 오르내린다).</summary>
+        public static Transform Current { get; private set; }
+        static Color? _defaultDeep, _defaultShallow;
+
+        /// <summary>맵마다 물 색 (서해는 탁한 황록색). a가 0이면 기본색.</summary>
+        public static void SetColors(Color deep, Color shallow)
+        {
+            if (Material == null) return;
+            _defaultDeep ??= Material.GetColor("_DeepColor");
+            _defaultShallow ??= Material.GetColor("_ShallowColor");
+            Material.SetColor("_DeepColor", deep.a > 0f ? deep : _defaultDeep.Value);
+            Material.SetColor("_ShallowColor", shallow.a > 0f ? shallow : _defaultShallow.Value);
+        }
 
         public static GameObject Create(Transform parent, Vector3 center, Vector2 size, float cell)
         {
@@ -54,6 +67,7 @@ namespace Fishing.World
             }
             else r.sharedMaterial = Mats.Lit(new Color(0.13f, 0.3f, 0.38f), 0.93f);
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            Current = go.transform;
             return go;
         }
     }

@@ -82,7 +82,9 @@ namespace Fishing.Angling
                 if (r is SkinnedMeshRenderer smr)
                 {
                     var m = new Mesh();
-                    smr.BakeMesh(m, true); // 크기까지 구운 뒤 위치·회전만 곱한다
+                    // 실험으로 확인: BakeMesh(false)는 뼈에 실린 크기까지 들어간 정점을 준다 → 위치·회전만 곱한다
+                    // (BakeMesh(true)는 크기가 빠지고, false + localToWorld는 크기가 두 번 들어간다)
+                    smr.BakeMesh(m, false);
                     var mtx = Matrix4x4.TRS(smr.transform.position, smr.transform.rotation, Vector3.one);
                     foreach (var v in m.vertices)
                     {
@@ -129,8 +131,8 @@ namespace Fishing.Angling
         {
             var go = Object.Instantiate(prefab, parent, false);
             go.name = "Fish_" + species.Id;
-            var path = "Fish/Species/" + species.Id;
-            go.transform.localScale = Vector3.one * (lengthCm / 100f / MeasuredLength(path, go));
+            // build_fish.py가 주둥이~꼬리 끝 1m로 만든다 (몸·지느러미를 따로 재면 각각 0.8m라 재지 않는다)
+            go.transform.localScale = Vector3.one * (lengthCm / 100f);
             var (body, fin) = SpeciesMats(species.Id);
             Renderer lod0Body = null, lod0Fin = null, lod1Body = null, lod1Fin = null;
             foreach (var r in go.GetComponentsInChildren<Renderer>(true))
@@ -210,6 +212,12 @@ namespace Fishing.Angling
             "beakfish" => new Color(0.55f, 0.55f, 0.5f),
             "giantgrouper" => new Color(0.4f, 0.32f, 0.25f),
             "robotfish" => new Color(0.75f, 0.78f, 0.82f),
+            "goby" => new Color(0.55f, 0.5f, 0.4f),
+            "shad" => new Color(0.7f, 0.75f, 0.8f),
+            "whitecroaker" => new Color(0.78f, 0.78f, 0.75f),
+            "octopus" => new Color(0.6f, 0.45f, 0.4f),
+            "cuttlefish" => new Color(0.65f, 0.55f, 0.45f),
+            "croaker" => new Color(0.5f, 0.48f, 0.42f),
             _ => new Color(0.75f, 0.78f, 0.82f)
         };
 

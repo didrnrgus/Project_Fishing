@@ -180,7 +180,7 @@ namespace Fishing.UI
             UIFactory.ClearChildren(_grid);
 
             // 낚시터 탭 (제목 줄 오른쪽, 닫기 버튼 옆)
-            var tabs = new[] { Fishing.World.Maps.HanRiver, Fishing.World.Maps.Honghyeon };
+            var tabs = Fishing.World.Maps.All;
             for (int t = 0; t < tabs.Length; t++)
             {
                 var map = tabs[t];

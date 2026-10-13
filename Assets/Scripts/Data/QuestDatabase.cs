@@ -102,6 +102,21 @@ namespace Fishing.Data
             new QuestDef { Title = "자이언트 그루퍼", Desc = "암초의 주인 자이언트 그루퍼! 저녁엔 C4, 아침엔 E3 어군에 나타난다지. 헤비대와 강한 줄을 챙기게.",
                 Goal = QuestGoal.CatchSpecies, SpeciesId = "giantgrouper", Count = 1, RewardGold = 50000, RewardExp = 3000,
                 RewardKeepNet = 3, RewardCostume = "top_union" },
+
+            // ---------- 서천 앞바다 (Lv.6, 서해) ----------
+            new QuestDef { Title = "서해 노을", Desc = "서천 앞바다에 가 보게. 춘장대 갯벌 가에서 망둥어부터 낚아 보면 서해 맛을 알 걸세.",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "goby", Count = 3, RewardGold = 3000, RewardExp = 500,
+                RewardBaitId = "bait_egi", RewardBaitCount = 5 },
+            new QuestDef { Title = "주꾸미 철", Desc = "서천 하면 주꾸미지! 에기를 바닥에 붙여 살살 끌어 보게.",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "octopus", Count = 3, RewardGold = 6000, RewardExp = 700 },
+            new QuestDef { Title = "물때를 읽어라", Desc = "서해는 물이 들고 나는 바다라네. 물이 들어올 때(들물) 고기가 붙지. 해 질 녘에 백조기를 노려 보게.",
+                Goal = QuestGoal.CatchSpeciesInBand, SpeciesId = "whitecroaker", Band = TimeBand.Evening, Count = 2,
+                RewardGold = 8000, RewardExp = 900, RewardBaitId = "bait_shrimp", RewardBaitCount = 20 },
+            new QuestDef { Title = "먹물 조심", Desc = "갑오징어는 먹물을 뿜으며 뒤로 내뺀다네. 바위 근처에서 에기로 노려 보게.",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "cuttlefish", Count = 1, RewardGold = 10000, RewardExp = 1200 },
+            new QuestDef { Title = "서해의 왕", Desc = "여름 서해의 왕 민어! 저녁엔 C5, 밤엔 F6 어군에 들어온다지. 새우 미끼와 튼튼한 줄을 챙기게.",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "croaker", Count = 1, RewardGold = 50000, RewardExp = 3000,
+                RewardKeepNet = 2 },
         };
     }
 }

@@ -144,7 +144,7 @@ def paint(d, seed=0):
 
     # ---- 옆줄 ----
     ll_v = 0.6 + 0.08 * np.sin(np.clip(u, 0, 1) * math.pi) - 0.08 * u
-    if not flat and d['type'] not in ('G',):
+    if not flat and d['type'] not in ('G',) and not d.get('ceph'):
         line = np.exp(-((v - ll_v) ** 2) / (2 * 0.006 ** 2)) * smooth(0.18, 0.24, u)
         blend(body, side * 0.6 + back * 0.4, line * 0.35)
         h_b += line * 0.5
@@ -154,11 +154,11 @@ def paint(d, seed=0):
     if d['type'] == 'G':
         head_end = 0.09
     gx = head_end - 0.05 * (vside - 0.5) ** 2 * 4
-    gill = np.exp(-((u - gx) ** 2) / (2 * 0.006 ** 2)) * smooth(0.05, 0.25, vside) * smooth(0.98, 0.8, vside) * eyed
+    gill = np.exp(-((u - gx) ** 2) / (2 * 0.006 ** 2)) * smooth(0.05, 0.25, vside) * smooth(0.98, 0.8, vside) * eyed * (0.0 if d.get('ceph') else 1.0)
     blend(body, back * 0.55, gill * 0.6)
     h_b += gill * 0.8
     # 입 선
-    if not flat:
+    if not flat and not d.get('ceph'):
         mouth_v = 0.5 + 0.35 * d.get('mouth', 0) * 0.3
         mlen = 0.035 + 0.03 * max(0, d.get('mouth', 0))
         if d['type'] == 'C':
@@ -279,6 +279,12 @@ def paint(d, seed=0):
             body[:] = body + m[..., None] * 0.15 * arg
         elif kind == 'mouthline':
             pass
+        elif kind == 'rings':
+            # 주꾸미 눈 아래 금색 고리 (좌우 대칭 UV라 하나만 그리면 양쪽에 나온다). u = 몸 영역 비율
+            px, py, rr = arg['u'] * BW, (1 - arg['v']) * H, arg['r']
+            dd = np.sqrt((xx - px) ** 2 + (yy - py) ** 2)
+            m = smooth(rr * 0.35, rr * 0.2, np.abs(dd - rr * 0.75))
+            blend(body, hexrgb(arg['color']), m)
     body = np.clip(body, 0, 1)
     metal_b += silver * 0.45 * smooth(0.9, 0.3, vside) * eyed
     alb[:, :BW, :3] = body

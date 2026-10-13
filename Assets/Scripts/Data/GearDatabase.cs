@@ -105,12 +105,14 @@ namespace Fishing.Data
             new BaitDef { Id = "bait_worm", Name = "지렁이", Kind = BaitKind.Worm, PackSize = 30, Price = 300, Maps = FishSpecies.HanOnly },
             new BaitDef { Id = "bait_paste", Name = "떡밥", Kind = BaitKind.Paste, PackSize = 30, Price = 400, Maps = FishSpecies.HanOnly },
             new BaitDef { Id = "bait_corn", Name = "옥수수", Kind = BaitKind.Corn, PackSize = 30, Price = 300, Maps = FishSpecies.HanOnly },
-            new BaitDef { Id = "bait_krill", Name = "크릴", Kind = BaitKind.Krill, PackSize = 30, Price = 400, Maps = FishSpecies.SeaOnly },
-            new BaitDef { Id = "bait_seaworm", Name = "청갯지렁이", Kind = BaitKind.SeaWorm, PackSize = 30, Price = 500, Maps = FishSpecies.SeaOnly },
-            new BaitDef { Id = "bait_squid", Name = "오징어살", Kind = BaitKind.Squid, PackSize = 20, Price = 600, Maps = FishSpecies.SeaOnly },
+            new BaitDef { Id = "bait_krill", Name = "크릴", Kind = BaitKind.Krill, PackSize = 30, Price = 400, Maps = FishSpecies.SeaMaps },
+            new BaitDef { Id = "bait_seaworm", Name = "청갯지렁이", Kind = BaitKind.SeaWorm, PackSize = 30, Price = 500, Maps = FishSpecies.SeaMaps },
+            new BaitDef { Id = "bait_squid", Name = "오징어살", Kind = BaitKind.Squid, PackSize = 20, Price = 600, Maps = FishSpecies.SeaMaps },
             new BaitDef { Id = "bait_shrimp", Name = "새우", Kind = BaitKind.Shrimp, PackSize = 20, Price = 600 },
             new BaitDef { Id = "bait_minnow", Name = "생미끼", Kind = BaitKind.Minnow, PackSize = 10, Price = 800 },
             new BaitDef { Id = "bait_lure", Name = "스푼 루어", Kind = BaitKind.Lure, PackSize = 10, Price = 1500 },
+            // 서천 앞바다: 주꾸미·갑오징어용 새우 모양 가짜 미끼 (원작풍)
+            new BaitDef { Id = "bait_egi", Name = "에기", Kind = BaitKind.Egi, PackSize = 5, Price = 1800, Maps = FishSpecies.WestOnly },
 
             // 해체 미끼 (원작풍 이름: 원작에도 "촉촉한이리" 같은 형용사+부위 미끼가 있었다). 살림망에서 고기를 해체해 얻는다
             new BaitDef { Id = "bait_cut1", Name = "어분덩이", Kind = BaitKind.CutBait, NotSold = true, Level = 1, Potency = 1.0f },

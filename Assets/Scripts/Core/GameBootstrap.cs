@@ -52,6 +52,7 @@ namespace Fishing.Core
             Game.DayNight.Init(new System.Collections.Generic.List<Light>(), new System.Collections.Generic.List<Renderer>());
             Game.Schools = gameObject.AddComponent<FishSchoolManager>();
             Game.Tournament = gameObject.AddComponent<TournamentSystem>();
+            gameObject.AddComponent<Tide>();
             // 마지막으로 있던 낚시터 (입장 레벨이 안 되면 한강)
             var startMap = Maps.Get(data.mapId);
             if (data.level < FishingAreas.EntryLevel(startMap.Id)) startMap = Maps.HanRiver;
@@ -91,6 +92,8 @@ namespace Fishing.Core
                 }
                 if (level == FishingAreas.EntryLevel("honghyeon"))
                     Game.Toast("새 낚시터가 열렸습니다: 홍현 앞바다 (남해). 대기실 [낚시터 선택하기]에서 입장하세요.", ToastKind.Great);
+                if (level == FishingAreas.EntryLevel("seocheon"))
+                    Game.Toast("새 낚시터가 열렸습니다: 서천 앞바다 (서해, 대회 장소). 물때를 읽고 주꾸미를 노려 보세요!", ToastKind.Great);
             };
 
             if (devArgs.Enabled) gameObject.AddComponent<DevAutomation>().Init(devArgs);

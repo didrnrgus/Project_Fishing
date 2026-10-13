@@ -527,6 +527,41 @@ def model_lure(iid):
     return [o], 'item'
 
 
+def model_egi(iid):
+    """에기: 새우 모양 나무 몸통(천을 감은 무늬) + 깃털 다리 + 꼬리 쪽 우산살 바늘 (주꾸미·갑오징어용)."""
+    objs = []
+    body_m = mat('#f08030', 0.35, coat=0.6)
+    stripe = mat('#ffd040', 0.3, coat=0.6)
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=24, v_segments=12, radius=1.0)
+    for v in bm.verts:
+        x, y, z = v.co
+        taper = 1.0 - 0.45 * max(0.0, y)  # 꼬리 쪽이 가늘다
+        v.co = V((x * 0.035 * taper, y * 0.16, z * 0.04 * taper))
+    objs.append(obj_from_bm(bm, 'EgiBody', body_m))
+    for k in range(4):
+        objs.append(torus(0.036 - k * 0.003, 0.004, stripe, loc=(0, -0.08 + k * 0.05, 0), rot=(math.pi / 2, 0, 0), seg=20, mseg=6))
+    objs.append(sphere(0.012, mat('#101010', 0.1), loc=(0.02, -0.13, 0.015)))
+    objs.append(sphere(0.012, mat('#101010', 0.1), loc=(-0.02, -0.13, 0.015)))
+    # 앞쪽 납작한 머리판 (가라앉는 추)
+    objs.append(box((0.05, 0.03, 0.012), mat('#c8c8cc', 0.25, metal=0.9), loc=(0, -0.16, -0.03), rot=(0.4, 0, 0), bevel=0.004))
+    # 옆 깃털 (다리)
+    feather = mat('#f0e0c0', 0.6)
+    for s in (-1, 1):
+        objs.append(tube([(s * 0.03, -0.02, -0.01), (s * 0.07, 0.02, -0.03), (s * 0.08, 0.06, -0.05)], 0.006, feather, r_end=0.001, sides=5))
+    # 꼬리 우산살 바늘 (두 겹)
+    hook = mat('#d8d8dc', 0.2, metal=1.0)
+    for ring in range(2):
+        for k in range(10):
+            a = k * 2 * math.pi / 10 + ring * 0.3
+            base = V((0, 0.16 + ring * 0.012, 0))
+            d = V((math.cos(a), 0, math.sin(a)))
+            objs.append(tube([base, base + d * 0.012 + V((0, 0.02, 0)), base + d * 0.022 + V((0, 0.012, 0))], 0.0018, hook, sides=4))
+    o = join(objs, 'Egi')
+    o.rotation_euler = (0, 0, math.radians(-50))
+    return [o], 'item'
+
+
 CUT_COL = ['#c8a070', '#b87860', '#9a4a3a', '#e8c8b0', '#a83a3a']
 
 
@@ -767,7 +802,7 @@ ITEMS = {
     'boat_rubber': model_boat, 'boat_speed': model_boat,
     'bait_worm': model_worm, 'bait_paste': model_paste, 'bait_corn': model_corn, 'bait_krill': model_krill,
     'bait_seaworm': model_seaworm, 'bait_squid': model_squid, 'bait_shrimp': model_shrimp, 'bait_minnow': model_minnow,
-    'bait_lure': model_lure,
+    'bait_lure': model_lure, 'bait_egi': model_egi,
     'bait_cut1': model_cutbait, 'bait_cut2': model_cutbait, 'bait_cut3': model_cutbait, 'bait_cut4': model_cutbait, 'bait_cut5': model_cutbait,
     'food_kimbap': model_kimbap,
     'mat_scale': model_scale, 'mat_starsand': model_starsand, 'mat_conch': model_conch,

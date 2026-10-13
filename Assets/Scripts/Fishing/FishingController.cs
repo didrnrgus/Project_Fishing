@@ -377,7 +377,7 @@ namespace Fishing.Angling
             PendingBite = BiteSelector.Pick(_ctx);
             BigBite = false;
 
-            _waitTimer = BiteSelector.WaitSeconds(_ctx) * slowdown * (_waitInSpot ? 0.7f : 1f);
+            _waitTimer = BiteSelector.WaitSeconds(_ctx) * slowdown * (_waitInSpot ? 0.7f : 1f) * Tide.WaitFactor; // 서해: 들물이면 빨리
             _nibblesLeft = PendingBite.Species.Aggression > 0.75f ? Random.Range(0, 2) : Random.Range(0, 4);
             _nextNibbleAt = _waitTimer * Random.Range(0.3f, 0.7f);
             _nibbleActive = false;

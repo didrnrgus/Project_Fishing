@@ -33,6 +33,7 @@ import bmesh  # noqa: E402
 import mathutils  # noqa: E402
 import numpy as np  # noqa: E402
 
+import cephalopod as CP  # noqa: E402
 import fish_species as FS  # noqa: E402
 import fish_tex  # noqa: E402
 
@@ -588,6 +589,15 @@ def animate(d, arm):
                 re[0 if axis == 2 else 2] = 0.18 * math.sin(ph * 2)  # 펄떡: 위아래로 들썩
             r.rotation_euler = re
             r.keyframe_insert('rotation_euler', frame=fr)
+            # 두족류 다리: 다리마다 위상을 달리해 꿈틀 (빠르게 헤엄칠 땐 뒤로 모아 쭉)
+            arm_amp = {'Swim_Slow': 0.22, 'Swim_Fast': 0.08, 'Thrash': 0.6, 'Flop': 0.45, 'Idle_Hover': 0.15}[clip]
+            for pb in arm.pose.bones:
+                if not pb.name.startswith('Arm'):
+                    continue
+                ai, aj = (int(x) for x in pb.name[3:].split('_'))
+                w = ph * (1.5 if clip == 'Thrash' else 1.0) + ai * 0.785 + aj * 0.9
+                pb.rotation_euler = (arm_amp * math.sin(w), 0.0, arm_amp * 0.5 * math.cos(w * 0.7 + ai))
+                pb.keyframe_insert('rotation_euler', frame=fr)
             for nm, sgn in (('Pec_R', 1), ('Pec_L', -1)):
                 pb = arm.pose.bones.get(nm)
                 if pb is None:
@@ -612,6 +622,8 @@ def build(sid):
     d = FS.resolve(sid)
     clear()
     B = Body(d)
+    if d.get('ceph'):
+        return build_cephalopod(d, B)
     v, f, uv = build_body_mesh(d, B)
     body = mesh_from('Body', v, f, uv)
     extras = [make_eye(d, B, 1), make_eye(d, B, -1)] + make_barbels(d, B)
@@ -645,6 +657,36 @@ def build(sid):
         c.modifiers.move(len(c.modifiers) - 1, 0)
         bpy.ops.object.modifier_apply(modifier=dm.name)
         lods.append(c)
+    animate(d, arm)
+    tris = sum(len(p.vertices) - 2 for ob in (body, fins) for p in ob.data.polygons)
+    return d, arm, body, fins, lods, tris
+
+
+def make_lods(body, fins):
+    lods = []
+    for ob, ratio in ((body, 0.28), (fins, 0.35)):
+        c = ob.copy()
+        c.data = ob.data.copy()
+        c.name = ob.name + '_LOD1'
+        c.data.name = c.name
+        bpy.context.scene.collection.objects.link(c)
+        dm = c.modifiers.new('Dec', 'DECIMATE')
+        dm.ratio = ratio
+        bpy.context.view_layer.objects.active = c
+        c.modifiers.move(len(c.modifiers) - 1, 0)
+        bpy.ops.object.modifier_apply(modifier=dm.name)
+        lods.append(c)
+    return lods
+
+
+def build_cephalopod(d, B):
+    """주꾸미·갑오징어 (cephalopod.py): 몸통 사슬 + 다리 뼈."""
+    body, fins, paths, arm_idx = CP.build(d)
+    solidify(fins, 0.002)
+    arm = build_rig(d, B, body, fins)
+    CP.add_arm_bones(arm, paths)
+    CP.weight_arms(body, paths, arm_idx)
+    lods = make_lods(body, fins)
     animate(d, arm)
     tris = sum(len(p.vertices) - 2 for ob in (body, fins) for p in ob.data.polygons)
     return d, arm, body, fins, lods, tris

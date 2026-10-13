@@ -199,7 +199,8 @@ namespace Fishing.EditorTools.Tests
             Assert.AreEqual("다이아몬드", TournamentRules.EmblemName(1000));
             Assert.AreEqual(30, TournamentRules.ToNextEmblem(0));
             Assert.AreEqual("hangang", TournamentRules.MapOf(1));
-            Assert.AreEqual("honghyeon", TournamentRules.MapOf(2));
+            Assert.AreEqual("seocheon", TournamentRules.MapOf(2));
+            Assert.AreEqual("honghyeon", TournamentRules.MapOf(3));
         }
     }
 

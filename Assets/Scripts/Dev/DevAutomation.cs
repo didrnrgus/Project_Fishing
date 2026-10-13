@@ -423,8 +423,76 @@ namespace Fishing.Dev
             yield return CloseResult();
             Game.Fishing.Autoplay = false;
 
+            // ================= 서천 앞바다 (서해, 물때) =================
+            Game.Weather.Force(Weather.Clear);
+            Game.Clock.Set(3, MinuteAtTide(3, 9 * 60, 15 * 60, true));   // 낮 만조 무렵
+            Game.UI.EnterField(Fishing.Data.FishingAreas.Korea.Find(a => a.Id == "seocheon"), 1);
+            Game.UI.Help.Close();
+            Game.Player.Teleport(new Vector3(8f, 1.1f, -50f), 20f);
+            Game.CameraRig.Yaw = 25f;
+            Game.CameraRig.Pitch = 14f;
+            Game.CameraRig.Distance = 11f;
+            yield return new WaitForSeconds(3f);
+            yield return Shot("34_seocheon_harbor");
+
+            // 썰물: 춘장대 갯벌이 드러난다
+            Game.Clock.Set(3, MinuteAtTide(3, 6 * 60, 18 * 60, false));
+            yield return new WaitForSeconds(0.5f);
+            Game.Player.Teleport(new Vector3(-110f, 1.2f, -30f), 0f);
+            Game.CameraRig.Yaw = 15f;
+            Game.CameraRig.Pitch = 16f;
+            Game.CameraRig.Distance = 10f;
+            yield return new WaitForSeconds(1.5f);
+            yield return Shot("35_seocheon_lowtide");
+
+            // 동백정 (오후), 그리고 서해 노을 (해 지기 직전)
+            Game.Clock.Set(3, 15 * 60 + 30);
+            var cape = Fishing.World.SeocheonDef.CapeBase;
+            float capeY = Fishing.World.SeocheonTerrain.HeightAt(cape.x, 2f);
+            Game.Player.Teleport(new Vector3(cape.x - 2f, capeY + 0.2f, 2f), 0f);
+            Game.CameraRig.Yaw = 170f;
+            Game.CameraRig.Pitch = 8f;
+            Game.CameraRig.Distance = 9f;
+            yield return new WaitForSeconds(1.5f);
+            yield return Shot("36_seocheon_pavilion");
+            Game.Clock.Set(3, 17 * 60 + 40);
+            Game.CameraRig.Yaw = -25f;
+            Game.CameraRig.Pitch = 4f;
+            yield return new WaitForSeconds(0.8f);
+            yield return Shot("36b_seocheon_sunset");
+
+            // 빨간 등대 방파제에서 주꾸미
+            Game.Clock.Set(4, 10 * 60);
+            var arm = Fishing.World.SeocheonDef.RedArm;
+            Game.Player.Teleport(new Vector3(arm.center.x, 1.1f, arm.yMax - 2f), 0f);
+            yield return new WaitForSeconds(1f);
+            Game.Fishing.Autoplay = true;
+            Game.Fishing.DebugStartFight("octopus", 26f, 12f);
+            yield return new WaitForSeconds(2f);
+            yield return Shot("37_seocheon_fight");
+            var westFight = Game.Fishing.Fight;
+            float westTimeout = Time.time + 60f;
+            while (Game.Fishing.State == FishingState.Fighting && Time.time < westTimeout) yield return null;
+            if (westFight != null) Debug.Log($"[Dev] 서천 파이팅 종료: {westFight.Species.Name} {westFight.Length:0.0}cm, 결과={westFight.Outcome}");
+            yield return WaitResult();
+            yield return Shot("38_seocheon_result");
+            yield return CloseResult();
+            Game.Fishing.Autoplay = false;
+
             Debug.Log("[Dev] 자동 스크린샷 완료");
             Application.Quit();
+        }
+
+        /// <summary>그날 from~to(분) 사이에서 물이 가장 높거나(high) 낮은 시각.</summary>
+        static float MinuteAtTide(int day, float from, float to, bool high)
+        {
+            float best = from, bestLevel = high ? -2f : 2f;
+            for (float m = from; m <= to; m += 5f)
+            {
+                float l = Tide.LevelAt(day * GameClock.MinutesPerDay + m);
+                if (high ? l > bestLevel : l < bestLevel) { bestLevel = l; best = m; }
+            }
+            return best;
         }
 
         /// <summary>환호 컷이 끝나고 결과 창이 뜬 뒤 물고기가 튀어 오를 때까지 기다린다.</summary>
