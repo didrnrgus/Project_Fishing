@@ -174,10 +174,10 @@ namespace Fishing.PlayerSystems
                 }
                 else
                 {
-                    if (Input.GetKey(KeyCode.W)) throttleIn += 1f;
-                    if (Input.GetKey(KeyCode.S)) throttleIn -= 0.4f;
-                    if (Input.GetKey(KeyCode.D)) steer += 1f;
-                    if (Input.GetKey(KeyCode.A)) steer -= 1f;
+                    if (Settings.Held(KeyAction.MoveForward)) throttleIn += 1f;
+                    if (Settings.Held(KeyAction.MoveBack)) throttleIn -= 0.4f;
+                    if (Settings.Held(KeyAction.MoveRight)) steer += 1f;
+                    if (Settings.Held(KeyAction.MoveLeft)) steer -= 1f;
                 }
             }
             Throttle = Mathf.MoveTowards(Throttle, Mathf.Abs(throttleIn), dt * 2f);

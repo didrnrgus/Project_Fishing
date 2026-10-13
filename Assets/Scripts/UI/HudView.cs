@@ -271,20 +271,33 @@ namespace Fishing.UI
             }
         }
 
+        // 메뉴 독 글자: 키를 바꾸면 다시 쓴다
+        readonly List<(TMP_Text text, KeyAction key, string label)> _menuLabels = new List<(TMP_Text, KeyAction, string)>();
+        int _menuVersion = -1;
+
+        void UpdateMenuLabels()
+        {
+            if (_menuVersion == Settings.Version) return;
+            _menuVersion = Settings.Version;
+            foreach (var (text, key, label) in _menuLabels)
+                text.text = $"<size=11><color=#7fd0ff>{Settings.KeyName(key)}</color></size>\n{label}";
+        }
+
         void BuildBottomBar()
         {
-            (string key, string label, System.Action action)[] menu =
+            (KeyAction key, string label, System.Action action)[] menu =
             {
-                ("L", "퀘스트", () => Game.UI.OpenExclusive(Game.UI.Quest)),
-                ("P", "도감", () => Game.UI.OpenExclusive(Game.UI.Dex)),
-                ("Z", "살림망", () => Game.UI.OpenExclusive(Game.UI.KeepNet)),
-                ("I", "가방", () => Game.UI.OpenExclusive(Game.UI.Inventory)),
-                ("C", "의상", () => Game.UI.OpenExclusive(Game.UI.Costume)),
-                ("F12", "상점", () => Game.UI.OpenShop()),
-                ("U", "설명", () => Game.UI.ToggleTips()),
-                ("F1", "도움말", () => Game.UI.OpenExclusive(Game.UI.Help)),
-                ("F5", "저장", () => Game.UI.SaveNow()),
-                ("B", "배", () => Game.Boat.Toggle()),
+                (KeyAction.Quest, "퀘스트", () => Game.UI.OpenExclusive(Game.UI.Quest)),
+                (KeyAction.Dex, "도감", () => Game.UI.OpenExclusive(Game.UI.Dex)),
+                (KeyAction.KeepNet, "살림망", () => Game.UI.OpenExclusive(Game.UI.KeepNet)),
+                (KeyAction.Inventory, "가방", () => Game.UI.OpenExclusive(Game.UI.Inventory)),
+                (KeyAction.Costume, "의상", () => Game.UI.OpenExclusive(Game.UI.Costume)),
+                (KeyAction.Shop, "상점", () => Game.UI.OpenShop()),
+                (KeyAction.Tips, "설명", () => Game.UI.ToggleTips()),
+                (KeyAction.Help, "도움말", () => Game.UI.OpenExclusive(Game.UI.Help)),
+                (KeyAction.Save, "저장", () => Game.UI.SaveNow()),
+                (KeyAction.Boat, "배", () => Game.Boat.Toggle()),
+                (KeyAction.Options, "옵션", () => Game.UI.OpenExclusive(Game.UI.Options)),
             };
             // 왼쪽 아래 떠 있는 유리 메뉴 독
             const float slot = 86f;
@@ -295,7 +308,8 @@ namespace Fishing.UI
                 var (key, label, action) = menu[i];
                 var btn = UIFactory.Button(dock, "", () => action(), new Color(1f, 1f, 1f, 0.001f), 15);
                 ((RectTransform)btn.transform).At(new Vector2(0, 0.5f), new Vector2(6 + i * slot, 0), new Vector2(slot - 4, 46));
-                btn.GetComponentInChildren<TMP_Text>().text = $"<size=11><color=#7fd0ff>{key}</color></size>\n{label}";
+                var text = btn.GetComponentInChildren<TMP_Text>();
+                _menuLabels.Add((text, key, label));
                 // 마우스를 올리면 은은하게 밝아진다
                 var colors = btn.colors;
                 colors.highlightedColor = new Color(1f, 1f, 1f, 90f);
@@ -628,6 +642,7 @@ namespace Fishing.UI
             _netSlot.text = $"<size=11><color=#80c8ff>Z</color></size> 살림망\n<b>{d.keepNet.Count}/{Game.Profile.KeepNetSize}</b>";
 
             UpdateTournament();
+            UpdateMenuLabels();
             UpdateMap(playerPos);
             UpdateBoatGauges();
             UpdateCasting();

@@ -132,8 +132,8 @@ namespace Fishing.PlayerSystems
             bool uiBlocking = Game.UI != null && Game.UI.BlockingPanelOpen;
             if (Input.GetMouseButton(1) && !uiBlocking && Shot == ShotKind.Follow)
             {
-                Yaw += Input.GetAxis("Mouse X") * 3f;
-                Pitch = Mathf.Clamp(Pitch - Input.GetAxis("Mouse Y") * 2f, -5f, 70f);
+                Yaw += Input.GetAxis("Mouse X") * 3f * Settings.LookSensitivity;
+                Pitch = Mathf.Clamp(Pitch - Input.GetAxis("Mouse Y") * 2f * Settings.LookSensitivity * (Settings.InvertY ? -1f : 1f), -5f, 70f);
             }
             if (!uiBlocking && Shot == ShotKind.Follow)
                 Distance = Mathf.Clamp(Distance - Input.mouseScrollDelta.y * 0.8f, 3f, 16f);

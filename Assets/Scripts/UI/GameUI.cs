@@ -26,6 +26,7 @@ namespace Fishing.UI
         public CostumePanel Costume { get; private set; }
         public ExchangePanel Exchange { get; private set; }
         public AquariumPanel Aquarium { get; private set; }
+        public OptionsPanel Options { get; private set; }
         /// <summary>F로 말을 걸 수 있는 가장 가까운 NPC.</summary>
         public Fishing.Characters.NpcAngler NearbyNpc { get; private set; }
 
@@ -77,7 +78,8 @@ namespace Fishing.UI
             Costume = new CostumePanel(canvas);
             Exchange = new ExchangePanel(canvas);
             Aquarium = new AquariumPanel(canvas);
-            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, Upgrade, Inventory, Costume, Exchange, Aquarium };
+            Options = new OptionsPanel(canvas);
+            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, Upgrade, Inventory, Costume, Exchange, Aquarium, Options };
             LobbyHud.Root.transform.SetAsFirstSibling();
             // 토스트는 모든 창 위에
             Hud.ToastLayer.SetParent(canvas, false);
@@ -205,6 +207,12 @@ namespace Fishing.UI
 
         void HandleKeys()
         {
+            // 옵션 창에서 새 키를 기다리는 중이면 다른 단축키는 받지 않는다
+            if (Options.IsOpen && Options.Waiting != null)
+            {
+                Options.Tick();
+                return;
+            }
             if (Result.IsOpen)
             {
                 if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Escape)) Result.ChooseByKey(true);
@@ -218,16 +226,17 @@ namespace Fishing.UI
             }
 
             // 설명 끄기/켜기는 파이팅 중에도 된다 (원작: [설명 끄기 : U])
-            if (Input.GetKeyDown(KeyCode.U)) ToggleTips();
+            if (Settings.Down(KeyAction.Tips)) ToggleTips();
+            if (Settings.Down(KeyAction.Options)) OpenExclusive(Options);
 
             if (Game.Mode == GameMode.Lobby)
             {
-                if (Input.GetKeyDown(KeyCode.L)) OpenExclusive(Quest);
-                if (Input.GetKeyDown(KeyCode.P)) OpenExclusive(Dex);
-                if (Input.GetKeyDown(KeyCode.Z)) OpenExclusive(KeepNet);
-                if (Input.GetKeyDown(KeyCode.I)) OpenExclusive(Inventory);
-                if (Input.GetKeyDown(KeyCode.C)) OpenExclusive(Costume);
-                if (Input.GetKeyDown(KeyCode.F1)) OpenExclusive(Help);
+                if (Settings.Down(KeyAction.Quest)) OpenExclusive(Quest);
+                if (Settings.Down(KeyAction.Dex)) OpenExclusive(Dex);
+                if (Settings.Down(KeyAction.KeepNet)) OpenExclusive(KeepNet);
+                if (Settings.Down(KeyAction.Inventory)) OpenExclusive(Inventory);
+                if (Settings.Down(KeyAction.Costume)) OpenExclusive(Costume);
+                if (Settings.Down(KeyAction.Help)) OpenExclusive(Help);
                 return;
             }
 
@@ -235,17 +244,18 @@ namespace Fishing.UI
             if (state == FishingState.Fighting) return;
             bool idle = state == FishingState.Idle;
 
-            // 원작 단축키: 퀘스트 L, 도감 P, 살림망 Z, 상점 F12, 지역 지도 M
-            if (Input.GetKeyDown(KeyCode.F1)) OpenExclusive(Help);
-            if (Input.GetKeyDown(KeyCode.M)) OpenExclusive(AreaMap);
-            if (Input.GetKeyDown(KeyCode.I)) OpenExclusive(Inventory);
-            if (Input.GetKeyDown(KeyCode.F) && NearbyNpc != null && idle && !BlockingPanelOpen) TalkTo(NearbyNpc);
-            if (Input.GetKeyDown(KeyCode.B) && !BlockingPanelOpen) Game.Boat.Toggle();
-            if (Input.GetKeyDown(KeyCode.P)) OpenExclusive(Dex);
-            if (Input.GetKeyDown(KeyCode.L)) OpenExclusive(Quest);
-            if (Input.GetKeyDown(KeyCode.Z)) OpenExclusive(KeepNet);
-            if (Input.GetKeyDown(KeyCode.F12)) OpenShop();
-            if (Input.GetKeyDown(KeyCode.F5)) SaveNow();
+            // 원작 단축키: 퀘스트 L, 도감 P, 살림망 Z, 상점 F12, 지역 지도 M (옵션에서 바꿀 수 있다)
+            if (Settings.Down(KeyAction.Help)) OpenExclusive(Help);
+            if (Settings.Down(KeyAction.AreaMap)) OpenExclusive(AreaMap);
+            if (Settings.Down(KeyAction.Inventory)) OpenExclusive(Inventory);
+            if (Settings.Down(KeyAction.Costume)) OpenExclusive(Costume);
+            if (Settings.Down(KeyAction.Talk) && NearbyNpc != null && idle && !BlockingPanelOpen) TalkTo(NearbyNpc);
+            if (Settings.Down(KeyAction.Boat) && !BlockingPanelOpen) Game.Boat.Toggle();
+            if (Settings.Down(KeyAction.Dex)) OpenExclusive(Dex);
+            if (Settings.Down(KeyAction.Quest)) OpenExclusive(Quest);
+            if (Settings.Down(KeyAction.KeepNet)) OpenExclusive(KeepNet);
+            if (Settings.Down(KeyAction.Shop)) OpenShop();
+            if (Settings.Down(KeyAction.Save)) SaveNow();
 
             if (idle && !BlockingPanelOpen)
                 for (int i = 0; i < 6; i++)

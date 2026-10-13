@@ -195,7 +195,7 @@ namespace Fishing.Angling
 
         void UpdateCharging()
         {
-            float dy = Input.GetAxis("Mouse Y");
+            float dy = Input.GetAxis("Mouse Y") * Settings.FightSensitivity;
             float now = Time.time;
             // 아래로 당긴 양(뒤로 젖히기)을 모으고, 위로 미는 순간 속도를 잰다
             if (dy < 0f && PushSum(now) <= 1f) PullBack += -dy;
@@ -401,13 +401,13 @@ namespace Fishing.Angling
             }
         }
 
-        bool WantsRetrieve => Input.GetKeyDown(KeyCode.R) || Game.Player.MovedThisFrame;
+        bool WantsRetrieve => Settings.Down(KeyAction.Retrieve) || Game.Player.MovedThisFrame;
 
         /// <summary>챔질 준비: 버튼을 누른 채 마우스를 흔들면 낚싯대가 그대로 좌우로 흔들린다 (원작 0:30).</summary>
         void SwayRod(bool bite)
         {
             var player = Game.Player;
-            float mx = Input.GetMouseButton(0) && !UiBlocking ? Input.GetAxis("Mouse X") : 0f;
+            float mx = Input.GetMouseButton(0) && !UiBlocking ? Input.GetAxis("Mouse X") * Settings.FightSensitivity : 0f;
             _swayYaw = Mathf.Clamp(_swayYaw * Mathf.Exp(-5f * Time.deltaTime) + mx * 7f, -32f, 32f);
             player.RodYaw = _swayYaw;
             player.BodyLean = bite ? -6f + Mathf.Abs(_swayYaw) * 0.2f : 0f;
@@ -425,7 +425,7 @@ namespace Fishing.Angling
                 return false;
             }
             if (_shakeSpent) return false;
-            _shake = _shake * Mathf.Exp(-6f * Time.deltaTime) + Mathf.Abs(Input.GetAxis("Mouse X"));
+            _shake = _shake * Mathf.Exp(-6f * Time.deltaTime) + Mathf.Abs(Input.GetAxis("Mouse X") * Settings.FightSensitivity);
             if (_shake < ShakeThreshold) return false;
             _shakeSpent = true;
             _shake = 0f;
@@ -460,6 +460,7 @@ namespace Fishing.Angling
                 BigBite = PendingBite.IsTrophy || PendingBite.Species.Rarity >= 4;
                 Game.Sound.Plop();
                 if (BigBite) Game.Sound.Heartbeat();
+                Rumble.Pulse(BigBite ? 0.45f : 0.25f, 0.35f, 0.18f);   // 본신: 톡
                 Game.CameraRig.Shake(0.35f);
                 return;
             }
@@ -573,6 +574,7 @@ namespace Fishing.Angling
                 Effects.Ripple(_bobber.Position, 2.4f, 1.2f);
                 Game.Sound.Splash(1f);
                 Game.CameraRig.Shake(grade == HookGrade.Perfect ? 1.1f : 0.7f);
+                Rumble.Pulse(grade == HookGrade.Perfect ? 0.9f : 0.6f, 0.5f, 0.3f);   // 챔질
                 Game.CameraRig.Punch(grade == HookGrade.Perfect ? -9f : -6f);
                 HitStop(0.12f, 0.12f);
                 return;
@@ -718,6 +720,7 @@ namespace Fishing.Angling
         void OnCounter()
         {
             Game.Sound.Counter(Fight.Combo);
+            Rumble.Pulse(0.8f, 1f, 0.15f);
             Game.CameraRig.Shake(1.2f);
             Game.CameraRig.Punch(-8f);
             HitStop(0.09f, 0.15f);
@@ -731,6 +734,7 @@ namespace Fishing.Angling
         /// <summary>물고기가 날뛸 때: 큰 물보라, 화면이 흔들리고, 낚싯대가 확 끌려간다.</summary>
         void OnBurst()
         {
+            Rumble.Pulse(0.7f, 0.2f, 0.6f);   // 질주: 묵직하게 길게
             Game.Sound.Splash(1f);
             var pos = _rodView.FishWorldPos(Fight);
             Effects.Splash(pos, 22, 1.3f);
@@ -742,6 +746,7 @@ namespace Fishing.Angling
 
         void OnEscapeRun()
         {
+            Rumble.Pulse(0.6f, 0.3f, 0.5f);
             Game.Sound.Splash(1.2f);
             Effects.Splash(_rodView.FishWorldPos(Fight), 24, 1.4f);
             Game.UI.Fight.ShowEscape();
@@ -780,7 +785,7 @@ namespace Fishing.Angling
                 {
                     Reeling = Input.GetMouseButton(0),
                     Releasing = Input.GetMouseButton(1),
-                    MouseDX = Input.GetAxis("Mouse X"),
+                    MouseDX = Input.GetAxis("Mouse X") * Settings.FightSensitivity,
                 };
                 f.Tick(Time.deltaTime, input, p.StaminaFactor, p.DurabilityFactor * (1f + p.Costume.Damage));
 
@@ -792,6 +797,7 @@ namespace Fishing.Angling
                 Game.Sound.SetReel(turns, f.Tension);
                 Game.Sound.SetDrag(lineOut);
                 Game.Sound.SetStrain(Mathf.InverseLerp(FishFight.HighTension, 1f, f.Tension));
+                Rumble.Hold(Mathf.InverseLerp(FishFight.HighTension, 1f, f.Tension));   // 장력이 높으면 계속 떨림
 
                 if (f.LandingChance && f.StartLanding())
                 {
@@ -837,6 +843,7 @@ namespace Fishing.Angling
             if (outcome != FightOutcome.Landed)
             {
                 Game.Sound.Snap();
+                Rumble.Pulse(1f, 1f, 0.45f);   // 줄 끊김
                 Game.Toast(outcome switch
                 {
                     FightOutcome.LineBroken => "툭! 줄이 끊어졌다... 장력을 조심하세요.",
@@ -851,6 +858,7 @@ namespace Fishing.Angling
             }
 
             Game.Sound.Success();
+            Rumble.Pulse(0.5f, 0.8f, 0.35f);   // 랜딩
             Game.Player.PlayCheer();
             Effects.Splash(fishPos, 40, 1.8f);
             // 원작 1:12: 결과 화면 전에 캐릭터 얼굴 클로즈업
