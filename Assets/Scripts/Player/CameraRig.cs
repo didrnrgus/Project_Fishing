@@ -16,6 +16,9 @@ namespace Fishing.PlayerSystems
         public float Distance = 7f;
 
         bool _fight;
+        bool _fixed;
+        Vector3 _fixedPos;
+        Quaternion _fixedRot;
         Vector3 _fightPos;
         Vector3 _fightDir;
         float _fightLook;
@@ -47,9 +50,32 @@ namespace Fishing.PlayerSystems
 
         public void Shake(float amount) => _shake = Mathf.Max(_shake, amount);
 
+        /// <summary>대기실처럼 정해진 구도로 고정한다.</summary>
+        public void SetFixed(Vector3 pos, Quaternion rot)
+        {
+            _fixed = true;
+            _fixedPos = pos;
+            _fixedRot = rot;
+            transform.SetPositionAndRotation(pos, rot);
+        }
+
+        public void ClearFixed()
+        {
+            _fixed = false;
+            if (Game.Player != null)
+                transform.position = Game.Player.transform.position + new Vector3(0f, 3f, -6f);
+        }
+
         void LateUpdate()
         {
             if (Game.Player == null) return;
+            if (_fixed)
+            {
+                // 대기실: 아주 천천히 숨 쉬듯 흔들린다
+                float t = Time.time * 0.3f;
+                transform.SetPositionAndRotation(_fixedPos + new Vector3(Mathf.Sin(t) * 0.05f, Mathf.Sin(t * 1.3f) * 0.03f, 0f), _fixedRot);
+                return;
+            }
             _shake = Mathf.MoveTowards(_shake, 0f, Time.deltaTime * 1.5f);
             var shakeOffset = Random.insideUnitSphere * _shake * 0.08f;
 

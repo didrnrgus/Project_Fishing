@@ -50,7 +50,16 @@ namespace Fishing.Dev
             p.AddItem("bait_corn", 20);
             p.AddItem("bait_minnow", 5);
 
+            Game.Clock.Set(1, 10 * 60);
             yield return new WaitForSeconds(3f);
+            yield return Shot("00a_lobby");
+            Game.UI.OpenExclusive(Game.UI.Areas);
+            yield return new WaitForSeconds(0.5f);
+            yield return Shot("00b_area_list");
+            Game.UI.EnterField(1);
+            Game.UI.Help.Close();
+            Game.Clock.Set(1, 6 * 60);
+            yield return new WaitForSeconds(2f);
             yield return Shot("01_field_morning");
 
             // 캐릭터 정면 클로즈업 (한낮)

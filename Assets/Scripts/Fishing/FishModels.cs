@@ -6,17 +6,16 @@ namespace Fishing.Angling
 {
     /// <summary>
     /// Quaternius Animated Fish Pack(CC0)의 Fish1~3으로 어종별 물고기를 만든다.
-    /// 원본은 cm 단위(길이 약 1.7~3.3m로 읽힘)라 실제 길이에 맞춰 줄이고, 어종 색을 입힌다.
+    /// 원본 길이(약 2~3.3m)는 처음 만들 때 BakeMesh로 재서 실제 길이에 맞춰 줄이고, 어종 색을 입힌다.
     /// 에셋이 없으면 캡슐로 대신한다.
     /// </summary>
     public static class FishModels
     {
-        // 모델별 원본 길이(Z축, 임포트 단위)
-        static readonly (string path, float rawLength)[] Models =
+        static readonly string[] Models =
         {
-            ("Fish/Fish1", 326.5f), // 몸통이 두툼한 고기: 잉어, 붕어, 메기 …
-            ("Fish/Fish2", 215.7f), // 지느러미가 큰 고기: 쏘가리, 배스, 블루길 …
-            ("Fish/Fish3", 167.6f), // 날씬한 고기: 피라미, 끄리, 강준치, 숭어, 뱀장어 …
+            "Fish/Fish1", // 몸통이 두툼한 고기: 잉어, 붕어, 메기 …
+            "Fish/Fish2", // 지느러미가 큰 고기: 쏘가리, 배스, 블루길 …
+            "Fish/Fish3", // 날씬한 고기: 피라미, 끄리, 강준치, 숭어, 뱀장어 …
         };
 
         public static int ModelIndex(FishSpecies s) => s.Id switch
@@ -42,9 +41,40 @@ namespace Fishing.Angling
             _ => new Color(0.75f, 0.78f, 0.82f)
         };
 
+        static readonly System.Collections.Generic.Dictionary<string, float> LengthCache = new System.Collections.Generic.Dictionary<string, float>();
+
+        /// <summary>
+        /// 스킨드 메쉬는 프리팹 bounds가 뼈 스케일을 반영하지 않을 수 있어서, 실제로 구워서(BakeMesh) 길이를 잰다.
+        /// 스케일 1인 상태에서 한 번만 재고 캐시한다.
+        /// </summary>
+        static float MeasuredLength(string path, GameObject instance)
+        {
+            if (LengthCache.TryGetValue(path, out var cached)) return cached;
+            float length = 0f;
+            foreach (var smr in instance.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                var baked = new Mesh();
+                smr.BakeMesh(baked, true);
+                var size = Vector3.Scale(baked.bounds.size, smr.transform.lossyScale);
+                length = Mathf.Max(length, Mathf.Max(size.x, Mathf.Max(size.y, size.z)));
+                Object.Destroy(baked);
+            }
+            if (length <= 0.0001f)
+                foreach (var mf in instance.GetComponentsInChildren<MeshFilter>(true))
+                {
+                    var size = Vector3.Scale(mf.sharedMesh.bounds.size, mf.transform.lossyScale);
+                    length = Mathf.Max(length, Mathf.Max(size.x, Mathf.Max(size.y, size.z)));
+                }
+            if (length <= 0.0001f) length = 1f;
+            // 부모 스케일이 섞이지 않도록 부모 기준으로 환산
+            if (instance.transform.parent != null) length /= Mathf.Max(0.0001f, instance.transform.parent.lossyScale.x);
+            LengthCache[path] = length;
+            return length;
+        }
+
         public static GameObject Create(FishSpecies species, float lengthCm, Transform parent)
         {
-            var (path, raw) = Models[ModelIndex(species)];
+            var path = Models[ModelIndex(species)];
             var prefab = Resources.Load<GameObject>(path);
             GameObject go;
             if (prefab == null || species.IsJunk)
@@ -57,7 +87,7 @@ namespace Fishing.Angling
             go = Object.Instantiate(prefab, parent, false);
             go.name = "Fish_" + species.Id;
             float meters = lengthCm / 100f;
-            go.transform.localScale = Vector3.one * (meters / raw);
+            go.transform.localScale = Vector3.one * (meters / MeasuredLength(path, go));
 
             var body = BodyColor(species);
             foreach (var r in go.GetComponentsInChildren<Renderer>(true))

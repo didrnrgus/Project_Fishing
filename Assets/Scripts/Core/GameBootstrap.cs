@@ -57,6 +57,7 @@ namespace Fishing.Core
             Game.Sound = Game.CameraRig.gameObject.AddComponent<SoundFx>();
             Game.Fishing = gameObject.AddComponent<FishingController>();
             Game.UI = gameObject.AddComponent<GameUI>();
+            Game.Lobby = LobbyRoom.Build();
 
             Game.Profile.LeveledUp += level =>
             {
@@ -70,11 +71,8 @@ namespace Fishing.Core
         void Start()
         {
             var q = Game.Quests.Current;
-            if (Game.Profile.Data.totalCatches == 0 && !Game.SaveDisabled)
-            {
-                Game.UI.OpenExclusive(Game.UI.Help);
-                Game.Toast("한강에 오신 걸 환영합니다! 설명은 U, 도움말은 F1입니다.", ToastKind.Great);
-            }
+            Game.UI.EnterLobby();
+            Game.Toast("한국 낚시 조합에 오신 걸 환영합니다! [낚시터 선택하기]에서 한강에 입장하세요.", ToastKind.Great);
             if (q != null) Game.Toast($"조합 퀘스트: {q.Title} - {q.GoalText}");
             _nextAutoSave = Time.time + AutoSaveInterval;
         }

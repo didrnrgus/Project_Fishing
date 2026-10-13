@@ -17,18 +17,21 @@ namespace Fishing.Characters
         Role _role;
         float _nextCast;
 
-        public static NpcAngler Spawn(Transform parent, Vector3 localPos, float yaw, CharacterLook look, Role role)
+        /// <summary>true면 다시 던지지 않고 낚싯대만 들고 서 있다 (대기실).</summary>
+        public bool Idle;
+
+        public static NpcAngler Spawn(Transform parent, Vector3 localPos, float yaw, CharacterLook look, Role role, bool showNameTag = true)
         {
             var root = new GameObject("NPC_" + look.Name).transform;
             root.SetParent(parent, false);
             root.localPosition = localPos;
             root.localRotation = Quaternion.Euler(0f, yaw, 0f);
             var npc = root.gameObject.AddComponent<NpcAngler>();
-            npc.Build(look, role);
+            npc.Build(look, role, showNameTag);
             return npc;
         }
 
-        void Build(CharacterLook look, Role role)
+        void Build(CharacterLook look, Role role, bool showNameTag)
         {
             _role = role;
             if (CharacterFactory.Available)
@@ -52,7 +55,7 @@ namespace Fishing.Characters
                 Mats.Prim(PrimitiveType.Cylinder, "Blank", _rod, new Vector3(0f, 0f, 1.1f), new Vector3(0.025f, 1.4f, 0.025f),
                     Mats.Lit(new Color(0.15f, 0.25f, 0.6f), 0.6f), false, Quaternion.Euler(90f, 0f, 0f));
             }
-            _nameTag = CharacterFactory.AddNameTag(transform, look.Name, look.Title);
+            if (showNameTag) _nameTag = CharacterFactory.AddNameTag(transform, look.Name, look.Title);
             _nextCast = Time.time + Random.Range(5f, 25f);
         }
 
@@ -66,7 +69,7 @@ namespace Fishing.Characters
                     Role.Talker => CharacterAnimator.Talk,
                     _ => CharacterAnimator.Sit
                 });
-                if (_role == Role.Angler && Time.time > _nextCast)
+                if (_role == Role.Angler && !Idle && Time.time > _nextCast)
                 {
                     _nextCast = Time.time + Random.Range(20f, 45f);
                     _anim.PlayOnce(CharacterAnimator.Cast, 1.6f, 0.75f);

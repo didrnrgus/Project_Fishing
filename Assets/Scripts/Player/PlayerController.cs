@@ -127,6 +127,7 @@ namespace Fishing.PlayerSystems
         void Update()
         {
             MovedThisFrame = false;
+            if (Game.Mode == GameMode.Lobby) return;
             var input = Vector2.zero;
             bool uiBlocking = Game.UI != null && Game.UI.BlockingPanelOpen;
             if (!uiBlocking)

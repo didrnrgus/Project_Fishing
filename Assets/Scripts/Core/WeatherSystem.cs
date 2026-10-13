@@ -23,6 +23,7 @@ namespace Fishing.Core
         void Update()
         {
             if (Game.Clock.TotalMinutes >= _nextChangeAt) Roll();
+            Apply(); // 대기실 실내에서는 비를 끈다
 
             var cam = Game.CameraRig != null ? Game.CameraRig.Cam : null;
             if (cam != null) _rain.transform.position = cam.transform.position + Vector3.up * 14f + cam.transform.forward * 6f;
@@ -49,7 +50,7 @@ namespace Fishing.Core
         {
             if (_rain == null) return;
             var emission = _rain.emission;
-            emission.rateOverTime = Current == Weather.Rain ? 1800f : 0f;
+            emission.rateOverTime = Current == Weather.Rain && Game.Mode == GameMode.Field ? 1800f : 0f;
         }
 
         void BuildRain()
