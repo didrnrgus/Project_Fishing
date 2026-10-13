@@ -24,7 +24,7 @@
 - 라이선스: `Assets/ThirdParty/Quaternius/*.txt`
 
 ## 남은 작업 (순서대로)
-1. [ ] 캐릭터: 플레이어/NPC를 Quaternius 모델로 교체 (PlayableGraph로 Idle/Walk/Jog/캐스팅 애니메이션, hand_r에 낚싯대, 옷 셰이더, 모자, 이름표+칭호)
+1. [~] 캐릭터: 플레이어/NPC를 Quaternius 모델로 교체 — CharacterFactory(옷 셰이더·머리·모자·조끼·이름표), CharacterAnimator(Playables) 작성·컴파일 확인 완료. 다음: PlayerController.BuildModel을 CharacterFactory로 교체(낚싯대는 LateUpdate에서 hand_r 위치 추종), 상태별 애니메이션 연결, Setup의 RuntimeShaders에 "Fishing/Clothed" 추가, 빌드 후 스크린샷으로 모자·조끼 위치(+Z 정면 가정) 확인 (PlayableGraph로 Idle/Walk/Jog/캐스팅 애니메이션, hand_r에 낚싯대, 옷 셰이더, 모자, 이름표+칭호)
 2. [ ] NPC 낚시꾼(뗏목·데크), 낚시점 주인
 3. [ ] 파이팅/결과 물고기를 Fish1~3 모델로 (어종 색)
 4. [ ] 물 셰이더: 절차적 노멀맵 2장 스크롤 + 버텍스 파도 + 반사, 보트/물고기 물보라
