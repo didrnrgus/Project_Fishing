@@ -197,6 +197,14 @@ namespace Fishing.Angling
                 return;
             }
 
+            // 겨울 한강 얼음 위: 캐스팅 대신 발 앞에 구멍을 뚫고 채비를 내린다
+            if (SeasonFx.OnIce(Game.Player.transform.position))
+            {
+                StartIceFishing();
+                return;
+            }
+
+            _bobber.FloatOffset = 0f;
             State = FishingState.Charging;
             PullBack = 0f;
             CastPower = 0f;
@@ -266,6 +274,34 @@ namespace Fishing.Angling
                 Casted?.Invoke(CastDistance);
                 State = FishingState.Casting;
             }
+        }
+
+        bool _iceFishing;
+
+        void StartIceFishing()
+        {
+            Game.Player.MovementLocked = true;
+            Game.Player.FaceYaw(Game.CameraRig.Yaw);
+            _castDir = Game.Player.Model.forward;
+            var hole = Game.Player.transform.position + _castDir * 1.4f;
+            hole.y = FieldMap.WaterY;
+            SeasonFx.MakeHole(hole);
+            _bobber.FloatOffset = 0.22f;
+            CastDistance = 1.4f;
+            _castTarget = hole;
+            Game.Player.RodPitch = 25f;
+            _bobber.Launch(Game.Player.RodTip.position, hole + Vector3.up * 0.25f);
+            Game.Sound.Splash(0.4f);
+            Game.Toast("얼음 구멍을 뚫고 채비를 내렸습니다. 빙어가 떼로 다녀요!", ToastKind.Info);
+            FlyingDistance = 0f;
+            State = FishingState.Casting;
+        }
+
+        /// <summary>개발/테스트용: 얼음 위에서 얼음낚시를 시작한다.</summary>
+        public void DebugIceFish()
+        {
+            if (State != FishingState.Idle) ToIdle();
+            StartIceFishing();
         }
 
         float PushSum(float now)
@@ -382,6 +418,9 @@ namespace Fishing.Angling
                 School = Game.Schools.At(col, row),
                 MapId = FieldMap.Id,
                 BaitPotency = Game.Profile.Bait.Potency,
+                IceFishing = _iceFishing = SeasonFx.OnIce(Game.Player.transform.position),
+                Season = Seasons.Current,
+                UseSeason = true,
                 // 먼바다 포인트는 대물이 잘 문다
                 BigFishBonus = Game.Profile.Costume.BigFish + (FieldMap.IsFarSea(_bobber.Position) ? 0.08f : 0f),
             };
@@ -462,7 +501,8 @@ namespace Fishing.Angling
             if (WantsRetrieve) { Retrieve("찌를 회수했습니다."); return; }
             if (_lureMode || Trolling) { UpdateLureWait(); return; }
             if (Time.time >= _castShotUntil) SwayRod(false);
-            if (UpdateReel()) { if (State == FishingState.Waiting && DetectShake()) FalseHook(); return; }
+            // 얼음 구멍에서는 감을 줄이 없다 (누르고 흔들면 챔질만)
+            if (!_iceFishing && UpdateReel()) { if (State == FishingState.Waiting && DetectShake()) FalseHook(); return; }
 
             _waitTimer -= Time.deltaTime;
             if (_nibbleActive && Time.time > _nibbleWindowEnd) _nibbleActive = false;
