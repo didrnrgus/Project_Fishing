@@ -80,8 +80,22 @@ namespace Fishing.Dev
             Game.CameraRig.Yaw = Game.Player.Yaw;
             Game.CameraRig.Distance = 7f;
 
-            // 원작 영상처럼 밤의 낚시 데크에서
+            // 어군: 데크 앞 물 위에 오래 머무는 하얀 소용돌이
             Game.Weather.Force(Weather.Clear);
+            Game.Clock.Set(1, 10 * 60);
+            Game.Player.Teleport(new Vector3(25f, 1.1f, -29f), 0f);
+            var school = Game.Schools.Schools[0];
+            school.Spot = new Vector3(22f, Fishing.World.FieldMap.WaterY, -15f);
+            Fishing.World.FieldMap.TryCell(school.Spot, out school.Col, out school.Row);
+            school.Hidden = false;
+            school.MoveAt = Time.time + 600f;
+            Game.CameraRig.Yaw = 0f;
+            Game.CameraRig.Pitch = 24f;
+            Game.CameraRig.Distance = 7f;
+            yield return new WaitForSeconds(8f); // 옛 자리에서 사라졌다 새 자리에 떠오르기까지
+            yield return Shot("01b_fish_school");
+
+            // 원작 영상처럼 밤의 낚시 데크에서
             Game.Clock.Set(1, 21 * 60);
             Game.Player.Teleport(new Vector3(25f, 1.1f, -29f), 0f);
             Game.CameraRig.Yaw = -20f;

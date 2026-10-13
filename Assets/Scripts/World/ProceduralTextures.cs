@@ -5,11 +5,13 @@ namespace Fishing.World
     /// <summary>물결 노멀맵, 구름 노이즈, 달 텍스처를 코드로 만든다. 모두 이음매 없이 반복된다.</summary>
     public static class ProceduralTextures
     {
-        static Texture2D _waterNormal, _cloudNoise, _moon;
+        static Texture2D _waterNormal, _cloudNoise, _moon, _schoolSwirl;
 
         public static Texture2D WaterNormal => _waterNormal ??= MakeWaterNormal(256);
         public static Texture2D CloudNoise => _cloudNoise ??= MakeCloudNoise(256);
         public static Texture2D Moon => _moon ??= MakeMoon(128);
+        /// <summary>어군 자리의 하얀 소용돌이(물고기 떼가 휘저은 거품). 흰색에 알파만 있다.</summary>
+        public static Texture2D SchoolSwirl => _schoolSwirl ??= MakeSchoolSwirl(256);
 
         // ---- 반복되는 값 노이즈 ----
         static float Hash(int x, int y, int seed)
@@ -109,6 +111,34 @@ namespace Fishing.World
             }
             tex.SetPixels32(px);
             tex.Apply(true);
+            return tex;
+        }
+
+        static Texture2D MakeSchoolSwirl(int size)
+        {
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp };
+            var px = new Color[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float dx = (x + 0.5f) / size * 2f - 1f, dy = (y + 0.5f) / size * 2f - 1f;
+                float r = Mathf.Sqrt(dx * dx + dy * dy);
+                float a = 0f;
+                if (r < 1f)
+                {
+                    float ang = Mathf.Atan2(dy, dx);
+                    // 바깥으로 감겨 나가는 세 갈래 나선 + 잘게 부서진 거품
+                    float arms = Mathf.Pow(0.5f + 0.5f * Mathf.Sin(ang * 3f + r * 11f), 3f);
+                    float foam = Fbm(x / (float)size, y / (float)size, 8, 4, 77);
+                    float ring = Mathf.Exp(-Mathf.Pow((r - 0.62f) / 0.2f, 2f));
+                    float core = Mathf.Exp(-Mathf.Pow(r / 0.28f, 2f)) * 0.35f;
+                    float edge = Mathf.Clamp01((1f - r) / 0.25f);
+                    a = (ring * (0.35f + 0.65f * arms) + core) * Mathf.SmoothStep(0.25f, 0.75f, foam) * 2.4f * edge;
+                }
+                px[y * size + x] = new Color(1f, 1f, 1f, Mathf.Clamp01(a));
+            }
+            tex.SetPixels(px);
+            tex.Apply();
             return tex;
         }
     }

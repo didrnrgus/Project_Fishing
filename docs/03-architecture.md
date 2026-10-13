@@ -45,7 +45,7 @@ Assets/
       SkyDecor.cs                달·별·구름 돔 (카메라를 따라다님)
       KenneyProps.cs             Kenney CC0 모델 배치: 높이/길이에 맞춰 키우기, 나무 색 다시 칠하기, 밤에 빌딩 은은한 발광
       ProceduralTextures.cs      물 노멀맵, 구름 노이즈, 달 텍스처 (주기적 value-noise fbm)
-      FishSchoolManager.cs       어군 이동, 큰/작은 어군, 수면 파문
+      FishSchoolManager.cs       어군 자리·이동(5~10분 머묾), 큰/작은 어군, 소용돌이(SchoolSwirlFx)·파문
       Effects.cs                 물보라(공유 파티클), 파문
     Player/
       PlayerController.cs        3인칭 캐릭터 이동, 낚싯대 기울기
@@ -55,7 +55,7 @@ Assets/
       FishingController.cs       낚시 상태 머신 (Idle→Charging→Casting→Waiting→Bite→Fighting→Result)
       FishFight.cs               파이팅 시뮬레이션 (순수 로직)
       BiteSelector.cs            어떤 고기가 몇 cm로 물지 결정
-      Bobber.cs                  찌 비행/부유/예신/본신
+      Bobber.cs                  찌 비행/부유/예신/본신, 릴 감기로 끌려옴(DragTo)
       FightRodView.cs            1인칭 낚싯대, 낚싯줄, 물고기 위치·몸체
       TelescopicRod.cs           뽑기대(마디 펼치기·휨 스프링) + 스피닝 릴(장비별 모양, 손잡이·로터·스풀 회전). 1인칭·플레이어·NPC 공용
       FishModels.cs              Fish1~3 모델로 어종별 물고기 (BakeMesh로 원본 길이를 재서 실제 cm에 맞춤)
