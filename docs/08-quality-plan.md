@@ -154,7 +154,7 @@ bpyenv/Scripts/python -I tools/blender/build_characters.py --preview --only male
 - [ ] Human Basic Motions FREE 임포트 → `CharacterAnimator`에 두 번째 클립 라이브러리, Idle/Walk/Run 교체
 - [x] 4장 3(장갑)·4(운동화)·5(남방 깃)·6(여자 조끼) → 재생성, 9(머리카락+모자) 확인 (AO는 완료)
 - [x] 데크·둔치·길·방파제 텍스처 (Poly Haven CC0: 풀·나무 데크·콘크리트·아스팔트, `Mats.TexturedBox`). 나무 교체(Hand Painted Nature Pack)는 에셋 스토어 로그인이 필요해 보류
-- [ ] 흐림/비 하늘 큐브맵 섞기, 반사 프로브
+- [x] 흐림/비 하늘, 반사 프로브: 큐브맵(AllSky)은 에셋 스토어 로그인이 필요해서 대신 `Sky.shader` 구름에 층구름(흐림·비에서 하늘을 덮는 회색 층)을 절차적으로 섞었다(`15b_cloudy_day`). 반사 프로브는 `DayNightCycle`의 하늘 실시간 프로브(시간대마다 갱신)
 - [ ] (선택) VRoid 시험 모델 하나 만들어 비교
 - [ ] `sh tools/build.sh && sh tools/autoshot.sh`로 스크린샷 갱신, README 표·`docs/03-architecture.md`(Clothed → Skin/Garment, CharacterFactory 설명), `docs/05-dev-guide.md`(3장 명령), `docs/06-roadmap.md` 갱신
 

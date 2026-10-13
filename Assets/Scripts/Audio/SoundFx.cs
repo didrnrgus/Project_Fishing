@@ -4,8 +4,8 @@ using UnityEngine;
 namespace Fishing.Audio
 {
     /// <summary>
-    /// 사운드 에셋 없이 절차적으로 만든 효과음. 원작에서 손맛의 핵심이던
-    /// 릴 감는 소리, 물보라, 줄 끊어지는 소리 등을 간단히 흉내 낸다.
+    /// 효과음. 낚시 소리(릴 감기, 물보라, 줄 끊어짐 등 원작 손맛의 핵심)는 절차적으로 만들고,
+    /// UI(버튼·경고)와 발소리(풀·콘크리트·나무·눈)는 Kenney CC0 녹음(Resources/Audio/Kenney)을 쓴다.
     /// </summary>
     public class SoundFx : MonoBehaviour
     {
@@ -18,11 +18,28 @@ namespace Fishing.Audio
         AudioSource _reelLoop, _dragLoop, _strainLoop, _engineLoop;
         float _reelTarget, _reelPitch, _dragTarget, _dragPitch, _strainTarget, _engineTarget, _enginePitch;
 
+        // Kenney Interface Sounds · Impact Sounds (CC0)
+        AudioClip _uiClick, _uiError;
+        readonly System.Collections.Generic.Dictionary<string, AudioClip[]> _steps = new System.Collections.Generic.Dictionary<string, AudioClip[]>();
+        AudioSource _stepSrc;
+
         void Awake()
         {
             _src = gameObject.AddComponent<AudioSource>();
             _src.playOnAwake = false;
             _src.spatialBlend = 0f;
+            _stepSrc = gameObject.AddComponent<AudioSource>();
+            _stepSrc.playOnAwake = false;
+            _stepSrc.spatialBlend = 0f;
+            _uiClick = Resources.Load<AudioClip>("Audio/Kenney/click_002");
+            _uiError = Resources.Load<AudioClip>("Audio/Kenney/error_004");
+            foreach (var s in new[] { "grass", "concrete", "wood", "snow" })
+            {
+                var clips = new AudioClip[5];
+                for (int k = 0; k < 5; k++) clips[k] = Resources.Load<AudioClip>($"Audio/Kenney/footstep_{s}_00{k}");
+                _steps[s] = clips;
+            }
+            Game.Toasted += (msg, kind) => { if (kind == ToastKind.Warn) UiError(); };
 
             _click = Make("click", 0.025f, t => Noise() * Mathf.Exp(-t * 260f));
             _tick = Make("tick", 0.06f, t => Mathf.Sin(t * 2f * Mathf.PI * 900f) * Mathf.Exp(-t * 90f));
@@ -180,6 +197,31 @@ namespace Fishing.Audio
 
         public void ReelClick(float tension) => Play(_click, 0.35f, Mathf.Lerp(0.9f, 1.4f, Mathf.Clamp01(tension)));
         public void Tick() => Play(_tick, 0.5f);
+        /// <summary>UI 버튼 (UIFactory.Button이 누를 때마다).</summary>
+        public void UiClick() { if (_uiClick != null) Play(_uiClick, 0.45f, Random.Range(0.96f, 1.04f)); }
+        public void UiError() { if (_uiError != null) Play(_uiError, 0.5f); }
+
+        /// <summary>발소리. 겨울 한강은 눈, 나무 데크·잔교·배는 나무, 길·방파제는 콘크리트, 나머지(풀·모래·흙)는 풀.</summary>
+        public void Footstep(Vector3 feet, bool running)
+        {
+            if (!_steps.TryGetValue(Surface(feet), out var clips) || clips[0] == null) return;
+            _stepSrc.pitch = Random.Range(0.9f, 1.1f);
+            _stepSrc.PlayOneShot(clips[Random.Range(0, clips.Length)], (running ? 0.42f : 0.3f) * Settings.EffectsVolume);
+        }
+
+        static string Surface(Vector3 feet)
+        {
+            if (World.FieldMap.Id == "hangang" && Fishing.Data.Seasons.IsWinter) return "snow";
+            if (!Physics.Raycast(feet + Vector3.up * 0.5f, Vector3.down, out var hit, 1.5f, ~0, QueryTriggerInteraction.Ignore)) return "grass";
+            if (hit.collider is TerrainCollider) return "grass";
+            string n = hit.collider.name.ToLowerInvariant();
+            if (n.Contains("deck") || n.Contains("pier") || n.Contains("plank") || n.Contains("boat") || n.Contains("wood") || n.Contains("bridge") || n.Contains("pavilion"))
+                return "wood";
+            if (n.Contains("walk") || n.Contains("road") || n.Contains("concrete") || n.Contains("asphalt") || n.Contains("break") || n.Contains("tetra")
+                || n.Contains("quay") || n.Contains("harbor") || n.Contains("port") || n.Contains("stair") || n.Contains("plaza") || n.Contains("wall"))
+                return "concrete";
+            return "grass";
+        }
         public void Splash(float strength) => Play(_splash, Mathf.Clamp01(0.4f + strength * 0.4f), Random.Range(0.85f, 1.15f));
         public void Plop() => Play(_plop, 0.9f);
         public void Whoosh() => Play(_whoosh, 0.6f);

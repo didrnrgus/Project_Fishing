@@ -1,6 +1,6 @@
 // 하늘 장식(달, 별, 구름) 공용 셰이더. 안개를 받지 않고 깊이를 쓰지 않는다.
 //  _Mode 0: 텍스처 × 색 × 버텍스 컬러 (달, 별)
-//  _Mode 1: 구름 — 텍스처 알파를 흘리고, 버텍스 컬러 알파(지평선 근처 페이드)를 곱한다
+//  _Mode 1: 구름 — 텍스처 알파를 흘리고, 버텍스 컬러 알파(지평선 근처 페이드)를 곱한다. _Coverage가 0.6을 넘으면 층구름이 하늘을 덮는다
 Shader "Fishing/Sky"
 {
     Properties
@@ -55,8 +55,13 @@ Shader "Fishing/Sky"
                 // 노이즈 값은 0.3~0.7에 몰려 있어서 임계값도 그 안에서 움직인다
                 float threshold = 0.66 - _Coverage * 0.3;
                 float cloud = smoothstep(threshold, threshold + 0.12, d);
+                // 흐림·비: 뭉게구름 사이를 회색 층구름(stratus)이 메운다 (흐린 날 하늘 큐브맵을 섞는 대신 절차적으로)
+                float stratus = smoothstep(0.6, 1.0, _Coverage);
+                float layer = stratus * (0.7 + 0.3 * smoothstep(0.35, 0.65, a2));
                 fixed4 c = _Color;
                 c.rgb *= lerp(1.0, 0.82, saturate((d - 0.5) * 2.0)); // 두꺼운 곳은 살짝 어둡게
+                c.rgb *= lerp(1.0, 0.86, layer * (1.0 - cloud));      // 층구름은 뭉게구름보다 조금 어둡고 평평하게
+                cloud = max(cloud, layer);
                 c.a *= cloud * i.color.a;
                 return c;
             }

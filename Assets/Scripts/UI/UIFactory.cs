@@ -395,7 +395,7 @@ namespace Fishing.UI
             colors.disabledColor = new Color(0.55f, 0.55f, 0.58f, 0.55f);
             colors.fadeDuration = 0.08f;
             btn.colors = colors;
-            btn.onClick.AddListener(() => onClick?.Invoke());
+            btn.onClick.AddListener(() => { if (Fishing.Core.Game.Sound != null) Fishing.Core.Game.Sound.UiClick(); onClick?.Invoke(); });
             var t = Text(img.transform, label, fontSize, TextMain, TextAnchor.MiddleCenter);
             t.rectTransform.Fill(6, 6, 2, 2);
             return btn;

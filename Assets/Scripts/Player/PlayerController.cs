@@ -57,6 +57,7 @@ namespace Fishing.PlayerSystems
         bool _mountSeated;
         float _airTime;
         const float JumpSpeed = 6.2f;
+        float _stride;
         int _extendedSections;
         string _rodId, _reelId;
 
@@ -301,6 +302,17 @@ namespace Fishing.PlayerSystems
             _cc.Move(motion * Time.deltaTime);
 
             _speedNow = new Vector2(motion.x, motion.z).magnitude;
+            // 발소리: 보폭(걷기 0.8m, 뛰기 1.1m)마다
+            if (_cc.isGrounded && _speedNow > 0.5f)
+            {
+                bool running = _speedNow > WalkSpeed + 0.5f;
+                _stride += _speedNow * Time.deltaTime;
+                if (_stride >= (running ? 1.1f : 0.8f))
+                {
+                    _stride = 0f;
+                    if (Game.Sound != null) Game.Sound.Footstep(transform.position, running);
+                }
+            }
             if (_anim == null)
             {
                 // 프리미티브 캐릭터는 걸을 때 살짝 들썩이는 것으로 대신한다
