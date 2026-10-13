@@ -90,6 +90,15 @@ namespace Fishing.EditorTools
                 // 노멀·금속성은 작게 (빌드 크기): 알베도 1024, 노멀 512, 금속성 256
                 importer.maxTextureSize = assetPath.EndsWith("_n.png") ? 512 : assetPath.EndsWith("_m.png") ? 256 : 1024;
             }
+            else if (assetPath.Contains("Resources/Terrain/"))
+            {
+                // 지형 텍스처 (Poly Haven CC0): *_nor = 노멀(OpenGL)
+                importer.textureType = assetPath.Contains("_nor") ? TextureImporterType.NormalMap : TextureImporterType.Default;
+                importer.mipmapEnabled = true;
+                importer.wrapMode = UnityEngine.TextureWrapMode.Repeat;
+                importer.maxTextureSize = 1024;
+                importer.anisoLevel = 4;
+            }
             else if (assetPath.Contains("Resources/Icons/"))
             {
                 importer.textureType = TextureImporterType.Sprite;

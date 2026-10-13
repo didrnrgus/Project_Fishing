@@ -361,6 +361,22 @@ namespace Fishing.Dev
             Game.CameraRig.Distance = 9f;
             yield return new WaitForSeconds(3f);
             yield return Shot("22_honghyeon_day");
+            // 방파제 끝에서 마을 쪽: 해변 비탈, 포구 호안, 다랭이논 지형
+            Game.Player.Teleport(new Vector3(bw.center.x, 1.1f, bw.yMax - 6f), 180f);
+            Game.CameraRig.Yaw = 200f;
+            Game.CameraRig.Pitch = 16f;
+            Game.CameraRig.Distance = 12f;
+            yield return new WaitForSeconds(1.5f);
+            yield return Shot("22b_honghyeon_village");
+            // 서쪽 갯바위 섬 위
+            var isl = Fishing.World.HonghyeonDef.Islands[0];
+            Game.Player.Teleport(new Vector3(isl.x - 3f, 1.1f, isl.z - 6f), 30f);
+            Game.CameraRig.Yaw = 40f;
+            Game.CameraRig.Pitch = 18f;
+            Game.CameraRig.Distance = 10f;
+            yield return new WaitForSeconds(1.5f);
+            yield return Shot("22c_honghyeon_island");
+            Game.Player.Teleport(new Vector3(bw.center.x, 1.1f, bw.yMin + 6f), 0f);
 
             Game.Clock.Set(2, 18 * 60 + 20);
             Game.Player.Teleport(new Vector3(bw.center.x, 1.1f, bw.yMax - 6f), 330f);

@@ -20,7 +20,7 @@ namespace Fishing.EditorTools
 
         static readonly string[] RuntimeShaders =
         {
-            "Standard", "Unlit/Color", "Skybox/Procedural", "Legacy Shaders/Particles/Alpha Blended", "UI/Default", "Fishing/Skin", "Fishing/Garment", "Fishing/Water", "Fishing/Sky", "Fishing/Fish"
+            "Standard", "Unlit/Color", "Skybox/Procedural", "Legacy Shaders/Particles/Alpha Blended", "UI/Default", "Fishing/Skin", "Fishing/Garment", "Fishing/Water", "Fishing/Sky", "Fishing/Fish", "Nature/Terrain/Standard"
         };
 
         [MenuItem("Fishing/Setup Project")]
