@@ -75,7 +75,17 @@ namespace Fishing.UI
             TabButton(tabs, "낚싯대", GearSlot.Rod, 6);
             TabButton(tabs, "릴", GearSlot.Reel, 170);
 
-            Cell(rows.Next(44), $"{gear.Name} <color=#ffd060>+{lv}</color>", 6, 800, 30, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
+            var head = rows.Next(64);
+            float gx = ItemIcons.Place(head, gear.Id, 6, 64);
+            Cell(head, $"{gear.Name} <color=#ffd060>+{lv}</color>", 6 + gx, 800 - gx, 30, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
+            // 재료: 반짝이는 비늘 · 별모래
+            float mx = 520;
+            foreach (var (id, n) in new[] { (RodUpgrade.ScaleId, p.Count(RodUpgrade.ScaleId)), (RodUpgrade.StarSandId, p.Count(RodUpgrade.StarSandId)) })
+            {
+                float w = ItemIcons.Place(head, id, mx, 44);
+                Cell(head, $"x{n}", mx + w - 4, 60, 18, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+                mx += w + 64;
+            }
 
             // 강화 단계 칸 (15칸)
             var pips = rows.Next(30, 10);

@@ -31,10 +31,11 @@ namespace Fishing.UI
                 }
                 foreach (var it in items)
                 {
-                    var row = rows.Next(36, 3);
+                    var row = rows.Next(46, 3);
                     UIFactory.RowBg(row);
                     bool equipped = it.id == p.Data.baitId;
-                    Cell(row, $"<b>{ItemDatabase.Name(it.id)}</b>  <color=#ffd060>x{it.count}</color>{(equipped ? "  <color=#70e070>장착 중</color>" : "")}", 10, 300, 18);
+                    float ix = ItemIcons.Place(row, it.id, 6, 40);
+                    Cell(row, $"<b>{ItemDatabase.Name(it.id)}</b>  <color=#ffd060>x{it.count}</color>{(equipped ? "  <color=#70e070>장착 중</color>" : "")}", 10 + ix, 300 - ix, 18);
                     Cell(row, ItemDatabase.Desc(it.id), 310, 400, 14, UIFactory.TextDim);
                     if (cat == ItemCategory.Bait)
                     {
@@ -55,8 +56,10 @@ namespace Fishing.UI
             // 배
             UIFactory.SectionTitle(rows.Next(30), "배", 4, 20);
             var boat = p.Boat;
-            Cell(rows.Next(28), boat == null ? "없음 (Lv.5에 조합이 고무보트를 지급합니다)"
-                : $"{boat.Name}  연료 {p.Data.boatFuel:0.0}/{boat.FuelCapacity:0}L  ·  물가에서 B로 꺼내 타기", 14, 800, 17, boat == null ? UIFactory.TextDim : UIFactory.TextMain);
+            var boatRow = rows.Next(boat == null ? 28 : 52);
+            float bx = boat != null ? ItemIcons.Place(boatRow, boat.Id, 6, 48) : 0f;
+            Cell(boatRow, boat == null ? "없음 (Lv.5에 조합이 고무보트를 지급합니다)"
+                : $"{boat.Name}  연료 {p.Data.boatFuel:0.0}/{boat.FuelCapacity:0}L  ·  물가에서 B로 꺼내 타기", 14 + bx, 800 - bx, 17, boat == null ? UIFactory.TextDim : UIFactory.TextMain);
         }
 
         void EatKimbap()

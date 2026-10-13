@@ -402,6 +402,15 @@ namespace Fishing.UI
                 var btn = UIFactory.Button(_baitBar, "", () => SelectBait(index), UIFactory.BtnGhost, 13);
                 ((RectTransform)btn.transform).At(new Vector2(1, 0.5f), new Vector2(-122 - (baits.Count - 1 - i) * 84, 0), new Vector2(80, 46));
                 var label = btn.GetComponentInChildren<TMP_Text>();
+                var icon = ItemIcons.Get(bait.Id);
+                if (icon != null)
+                {
+                    var img = UIFactory.Image(btn.transform, Color.white, icon, "Icon");
+                    img.preserveAspect = true;
+                    img.raycastTarget = false;
+                    img.rectTransform.At(new Vector2(0, 0.5f), new Vector2(2, 0), new Vector2(34, 34), new Vector2(0, 0.5f));
+                    label.rectTransform.offsetMin = new Vector2(30, label.rectTransform.offsetMin.y);
+                }
                 label.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
                 label.enableAutoSizing = true;
                 label.fontSizeMin = 10f;

@@ -49,7 +49,8 @@ namespace Fishing.UI
                 UIFactory.RowBg(row);
                 int plus = RodUpgrade.Upgradable(g.Slot) ? p.GearLevel(g.Id) : 0;
                 var shown = plus > 0 ? RodUpgrade.Apply(g, plus) : g;
-                var name = Cell(row, $"<b>{g.Name}</b>{(plus > 0 ? $" <color=#ffd060>+{plus}</color>" : "")}\n<size=14><color=#a0b0c0>{shown.StatLine}</color></size>", 10, 470, 18);
+                float ix = ItemIcons.Place(row, g.Id, 6, 46);
+                var name = Cell(row, $"<b>{g.Name}</b>{(plus > 0 ? $" <color=#ffd060>+{plus}</color>" : "")}\n<size=14><color=#a0b0c0>{shown.StatLine}</color></size>", 10 + ix, 470 - ix, 18);
                 name.alignment = UIFactory.Align(TextAnchor.MiddleLeft);
 
                 bool owned = p.Owns(g.Id);
@@ -73,15 +74,17 @@ namespace Fishing.UI
             foreach (var b in GearDatabase.Baits)
             {
                 if (b.NotSold || !b.SoldIn(Fishing.World.FieldMap.Id)) continue;
-                var row = rows.Next(40, 4);
+                var row = rows.Next(44, 4);
                 UIFactory.RowBg(row);
-                Cell(row, $"{b.Name}  <size=14><color=#a0b0c0>{b.PackSize}개 · 보유 {p.Count(b.Id)}</color></size>", 10, 380, 18);
+                float ix = ItemIcons.Place(row, b.Id, 6, 40);
+                Cell(row, $"{b.Name}  <size=14><color=#a0b0c0>{b.PackSize}개 · 보유 {p.Count(b.Id)}</color></size>", 10 + ix, 380 - ix, 18);
                 RowButton(row, $"{b.Price:N0}골드", () => BuyItem(b.Id, b.Name, b.PackSize, b.Price), 400, 200,
                     UIFactory.BtnGold, p.Data.gold >= b.Price);
             }
-            var kimbap = rows.Next(40, 4);
+            var kimbap = rows.Next(44, 4);
             UIFactory.RowBg(kimbap);
-            Cell(kimbap, $"김밥  <size=14><color=#a0b0c0>체력 +{GearDatabase.KimbapStamina:0} · 보유 {p.Count(GearDatabase.KimbapId)}</color></size>", 10, 380, 18);
+            float kx = ItemIcons.Place(kimbap, GearDatabase.KimbapId, 6, 40);
+            Cell(kimbap, $"김밥  <size=14><color=#a0b0c0>체력 +{GearDatabase.KimbapStamina:0} · 보유 {p.Count(GearDatabase.KimbapId)}</color></size>", 10 + kx, 380 - kx, 18);
             RowButton(kimbap, $"{GearDatabase.KimbapPrice:N0}골드", () => BuyItem(GearDatabase.KimbapId, "김밥", 1, GearDatabase.KimbapPrice), 400, 200,
                 UIFactory.BtnGold, p.Data.gold >= GearDatabase.KimbapPrice);
 
