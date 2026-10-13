@@ -234,6 +234,7 @@ namespace Fishing.UI
                 ("P", "도감", () => Game.UI.OpenExclusive(Game.UI.Dex)),
                 ("Z", "살림망", () => Game.UI.OpenExclusive(Game.UI.KeepNet)),
                 ("I", "가방", () => Game.UI.OpenExclusive(Game.UI.Inventory)),
+                ("C", "의상", () => Game.UI.OpenExclusive(Game.UI.Costume)),
                 ("F12", "상점", () => Game.UI.OpenShop()),
                 ("U", "설명", () => Game.UI.ToggleTips()),
                 ("F1", "도움말", () => Game.UI.OpenExclusive(Game.UI.Help)),
@@ -486,7 +487,7 @@ namespace Fishing.UI
             }
 
             _levelText.text = $"Lv.{d.level}";
-            _staminaFill.fillAmount = d.stamina / PlayerProfile.MaxStamina;
+            _staminaFill.fillAmount = d.stamina / p.StaminaCap;
             _staminaFill.color = d.stamina < 30f ? UIFactory.Danger : new Color(0.4f, 0.8f, 1f);
             _staminaText.text = $"{d.stamina:0.0} %";
             bool maxLevel = d.level >= PlayerProfile.MaxLevel;

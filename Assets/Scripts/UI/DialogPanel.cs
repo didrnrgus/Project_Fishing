@@ -92,6 +92,7 @@ namespace Fishing.UI
             Show(greet,
                 ("물건 사고팔기", () => { Close(); Game.UI.OpenExclusive(Game.UI.Shop); }),
                 ("장비 강화 (낚싯대·릴)", () => { Close(); Game.UI.OpenExclusive(Game.UI.Upgrade); }),
+                ("의상 보기", () => { Close(); Game.UI.OpenExclusive(Game.UI.Costume); }),
                 ("오늘 조황 묻기", () => Show(Report(), ("다른 이야기", ShopGreeting), Bye)),
                 Bye);
         }

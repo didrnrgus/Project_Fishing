@@ -190,7 +190,7 @@ namespace Fishing.Angling
             var rod = Game.Profile.Rod;
             // 미리보기: 당긴 만큼 낼 수 있는 최대 비거리를 보여준다
             float preview = Mathf.Max(CastPower, pullFactor * Mathf.Clamp01(PullBack / PullFull));
-            CastDistance = Mathf.Lerp(4f, rod.CastRange, preview);
+            CastDistance = Mathf.Lerp(4f, rod.CastRange + Game.Profile.Costume.Cast, preview);
             UpdateAim(CastDistance);
 
             if (Input.GetMouseButtonUp(0) || UiBlocking)
@@ -198,7 +198,7 @@ namespace Fishing.Angling
                 HideAim();
                 if (UiBlocking) { ToIdle(); return; }
 
-                CastDistance = Mathf.Lerp(4f, rod.CastRange, CastPower);
+                CastDistance = Mathf.Lerp(4f, rod.CastRange + Game.Profile.Costume.Cast, CastPower);
                 _castTarget = Game.Player.transform.position + _castDir * CastDistance;
                 _castTarget.y = FieldMap.WaterY + 0.01f;
                 if (!FieldMap.IsWater(_castTarget))
@@ -280,6 +280,7 @@ namespace Fishing.Angling
                 School = Game.Schools.At(col, row),
                 MapId = FieldMap.Id,
                 BaitPotency = Game.Profile.Bait.Potency,
+                BigFishBonus = Game.Profile.Costume.BigFish,
             };
             CastCellLabel = $"{_cellName} · {FieldMap.HabitatName(_ctx.Habitat)}" + (_ctx.School != null ? $" · {_ctx.School.Name}({_ctx.School.SizeLabel})" : "");
             PendingBite = BiteSelector.Pick(_ctx);
@@ -443,6 +444,7 @@ namespace Fishing.Angling
             PendingBite = bite;
             if (_castDir == Vector3.zero) _castDir = Game.Player.Model.forward;
             Fight = new FishFight(bite.Species, bite.Length, Mathf.Max(6f, distance), hookQuality, p.Rod, p.Reel, p.Line, startCombo);
+            Fight.CounterBonus = 1f + p.Costume.Counter;
             Fight.Countered += OnCounter;
             Fight.Burst += () => Game.Sound.Splash(1f);
             Fight.EscapeRun += OnEscapeRun;
@@ -561,7 +563,7 @@ namespace Fishing.Angling
                     Game.Sound.ReelClick(0.8f);
                     _lastTapAt = Time.time;
                 }
-                f.Tick(Time.deltaTime, default, p.StaminaFactor, p.DurabilityFactor);
+                f.Tick(Time.deltaTime, default, p.StaminaFactor, p.DurabilityFactor * (1f + p.Costume.Damage));
                 // 연타할 때마다 릴을 힘차게 돌린다
                 float tapTurns = Time.time - _lastTapAt < 0.18f ? 4.5f : 0f;
                 _rodView.SetReel(tapTurns, 0f);
@@ -575,7 +577,7 @@ namespace Fishing.Angling
                     Releasing = Input.GetMouseButton(1),
                     MouseDX = Input.GetAxis("Mouse X"),
                 };
-                f.Tick(Time.deltaTime, input, p.StaminaFactor, p.DurabilityFactor);
+                f.Tick(Time.deltaTime, input, p.StaminaFactor, p.DurabilityFactor * (1f + p.Costume.Damage));
 
                 // 릴: 감으면 손잡이가 돌고(드르르륵), 줄이 풀려 나가면 스풀이 거꾸로 돌며 드랙이 운다(지이이익)
                 float lineOut = Mathf.Max(0f, (f.Distance - _lastDistance) / Mathf.Max(Time.deltaTime, 1e-4f));
@@ -595,7 +597,7 @@ namespace Fishing.Angling
 
             // 체력 소모: 하이텐션일수록 많이 지친다
             float drain = 0.35f + (f.IsHighTension ? 1.8f * f.Tension : 0f);
-            p.ChangeStamina(-drain * Time.deltaTime);
+            p.ChangeStamina(-drain * (1f - p.Costume.Drain) * Time.deltaTime);
 
             // 원작처럼 물고기 위치에 데미지 숫자를 띄운다
             _damagePopTimer -= Time.deltaTime;

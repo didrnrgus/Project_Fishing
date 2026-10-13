@@ -18,6 +18,10 @@ namespace Fishing.Characters
         public Color Shoes = new Color(0.2f, 0.2f, 0.22f);
         public bool Hat = true;
         public Color HatColor = new Color(0.9f, 0.84f, 0.62f);
+        /// <summary>모자 모양: 0 벙거지, 1 야구모자, 2 밀짚모자.</summary>
+        public int HatStyle;
+        public bool Glasses;
+        public Color GlassesColor = new Color(0.08f, 0.08f, 0.1f);
         public bool Vest = true;
         public Color VestColor = new Color(0.25f, 0.4f, 0.3f);
         public string Name;
@@ -80,7 +84,8 @@ namespace Fishing.Characters
 
             if (bones.TryGetValue("Head", out var head))
             {
-                if (look.Hat) AttachBucketHat(head, look.HatColor, go.transform.lossyScale.x);
+                if (look.Hat) AttachHat(head, look.HatStyle, look.HatColor, go.transform.lossyScale.x);
+                if (look.Glasses) AttachGlasses(head, look.GlassesColor, go.transform.lossyScale.x);
             }
 
             var anim = go.GetComponent<Animator>();
@@ -168,6 +173,66 @@ namespace Fishing.Characters
         }
 
         /// <summary>낚시 모자(벙거지). 모델의 기본 자세에서 머리 위에 월드 기준으로 배치한 뒤 Head 뼈에 붙인다.</summary>
+        static void AttachHat(Transform head, int style, Color color, float scale)
+        {
+            if (style == 1) { AttachCap(head, color, scale); return; }
+            if (style == 2) { AttachStrawHat(head, color, scale); return; }
+            AttachBucketHat(head, color, scale);
+        }
+
+        /// <summary>야구모자: 둥근 크라운 + 앞챙.</summary>
+        static void AttachCap(Transform head, Color color, float scale)
+        {
+            var hat = new GameObject("Cap").transform;
+            hat.position = head.position + Vector3.up * 0.17f * scale / 0.92f;
+            hat.rotation = Quaternion.LookRotation(Facing(head));
+            var mat = Mats.Lit(color, 0.2f);
+            Mats.Prim(PrimitiveType.Sphere, "Crown", hat, new Vector3(0f, 0.02f, -0.005f), new Vector3(0.215f, 0.15f, 0.235f), mat, false);
+            Mats.Prim(PrimitiveType.Cube, "Visor", hat, new Vector3(0f, -0.015f, 0.14f), new Vector3(0.17f, 0.012f, 0.11f), mat, false, Quaternion.Euler(-8f, 0f, 0f));
+            Mats.Prim(PrimitiveType.Sphere, "Button", hat, new Vector3(0f, 0.095f, 0f), Vector3.one * 0.025f, Mats.Lit(color * 0.7f), false);
+            hat.SetParent(head, true);
+        }
+
+        /// <summary>밀짚모자: 넓은 챙 + 리본.</summary>
+        static void AttachStrawHat(Transform head, Color color, float scale)
+        {
+            var hat = new GameObject("StrawHat").transform;
+            hat.position = head.position + Vector3.up * 0.2f * scale / 0.92f;
+            hat.rotation = Quaternion.identity;
+            var mat = Mats.Lit(color, 0.05f);
+            Mats.Prim(PrimitiveType.Cylinder, "Brim", hat, new Vector3(0f, 0f, 0.01f), new Vector3(0.5f, 0.006f, 0.5f), mat, false);
+            Mats.Prim(PrimitiveType.Cylinder, "Crown", hat, new Vector3(0f, 0.055f, 0.01f), new Vector3(0.21f, 0.055f, 0.21f), mat, false);
+            Mats.Prim(PrimitiveType.Cylinder, "Ribbon", hat, new Vector3(0f, 0.022f, 0.01f), new Vector3(0.215f, 0.014f, 0.215f), Mats.Lit(new Color(0.75f, 0.15f, 0.12f)), false);
+            hat.SetParent(head, true);
+        }
+
+        /// <summary>캐릭터가 실제로 보는 방향. 모델이 원래 -Z를 보고 180도 돌려 붙였으므로 Animator 기준 -forward.</summary>
+        static Vector3 Facing(Transform head)
+        {
+            var anim = head.GetComponentInParent<Animator>();
+            var f = anim != null ? -anim.transform.forward : head.root.forward;
+            f.y = 0f;
+            return f.sqrMagnitude > 0.001f ? f.normalized : Vector3.forward;
+        }
+
+        /// <summary>선글라스: 렌즈 둘 + 다리.</summary>
+        static void AttachGlasses(Transform head, Color color, float scale)
+        {
+            var g = new GameObject("Glasses").transform;
+            var fwd = Facing(head);
+            g.position = head.position + Vector3.up * 0.1f * scale / 0.92f + fwd * 0.095f * scale / 0.92f;
+            g.rotation = Quaternion.LookRotation(fwd);
+            var lens = Mats.Lit(color, 0.95f, 0.5f);
+            var frame = Mats.Lit(new Color(0.05f, 0.05f, 0.05f), 0.6f);
+            foreach (int side in new[] { -1, 1 })
+            {
+                Mats.Prim(PrimitiveType.Cube, "Lens", g, new Vector3(side * 0.036f, 0f, 0f), new Vector3(0.058f, 0.032f, 0.006f), lens, false);
+                Mats.Prim(PrimitiveType.Cube, "Arm", g, new Vector3(side * 0.07f, 0.005f, -0.05f), new Vector3(0.004f, 0.006f, 0.1f), frame, false);
+            }
+            Mats.Prim(PrimitiveType.Cube, "Bridge", g, new Vector3(0f, 0.008f, 0f), new Vector3(0.02f, 0.005f, 0.005f), frame, false);
+            g.SetParent(head, true);
+        }
+
         static void AttachBucketHat(Transform head, Color color, float scale)
         {
             // Head 뼈는 두개골 아래쪽에 있어서 원본 기준 약 0.22m 위가 정수리다

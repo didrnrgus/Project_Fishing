@@ -127,7 +127,7 @@ namespace Fishing.Core
             {
                 Data.exp -= ExpToNext(Data.level);
                 Data.level++;
-                Data.stamina = MaxStamina;
+                Data.stamina = StaminaCap;
                 LeveledUp?.Invoke(Data.level);
             }
             if (Data.level >= MaxLevel) Data.exp = 0;
@@ -146,7 +146,7 @@ namespace Fishing.Core
 
         public void ChangeStamina(float delta)
         {
-            Data.stamina = Mathf.Clamp(Data.stamina + delta, 0f, MaxStamina);
+            Data.stamina = Mathf.Clamp(Data.stamina + delta, 0f, StaminaCap);
         }
 
         // ---- 아이템 ----
@@ -188,6 +188,76 @@ namespace Fishing.Core
                     break;
             }
             NotifyChanged();
+        }
+
+        // ---- 의상 ----
+        public event Action LookChanged;
+
+        public string Worn(CostumeSlot slot)
+        {
+            int i = (int)slot;
+            while (Data.costumes.Count <= i) Data.costumes.Add(CostumeDatabase.Defaults[Data.costumes.Count]);
+            return Data.costumes[i];
+        }
+
+        public bool OwnsCostume(CostumeDef c) => CostumeDatabase.IsFree(c) || Data.ownedCostumes.Contains(c.Id);
+
+        public void Wear(CostumeDef c)
+        {
+            Worn(c.Slot);
+            Data.costumes[(int)c.Slot] = c.Id;
+            Stamina(0f);
+            NotifyChanged();
+            LookChanged?.Invoke();
+        }
+
+        public void GiveCostume(string id)
+        {
+            if (!Data.ownedCostumes.Contains(id)) Data.ownedCostumes.Add(id);
+        }
+
+        /// <summary>입은 의상 능력치 합계.</summary>
+        public CostumeStats Costume
+        {
+            get
+            {
+                var st = new CostumeStats();
+                for (int i = 0; i < 6; i++)
+                {
+                    var c = CostumeDatabase.Get(Worn((CostumeSlot)i));
+                    if (c == null) continue;
+                    st.Stamina += c.Stamina; st.BigFish += c.BigFish; st.Damage += c.Damage;
+                    st.Counter += c.Counter; st.Cast += c.Cast; st.Drain += c.Drain;
+                }
+                return st;
+            }
+        }
+
+        /// <summary>최대 체력 (기본 100 + 의상).</summary>
+        public float StaminaCap => MaxStamina + Costume.Stamina;
+
+        void Stamina(float delta) => Data.stamina = Mathf.Clamp(Data.stamina + delta, 0f, StaminaCap);
+
+        /// <summary>입은 의상을 반영한 내 캐릭터 외형.</summary>
+        public Fishing.Characters.CharacterLook BuildLook()
+        {
+            var look = Fishing.Characters.CharacterLook.Player;
+            var hat = CostumeDatabase.Get(Worn(CostumeSlot.Hat));
+            look.Hat = hat != null && hat.Style >= 0;
+            if (look.Hat) { look.HatColor = hat.Color; look.HatStyle = hat.Style; }
+            var glass = CostumeDatabase.Get(Worn(CostumeSlot.Glasses));
+            look.Glasses = glass != null && glass.Style >= 0;
+            if (look.Glasses) look.GlassesColor = glass.Color;
+            var top = CostumeDatabase.Get(Worn(CostumeSlot.Top));
+            if (top != null) look.Shirt = top.Color;
+            var vest = CostumeDatabase.Get(Worn(CostumeSlot.Vest));
+            look.Vest = vest != null && vest.Style >= 0;
+            if (look.Vest) look.VestColor = vest.Color;
+            var bottom = CostumeDatabase.Get(Worn(CostumeSlot.Bottom));
+            if (bottom != null) look.Pants = bottom.Color;
+            var shoes = CostumeDatabase.Get(Worn(CostumeSlot.Shoes));
+            if (shoes != null) look.Shoes = shoes.Color;
+            return look;
         }
 
         public void SelectBait(string baitId)

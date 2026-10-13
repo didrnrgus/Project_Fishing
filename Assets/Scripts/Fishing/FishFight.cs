@@ -62,6 +62,8 @@ namespace Fishing.Angling
         public FightOutcome Outcome { get; private set; }
         public float Elapsed { get; private set; }
         public float Pull { get; private set; }
+        /// <summary>카운터 데미지 배율 (의상).</summary>
+        public float CounterBonus = 1f;
         /// <summary>마우스로 당겨서(+) 또는 늦춰서(-) 더해진 장력.</summary>
         public float DragLoad { get; private set; }
         /// <summary>물고기가 있는(당기는) 쪽: -1 왼쪽, +1 오른쪽.</summary>
@@ -311,7 +313,7 @@ namespace Fishing.Angling
             int want = CounterDirection;
             if (flick * want < FlickThreshold) return;
 
-            float damage = MaxHP * (0.07f + 0.02f * Combo) * Rod.Power * staminaFactor * durability;
+            float damage = MaxHP * (0.07f + 0.02f * Combo) * Rod.Power * staminaFactor * durability * CounterBonus;
             LastCounterDamage = Mathf.Min(HP, damage);
             HP = Mathf.Max(0f, HP - damage);
             Combo = Mathf.Min(5, Combo + 1);

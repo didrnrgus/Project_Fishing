@@ -23,6 +23,7 @@ namespace Fishing.UI
         public DialogPanel Dialog { get; private set; }
         public UpgradePanel Upgrade { get; private set; }
         public InventoryPanel Inventory { get; private set; }
+        public CostumePanel Costume { get; private set; }
         /// <summary>F로 말을 걸 수 있는 가장 가까운 NPC.</summary>
         public Fishing.Characters.NpcAngler NearbyNpc { get; private set; }
 
@@ -68,13 +69,20 @@ namespace Fishing.UI
             Dialog = new DialogPanel(canvas);
             Upgrade = new UpgradePanel(canvas);
             Inventory = new InventoryPanel(canvas);
-            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, Upgrade, Inventory };
+            Costume = new CostumePanel(canvas);
+            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, Upgrade, Inventory, Costume };
             LobbyHud.Root.transform.SetAsFirstSibling();
         }
 
         void Start()
         {
             Game.Profile.Changed += RefreshOpenPanels;
+            // 의상을 바꾸면 필드 캐릭터·대기실 캐릭터를 다시 입힌다
+            Game.Profile.LookChanged += () =>
+            {
+                Game.Player.ApplyLook();
+                if (Game.Lobby != null) Game.Lobby.RefreshPlayer();
+            };
             Game.Fishing.Casted += Hud.OnCasted;
         }
 
@@ -206,6 +214,8 @@ namespace Fishing.UI
                 if (Input.GetKeyDown(KeyCode.P)) OpenExclusive(Dex);
                 if (Input.GetKeyDown(KeyCode.Z)) OpenExclusive(KeepNet);
                 if (Input.GetKeyDown(KeyCode.I)) OpenExclusive(Inventory);
+            if (Input.GetKeyDown(KeyCode.C)) OpenExclusive(Costume);
+                if (Input.GetKeyDown(KeyCode.C)) OpenExclusive(Costume);
                 if (Input.GetKeyDown(KeyCode.F1)) OpenExclusive(Help);
                 return;
             }
