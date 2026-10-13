@@ -353,6 +353,16 @@ namespace Fishing.PlayerSystems
 
         void BuildSpeedBoat()
         {
+            if (KenneyProps.Available)
+            {
+                // Kenney Watercraft Kit 모터보트 (CC0). 길이 5.2m, 바닥이 물에 0.4m 잠긴다
+                // 뒤쪽에 수상스키 견인 아치가 있는 모터보트. 뱃머리가 +Z
+                KenneyProps.Spawn("Kenney/Watercraft/boat-speed-a", _boat, new Vector3(0f, -0.4f, 0f), 0f, 0f, 5.2f);
+                _seat = Point("Seat", new Vector3(0f, 0.62f, -0.2f));
+                _bow = Point("Bow", new Vector3(0f, 0.72f, 1.6f));
+                _stern = Point("Stern", new Vector3(0f, 0f, -2.6f));
+                return;
+            }
             var white = Mats.Lit(new Color(0.93f, 0.94f, 0.95f), 0.6f);
             var navy = Mats.Lit(new Color(0.1f, 0.2f, 0.45f), 0.5f);
             var deck = Mats.Lit(new Color(0.75f, 0.73f, 0.68f), 0.3f);

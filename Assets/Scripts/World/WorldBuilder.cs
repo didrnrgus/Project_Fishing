@@ -219,8 +219,25 @@ namespace Fishing.World
                 PlaceTree(trees, new Vector3(R(-155f, 155f), HanRiverMap.LandY, R(62f, 68f)), trunk, leaves[i % leaves.Length]);
         }
 
+        static readonly string[] TreeModels =
+        {
+            "tree_default", "tree_oak", "tree_fat", "tree_detailed", "tree_tall", "tree_simple", "tree_plateau",
+            "tree_pineRoundA", "tree_pineRoundB", "tree_pineRoundC"
+        };
+        static readonly string[] BushModels = { "plant_bush", "plant_bushLarge", "plant_bushDetailed" };
+
         void PlaceTree(Transform parent, Vector3 basePos, Material trunk, Material leaf)
         {
+            if (KenneyProps.Available)
+            {
+                // Kenney Nature Kit 나무 (CC0), 높이 5~9m. 둘레에 덤불을 조금 심는다
+                var model = TreeModels[_rng.Next(TreeModels.Length)];
+                KenneyProps.Spawn("Kenney/Nature/" + model, parent, basePos, R(0f, 360f), R(5f, 9f));
+                if (_rng.NextDouble() < 0.4)
+                    KenneyProps.Spawn("Kenney/Nature/" + BushModels[_rng.Next(BushModels.Length)], parent,
+                        basePos + new Vector3(R(-2f, 2f), 0f, R(-2f, 2f)), R(0f, 360f), R(0.7f, 1.3f));
+                return;
+            }
             float h = R(2.5f, 4f);
             var t = new GameObject("Tree").transform;
             t.SetParent(parent, false);
@@ -239,13 +256,28 @@ namespace Fishing.World
             for (float x = -150f; x <= 150f; x += 25f)
             {
                 var basePos = new Vector3(x, HanRiverMap.LandY, -63.5f);
-                Mats.Prim(PrimitiveType.Cylinder, "Pole", lamps, basePos + Vector3.up * 2f, new Vector3(0.12f, 2f, 0.12f), pole, false);
-                var bulb = Mats.Prim(PrimitiveType.Sphere, "Bulb", lamps, basePos + Vector3.up * 4.1f, Vector3.one * 0.45f, pole, false);
-                LampBulbs.Add(bulb.GetComponent<Renderer>());
+                Vector3 head;
+                if (KenneyProps.Available)
+                {
+                    // Kenney City Kit Roads 가로등: 높이 5.5m, 팔이 강 쪽(+Z)으로 뻗는다 (모델 팔은 -Z 방향)
+                    const float lampH = 5.5f;
+                    var lamp = KenneyProps.Spawn("Kenney/Roads/light-curved", lamps, basePos, 180f, lampH);
+                    float s = lampH / 0.67f;
+                    head = basePos + new Vector3(0f, 0.62f * s, 0.19f * s);
+                    var bulb = Mats.Prim(PrimitiveType.Sphere, "Bulb", lamps, head, new Vector3(0.45f, 0.18f, 0.45f), pole, false);
+                    LampBulbs.Add(bulb.GetComponent<Renderer>());
+                }
+                else
+                {
+                    Mats.Prim(PrimitiveType.Cylinder, "Pole", lamps, basePos + Vector3.up * 2f, new Vector3(0.12f, 2f, 0.12f), pole, false);
+                    var bulb = Mats.Prim(PrimitiveType.Sphere, "Bulb", lamps, basePos + Vector3.up * 4.1f, Vector3.one * 0.45f, pole, false);
+                    LampBulbs.Add(bulb.GetComponent<Renderer>());
+                    head = basePos + Vector3.up * 4.1f;
+                }
 
                 var lightGo = new GameObject("LampLight");
                 lightGo.transform.SetParent(lamps, false);
-                lightGo.transform.localPosition = basePos + Vector3.up * 3.9f;
+                lightGo.transform.localPosition = head - Vector3.up * 0.2f;
                 var light = lightGo.AddComponent<Light>();
                 light.type = LightType.Point;
                 light.range = 14f;
@@ -303,7 +335,18 @@ namespace Fishing.World
             // 요트
             var hull = Mats.Lit(new Color(0.92f, 0.92f, 0.94f), 0.6f);
             var sail = Mats.Lit(new Color(0.85f, 0.88f, 0.9f));
-            for (int i = 0; i < 3; i++)
+            if (KenneyProps.Available)
+            {
+                // Kenney Watercraft Kit: 요트 3척, 정박한 작은 어선 2척, 나룻배 1척
+                string[] yachts = { "boat-sail-a", "boat-sail-b", "boat-sail-a" };
+                for (int i = 0; i < 3; i++)
+                    KenneyProps.Spawn("Kenney/Watercraft/" + yachts[i], props,
+                        new Vector3(-120f + i * 95f + R(-10f, 10f), HanRiverMap.WaterY - 0.35f, R(34f, 52f)), R(0f, 360f), 0f, 9f);
+                KenneyProps.Spawn("Kenney/Watercraft/boat-fishing-small", props, new Vector3(120f, HanRiverMap.WaterY - 0.3f, 50f), 80f, 0f, 7f);
+                KenneyProps.Spawn("Kenney/Watercraft/boat-fishing-small", props, new Vector3(-140f, HanRiverMap.WaterY - 0.3f, 48f), -100f, 0f, 7f);
+                KenneyProps.Spawn("Kenney/Watercraft/boat-row-small", props, new Vector3(45f, HanRiverMap.WaterY - 0.15f, -54f), 15f, 0f, 3.6f);
+            }
+            for (int i = 0; i < (KenneyProps.Available ? 0 : 3); i++)
             {
                 var boat = new GameObject("Yacht").transform;
                 boat.SetParent(props, false);
@@ -357,6 +400,13 @@ namespace Fishing.World
             };
             var windows = Mats.Emissive(new Color(0.95f, 0.85f, 0.6f), 0.6f);
 
+            if (KenneyProps.Available)
+            {
+                BuildKenneyCity(city);
+                BuildNamsan(city);
+                return;
+            }
+
             // 북쪽 강변 아파트 단지
             for (float x = -170f; x <= 170f; x += 22f)
             {
@@ -369,13 +419,7 @@ namespace Fishing.World
                         new Vector3(0.9f, 0.6f / h, 0.01f), windows, false);
             }
 
-            // 멀리 보이는 남산과 타워
-            var hill = Mats.Lit(new Color(0.22f, 0.36f, 0.22f));
-            Mats.Prim(PrimitiveType.Sphere, "Namsan", city, new Vector3(60f, -40f, 260f), new Vector3(260f, 150f, 160f), hill, false);
-            var tower = Mats.Lit(new Color(0.9f, 0.9f, 0.92f));
-            Mats.Prim(PrimitiveType.Cylinder, "Tower", city, new Vector3(60f, 55f, 250f), new Vector3(3f, 25f, 3f), tower, false);
-            Mats.Prim(PrimitiveType.Sphere, "TowerTop", city, new Vector3(60f, 78f, 250f), new Vector3(9f, 5f, 9f), tower, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Antenna", city, new Vector3(60f, 90f, 250f), new Vector3(0.6f, 10f, 0.6f), Mats.Emissive(new Color(1f, 0.3f, 0.3f), 1f), false);
+            BuildNamsan(city);
 
             // 남쪽 뒤편 저층 건물
             for (float x = -170f; x <= 170f; x += 30f)
@@ -384,6 +428,46 @@ namespace Fishing.World
                 Mats.Prim(PrimitiveType.Cube, "Building", city, new Vector3(x, HanRiverMap.LandY + h * 0.5f, -125f),
                     new Vector3(20f, h, 12f), walls[_rng.Next(walls.Length)], false);
             }
+        }
+
+        static readonly string[] TallBuildings =
+        {
+            "building-skyscraper-a", "building-skyscraper-b", "building-skyscraper-c", "building-skyscraper-d", "building-skyscraper-e",
+            "building-l", "building-m", "building-n", "building-f", "building-g", "building-i"
+        };
+        static readonly string[] LowBuildings =
+            { "building-a", "building-b", "building-c", "building-d", "building-e", "building-h", "building-j", "building-k" };
+
+        /// <summary>Kenney City Kit Commercial로 강 건너 빌딩 숲과 남쪽 뒤편 상가를 세운다.</summary>
+        void BuildKenneyCity(Transform city)
+        {
+            // 북쪽: 두 줄로 겹쳐 세워 스카이라인을 만든다 (뒷줄이 더 높다)
+            for (int row = 0; row < 2; row++)
+            for (float x = -185f; x <= 185f; x += row == 0 ? 17f : 23f)
+            {
+                var model = TallBuildings[_rng.Next(TallBuildings.Length)];
+                float h = row == 0 ? R(18f, 32f) : R(30f, 52f);
+                float z = row == 0 ? R(96f, 104f) : R(118f, 130f);
+                KenneyProps.Spawn("Kenney/City/" + model, city, new Vector3(x + R(-3f, 3f), HanRiverMap.LandY, z),
+                    180f + (_rng.Next(4) * 90f) * (row == 0 ? 0f : 1f), h);
+            }
+            // 남쪽 뒤편 저층 상가
+            for (float x = -175f; x <= 175f; x += 19f)
+            {
+                var model = LowBuildings[_rng.Next(LowBuildings.Length)];
+                KenneyProps.Spawn("Kenney/City/" + model, city, new Vector3(x + R(-2f, 2f), HanRiverMap.LandY, R(-128f, -120f)), 0f, R(10f, 18f));
+            }
+        }
+
+        void BuildNamsan(Transform city)
+        {
+            // 멀리 보이는 남산과 타워
+            var hill = Mats.Lit(new Color(0.22f, 0.36f, 0.22f));
+            Mats.Prim(PrimitiveType.Sphere, "Namsan", city, new Vector3(60f, -40f, 260f), new Vector3(260f, 150f, 160f), hill, false);
+            var tower = Mats.Lit(new Color(0.9f, 0.9f, 0.92f));
+            Mats.Prim(PrimitiveType.Cylinder, "Tower", city, new Vector3(60f, 55f, 250f), new Vector3(3f, 25f, 3f), tower, false);
+            Mats.Prim(PrimitiveType.Sphere, "TowerTop", city, new Vector3(60f, 78f, 250f), new Vector3(9f, 5f, 9f), tower, false);
+            Mats.Prim(PrimitiveType.Cylinder, "Antenna", city, new Vector3(60f, 90f, 250f), new Vector3(0.6f, 10f, 0.6f), Mats.Emissive(new Color(1f, 0.3f, 0.3f), 1f), false);
         }
     }
 }

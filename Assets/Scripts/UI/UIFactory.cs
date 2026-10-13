@@ -127,16 +127,32 @@ namespace Fishing.UI
             return Mathf.Clamp01((0.13f - d) * 40f) + Mathf.Clamp01((0.22f - d) * 3f) * 0.35f;
         });
 
-        /// <summary>카운터 찬스 때 화면을 덮는 속도선.</summary>
-        public static Sprite SpeedLines => _speedLines ??= MakeSprite(512, (x, y) =>
+        /// <summary>
+        /// 카운터 찬스 때 화면을 덮는 만화식 집중선. 가운데는 비워 두고 바깥으로 갈수록 진해진다.
+        /// 선마다 굵기·시작 거리·밝기가 다르고, 가장자리는 부드럽게 깎아 계단 현상이 없다.
+        /// 정사각형 원 안에 그리므로 화면 대각선보다 크게 깔고 돌려야 모서리가 비지 않는다.
+        /// </summary>
+        public static Sprite SpeedLines => _speedLines ??= MakeSprite(1024, (x, y) =>
         {
+            const int Count = 150;
             float r = Mathf.Sqrt(x * x + y * y);
-            float a = Mathf.Atan2(y, x) / (Mathf.PI * 2f) + 0.5f;
-            int bucket = Mathf.FloorToInt(a * 220f);
-            float h = Mathf.Abs(Mathf.Sin(bucket * 12.9898f) * 43758.5453f) % 1f;
-            float streak = h > 0.55f ? (h - 0.55f) / 0.45f : 0f;
-            return streak * Mathf.Clamp01((r - 0.35f) / 0.65f) * 0.9f;
+            float a = (Mathf.Atan2(y, x) / (Mathf.PI * 2f) + 0.5f) * Count;
+            int i = Mathf.FloorToInt(a);
+            float u = a - i;                                       // 선 하나의 각도 칸 안에서 0~1
+            float h1 = Hash(i), h2 = Hash(i + 1000), h3 = Hash(i + 2000);
+            if (h1 < 0.35f) return 0f;                              // 빈 칸
+            float center = 0.5f + (h2 - 0.5f) * 0.4f;
+            float width = Mathf.Lerp(0.08f, 0.42f, h3) * 0.5f;      // 칸 대비 반폭
+            float edge = Mathf.Abs(u - center);
+            float px = 1.5f / (r * 512f * Mathf.PI * 2f / Count + 1e-3f); // 1픽셀만큼의 u
+            float body = Mathf.Clamp01((width - edge) / Mathf.Max(px, 0.02f) + 0.5f);
+            float start = Mathf.Lerp(0.38f, 0.7f, Hash(i + 3000));  // 선이 시작하는 반지름
+            float radial = Mathf.SmoothStep(0f, 1f, (r - start) / 0.25f);
+            float bright = Mathf.Lerp(0.45f, 1f, h1);
+            return body * radial * bright;
         });
+
+        static float Hash(int n) => Mathf.Abs(Mathf.Sin(n * 12.9898f + 78.233f) * 43758.5453f) % 1f;
 
         public static Sprite HpGradient => _hpGradient ??= MakeColorSprite(64, (x, y) =>
             Color.Lerp(new Color(0.96f, 0.3f, 0.22f), new Color(1f, 0.78f, 0.3f), (x + 1f) * 0.5f));

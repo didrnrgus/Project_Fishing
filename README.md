@@ -103,9 +103,10 @@ Assets/Resources  Quaternius 캐릭터·머리·애니메이션·물고기 (CC0)
 Assets/Editor  셋업·빌드 도구, 임포트 규칙, 밸런스 시뮬레이터
 ```
 
-씬에는 `GameBootstrap` 하나만 있고, 나머지는 모두 코드로 만듭니다. 사람과 물고기만 CC0 모델을 쓰고, 배경은 프리미티브와 절차적 텍스처·셰이더, 소리는 절차적으로 만듭니다.
+씬에는 `GameBootstrap` 하나만 있고, 나머지는 모두 코드로 만듭니다. 사람·물고기(Quaternius)와 건물·가로등·나무·배(Kenney)는 CC0 모델을 쓰고, 땅·물·다리·하늘은 프리미티브와 절차적 텍스처·셰이더, 소리는 절차적으로 만듭니다. 유니티 에셋 스토어 에셋은 공개 저장소에 올릴 수 없어서 쓰지 않습니다.
 
 ## 크레딧
 
 - 원작: 「청풍명월」 개발 저스트나인, 서비스 네오위즈게임즈(피망). 이 프로젝트는 원작과 관련이 없는 개인 팬 프로젝트입니다.
+- 배경·배 모델: [Kenney](https://kenney.nl) — City Kit Commercial, City Kit Roads, Nature Kit, Watercraft Kit (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Kenney/`.
 - 3D 모델: [Quaternius](https://quaternius.com) — Universal Base Characters, Universal Animation Library, Animated Fish Pack (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Quaternius/`.
