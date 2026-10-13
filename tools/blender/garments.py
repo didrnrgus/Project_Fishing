@@ -759,3 +759,58 @@ def bake_cover(b, groups):
     for i in range(n):
         attr.data[i].color = tuple(col[i])
     return col
+
+
+# ---------------------------------------------------------------------------------------------
+# 음영(AO): 버텍스마다 법선 반구로 광선을 쏴서 가까이 막히는 비율 → 버텍스 컬러 G에 곱한다
+
+def _ray_dirs(n=14):
+    # 코사인 가중 반구 방향(위 = +Z) 고정 집합
+    rng = np.random.default_rng(7)
+    d = []
+    for k in range(n):
+        u, v = (k + 0.5) / n, rng.random()
+        r, a = math.sqrt(u), 2 * math.pi * v
+        d.append((r * math.cos(a), r * math.sin(a), math.sqrt(max(0.0, 1 - u))))
+    return np.array(d)
+
+
+def bake_ao(obj, body, extra=(), dist=0.12, strength=0.6, samples=14):
+    """obj 버텍스 컬러 'Col'.G *= AO. 몸과 obj 자신(+extra)에 가리는 정도를 본다 (휴식 자세)."""
+    me = obj.data
+    P = world_verts(obj)
+    obj.data.update()
+    nm = obj.matrix_world.to_3x3().inverted().transposed()
+    N = np.array([tuple((nm @ v.normal).normalized()) for v in me.vertices])
+    trees = [body.bvh, mathutils.bvhtree.BVHTree.FromPolygons([tuple(p) for p in P], [tuple(p.vertices) for p in me.polygons])]
+    for o in extra:
+        Q = world_verts(o)
+        trees.append(mathutils.bvhtree.BVHTree.FromPolygons([tuple(p) for p in Q], [tuple(p.vertices) for p in o.data.polygons]))
+    D = _ray_dirs(samples)
+    attr = me.color_attributes['Col']
+    # 주머니·버클·안경처럼 각진(flat) 면의 버텍스는 법선이 모서리 대각선이라 옆 면에 막혀 시커메진다 → 건너뜀
+    smooth_v = set()
+    for p in me.polygons:
+        if p.use_smooth:
+            smooth_v.update(p.vertices)
+    for i in range(len(P)):
+        if i not in smooth_v:
+            continue
+        n = N[i]
+        t = np.array([1.0, 0, 0]) if abs(n[0]) < 0.9 else np.array([0, 1.0, 0])
+        t = t - n * (t @ n)
+        t /= np.linalg.norm(t)
+        bt = np.cross(n, t)
+        o = mathutils.Vector(P[i] + n * 0.003)
+        hit = 0
+        for d in D:
+            w = mathutils.Vector(t * d[0] + bt * d[1] + n * d[2])
+            for tr in trees:
+                loc, _, _, _ = tr.ray_cast(o, w, dist)
+                if loc is not None:
+                    hit += 1
+                    break
+        ao = 1.0 - strength * hit / len(D)
+        c = list(attr.data[i].color)
+        c[1] *= ao
+        attr.data[i].color = c
