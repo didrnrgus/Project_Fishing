@@ -34,7 +34,7 @@ namespace Fishing.Angling
             w *= Contains(s.Baits, ctx.Bait) ? 1f : 0.15f;
             w *= Contains(s.Times, ctx.Band) ? 1f : 0.3f;
             w *= Contains(s.Weathers, ctx.Weather) ? 1.3f : 1f;
-            if (ctx.School != null && ctx.School.Contains(s.Id)) w *= 4f;
+            if (ctx.School != null && ctx.School.Contains(s.Id)) w *= ctx.School.BiteBoost;
             return w;
         }
 
@@ -64,7 +64,7 @@ namespace Fishing.Angling
         public static float RollLength(FishSpecies s, BiteContext ctx)
         {
             if (s.MinLen >= s.MaxLen) return s.MinLen;
-            float skew = ctx.School != null && ctx.School.Contains(s.Id) ? 1.7f : 2.2f;
+            float skew = ctx.School != null && ctx.School.Contains(s.Id) ? ctx.School.LengthSkew : 2.2f;
             float t = Mathf.Pow(Random.value, skew);
             return Mathf.Round(Mathf.Lerp(s.MinLen, s.MaxLen, t) * 10f) / 10f;
         }
@@ -73,7 +73,7 @@ namespace Fishing.Angling
         public static float WaitSeconds(BiteContext ctx)
         {
             float t = Random.Range(5f, 14f);
-            if (ctx.School != null) t *= 0.5f;
+            if (ctx.School != null) t *= ctx.School.WaitFactor;
 
             bool anyMatch = false;
             foreach (var s in FishDatabase.All)

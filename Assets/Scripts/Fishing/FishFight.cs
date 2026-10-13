@@ -75,6 +75,9 @@ namespace Fishing.Angling
         public float LastCounterDamage { get; private set; }
         public bool IsHighTension => Tension >= HighTension;
         public bool IsDanger => Tension >= DangerTension;
+
+        /// <summary>개발용(자동 스크린샷): 장력을 강제로 정한다.</summary>
+        public void DebugSetTension(float value) => Tension = value;
         public bool AtEdge => Mathf.Abs(FishX) >= EdgeForCounter;
 
         public event Action Countered;

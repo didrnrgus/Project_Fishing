@@ -4,12 +4,12 @@ using UnityEngine;
 
 namespace Fishing.UI
 {
-    /// <summary>살림망: 보관한 물고기 목록. 요리해서 먹으면 체력을 회복한다.</summary>
+    /// <summary>살림망: 보관한 물고기 목록. 요리해서 먹으면 체력을 회복하고, 작은 고기(20cm 미만)는 생미끼로 만들 수 있다.</summary>
     public class KeepNetPanel : UIPanel
     {
         public KeepNetPanel(Transform canvas)
         {
-            BuildFrame(canvas, "KeepNetPanel", "살림망", new Vector2(760, 800));
+            BuildFrame(canvas, "KeepNetPanel", "살림망", new Vector2(860, 800));
         }
 
         public override void Refresh()
@@ -21,10 +21,10 @@ namespace Fishing.UI
 
             var rows = new RowCursor(Body);
             var header = rows.Next(24);
-            Cell(header, "어종", 8, 200, 15, UIFactory.TextDim);
-            Cell(header, "길이", 210, 100, 15, UIFactory.TextDim);
-            Cell(header, "무게", 310, 110, 15, UIFactory.TextDim);
-            Cell(header, "판매가", 420, 110, 15, UIFactory.TextDim);
+            Cell(header, "어종", 8, 190, 15, UIFactory.TextDim);
+            Cell(header, "길이", 200, 90, 15, UIFactory.TextDim);
+            Cell(header, "무게", 290, 100, 15, UIFactory.TextDim);
+            Cell(header, "판매가", 390, 90, 15, UIFactory.TextDim);
 
             if (net.Count == 0)
             {
@@ -41,18 +41,22 @@ namespace Fishing.UI
                 var row = rows.Next(26, 3);
                 UIFactory.Image(row, new Color(1, 1, 1, i % 2 == 0 ? 0.04f : 0f), null, "Stripe").rectTransform.Fill();
                 bool trophy = s.IsTrophy(fish.length);
-                Cell(row, (trophy ? "★ " : "") + s.Name, 8, 200, 18, trophy ? UIFactory.Gold : UIFactory.TextMain);
-                Cell(row, $"{fish.length:0.0}cm", 210, 100);
-                Cell(row, fish.weight >= 1000 ? $"{fish.weight / 1000f:0.00}kg" : $"{fish.weight:0}g", 310, 110);
-                Cell(row, $"{price:N0}", 420, 110, 18, UIFactory.Gold);
+                Cell(row, (trophy ? "★ " : "") + s.Name, 8, 190, 18, trophy ? UIFactory.Gold : UIFactory.TextMain);
+                Cell(row, $"{fish.length:0.0}cm", 200, 90);
+                Cell(row, fish.weight >= 1000 ? $"{fish.weight / 1000f:0.00}kg" : $"{fish.weight:0}g", 290, 100);
+                Cell(row, $"{price:N0}", 390, 90, 18, UIFactory.Gold);
                 int index = i;
-                RowButton(row, $"요리 (+{PlayerProfile.CookStamina(fish):0})", () => Cook(index), 540, 160, new Color(0.45f, 0.3f, 0.15f));
+                RowButton(row, $"요리 (+{PlayerProfile.CookStamina(fish):0})", () => Cook(index), 486, 150, new Color(0.45f, 0.3f, 0.15f));
+                if (PlayerProfile.CanMakeBait(fish))
+                    RowButton(row, $"미끼 (생미끼 +{PlayerProfile.BaitFromFish(fish)})", () => MakeBait(index), 642, 168, new Color(0.18f, 0.38f, 0.5f));
             }
 
             var footer = rows.Next(50, 14);
-            Cell(footer, $"합계 {total:N0}골드  ·  판매는 상점(F12)에서", 8, 360, 18, UIFactory.TextDim);
+            Cell(footer, $"합계 {total:N0}골드  ·  판매는 상점(F12)에서", 8, 380, 18, UIFactory.TextDim);
             int kimbap = p.Count(GearDatabase.KimbapId);
-            RowButton(footer, $"김밥 먹기 ({kimbap}개)", EatKimbap, 450, 250, new Color(0.25f, 0.45f, 0.25f), kimbap > 0, 19);
+            RowButton(footer, $"김밥 먹기 ({kimbap}개)", EatKimbap, 560, 250, new Color(0.25f, 0.45f, 0.25f), kimbap > 0, 19);
+            Cell(rows.Next(24), $"{PlayerProfile.BaitFishMaxLength:0}cm 미만의 작은 고기는 생미끼로 만들 수 있습니다. 생미끼는 쏘가리·끄리·메기 같은 육식어가 좋아해요.",
+                8, 800, 14, UIFactory.TextDim);
         }
 
         void Cook(int index)
@@ -72,6 +76,22 @@ namespace Fishing.UI
             Game.Toast($"{name} 요리를 먹었습니다. 체력 +{amount:0}", ToastKind.Good);
             p.NotifyChanged();
         }
+
+        void MakeBait(int index)
+        {
+            var p = Game.Profile;
+            if (index >= p.Data.keepNet.Count) return;
+            var fish = p.Data.keepNet[index];
+            if (!PlayerProfile.CanMakeBait(fish)) return;
+            int count = PlayerProfile.BaitFromFish(fish);
+            p.Data.keepNet.RemoveAt(index);
+            p.AddItem(MinnowBaitId, count);
+            var name = FishDatabase.Get(fish.speciesId)?.Name;
+            Game.Toast($"{name}로 생미끼 {count}개를 만들었습니다.", ToastKind.Good);
+            p.NotifyChanged();
+        }
+
+        const string MinnowBaitId = "bait_minnow";
 
         void EatKimbap()
         {

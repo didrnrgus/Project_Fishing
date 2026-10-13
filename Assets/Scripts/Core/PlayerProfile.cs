@@ -133,6 +133,18 @@ namespace Fishing.Core
         }
 
         /// <summary>요리해서 먹으면 무게에 비례해 체력을 회복한다.</summary>
+        /// <summary>미끼로 만들 수 있는 작은 고기인지 (20cm 미만, 잡동사니 제외).</summary>
+        public static bool CanMakeBait(CaughtFish fish)
+        {
+            var s = FishDatabase.Get(fish.speciesId);
+            return s != null && !s.IsJunk && fish.length < BaitFishMaxLength;
+        }
+
+        public const float BaitFishMaxLength = 20f;
+
+        /// <summary>작은 고기 한 마리로 만드는 생미끼 개수: 10cm 미만 2개, 그 이상 3개.</summary>
+        public static int BaitFromFish(CaughtFish fish) => fish.length < 10f ? 2 : 3;
+
         public static float CookStamina(CaughtFish fish) => Mathf.Clamp(fish.weight / 25f, 5f, 60f);
     }
 

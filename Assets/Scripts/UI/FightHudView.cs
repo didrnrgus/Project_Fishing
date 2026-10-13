@@ -44,6 +44,8 @@ namespace Fishing.UI
         Text _landingValue;
         float _counterUntil, _escapeUntil, _landingFlashUntil;
         float _reelAngle;
+        Image _vignette;
+        float _vignetteAlpha;
 
         readonly List<(Text text, Vector3 world, float born, bool big)> _pops = new List<(Text, Vector3, float, bool)>();
 
@@ -62,6 +64,10 @@ namespace Fishing.UI
 
         void BuildOverlays()
         {
+            // 원작: 장력이 위험하면 화면 가장자리가 빨갛게 번쩍인다
+            _vignette = UIFactory.Image(_root, new Color(0.9f, 0.05f, 0.03f, 0f), UIFactory.Vignette, "DangerVignette");
+            _vignette.rectTransform.Fill();
+
             _speedLines = UIFactory.Image(_root, new Color(0.85f, 0.95f, 1f, 0.6f), UIFactory.SpeedLines, "SpeedLines");
             _speedLines.rectTransform.Fill(-200, -200, -200, -200);
 
@@ -245,6 +251,17 @@ namespace Fishing.UI
 
         // ---------------- 갱신 ----------------
 
+        void UpdateVignette(FishFight f)
+        {
+            float target = 0f;
+            if (f.IsDanger) target = 0.6f + 0.35f * Mathf.Abs(Mathf.Sin(Time.time * 9f));
+            else if (f.IsHighTension) target = Mathf.InverseLerp(FishFight.HighTension, FishFight.DangerTension, f.Tension) * 0.3f;
+            _vignetteAlpha = Mathf.MoveTowards(_vignetteAlpha, target, Time.deltaTime * 4f);
+            var c = _vignette.color;
+            c.a = _vignetteAlpha;
+            _vignette.color = c;
+        }
+
         public void Update()
         {
             var fishing = Game.Fishing;
@@ -258,6 +275,8 @@ namespace Fishing.UI
             }
 
             bool tips = Game.Profile.Data.showTips;
+
+            UpdateVignette(f);
 
             // 파이팅 레벨 링 + 릴 손잡이
             float hook = f.Hook / 100f;
