@@ -73,6 +73,9 @@ namespace Fishing.Core
             Game.Profile.LeveledUp += level =>
             {
                 Game.Toast($"레벨 업! Lv.{level}  체력이 회복되었습니다.", ToastKind.Great);
+                Game.Quests.CheckAchievements();
+                foreach (var (lv, t) in AchievementDatabase.LevelTitles)
+                    if (lv == level) Game.Toast($"새 칭호: 「{t}」 (퀘스트 창 [업적·칭호]에서 바꿀 수 있어요)", ToastKind.Good);
                 Game.Sound.LevelUp();
                 // 원작: 배는 레벨 5에서 얻는다. 조합이 고무보트를 지급하고 홍현 앞바다가 열린다
                 if (level >= 5 && !Game.Profile.Owns("boat_rubber"))

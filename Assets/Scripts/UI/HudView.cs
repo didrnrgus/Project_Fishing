@@ -487,6 +487,7 @@ namespace Fishing.UI
             }
 
             _levelText.text = $"Lv.{d.level}";
+            _nameText.text = $"강태공  <size=13><color=#7fd8ff>{p.CurrentTitle}</color></size>";
             _staminaFill.fillAmount = d.stamina / p.StaminaCap;
             _staminaFill.color = d.stamina < 30f ? UIFactory.Danger : new Color(0.4f, 0.8f, 1f);
             _staminaText.text = $"{d.stamina:0.0} %";

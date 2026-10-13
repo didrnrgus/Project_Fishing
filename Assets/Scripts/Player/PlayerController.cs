@@ -125,7 +125,10 @@ namespace Fishing.PlayerSystems
         public void ApplyLook()
         {
             if (!CharacterFactory.Available || Game.Profile == null) return;
-            BuildCharacter(Game.Profile.BuildLook());
+            var look = Game.Profile.BuildLook();
+            BuildCharacter(look);
+            if (_nameTag != null) Destroy(_nameTag.gameObject);
+            _nameTag = CharacterFactory.AddNameTag(transform, look.Name, look.Title);
         }
 
         // ---------------- 배 ----------------

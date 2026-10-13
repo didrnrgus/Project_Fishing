@@ -192,6 +192,13 @@ namespace Fishing.Dev
             yield return Shot("12_keepnet");
             Game.UI.OpenExclusive(Game.UI.Quest);
             yield return Shot("13_quest");
+            Game.UI.Quest.ShowTab(1);
+            yield return Shot("13b_daily");
+            Game.UI.Quest.ShowTab(3);
+            yield return Shot("13c_achievements");
+            Game.UI.Quest.ShowTab(0);
+            Game.UI.OpenExclusive(Game.UI.Exchange);
+            yield return Shot("13d_exchange");
             Game.UI.OpenExclusive(Game.UI.Shop);
             yield return Shot("14_shop");
             Game.UI.Shop.Close();

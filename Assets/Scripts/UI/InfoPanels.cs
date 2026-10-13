@@ -1,3 +1,4 @@
+using System.Linq;
 using Fishing.Core;
 using Fishing.Data;
 using UnityEngine;
@@ -5,44 +6,72 @@ using UnityEngine;
 namespace Fishing.UI
 {
     /// <summary>조합 퀘스트 창: 현재 퀘스트와 완료한 퀘스트 목록.</summary>
+    /// <summary>
+    /// 퀘스트(L). 원작처럼 여러 종류: 이야기(스토리) / 일일 의뢰 / 대물 도전 / 업적·칭호.
+    /// 이야기 퀘스트는 조합 연락관이나 대기실에서 보고해야 보상을 받는다.
+    /// </summary>
     public class QuestPanel : UIPanel
     {
+        int _tab;
+
         public QuestPanel(Transform canvas)
         {
-            BuildFrame(canvas, "QuestPanel", "조합 퀘스트", new Vector2(760, 640));
+            BuildFrame(canvas, "QuestPanel", "조합 퀘스트", new Vector2(980, 800));
+        }
+
+        public void ShowTab(int tab)
+        {
+            _tab = tab;
+            if (IsOpen) Refresh();
         }
 
         public override void Refresh()
         {
             UIFactory.ClearChildren(Body);
             var rows = new RowCursor(Body);
+            var tabs = rows.Next(42, 10);
+            string[] names = { "이야기", "일일 의뢰", "대물 도전", "업적 · 칭호" };
+            for (int i = 0; i < names.Length; i++)
+            {
+                int t = i;
+                RowButton(tabs, names[i], () => { _tab = t; Refresh(); }, i * 182f, 176,
+                    _tab == i ? new Color(0.15f, 0.45f, 0.42f) : new Color(0.15f, 0.18f, 0.22f), true, 18);
+            }
+            Title.text = $"조합 퀘스트   <size=18><color=#ffd060>소라고동 {Game.Profile.Count(AchievementDatabase.ConchId)}개</color></size>";
+            switch (_tab)
+            {
+                case 0: Story(rows); break;
+                case 1: Daily(rows); break;
+                case 2: Trophy(rows); break;
+                default: Achievements(rows); break;
+            }
+        }
+
+        void Story(RowCursor rows)
+        {
             var quests = Game.Quests;
             var q = quests.Current;
-
             Cell(rows.Next(24), QuestDatabase.Giver, 4, 600, 16, UIFactory.Accent);
             if (q != null)
             {
-                Cell(rows.Next(40), q.Title, 4, 700, 28, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
-                var desc = Cell(rows.Next(70), $"\"{q.Desc}\"", 4, 700, 18, UIFactory.TextDim, TextAnchor.UpperLeft);
+                Cell(rows.Next(40), q.Title, 4, 900, 28, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
+                var desc = Cell(rows.Next(60), $"\"{q.Desc}\"", 4, 900, 18, UIFactory.TextDim, TextAnchor.UpperLeft);
                 desc.fontStyle = FontStyle.Italic;
-                Cell(rows.Next(30), $"목표: {q.GoalText}   ({Mathf.Min(quests.Progress, q.Count)}/{q.Count})", 4, 700, 20);
-                Cell(rows.Next(30), $"보상: {q.RewardText}", 4, 700, 20, UIFactory.Gold);
+                Cell(rows.Next(30), $"목표: {q.GoalText}   ({Mathf.Min(quests.Progress, q.Count)}/{q.Count})", 4, 900, 20);
+                Cell(rows.Next(30), $"보상: {q.RewardText}", 4, 900, 20, UIFactory.Gold);
                 if (quests.Ready)
                 {
                     // 대기실(조합)에서는 바로, 필드에서는 조합 연락관과 대화 중일 때 보고할 수 있다
                     bool canReport = Game.Mode == GameMode.Lobby || (Game.UI.Dialog.Npc != null && Game.UI.Dialog.Npc.NpcId == "union");
                     var row = rows.Next(52, 8);
                     if (canReport) RowButton(row, "목표 달성! 보고하고 보상 받기", () => { quests.Claim(); Refresh(); }, 4, 420, new Color(0.2f, 0.5f, 0.3f), true, 20);
-                    else Cell(row, $"목표 달성! {Fishing.World.FieldMap.UnionContact}이나 한국 낚시 조합(대기실)에서 보고하세요.", 4, 700, 17, UIFactory.Good);
+                    else Cell(row, $"목표 달성! {Fishing.World.FieldMap.UnionContact}이나 한국 낚시 조합(대기실)에서 보고하세요.", 4, 900, 17, UIFactory.Good);
                 }
             }
-            else
-            {
-                Cell(rows.Next(40), "모든 이야기 퀘스트를 마쳤습니다!", 4, 700, 26, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
-            }
+            else Cell(rows.Next(40), "모든 이야기 퀘스트를 마쳤습니다!", 4, 900, 26, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
 
-            rows.Next(16);
-            Cell(rows.Next(26), $"완료한 퀘스트 ({quests.CompletedCount}/{QuestDatabase.Story.Count})", 4, 600, 18, UIFactory.Accent);
+            rows.Next(10);
+            Cell(rows.Next(26), $"이야기 ({quests.CompletedCount}/{QuestDatabase.Story.Count})", 4, 600, 18, UIFactory.Accent);
             for (int i = 0; i < QuestDatabase.Story.Count; i++)
             {
                 var def = QuestDatabase.Story[i];
@@ -50,13 +79,72 @@ namespace Fishing.UI
                 bool current = i == quests.CompletedCount;
                 string mark = done ? "✔" : current ? "▶" : "·";
                 var color = done ? UIFactory.Good : current ? UIFactory.TextMain : UIFactory.TextDim;
-                Cell(rows.Next(26, 2), $"{mark}  {def.Title}" + (done || current ? $"  <size=14><color=#8090a0>{def.GoalText}</color></size>" : ""),
-                    10, 700, 18, color);
+                Cell(rows.Next(25, 1), $"{mark}  {def.Title}" + (done || current ? $"  <size=14><color=#8090a0>{def.GoalText}</color></size>" : ""),
+                    10, 900, 17, color);
+            }
+        }
+
+        void Daily(RowCursor rows)
+        {
+            Cell(rows.Next(30), "오늘의 조합 의뢰  <size=14><color=#8090a0>게임 하루마다 새로 3개 · 가 본 낚시터에서 · 완료하면 바로 보상 + 소라고동</color></size>",
+                4, 900, 20, UIFactory.Accent);
+            foreach (var q in Game.Quests.Daily)
+            {
+                var row = rows.Next(56, 6);
+                UIFactory.Image(row, new Color(1, 1, 1, q.done ? 0.02f : 0.05f), null, "Bg").rectTransform.Fill();
+                Cell(row, $"{(q.done ? "✔ " : "")}<b>{QuestSystem.DailyText(q)}</b>\n<size=14><color=#ffd060>{q.gold:N0}골드 · 경험치 {q.exp} · 소라고동 1</color></size>",
+                    12, 640, 19, q.done ? UIFactory.Good : UIFactory.TextMain);
+                Cell(row, q.done ? "완료" : $"{q.progress}/{q.count}", 700, 160, 22, q.done ? UIFactory.Good : UIFactory.TextMain, TextAnchor.MiddleRight, FontStyle.Bold);
+            }
+            Cell(rows.Next(30), $"지금까지 완료한 의뢰 {Game.Profile.Data.dailyCompleted}개", 4, 900, 16, UIFactory.TextDim);
+        }
+
+        void Trophy(RowCursor rows)
+        {
+            var p = Game.Profile;
+            Cell(rows.Next(30), $"대물 도전  <size=14><color=#8090a0>어종마다 대물 기준을 처음 넘기면 소라고동 3개 + 경험치 · 달성 {p.Data.trophyDone.Count}종</color></size>",
+                4, 900, 20, UIFactory.Accent);
+            foreach (var map in new[] { Fishing.World.Maps.HanRiver, Fishing.World.Maps.Honghyeon })
+            {
+                Cell(rows.Next(26), map.ShortName, 4, 300, 17, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
+                var list = FishDatabase.DexOf(map.Id).ToList();
+                for (int i = 0; i < list.Count; i += 3)
+                {
+                    var row = rows.Next(24, 1);
+                    for (int k = 0; k < 3 && i + k < list.Count; k++)
+                    {
+                        var s = list[i + k];
+                        bool done = p.Data.trophyDone.Contains(s.Id);
+                        var best = p.Dex(s.Id)?.maxLength ?? 0f;
+                        Cell(row, $"{(done ? "✔" : "·")} {s.Name} {s.TrophyLen:0.#}cm  <size=12><color=#8090a0>최고 {best:0.0}</color></size>",
+                            12 + k * 300, 296, 15, done ? UIFactory.Good : UIFactory.TextDim);
+                    }
+                }
+            }
+        }
+
+        void Achievements(RowCursor rows)
+        {
+            var p = Game.Profile;
+            var titleRow = rows.Next(40, 6);
+            Cell(titleRow, $"지금 칭호: <color=#7fd8ff>「{p.CurrentTitle}」</color>", 4, 360, 20);
+            var titles = p.Titles;
+            for (int i = 0; i < titles.Count && i < 5; i++)
+            {
+                string t = titles[titles.Count - 1 - i];
+                RowButton(titleRow, t, () => p.SetTitle(t), 370 + i * 112, 108, t == p.CurrentTitle ? new Color(0.15f, 0.45f, 0.42f) : new Color(0.18f, 0.22f, 0.28f), true, 13);
+            }
+            foreach (var a in AchievementDatabase.All)
+            {
+                bool done = p.Data.achievements.Contains(a.Id);
+                string prog = !done && a.Progress != null ? $"  ({a.Progress(p).Item1}/{a.Progress(p).Item2})" : "";
+                Cell(rows.Next(24, 1), $"{(done ? "✔" : "·")} <b>{a.Name}</b>  <size=13><color=#8090a0>{a.Desc}{prog}</color></size>" +
+                                      $"  <size=13><color=#ffd060>소라고동 {a.Conch}</color>{(a.Title != null ? $" · 칭호 「{a.Title}」" : "")}</size>",
+                    10, 920, 16, done ? UIFactory.Good : UIFactory.TextMain);
             }
         }
     }
 
-    /// <summary>조작법 / 게임 규칙 요약.</summary>
     public class HelpPanel : UIPanel
     {
         public HelpPanel(Transform canvas)

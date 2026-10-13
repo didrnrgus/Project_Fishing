@@ -111,6 +111,7 @@ namespace Fishing.UI
                     Game.Sound.Success();
                     SetResult($"강화 성공!  +{before} → +{before + 1}", UIFactory.Gold);
                     Game.Toast($"{gear.Name} 강화 성공! +{before + 1}", ToastKind.Great);
+                    Game.Quests.CheckAchievements();
                     break;
                 case UpgradeResult.Fail:
                     Game.Sound.Snap();

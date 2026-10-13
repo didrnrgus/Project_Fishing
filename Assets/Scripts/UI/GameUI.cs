@@ -24,6 +24,7 @@ namespace Fishing.UI
         public UpgradePanel Upgrade { get; private set; }
         public InventoryPanel Inventory { get; private set; }
         public CostumePanel Costume { get; private set; }
+        public ExchangePanel Exchange { get; private set; }
         /// <summary>F로 말을 걸 수 있는 가장 가까운 NPC.</summary>
         public Fishing.Characters.NpcAngler NearbyNpc { get; private set; }
 
@@ -70,7 +71,8 @@ namespace Fishing.UI
             Upgrade = new UpgradePanel(canvas);
             Inventory = new InventoryPanel(canvas);
             Costume = new CostumePanel(canvas);
-            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, Upgrade, Inventory, Costume };
+            Exchange = new ExchangePanel(canvas);
+            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, Upgrade, Inventory, Costume, Exchange };
             LobbyHud.Root.transform.SetAsFirstSibling();
         }
 

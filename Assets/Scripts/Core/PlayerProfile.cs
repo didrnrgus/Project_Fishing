@@ -238,10 +238,44 @@ namespace Fishing.Core
 
         void Stamina(float delta) => Data.stamina = Mathf.Clamp(Data.stamina + delta, 0f, StaminaCap);
 
+        /// <summary>쓸 수 있는 칭호 (레벨 칭호 + 업적 칭호).</summary>
+        public System.Collections.Generic.List<string> Titles
+        {
+            get
+            {
+                var list = new System.Collections.Generic.List<string>();
+                foreach (var (lv, t) in AchievementDatabase.LevelTitles) if (Data.level >= lv) list.Add(t);
+                foreach (var a in AchievementDatabase.All)
+                    if (a.Title != null && Data.achievements.Contains(a.Id)) list.Add(a.Title);
+                return list;
+            }
+        }
+
+        /// <summary>이름표에 붙는 칭호.</summary>
+        public string CurrentTitle
+        {
+            get
+            {
+                var titles = Titles;
+                if (!string.IsNullOrEmpty(Data.title) && titles.Contains(Data.title)) return Data.title;
+                string best = "초보 조사";
+                foreach (var (lv, t) in AchievementDatabase.LevelTitles) if (Data.level >= lv) best = t;
+                return best;
+            }
+        }
+
+        public void SetTitle(string title)
+        {
+            Data.title = title;
+            NotifyChanged();
+            LookChanged?.Invoke();
+        }
+
         /// <summary>입은 의상을 반영한 내 캐릭터 외형.</summary>
         public Fishing.Characters.CharacterLook BuildLook()
         {
             var look = Fishing.Characters.CharacterLook.Player;
+            look.Title = CurrentTitle;
             var hat = CostumeDatabase.Get(Worn(CostumeSlot.Hat));
             look.Hat = hat != null && hat.Style >= 0;
             if (look.Hat) { look.HatColor = hat.Color; look.HatStyle = hat.Style; }
