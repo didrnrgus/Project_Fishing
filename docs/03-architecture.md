@@ -138,4 +138,4 @@ GameBootstrap.Start → GameUI.EnterLobby (Mode=Lobby, 카메라 고정)
 - 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/HoldRod/Cast/Hook…)가 클립 이름이다. 다른 라이브러리를 쓰면 이름만 바꾼다.
 - 물고기: `FishModels.Models`(경로)와 `ModelIndex`(어종 → 모델)만 바꾸면 된다. 크기는 BakeMesh로 재서 자동으로 맞춘다.
 - 물: `WaterSurface` + `Fishing/Water` 셰이더 (`_WaveAmp`, `_WaveLen`, 노멀 타일·속도). 하늘 반사는 `DayNightCycle`의 리얼타임 반사 프로브(하늘만, 2초마다).
-- 1인칭 낚싯대: `FightRodView`의 `_segs`(9마디) 구조를 유지하면 휘는 연출을 그대로 쓸 수 있다.
+- 1인칭 낚싯대: `FightRodView`의 `_segs`(14마디) 구조를 유지하면 `BendRod`의 휘는 연출(줄 방향, Flex별 분포, 스프링)을 그대로 쓸 수 있다.
