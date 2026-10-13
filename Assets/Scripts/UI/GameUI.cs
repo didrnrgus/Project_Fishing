@@ -19,6 +19,7 @@ namespace Fishing.UI
         public HelpPanel Help { get; private set; }
         public FishingAreaPanel Areas { get; private set; }
         public LobbyView LobbyHud { get; private set; }
+        public AreaMapPanel AreaMap { get; private set; }
 
         UIPanel[] _panels;
 
@@ -57,7 +58,8 @@ namespace Fishing.UI
                 changeBase: () => Game.Toast("동남아·지중해 거점은 아직 준비 중입니다. 지금은 한국 낚시 조합만 열려 있어요.", ToastKind.Warn));
             Areas = new FishingAreaPanel(canvas);
             Areas.Enter = (area, channel) => EnterField(channel);
-            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas };
+            AreaMap = new AreaMapPanel(canvas);
+            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap };
             LobbyHud.Root.transform.SetAsFirstSibling();
         }
 
@@ -86,6 +88,7 @@ namespace Fishing.UI
             if (lobby) LobbyHud.Update();
             Hud.Update();
             Fight.Update();
+            if (AreaMap.IsOpen) AreaMap.Tick();
             Result.Animate();
             HandleKeys();
         }
@@ -170,8 +173,9 @@ namespace Fishing.UI
             if (state == FishingState.Fighting) return;
             bool idle = state == FishingState.Idle;
 
-            // 원작 단축키: 퀘스트 L, 도감 P, 살림망 Z, 상점 F12
+            // 원작 단축키: 퀘스트 L, 도감 P, 살림망 Z, 상점 F12, 지역 지도 M
             if (Input.GetKeyDown(KeyCode.F1)) OpenExclusive(Help);
+            if (Input.GetKeyDown(KeyCode.M)) OpenExclusive(AreaMap);
             if (Input.GetKeyDown(KeyCode.P)) OpenExclusive(Dex);
             if (Input.GetKeyDown(KeyCode.L)) OpenExclusive(Quest);
             if (Input.GetKeyDown(KeyCode.Z)) OpenExclusive(KeepNet);

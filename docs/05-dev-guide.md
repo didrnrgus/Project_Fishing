@@ -4,7 +4,8 @@
 
 - **Unity 6000.3.17f1** (Unity Hub 기본 경로 `C:\Program Files\Unity\Hub\Editor\6000.3.17f1`)
 - Windows Build Support 모듈
-- 패키지: `com.unity.ugui 2.0.0` + 기본 모듈. 외부 에셋 없음
+- 패키지: `com.unity.ugui 2.0.0` + 기본 모듈
+- 외부 에셋: Quaternius CC0 모델만 (`Assets/Resources/Characters`, `Animations`, `Fish`). 임포트 설정은 `Assets/Editor/AssetImportRules.cs`가 자동으로 맞춘다.
 - 렌더 파이프라인: Built-in, 입력: 구 Input Manager
 
 ## 처음 열기
@@ -22,12 +23,13 @@
 | Build Windows | `Builds/Windows/ProjectFishing.exe` |
 | Balance Simulation | `docs/balance-report.md` 생성 |
 | Delete Save | 세이브 파일 삭제 |
+| Inspect Imported Assets | 캐릭터·애니메이션·물고기 임포트 결과(뼈, 클립, 크기) → `Logs/asset-inspect.txt` |
 
 ## 명령줄 도구 (`tools/`, Git Bash)
 
 ```bash
 sh tools/build.sh                 # 윈도우 빌드
-sh tools/autoshot.sh              # 빌드 실행 → Screenshots/ 에 10장 자동 촬영 후 종료
+sh tools/autoshot.sh              # 빌드 실행 → Screenshots/ 에 20장 자동 촬영 후 종료
 sh tools/balance.sh               # 밸런스 리포트 (전체)
 sh tools/balance.sh -simSummary   # 밸런스 리포트 (대물급만)
 ```
@@ -41,18 +43,23 @@ Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.ex
 
 | 파일 | 장면 |
 |---|---|
+| 00a_lobby | 대기실(한국 낚시 조합), 오전 10시 |
+| 00b_area_list | 낚시터 목록 (한국 지도, 채널) → 한강 CH.1 입장 |
 | 01_field_morning | 시작 위치 (새벽) |
+| 00_character | 한낮 캐릭터 정면 클로즈업 (옷, 모자, 이름표) |
 | 02_casting | 밤의 낚시 데크, 당겼다 미는 캐스팅 (비거리 숫자, 궤적) |
 | 03_waiting | 찌를 던지고 기다림 (찌 클로즈업 게이지) |
 | 04_bite_gauge | 본신: 찌가 잠기고 빨간 `!`, 두근두근 |
 | 05_hook_perfect | 자동 조작으로 PERFECT 챔질 → 파이팅 시작 |
 | 06_fight | 82cm 잉어 파이팅 |
+| 06b_tension_danger | 장력을 0.96으로 강제 → 빨간 화면 테두리 |
 | 07_counter_chance | 카운터 찬스 (속도선, 파란 화살표) |
 | 08_counter | 카운터 성공 |
 | 09_landing | 랜딩 찬스 다이얼 |
 | 10_result | RESULT 화면 |
 | 11_dex ~ 14_shop | 도감, 살림망, 퀘스트, 상점 (샘플 데이터) |
 | 16_help | 도움말 |
+| 17_area_map | 지역 지도(M). 어군 하나를 3마리 낚은 것으로 처리해 작은 어군으로 보여 줌 |
 | 15_night_rain | 비 오는 밤, 동작대교 아래 |
 
 로그(`Logs/player.log`)에 파이팅 결과가 남는다. 예: `[Dev] 파이팅 종료: 어종=잉어 82.0cm, 상태=Result, 경과=21.7s, HP=54/382, 결과=Landed`

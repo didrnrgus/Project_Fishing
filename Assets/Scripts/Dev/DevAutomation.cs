@@ -113,6 +113,15 @@ namespace Fishing.Dev
             yield return new WaitForSeconds(2f);
             yield return Shot("06_fight");
 
+            // 장력 위험: 화면 가장자리가 빨갛게
+            for (float t = 0f; t < 0.35f; t += Time.deltaTime)
+            {
+                fight.DebugSetTension(0.96f);
+                yield return null;
+            }
+            yield return Shot("06b_tension_danger");
+            fight.DebugSetTension(0.5f);
+
             bool countered = false, chanceShot = false;
             fight.Countered += () => countered = true;
             Game.Fishing.AutoplayCounterChance = 0f;
@@ -176,6 +185,14 @@ namespace Fishing.Dev
             Game.UI.OpenExclusive(Game.UI.Help);
             yield return Shot("16_help");
             Game.UI.Help.Close();
+
+            // 지역 지도(M): 어군 하나는 3마리를 낚아 작은 어군으로 만든다
+            var shrink = Game.Schools.Schools[1];
+            for (int i = 0; i < Fishing.World.FishSchoolManager.CatchesToShrink; i++) Game.Schools.OnCatch(shrink, shrink.SpeciesIds[0]);
+            Game.UI.OpenExclusive(Game.UI.AreaMap);
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("17_area_map");
+            Game.UI.AreaMap.Close();
 
             // 비 오는 밤
             Game.Player.Teleport(new Vector3(-70f, 1.1f, -64f), 20f);

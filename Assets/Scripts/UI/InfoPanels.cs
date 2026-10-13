@@ -57,7 +57,7 @@ namespace Fishing.UI
             var text = UIFactory.Text(Body,
                 "<b><color=#55dcc8>필드</color></b>\n" +
                 "  WASD 이동 · Shift 달리기 · 오른쪽 버튼 드래그 시점 회전 · 휠 줌 · 숫자 1~6 미끼 선택\n" +
-                "  L 퀘스트 · P 도감 · Z 살림망 · F12 상점 · U 설명 켜기/끄기 · F1 도움말 · F5 저장 · Esc 창 닫기\n\n" +
+                "  L 퀘스트 · P 도감 · Z 살림망 · M 지역 지도 · F12 상점 · U 설명 켜기/끄기 · F1 도움말 · F5 저장 · Esc 창 닫기\n\n" +
                 "<b><color=#55dcc8>캐스팅</color></b>\n" +
                 "  왼쪽 버튼을 누르고 마우스를 <b>아래로 당긴 다음</b>, <b>빠르게 위로 밀면서</b> 버튼을 놓으세요.\n" +
                 "  많이 당기고 빨리 밀수록 멀리 날아갑니다. 화면의 큰 숫자가 비거리입니다.\n\n" +
@@ -74,7 +74,8 @@ namespace Fishing.UI
                 "<b><color=#55dcc8>성장</color></b>\n" +
                 "  체력(HP)은 시간과 하이텐션으로 줄어듭니다. 30 미만이면 힘이 빠집니다. 요리나 김밥으로 회복하세요.\n" +
                 "  어종마다 좋아하는 서식지·미끼·시간·날씨가 있고, 도감에 많이 기록할수록 정보가 열립니다.\n" +
-                "  미니맵의 <color=#ffbf4d>◆</color> 는 어군입니다. 어군이 있는 칸에 던지면 입질이 빠르고 대물 확률이 오릅니다.",
+                "  미니맵의 <color=#ffbf4d>◆</color> 는 어군입니다. 어군이 있는 칸에 던지면 입질이 빠르고 대물 확률이 오릅니다.\n" +
+                "  큰 어군에서 3마리를 낚으면 작은 어군으로 흩어집니다(6시간 뒤 다시 모임). 20cm 미만 작은 고기는 살림망에서 생미끼로 만들 수 있어요.",
                 17, UIFactory.TextMain, TextAnchor.UpperLeft);
             text.rectTransform.Fill();
             text.lineSpacing = 1.15f;

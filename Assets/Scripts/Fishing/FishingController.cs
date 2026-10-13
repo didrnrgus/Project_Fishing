@@ -277,7 +277,7 @@ namespace Fishing.Angling
                 Weather = Game.Weather.Current,
                 School = Game.Schools.At(col, row),
             };
-            CastCellLabel = $"{_cellName} · {Names.Of(_ctx.Habitat)}" + (_ctx.School != null ? $" · {_ctx.School.Name}" : "");
+            CastCellLabel = $"{_cellName} · {Names.Of(_ctx.Habitat)}" + (_ctx.School != null ? $" · {_ctx.School.Name}({_ctx.School.SizeLabel})" : "");
             PendingBite = BiteSelector.Pick(_ctx);
             BigBite = false;
 
@@ -637,6 +637,7 @@ namespace Fishing.Angling
             p.Data.totalCatches++;
             p.AddExp(exp);
             Game.Quests.OnCatch(new CatchInfo { Species = species, Length = f.Length, Habitat = _ctx.Habitat, Band = Game.Clock.Band });
+            Game.Schools.OnCatch(_ctx.School, species.Id);
 
             State = FishingState.Result;
             Fight = null;

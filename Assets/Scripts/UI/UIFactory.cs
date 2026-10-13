@@ -36,6 +36,16 @@ namespace Fishing.UI
 
         public static Sprite White => _white ??= MakeSprite(4, (x, y) => 1f);
 
+        /// <summary>가장자리로 갈수록 진해지는 둥근 사각형 테두리. 전체 화면에 늘려 쓴다.</summary>
+        public static Sprite Vignette => _vignette ??= MakeSprite(256, (x, y) =>
+        {
+            float d = Mathf.Pow(Mathf.Pow(Mathf.Abs(x), 5f) + Mathf.Pow(Mathf.Abs(y), 5f), 0.2f);
+            float a = Mathf.Clamp01((d - 0.62f) / 0.4f);
+            return a * a;
+        });
+
+        static Sprite _vignette;
+
         public static Sprite Circle => _circle ??= MakeSprite(128, (x, y) =>
         {
             float d = Mathf.Sqrt(x * x + y * y);

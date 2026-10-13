@@ -6,16 +6,23 @@
 현재 버전은 **한강(반포지구) 맵 하나**입니다. 국내 다른 맵은 로드맵에 있고, 해외 맵은 아직 범위 밖입니다.
 조작과 화면 구성은 원작 플레이 영상을 프레임 단위로 분석해서 맞췄습니다.
 
+| 대기실 (한국 낚시 조합) | 낚시터 목록 |
+|---|---|
+| ![lobby](docs/images/00a_lobby.png) | ![areas](docs/images/00b_area_list.png) |
+| **캐릭터 (Quaternius CC0 + 옷 셰이더)** | **지역 지도 (M)** |
+| ![character](docs/images/00_character.png) | ![areamap](docs/images/17_area_map.png) |
+
 | 캐스팅 (당겼다 밀기) | 챔질 (찌 게이지) |
 |---|---|
 | ![casting](docs/images/02_casting.png) | ![bite](docs/images/04_bite_gauge.png) |
 | **카운터 찬스** | **랜딩 찬스** |
 | ![counter](docs/images/07_counter_chance.png) | ![landing](docs/images/09_landing.png) |
-| **RESULT** | **도감** |
-| ![result](docs/images/10_result.png) | ![dex](docs/images/11_dex.png) |
+| **장력 위험 (빨간 테두리)** | **RESULT** |
+| ![danger](docs/images/06b_tension_danger.png) | ![result](docs/images/10_result.png) |
 
 ## 특징
 
+- **원작 흐름**: 게임은 **한국 낚시 조합(대기실)**에서 시작한다. [낚시터 선택하기] → 한국 지도 낚시터 목록 → 한강 CH.1~5 입장(빠른입장). 필드 오른쪽 위 `↩ 조합`으로 돌아온다.
 - **원작 조작 그대로**
   - **캐스팅**: 왼쪽 버튼을 누르고 당긴 다음, 빠르게 밀면서 놓는다. 큰 비거리 숫자와 하늘색 궤적이 뜬다.
   - **챔질**: 왼쪽 버튼을 누른 채 좌우로 흔든다. 찌가 완전히 잠겼을 때 흔들면 **PERFECT**(BAD~PERFECT 찌 게이지).
@@ -28,12 +35,14 @@
 - **한강 생태**
   - 어종 16종(붕어, 잉어, 쏘가리, 메기, 가물치, 뱀장어, 전설의 황금 비단잉어…)과 잡동사니가 있다.
   - 서식지, 미끼, 시간대, 날씨에 따라 입질이 달라진다.
-  - 미니맵에 보이는 **어군**이 시간에 따라 이동한다.
+  - 미니맵과 **지역 지도(M)**에 보이는 **어군**이 시간에 따라 이동한다. 큰 어군에서 3마리를 낚으면 작은 어군으로 흩어진다.
+  - 20cm 미만 작은 고기는 살림망에서 **생미끼**로 만든다.
 - **성장**
   - 레벨 1~25, 장비 10종(경조/연조 낚싯대, 릴, 줄), 미끼 6종, 낚싯대 내구도
   - 캐릭터 체력 관리: 하이텐션을 쓰면 빨리 지친다. 요리나 김밥으로 회복한다.
 - **수집**: 단계별로 열리는 도감, 살림망, 상점(F12) 판매, 한국 낚시 조합 이야기 퀘스트 8개
-- **분위기**: 낮과 밤, 노을, 비, 새벽 물안개, 가로등, 절차적 효과음(릴 클릭, 물보라, 줄 끊김)
+- **분위기**: 낮과 밤, 노을, 해·달·별, 날씨별 구름, 물결 셰이더(하늘 반사), 비, 새벽 물안개, 가로등, 절차적 효과음(릴 클릭, 물보라, 줄 끊김)
+- **사람**: Quaternius CC0 휴머노이드 캐릭터에 옷(셔츠·조끼·바지·신발)을 셰이더로 입히고 모자·머리·이름표/칭호를 붙였다. 대기·걷기·캐스팅·챔질·환호 애니메이션. 둔치와 뗏목에 NPC 낚시꾼, 낚시점 김사장.
 
 ## 실행
 
@@ -58,7 +67,7 @@ sh tools/build.sh
 | 1~6 | 미끼 선택 |
 | **파이팅**: 왼쪽 / 오른쪽 버튼 / 마우스 좌우 | 감기 / 풀기 / 낚싯대 방향·카운터 |
 | **랜딩 찬스**: Space 또는 왼쪽 버튼 연타 | 0m까지 끌어오기 |
-| L / P / Z / F12 | 퀘스트 / 도감 / 살림망 / 상점 |
+| L / P / Z / M / F12 | 퀘스트 / 도감 / 살림망 / 지역 지도 / 상점 |
 | U / F1 / F5 / Esc | 설명 켜기·끄기 / 도움말 / 저장 / 닫기 |
 
 ## 문서
@@ -77,19 +86,23 @@ sh tools/build.sh
 
 ```
 Assets/Scripts
-  Core/      진입점(GameBootstrap), 시계·날씨·조명, 저장, 퀘스트
-  Data/      어종·장비·퀘스트 정적 테이블
-  World/     한강 맵 정의, 프리미티브 월드 생성, 어군, 효과
-  Player/    3인칭 캐릭터, 카메라(3인칭 ↔ 1인칭)
-  Fishing/   낚시 상태 머신, 파이팅 시뮬레이션(FishFight), 입질 선택, 찌
-  UI/        코드로 만든 UGUI: HUD, 파이팅 HUD, 결과·살림망·도감·낚시점·퀘스트
+  Core/       진입점(GameBootstrap), 시계·날씨·조명, 저장, 퀘스트, 게임 모드(대기실/필드)
+  Data/       어종·장비·퀘스트·낚시터 정적 테이블
+  Characters/ 캐릭터 조립(CharacterFactory), Playables 애니메이션, NPC
+  World/      한강 맵 정의, 월드 생성, 대기실, 수면·하늘, 어군, 효과
+  Player/     3인칭 캐릭터, 카메라(3인칭 ↔ 1인칭 ↔ 고정)
+  Fishing/    낚시 상태 머신, 파이팅 시뮬레이션(FishFight), 입질 선택, 찌, 물고기 모델
+  UI/         코드로 만든 UGUI: 대기실, 낚시터 목록, 지역 지도, HUD, 파이팅 HUD, 각종 창
   Audio/     절차적 효과음
   Dev/       자동 연출·스크린샷
-Assets/Editor  셋업·빌드 도구, 밸런스 시뮬레이터
+Assets/Shaders  Fishing/Clothed(옷), Fishing/Water(물결), Fishing/Sky(달·별·구름)
+Assets/Resources  Quaternius 캐릭터·머리·애니메이션·물고기 (CC0)
+Assets/Editor  셋업·빌드 도구, 임포트 규칙, 밸런스 시뮬레이터
 ```
 
-씬에는 `GameBootstrap` 하나만 있고, 나머지는 모두 코드로 만듭니다. 아트 에셋 없이 프리미티브와 절차적 텍스처, 사운드만 씁니다.
+씬에는 `GameBootstrap` 하나만 있고, 나머지는 모두 코드로 만듭니다. 사람과 물고기만 CC0 모델을 쓰고, 배경은 프리미티브와 절차적 텍스처·셰이더, 소리는 절차적으로 만듭니다.
 
 ## 크레딧
 
 - 원작: 「청풍명월」 개발 저스트나인, 서비스 네오위즈게임즈(피망). 이 프로젝트는 원작과 관련이 없는 개인 팬 프로젝트입니다.
+- 3D 모델: [Quaternius](https://quaternius.com) — Universal Base Characters, Universal Animation Library, Animated Fish Pack (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Quaternius/`.

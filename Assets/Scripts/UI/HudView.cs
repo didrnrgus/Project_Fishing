@@ -128,6 +128,8 @@ namespace Fishing.UI
 
             _mapRoot = UIFactory.Node("Map", frame).At(new Vector2(0.5f, 0), new Vector2(0, 8), new Vector2(320, 212));
             _mapRoot.gameObject.AddComponent<RectMask2D>();
+            UIFactory.Text(frame, "[M] 지역 지도", 11, new Color(1, 1, 1, 0.55f), TextAnchor.LowerRight).rectTransform
+                .At(new Vector2(1, 0), new Vector2(-8, 10), new Vector2(120, 16), new Vector2(1, 0));
             UIFactory.Image(_mapRoot, new Color(0.24f, 0.3f, 0.24f), null, "Land").rectTransform.Fill();
             UIFactory.Image(_mapRoot, new Color(0.14f, 0.25f, 0.34f), null, "Water").rectTransform
                 .At(new Vector2(0.5f, 0.5f), MapPos(0f, 0f), new Vector2(320, 120 * MapScale));
@@ -425,6 +427,7 @@ namespace Fishing.UI
             {
                 var c = HanRiverMap.CellCenter(schools[i].Col, schools[i].Row);
                 _schoolMarks[i].anchoredPosition = MapPos(c.x, c.z) + new Vector2(Mathf.Sin(Time.time * 1.5f + i) * 3f, 0f);
+                _schoolMarks[i].localScale = Vector3.one * (schools[i].Big ? 1.15f : 0.65f);
             }
         }
 
