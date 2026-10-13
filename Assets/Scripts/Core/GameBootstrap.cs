@@ -29,6 +29,8 @@ namespace Fishing.Core
         {
             Application.targetFrameRate = 60;
             QualitySettings.shadowDistance = 90f;
+            Settings.Load();   // 기기 설정 (음량·감도·화면·키 배치)
+            Rumble.Ensure();
 
             var devArgs = DevAutomation.Parse();
             Game.SaveDisabled = devArgs.Enabled;
@@ -65,7 +67,8 @@ namespace Fishing.Core
             Game.CameraRig = new GameObject("MainCamera").AddComponent<CameraRig>();
             Game.CameraRig.Yaw = data.yaw;
             Game.CameraRig.transform.position = spawn + new Vector3(0, 3, -6);
-            PostFx.Attach(Game.CameraRig.Cam);
+            var fx = PostFx.Attach(Game.CameraRig.Cam);
+            if (fx != null) fx.Enabled = Settings.PostFx;
 
             Game.Sound = Game.CameraRig.gameObject.AddComponent<SoundFx>();
             Game.Fishing = gameObject.AddComponent<FishingController>();

@@ -232,6 +232,10 @@ namespace Fishing.Dev
             Game.UI.OpenExclusive(Game.UI.Help);
             yield return Shot("16_help");
             Game.UI.Help.Close();
+            Game.UI.OpenExclusive(Game.UI.Options);
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("16b_options");
+            Game.UI.Options.Close();
 
             // 낚시 대회: 참가해서 몇 마리 낚은 상태 (HUD 순위표 + 퀘스트 창 대회 탭). 끝나면 시각을 되돌린다
             float clockBefore = Game.Clock.Minutes;

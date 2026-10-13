@@ -1,3 +1,4 @@
+using Fishing.Core;
 using UnityEngine;
 
 namespace Fishing.Audio
@@ -143,12 +144,13 @@ namespace Fishing.Audio
         {
             // 매 프레임 다시 넣어 주지 않으면 소리가 잦아든다
             float k = 1f - Mathf.Exp(-Time.deltaTime * 18f);
-            _reelLoop.volume = Mathf.Lerp(_reelLoop.volume, _reelTarget, k);
+            float fx = Settings.EffectsVolume;
+            _reelLoop.volume = Mathf.Lerp(_reelLoop.volume, _reelTarget * fx, k);
             _reelLoop.pitch = Mathf.Lerp(_reelLoop.pitch, Mathf.Max(0.5f, _reelPitch), k);
-            _dragLoop.volume = Mathf.Lerp(_dragLoop.volume, _dragTarget, k);
+            _dragLoop.volume = Mathf.Lerp(_dragLoop.volume, _dragTarget * fx, k);
             _dragLoop.pitch = Mathf.Lerp(_dragLoop.pitch, Mathf.Max(0.5f, _dragPitch), k);
-            _strainLoop.volume = Mathf.Lerp(_strainLoop.volume, _strainTarget, k * 0.5f);
-            _engineLoop.volume = Mathf.Lerp(_engineLoop.volume, _engineTarget, k * 0.4f);
+            _strainLoop.volume = Mathf.Lerp(_strainLoop.volume, _strainTarget * fx, k * 0.5f);
+            _engineLoop.volume = Mathf.Lerp(_engineLoop.volume, _engineTarget * fx, k * 0.4f);
             _engineLoop.pitch = Mathf.Lerp(_engineLoop.pitch, Mathf.Max(0.4f, _enginePitch), k * 0.4f);
             _reelTarget = _dragTarget = _strainTarget = _engineTarget = 0f;
         }
@@ -173,7 +175,7 @@ namespace Fishing.Audio
         void Play(AudioClip clip, float volume = 1f, float pitch = 1f)
         {
             _src.pitch = pitch;
-            _src.PlayOneShot(clip, volume);
+            _src.PlayOneShot(clip, volume * Settings.EffectsVolume);
         }
 
         public void ReelClick(float tension) => Play(_click, 0.35f, Mathf.Lerp(0.9f, 1.4f, Mathf.Clamp01(tension)));

@@ -245,7 +245,7 @@ namespace Fishing.PlayerSystems
             if (_mount != null)
             {
                 // 배 위: 이동은 BoatController가 한다. WASD는 찌 회수 판정에만 쓴다
-                MovedThisFrame = !uiBlocking && (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D));
+                MovedThisFrame = !uiBlocking && (Settings.Held(KeyAction.MoveForward) || Settings.Held(KeyAction.MoveBack) || Settings.Held(KeyAction.MoveLeft) || Settings.Held(KeyAction.MoveRight));
                 _speedNow = 0f;
                 _airTime = 0f;
                 if (_anim != null) UpdateAnimation();
@@ -256,10 +256,10 @@ namespace Fishing.PlayerSystems
             }
             if (!uiBlocking)
             {
-                if (Input.GetKey(KeyCode.W)) input.y += 1f;
-                if (Input.GetKey(KeyCode.S)) input.y -= 1f;
-                if (Input.GetKey(KeyCode.D)) input.x += 1f;
-                if (Input.GetKey(KeyCode.A)) input.x -= 1f;
+                if (Settings.Held(KeyAction.MoveForward)) input.y += 1f;
+                if (Settings.Held(KeyAction.MoveBack)) input.y -= 1f;
+                if (Settings.Held(KeyAction.MoveRight)) input.x += 1f;
+                if (Settings.Held(KeyAction.MoveLeft)) input.x -= 1f;
             }
             bool wantsMove = input.sqrMagnitude > 0.01f;
             MovedThisFrame = wantsMove;
@@ -270,7 +270,7 @@ namespace Fishing.PlayerSystems
                 float camYaw = Game.CameraRig != null ? Game.CameraRig.Yaw : 0f;
                 var rot = Quaternion.Euler(0f, camYaw, 0f);
                 var dir = rot * new Vector3(input.x, 0f, input.y).normalized;
-                float speed = Input.GetKey(KeyCode.LeftShift) ? RunSpeed : WalkSpeed;
+                float speed = Settings.Held(KeyAction.Run) ? RunSpeed : WalkSpeed;
                 motion = dir * speed;
                 Model.rotation = Quaternion.Slerp(Model.rotation, Quaternion.LookRotation(dir), Time.deltaTime * 12f);
 
@@ -290,7 +290,7 @@ namespace Fishing.PlayerSystems
             if (_cc.isGrounded && _vy < 0f) _vy = -1f;
             // 점프 (원작: Space). 낚시 중이거나 창이 열려 있으면 안 된다
             bool fishingIdle = Game.Fishing == null || Game.Fishing.State == Angling.FishingState.Idle;
-            if (Input.GetKeyDown(KeyCode.Space) && _cc.isGrounded && !uiBlocking && !MovementLocked && fishingIdle)
+            if (Settings.Down(KeyAction.Jump) && _cc.isGrounded && !uiBlocking && !MovementLocked && fishingIdle)
             {
                 _vy = JumpSpeed;
                 _anim?.PlayOnce(CharacterAnimator.JumpStart, 1.4f, 0.6f);
