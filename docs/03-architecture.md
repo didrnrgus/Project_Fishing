@@ -82,11 +82,11 @@ GameBootstrap.Awake
 | 상태 | 들어가는 조건 | 하는 일 | 나가는 조건 |
 |---|---|---|---|
 | Idle | 기본 | 이동 가능 | 좌클릭 → Charging (미끼·체력이 있어야 함) |
-| Charging | | 게이지 왕복, 착지 링 | 떼기 → Casting (물이면) / Idle |
+| Charging | | 당긴 양·민 속도 측정, 궤적 리본, 비거리 숫자 | 떼기 → Casting (물이면) / Idle |
 | Casting | | 찌 비행 | 착지 → Waiting |
-| Waiting | | 어종 미리 결정, 예신 | 시간 끝 → Bite / 좌클릭 → 헛챔질(다시 Waiting) / R·이동 → Idle |
-| Bite | | 찌 잠김, `!`, 두근두근 | 좌클릭 → Fighting / 시간 초과 → Idle |
-| Fighting | | `FishFight.Tick`, 1인칭, 커서 잠금 | 결과 → Result(성공) / Idle(실패) |
+| Waiting | | 어종 미리 결정, 예신, 찌 게이지 | 시간 끝 → Bite / 흔들기 → 헛챔질(다시 Waiting) / R·이동 → Idle |
+| Bite | | 찌가 1.1초에 걸쳐 잠김, 빨간 `!`, 두근두근 | 흔들기 → 등급(`HookGrade`) → Fighting 또는 BAD 헛챔질 / 시간 초과 → Idle |
+| Fighting | | `FishFight.Tick`, 1인칭, 커서 잠금, 데미지 숫자. 랜딩 찬스면 연타 → `LandingTap` | 결과 → Result(성공) / Idle(실패) |
 | Result | | 결과 창 | 살림망·방생 선택 → Idle |
 
 ## 확장 방법
@@ -95,7 +95,7 @@ GameBootstrap.Awake
 `FishDatabase.All`에 `FishSpecies`를 추가한다. 도감, 입질, 퀘스트 텍스트에 자동으로 반영된다. 추가한 뒤 `tools/balance.sh`로 난이도를 확인한다.
 
 ### 장비 추가
-`GearDatabase.Gear`에 `GearDef`를 추가한다. 낚시점 목록은 `Slot` 순서대로 자동 정렬된다.
+`GearDatabase.Gear`에 `GearDef`를 추가한다. 상점(F12) 장비 목록은 `Slot` 순서대로 자동 정렬된다.
 
 ### 새 맵 추가 (예: 서천 앞바다)
 지금은 `HanRiverMap`이 정적 클래스다. 맵을 늘리려면 다음 순서로 바꾼다.

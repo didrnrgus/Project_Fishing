@@ -15,6 +15,8 @@ namespace Fishing.Core
         Material _bulbOn, _bulbOff;
         float _weatherDim = 1f;
         bool _lampsOn = true;
+        ReflectionProbe _skyProbe;
+        float _nextProbeAt;
 
         public void Init(List<Light> lamps, List<Renderer> bulbs)
         {
@@ -36,6 +38,19 @@ namespace Fishing.Core
             RenderSettings.fogMode = FogMode.Exponential;
 
             SetLamps(false);
+
+            // 기본 반사는 시작할 때의 하늘로 고정되므로, 하늘만 찍는 실시간 프로브를 주기적으로 갱신한다
+            var probeGo = new GameObject("SkyReflection");
+            probeGo.transform.SetParent(transform, false);
+            _skyProbe = probeGo.AddComponent<ReflectionProbe>();
+            _skyProbe.mode = UnityEngine.Rendering.ReflectionProbeMode.Realtime;
+            _skyProbe.refreshMode = UnityEngine.Rendering.ReflectionProbeRefreshMode.ViaScripting;
+            _skyProbe.timeSlicingMode = UnityEngine.Rendering.ReflectionProbeTimeSlicingMode.AllFacesAtOnce;
+            _skyProbe.size = new Vector3(2000f, 400f, 2000f);
+            _skyProbe.resolution = 64;
+            _skyProbe.cullingMask = 0;
+            _skyProbe.clearFlags = UnityEngine.Rendering.ReflectionProbeClearFlags.Skybox;
+            _skyProbe.importance = 0;
         }
 
         Light CreateLight(string name, Color color, LightShadows shadows)
@@ -94,6 +109,12 @@ namespace Fishing.Core
             _sky.SetFloat("_AtmosphereThickness", Mathf.Lerp(0.9f, 1.6f, warm));
             _sky.SetColor("_SkyTint", Color.Lerp(new Color(0.55f, 0.55f, 0.55f), new Color(0.5f, 0.55f, 0.65f), _weatherDim));
             _sky.SetColor("_GroundColor", Color.Lerp(new Color(0.12f, 0.12f, 0.14f), new Color(0.37f, 0.35f, 0.34f), day));
+
+            if (Time.time >= _nextProbeAt)
+            {
+                _nextProbeAt = Time.time + 2f;
+                _skyProbe.RenderProbe();
+            }
 
             bool wantLamps = day < 0.45f || _weatherDim < 0.45f;
             if (wantLamps != _lampsOn) SetLamps(wantLamps);

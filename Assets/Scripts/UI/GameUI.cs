@@ -54,6 +54,7 @@ namespace Fishing.UI
         void Start()
         {
             Game.Profile.Changed += RefreshOpenPanels;
+            Game.Fishing.Casted += Hud.OnCasted;
         }
 
         void OnDestroy()
@@ -72,7 +73,32 @@ namespace Fishing.UI
         {
             Hud.Update();
             Fight.Update();
+            Result.Animate();
             HandleKeys();
+        }
+
+        public void OpenShop()
+        {
+            if (Shop.IsOpen) { Shop.Close(); return; }
+            if (Game.Fishing.State != FishingState.Idle)
+            {
+                Game.Toast("낚시 중에는 상점을 이용할 수 없습니다.", ToastKind.Warn);
+                return;
+            }
+            OpenExclusive(Shop);
+        }
+
+        public void ToggleTips()
+        {
+            var d = Game.Profile.Data;
+            d.showTips = !d.showTips;
+            Game.Toast(d.showTips ? "설명을 켰습니다. (U)" : "설명을 껐습니다. (U)");
+        }
+
+        public void SaveNow()
+        {
+            Game.Save();
+            Game.Toast("저장했습니다.", ToastKind.Good);
         }
 
         void HandleKeys()
@@ -89,27 +115,20 @@ namespace Fishing.UI
                 return;
             }
 
+            // 설명 끄기/켜기는 파이팅 중에도 된다 (원작: [설명 끄기 : U])
+            if (Input.GetKeyDown(KeyCode.U)) ToggleTips();
+
             var state = Game.Fishing.State;
             if (state == FishingState.Fighting) return;
             bool idle = state == FishingState.Idle;
 
+            // 원작 단축키: 퀘스트 L, 도감 P, 살림망 Z, 상점 F12
             if (Input.GetKeyDown(KeyCode.F1)) OpenExclusive(Help);
-            if (Input.GetKeyDown(KeyCode.B)) OpenExclusive(Dex);
-            if (Input.GetKeyDown(KeyCode.Q)) OpenExclusive(Quest);
-            if (Input.GetKeyDown(KeyCode.I)) OpenExclusive(KeepNet);
-            if (Input.GetKeyDown(KeyCode.P))
-            {
-                bool near = Vector3.Distance(Game.Player.transform.position, HanRiverMap.ShopPos) < HanRiverMap.ShopRadius;
-                if (Shop.IsOpen) Shop.Close();
-                else if (!idle) Game.Toast("낚시 중에는 낚시점을 이용할 수 없습니다.", ToastKind.Warn);
-                else if (!near) Game.Toast("낚시점 근처에서 이용할 수 있습니다. (미니맵의 노란 점)", ToastKind.Warn);
-                else OpenExclusive(Shop);
-            }
-            if (Input.GetKeyDown(KeyCode.F5))
-            {
-                Game.Save();
-                Game.Toast("저장했습니다.", ToastKind.Good);
-            }
+            if (Input.GetKeyDown(KeyCode.P)) OpenExclusive(Dex);
+            if (Input.GetKeyDown(KeyCode.L)) OpenExclusive(Quest);
+            if (Input.GetKeyDown(KeyCode.Z)) OpenExclusive(KeepNet);
+            if (Input.GetKeyDown(KeyCode.F12)) OpenShop();
+            if (Input.GetKeyDown(KeyCode.F5)) SaveNow();
 
             if (idle && !BlockingPanelOpen)
                 for (int i = 0; i < 6; i++)

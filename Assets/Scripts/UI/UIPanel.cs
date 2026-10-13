@@ -13,6 +13,9 @@ namespace Fishing.UI
         protected RectTransform Body;
         protected Text Title;
 
+        /// <summary>BuildFrame 대신 전체 화면 등 직접 만든 루트를 쓸 때.</summary>
+        protected void SetRoot(GameObject root) => Root = root;
+
         protected void BuildFrame(Transform canvas, string name, string title, Vector2 size, bool closable = true)
         {
             var dim = UIFactory.Panel(canvas, name, new Color(0, 0, 0, 0.35f));

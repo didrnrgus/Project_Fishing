@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Fishing.Core;
 using Fishing.Data;
 using Fishing.World;
@@ -8,14 +9,30 @@ namespace Fishing.Angling
 {
     public enum FishingState { Idle, Charging, Casting, Waiting, Bite, Fighting, Result }
 
+    /// <summary>챔질 판정. 원작처럼 찌가 물에 많이 잠겼을 때 흔들수록 좋다.</summary>
+    public enum HookGrade { None, Bad, SoSo, Good, Great, Perfect }
+
     /// <summary>
-    /// 낚시 한 번의 흐름을 관리한다.
-    /// Idle → (좌클릭 누르고 있기) Charging → (떼기) Casting → Waiting → Bite → (좌클릭 챔질) Fighting → Result
+    /// 낚시 한 번의 흐름 (원작 조작을 따른다).
+    ///  캐스팅: 좌클릭을 누르고 마우스를 당긴 다음, 빠르게 밀면서 버튼을 놓는다. 미는 속도가 비거리.
+    ///  챔질:   좌클릭을 누른 채 마우스를 좌우로 흔든다. 찌가 완전히 잠겼을 때 흔들면 PERFECT.
+    ///  파이팅: 좌클릭 감기 / 우클릭 풀기 / 마우스 좌우 낚싯대 방향·카운터
+    ///  랜딩:   랜딩 찬스가 뜨면 Space 또는 좌클릭 연타.
     /// </summary>
     public class FishingController : MonoBehaviour
     {
+        // 캐스팅 제스처
+        const float PullFull = 10f;     // 이만큼 당기면 최대 위력 (Mouse Y 축 단위, 약 100px)
+        const float PushFull = 32f;     // 최근 0.15초 동안 이만큼 밀면 최대 비거리 (약 320px)
+        const float PushWindow = 0.15f;
+        // 챔질 제스처
+        const float ShakeThreshold = 14f;
+        const float SinkTime = 1.1f;    // 찌가 완전히 잠기기까지
+        const float SunkHold = 0.6f;    // 완전히 잠긴 뒤 고기가 뱉기까지
+
         public FishingState State { get; private set; }
-        public float Charge { get; private set; }
+        public float CastPower { get; private set; }
+        public float PullBack { get; private set; }
         public float CastDistance { get; private set; }
         public bool CastTargetIsWater { get; private set; }
         public FishFight Fight { get; private set; }
@@ -23,32 +40,45 @@ namespace Fishing.Angling
         public bool BigBite { get; private set; }
         public string CastCellLabel { get; private set; } = "";
         public Vector3 BobberPosition => _bobber != null ? _bobber.Position : Vector3.zero;
+        /// <summary>찌가 잠긴 정도 0~1 (챔질 게이지 표시용).</summary>
+        public float BobberSink => _bobber != null ? _bobber.SinkAmount : 0f;
+        public HookGrade LastGrade { get; private set; }
+        public float LastGradeAt { get; private set; } = -10f;
 
         /// <summary>개발용: 파이팅을 자동으로 진행한다 (스크린샷/밸런스 확인).</summary>
         public bool Autoplay;
+        /// <summary>자동 조작이 카운터 찬스에서 카운터를 시도할 확률(프레임당).</summary>
+        public float AutoplayCounterChance = 0.08f;
 
         public event System.Action FightStarted;
         public event System.Action<FightOutcome> FightEnded;
+        /// <summary>찌를 던진 순간. 인자는 비거리(m).</summary>
+        public event System.Action<float> Casted;
 
         Bobber _bobber;
         FightRodView _rodView;
         LineRenderer _line;
+        LineRenderer _aimArc;
         GameObject _marker;
         Renderer _markerRenderer;
+        GameObject _playerRing;
 
         Vector3 _castTarget;
         Vector3 _castDir;
         BiteContext _ctx;
         string _cellName;
-        float _chargeT;
+        readonly List<(float t, float dy)> _pushSamples = new List<(float, float)>();
         float _waitTimer;
         float _nextNibbleAt;
         int _nibblesLeft;
         bool _nibbleActive;
         float _nibbleWindowEnd;
         float _biteTimer;
-        float _biteWindow;
+        float _shake;
+        bool _shakeSpent;
         float _reelClickTimer;
+        float _damagePopTimer;
+        float _autoTapTimer;
         bool _cursorWasLocked;
 
         void Start()
@@ -63,10 +93,30 @@ namespace Fishing.Angling
             _line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             _line.enabled = false;
 
+            // 원작의 하늘색 캐스팅 궤적 리본
+            _aimArc = new GameObject("AimArc").AddComponent<LineRenderer>();
+            _aimArc.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            _aimArc.alignment = LineAlignment.TransformZ;
+            _aimArc.positionCount = 16;
+            _aimArc.widthCurve = new AnimationCurve(new Keyframe(0f, 0.15f), new Keyframe(0.85f, 0.45f), new Keyframe(1f, 0.05f));
+            _aimArc.sharedMaterial = Mats.Particle(Color.white);
+            _aimArc.colorGradient = new Gradient
+            {
+                colorKeys = new[] { new GradientColorKey(new Color(0.2f, 0.85f, 1f), 0f), new GradientColorKey(new Color(0.4f, 0.95f, 1f), 1f) },
+                alphaKeys = new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0.9f, 0.7f), new GradientAlphaKey(1f, 1f) }
+            };
+            _aimArc.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            _aimArc.enabled = false;
+
             _marker = Mats.Prim(PrimitiveType.Cylinder, "CastMarker", null, Vector3.zero, new Vector3(1.2f, 0.01f, 1.2f),
                 Mats.Transparent(new Color(0.3f, 1f, 0.7f, 0.45f), 0.5f, shared: false), collider: false);
             _markerRenderer = _marker.GetComponent<Renderer>();
             _marker.SetActive(false);
+
+            _playerRing = Mats.Prim(PrimitiveType.Cylinder, "PlayerRing", null, Vector3.zero, new Vector3(2.2f, 0.005f, 2.2f),
+                Mats.NewRipple(), collider: false);
+            _playerRing.GetComponent<Renderer>().sharedMaterial.SetColor("_TintColor", new Color(0.3f, 0.9f, 1f, 0.6f));
+            _playerRing.SetActive(false);
         }
 
         bool PointerOverUI => EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
@@ -86,7 +136,7 @@ namespace Fishing.Angling
             UpdateLine();
         }
 
-        // ---------- Idle / Charging / Casting ----------
+        // ---------- Idle / Charging(캐스팅 제스처) / Casting ----------
 
         void UpdateIdle()
         {
@@ -98,54 +148,108 @@ namespace Fishing.Angling
             var p = Game.Profile;
             if (p.Count(p.Bait.Id) <= 0)
             {
-                Game.Toast($"{p.Bait.Name}이(가) 없습니다. 숫자키로 다른 미끼를 고르거나 낚시점(P)에서 사세요.", ToastKind.Warn);
+                Game.Toast($"{p.Bait.Name}이(가) 없습니다. 숫자키로 다른 미끼를 고르거나 상점(F12)에서 사세요.", ToastKind.Warn);
                 return;
             }
             if (p.Data.stamina <= 0f)
             {
-                Game.Toast("체력이 바닥났습니다. 살림망(I)에서 요리를 하거나 김밥을 드세요.", ToastKind.Warn);
+                Game.Toast("체력이 바닥났습니다. 살림망(Z)에서 요리를 하거나 김밥을 드세요.", ToastKind.Warn);
                 return;
             }
 
             State = FishingState.Charging;
-            _chargeT = 0f;
+            PullBack = 0f;
+            CastPower = 0f;
+            _pushSamples.Clear();
             Game.Player.MovementLocked = true;
             Game.Player.FaceYaw(Game.CameraRig.Yaw);
             _marker.SetActive(true);
+            _aimArc.enabled = true;
+            _playerRing.SetActive(true);
         }
 
         void UpdateCharging()
         {
-            _chargeT += Time.deltaTime;
-            Charge = Mathf.PingPong(_chargeT / 0.9f, 1f);
-            Game.Player.RodPitch = Mathf.Lerp(60f, 95f, Charge);
+            float dy = Input.GetAxis("Mouse Y");
+            float now = Time.time;
+            // 아래로 당긴 양(뒤로 젖히기)을 모으고, 위로 미는 순간 속도를 잰다
+            if (dy < 0f && PushSum(now) <= 1f) PullBack += -dy;
+            _pushSamples.Add((now, Mathf.Max(0f, dy)));
+            _pushSamples.RemoveAll(s => now - s.t > PushWindow);
+
+            float pullFactor = Mathf.Lerp(0.55f, 1f, Mathf.Clamp01(PullBack / PullFull));
+            CastPower = Mathf.Clamp01(PushSum(now) / PushFull) * pullFactor;
+
             Game.Player.FaceYaw(Game.CameraRig.Yaw);
+            Game.Player.RodPitch = Mathf.Lerp(60f, 110f, Mathf.Clamp01(PullBack / PullFull)) - CastPower * 80f;
 
             _castDir = Game.Player.Model.forward;
             var rod = Game.Profile.Rod;
-            CastDistance = Mathf.Lerp(4f, rod.CastRange, Charge);
-            _castTarget = Game.Player.transform.position + _castDir * CastDistance;
-            _castTarget.y = HanRiverMap.WaterY + 0.01f;
-            CastTargetIsWater = HanRiverMap.IsWater(_castTarget);
-            _marker.transform.position = _castTarget;
-            var c = CastTargetIsWater ? new Color(0.3f, 1f, 0.7f, 0.45f) : new Color(1f, 0.3f, 0.3f, 0.45f);
-            _markerRenderer.material.color = c;
+            // 미리보기: 당긴 만큼 낼 수 있는 최대 비거리를 보여준다
+            float preview = Mathf.Max(CastPower, pullFactor * Mathf.Clamp01(PullBack / PullFull));
+            CastDistance = Mathf.Lerp(4f, rod.CastRange, preview);
+            UpdateAim(CastDistance);
 
             if (Input.GetMouseButtonUp(0) || UiBlocking)
             {
-                _marker.SetActive(false);
+                HideAim();
                 if (UiBlocking) { ToIdle(); return; }
-                if (!CastTargetIsWater)
+
+                CastDistance = Mathf.Lerp(4f, rod.CastRange, CastPower);
+                _castTarget = Game.Player.transform.position + _castDir * CastDistance;
+                _castTarget.y = HanRiverMap.WaterY + 0.01f;
+                if (!HanRiverMap.IsWater(_castTarget))
                 {
-                    Game.Toast("물 위로 던져야 합니다.", ToastKind.Warn);
+                    Game.Toast(CastPower < 0.05f
+                        ? "왼쪽 버튼을 누르고 당긴 다음, 빠르게 밀면서 놓으세요."
+                        : "물 위로 던져야 합니다.", ToastKind.Warn);
                     ToIdle();
                     return;
                 }
                 Game.Player.RodPitch = 20f;
                 _bobber.Launch(Game.Player.RodTip.position, _castTarget);
                 Game.Sound.Whoosh();
+                Casted?.Invoke(CastDistance);
                 State = FishingState.Casting;
             }
+        }
+
+        float PushSum(float now)
+        {
+            float sum = 0f;
+            foreach (var s in _pushSamples)
+                if (now - s.t <= PushWindow) sum += s.dy;
+            return sum;
+        }
+
+        void UpdateAim(float distance)
+        {
+            var origin = Game.Player.transform.position;
+            var target = origin + _castDir * distance;
+            target.y = HanRiverMap.WaterY + 0.03f;
+            CastTargetIsWater = HanRiverMap.IsWater(target);
+
+            _marker.transform.position = target;
+            _markerRenderer.material.color = CastTargetIsWater ? new Color(0.3f, 1f, 0.9f, 0.45f) : new Color(1f, 0.3f, 0.3f, 0.45f);
+            _playerRing.transform.position = origin + Vector3.up * 0.03f;
+
+            var right = Vector3.Cross(Vector3.up, _castDir);
+            var start = origin + _castDir * 1.2f;
+            start.y = Mathf.Max(origin.y, HanRiverMap.WaterY) + 0.05f;
+            for (int i = 0; i < _aimArc.positionCount; i++)
+            {
+                float t = i / (float)(_aimArc.positionCount - 1);
+                var p = Vector3.Lerp(start, target, t) + right * Mathf.Sin(t * Mathf.PI) * distance * 0.06f;
+                p.y = Mathf.Lerp(start.y, target.y, t);
+                _aimArc.SetPosition(i, p);
+            }
+        }
+
+        void HideAim()
+        {
+            _marker.SetActive(false);
+            _aimArc.enabled = false;
+            _playerRing.SetActive(false);
         }
 
         void UpdateCasting()
@@ -155,11 +259,13 @@ namespace Fishing.Angling
             BeginWait(1f);
         }
 
-        // ---------- Waiting / Bite ----------
+        // ---------- Waiting / Bite (챔질 제스처) ----------
 
         void BeginWait(float slowdown)
         {
             HanRiverMap.TryCell(_bobber.Position, out int col, out int row);
+            col = Mathf.Clamp(col, 0, HanRiverMap.Cols - 1);
+            row = Mathf.Clamp(row, 0, HanRiverMap.Rows - 1);
             _cellName = HanRiverMap.CellName(col, row);
             _ctx = new BiteContext
             {
@@ -177,11 +283,31 @@ namespace Fishing.Angling
             _nibblesLeft = PendingBite.Species.Aggression > 0.75f ? Random.Range(0, 2) : Random.Range(0, 4);
             _nextNibbleAt = _waitTimer * Random.Range(0.3f, 0.7f);
             _nibbleActive = false;
+            _shake = 0f;
+            _shakeSpent = Input.GetMouseButton(0);
             _bobber.ResetFloat();
             State = FishingState.Waiting;
         }
 
         bool WantsRetrieve => Input.GetKeyDown(KeyCode.R) || Game.Player.MovedThisFrame;
+
+        /// <summary>좌클릭을 누른 채 좌우로 흔들었는지. 한 번 판정되면 버튼을 뗄 때까지 다시 판정하지 않는다.</summary>
+        bool DetectShake()
+        {
+            if (UiBlocking) return false;
+            if (!Input.GetMouseButton(0))
+            {
+                _shakeSpent = false;
+                _shake = 0f;
+                return false;
+            }
+            if (_shakeSpent) return false;
+            _shake = _shake * Mathf.Exp(-6f * Time.deltaTime) + Mathf.Abs(Input.GetAxis("Mouse X"));
+            if (_shake < ShakeThreshold) return false;
+            _shakeSpent = true;
+            _shake = 0f;
+            return true;
+        }
 
         void UpdateWaiting()
         {
@@ -203,19 +329,18 @@ namespace Fishing.Angling
             if (_waitTimer <= 0f && _nibblesLeft <= 0)
             {
                 State = FishingState.Bite;
-                _biteWindow = 0.9f + 0.35f * Game.Profile.Rod.Flex;
                 _biteTimer = 0f;
                 BigBite = PendingBite.IsTrophy || PendingBite.Species.Rarity >= 4;
-                _bobber.Sink();
                 Game.Sound.Plop();
                 if (BigBite) Game.Sound.Heartbeat();
                 return;
             }
 
-            if (!UiBlocking && !PointerOverUI && Input.GetMouseButtonDown(0))
+            if (DetectShake())
             {
-                // 깔짝일 때 챔질하면 헛챔질
+                // 예신(깔짝)에 속아 챔질하면 헛챔질
                 if (Random.value < 0.5f) Game.Profile.ConsumeItem(Game.Profile.Bait.Id);
+                ShowGrade(HookGrade.Bad);
                 Game.Toast(_nibbleActive ? "헛챔질! 예신에 속았다..." : "헛챔질! 고기가 놀라 달아났다.", ToastKind.Warn);
                 Game.Player.RodPitch = 60f;
                 BeginWait(1.3f);
@@ -227,20 +352,47 @@ namespace Fishing.Angling
             if (WantsRetrieve) { Retrieve("찌를 회수했습니다."); return; }
 
             _biteTimer += Time.deltaTime;
-            if (Autoplay || (!UiBlocking && Input.GetMouseButtonDown(0)))
+            float sink = Mathf.Clamp01(_biteTimer / SinkTime);
+            _bobber.SetSink(sink);
+
+            float shown = _bobber.SinkAmount; // 눈에 보이는 찌 위치로 판정해야 공정하다
+            bool shook = Autoplay ? shown >= 0.97f : DetectShake();
+            if (shook)
             {
-                float quality = 1f - Mathf.Clamp01(_biteTimer / _biteWindow) * 0.6f;
+                var grade = GradeFor(shown);
+                ShowGrade(grade);
+                if (grade == HookGrade.Bad)
+                {
+                    if (Random.value < 0.5f) Game.Profile.ConsumeItem(Game.Profile.Bait.Id);
+                    Game.Toast("BAD! 너무 일찍 챔질했다. 고기가 달아났다.", ToastKind.Warn);
+                    Game.Player.RodPitch = 60f;
+                    BeginWait(1.3f);
+                    return;
+                }
                 Game.Profile.ConsumeItem(Game.Profile.Bait.Id);
-                Game.Toast(quality > 0.85f ? "완벽한 챔질!" : "챔질 성공!", ToastKind.Good);
-                StartFight(PendingBite, Vector3.Distance(Game.Player.transform.position, _bobber.Position), quality);
+                float quality = grade switch { HookGrade.SoSo => 0.25f, HookGrade.Good => 0.5f, HookGrade.Great => 0.75f, _ => 1f };
+                StartFight(PendingBite, Vector3.Distance(Game.Player.transform.position, _bobber.Position), quality,
+                    grade == HookGrade.Perfect ? 1 : 0);
                 return;
             }
-            if (_biteTimer > _biteWindow)
+            if (_biteTimer > SinkTime + SunkHold)
             {
                 Game.Profile.ConsumeItem(Game.Profile.Bait.Id);
                 Game.Toast("늦었다! 미끼만 따먹혔다. 다시 던지세요.", ToastKind.Warn);
                 ToIdle();
             }
+        }
+
+        static HookGrade GradeFor(float sink) =>
+            sink < 0.2f ? HookGrade.Bad :
+            sink < 0.45f ? HookGrade.SoSo :
+            sink < 0.7f ? HookGrade.Good :
+            sink < 0.97f ? HookGrade.Great : HookGrade.Perfect;
+
+        void ShowGrade(HookGrade grade)
+        {
+            LastGrade = grade;
+            LastGradeAt = Time.time;
         }
 
         void Retrieve(string message)
@@ -252,28 +404,30 @@ namespace Fishing.Angling
         void ToIdle()
         {
             State = FishingState.Idle;
-            Charge = 0f;
+            CastPower = 0f;
             BigBite = false;
             _bobber.Hide();
-            _marker.SetActive(false);
+            HideAim();
             Game.Player.MovementLocked = false;
             Game.Player.RodPitch = 35f;
         }
 
         // ---------- Fighting ----------
 
-        public void StartFight(BiteResult bite, float distance, float hookQuality)
+        public void StartFight(BiteResult bite, float distance, float hookQuality, int startCombo = 0)
         {
             var p = Game.Profile;
             PendingBite = bite;
             if (_castDir == Vector3.zero) _castDir = Game.Player.Model.forward;
-            Fight = new FishFight(bite.Species, bite.Length, Mathf.Max(4f, distance), hookQuality, p.Rod, p.Reel, p.Line);
+            Fight = new FishFight(bite.Species, bite.Length, Mathf.Max(6f, distance), hookQuality, p.Rod, p.Reel, p.Line, startCombo);
             Fight.Countered += OnCounter;
             Fight.Burst += () => Game.Sound.Splash(1f);
+            Fight.EscapeRun += OnEscapeRun;
 
             State = FishingState.Fighting;
             _bobber.Hide();
             _line.enabled = false;
+            _damagePopTimer = 0f;
             Game.Player.MovementLocked = true;
             Game.Player.SetVisible(false);
             Game.CameraRig.EnterFight(Game.Player.EyePos, _castDir);
@@ -305,45 +459,116 @@ namespace Fishing.Angling
             Game.Player.MovementLocked = true;
             Game.Player.RodPitch = 20f;
             _bobber.Launch(Game.Player.RodTip.position, _castTarget);
+            Casted?.Invoke(distance);
             State = FishingState.Casting;
+        }
+
+        /// <summary>개발/테스트용: 캐스팅 제스처 화면을 보여주기 위해 조준 상태로 만든다.</summary>
+        public void DebugAim(float power, float pullBack)
+        {
+            if (State != FishingState.Idle) ToIdle();
+            State = FishingState.Charging;
+            _castDir = Game.Player.Model.forward;
+            CastPower = power;
+            PullBack = pullBack;
+            CastDistance = Mathf.Lerp(4f, Game.Profile.Rod.CastRange, power);
+            _marker.SetActive(true);
+            _aimArc.enabled = true;
+            _playerRing.SetActive(true);
+            UpdateAim(CastDistance);
+            enabled = false; // 다음 Update에서 마우스 입력으로 덮어쓰지 않게 잠시 멈춘다
+        }
+
+        public void DebugResume() => enabled = true;
+
+        /// <summary>개발/테스트용: 대기 중이면 바로 본신이 오게 한다. 어종을 지정할 수 있다.</summary>
+        public void DebugForceBite(string speciesId = null, float length = 0f)
+        {
+            if (State != FishingState.Waiting) return;
+            _waitTimer = 0f;
+            _nibblesLeft = 0;
+            if (speciesId != null) PendingBite = new BiteResult { Species = FishDatabase.Get(speciesId), Length = length };
         }
 
         void OnCounter()
         {
             Game.Sound.Counter();
             Game.CameraRig.Shake(1.2f);
-            Effects.Splash(_rodView.FishWorldPos(Fight), 30, 1.6f);
+            var pos = _rodView.FishWorldPos(Fight);
+            Effects.Splash(pos, 30, 1.6f);
             Game.UI.Fight.ShowCounter(Fight.Combo);
+            Game.UI.Fight.PopDamage(pos, Fight.LastCounterDamage, true);
+        }
+
+        void OnEscapeRun()
+        {
+            Game.Sound.Splash(1.2f);
+            Effects.Splash(_rodView.FishWorldPos(Fight), 24, 1.4f);
+            Game.UI.Fight.ShowEscape();
         }
 
         void UpdateFighting()
         {
             var f = Fight;
-            var input = Autoplay ? FightBot.Input(f) : new FightInput
-            {
-                Reeling = Input.GetMouseButton(0),
-                Releasing = Input.GetMouseButton(1),
-                MouseDX = Input.GetAxis("Mouse X"),
-            };
-
             var p = Game.Profile;
-            f.Tick(Time.deltaTime, input, p.StaminaFactor, p.DurabilityFactor);
+
+            if (f.Landing)
+            {
+                // 랜딩 찬스: Space 또는 좌클릭 연타
+                bool tap = Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0);
+                if (Autoplay)
+                {
+                    _autoTapTimer -= Time.deltaTime;
+                    tap = _autoTapTimer <= 0f;
+                    if (tap) _autoTapTimer = 1f / FightBot.LandingTapsPerSecond;
+                }
+                if (tap)
+                {
+                    f.LandingTap(p.StaminaFactor);
+                    Game.Sound.ReelClick(0.8f);
+                }
+                f.Tick(Time.deltaTime, default, p.StaminaFactor, p.DurabilityFactor);
+            }
+            else
+            {
+                var input = Autoplay ? FightBot.Input(f, AutoplayCounterChance) : new FightInput
+                {
+                    Reeling = Input.GetMouseButton(0),
+                    Releasing = Input.GetMouseButton(1),
+                    MouseDX = Input.GetAxis("Mouse X"),
+                };
+                f.Tick(Time.deltaTime, input, p.StaminaFactor, p.DurabilityFactor);
+
+                if (input.Reeling)
+                {
+                    _reelClickTimer -= Time.deltaTime;
+                    if (_reelClickTimer <= 0f)
+                    {
+                        _reelClickTimer = 0.07f;
+                        Game.Sound.ReelClick(f.Tension);
+                    }
+                }
+
+                if (f.LandingChance && f.StartLanding())
+                {
+                    Game.Sound.Heartbeat();
+                    Game.UI.Fight.ShowLandingChance();
+                }
+            }
 
             // 체력 소모: 하이텐션일수록 많이 지친다
             float drain = 0.35f + (f.IsHighTension ? 1.8f * f.Tension : 0f);
             p.ChangeStamina(-drain * Time.deltaTime);
 
-            if (input.Reeling)
+            // 원작처럼 물고기 위치에 데미지 숫자를 띄운다
+            _damagePopTimer -= Time.deltaTime;
+            if (_damagePopTimer <= 0f)
             {
-                _reelClickTimer -= Time.deltaTime;
-                if (_reelClickTimer <= 0f)
-                {
-                    _reelClickTimer = 0.07f;
-                    Game.Sound.ReelClick(f.Tension);
-                }
+                _damagePopTimer = 0.55f;
+                float dmg = f.TakeDamagePool();
+                if (dmg >= 0.5f) Game.UI.Fight.PopDamage(_rodView.FishWorldPos(f), dmg, false);
             }
 
-            if ((Autoplay || Input.GetKeyDown(KeyCode.Space)) && f.CanLand) f.TryLand();
             if (f.Outcome != FightOutcome.None) EndFight(f.Outcome);
         }
 
@@ -353,6 +578,7 @@ namespace Fishing.Angling
             var p = Game.Profile;
             Cursor.lockState = _cursorWasLocked ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible = true;
+            var fishPos = _rodView.FishWorldPos(f);
             _rodView.Hide();
             Game.CameraRig.ExitFight();
             Game.Player.SetVisible(true);
@@ -360,7 +586,7 @@ namespace Fishing.Angling
 
             float wear = Mathf.Lerp(0.5f, 3f, f.Length / 100f) * (f.Tension > 0.9f ? 1.5f : 1f);
             p.Data.rodDurability = Mathf.Max(0f, p.Data.rodDurability - wear);
-            if (p.Data.rodDurability <= 0f) Game.Toast("낚싯대가 망가졌습니다! 낚시점에서 수리하세요.", ToastKind.Warn);
+            if (p.Data.rodDurability <= 0f) Game.Toast("낚싯대가 망가졌습니다! 상점에서 수리하세요.", ToastKind.Warn);
 
             FightEnded?.Invoke(outcome);
 
@@ -381,6 +607,7 @@ namespace Fishing.Angling
             }
 
             Game.Sound.Success();
+            Effects.Splash(fishPos, 40, 1.8f);
             var species = f.Species;
             var caught = new CaughtFish
             {
@@ -390,6 +617,9 @@ namespace Fishing.Angling
                 day = Game.Clock.Day,
                 zone = _cellName,
             };
+            var previous = p.Dex(species.Id);
+            float prevBest = previous?.maxLength ?? 0f;
+            int prevBestDay = previous?.firstDay ?? 0;
             bool record = p.RecordDex(species, caught.length, caught.weight, caught.day);
             int exp = Mathf.RoundToInt(species.Exp * Mathf.Sqrt(f.Length / species.MinLen) * (species.IsTrophy(f.Length) ? 2f : 1f));
             p.Data.totalCatches++;
@@ -398,12 +628,12 @@ namespace Fishing.Angling
 
             State = FishingState.Result;
             Fight = null;
-            Game.UI.Result.Show(caught, exp, record, keep =>
+            Game.UI.Result.Show(caught, exp, record, prevBest, prevBestDay, keep =>
             {
                 if (keep && !species.IsJunk)
                 {
                     if (p.KeepNetFull)
-                        Game.Toast("살림망이 가득 찼습니다. 낚시점에서 판매하거나 요리하세요.", ToastKind.Warn);
+                        Game.Toast("살림망이 가득 찼습니다. 상점에서 판매하거나 요리하세요.", ToastKind.Warn);
                     else
                         p.Data.keepNet.Add(caught);
                 }

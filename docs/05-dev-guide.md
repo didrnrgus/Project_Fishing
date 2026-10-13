@@ -42,14 +42,20 @@ Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.ex
 | 파일 | 장면 |
 |---|---|
 | 01_field_morning | 시작 위치 (새벽) |
-| 02_waiting_sunset | 낚시 데크 끝에서 찌를 던지고 기다림 (해질녘) |
-| 03_fight | 82cm 잉어 파이팅 (자동 조작) |
-| 04_counter | 첫 카운터 순간 |
-| 05_result | 랜딩 결과 창 |
-| 06_dex ~ 09_shop | 도감, 살림망, 퀘스트, 낚시점 (샘플 데이터) |
-| 10_night_rain | 비 오는 밤, 동작대교 아래 |
+| 02_casting | 밤의 낚시 데크, 당겼다 미는 캐스팅 (비거리 숫자, 궤적) |
+| 03_waiting | 찌를 던지고 기다림 (찌 클로즈업 게이지) |
+| 04_bite_gauge | 본신: 찌가 잠기고 빨간 `!`, 두근두근 |
+| 05_hook_perfect | 자동 조작으로 PERFECT 챔질 → 파이팅 시작 |
+| 06_fight | 82cm 잉어 파이팅 |
+| 07_counter_chance | 카운터 찬스 (속도선, 파란 화살표) |
+| 08_counter | 카운터 성공 |
+| 09_landing | 랜딩 찬스 다이얼 |
+| 10_result | RESULT 화면 |
+| 11_dex ~ 14_shop | 도감, 살림망, 퀘스트, 상점 (샘플 데이터) |
+| 16_help | 도움말 |
+| 15_night_rain | 비 오는 밤, 동작대교 아래 |
 
-로그(`Logs/player.log`)에 파이팅 결과가 남는다. 예: `[Dev] 파이팅 종료: 상태=Result, 경과=20.5s, HP=59/382, 결과=Landed`
+로그(`Logs/player.log`)에 파이팅 결과가 남는다. 예: `[Dev] 파이팅 종료: 어종=잉어 82.0cm, 상태=Result, 경과=21.7s, HP=54/382, 결과=Landed`
 
 UI나 연출을 바꾼 뒤 `build.sh` → `autoshot.sh`로 실제 화면을 확인하는 흐름을 권장한다.
 
@@ -62,6 +68,7 @@ UI나 연출을 바꾼 뒤 `build.sh` → `autoshot.sh`로 실제 화면을 확�
 ## 디버깅 팁
 
 - 파이팅만 바로 시험하려면 `Game.Fishing.DebugStartFight("carp", 90f, 20f)`를 호출한다 (예: 임시 키 바인딩).
+- 찌를 던진 뒤 `Game.Fishing.DebugForceBite("carp", 82f)`면 바로 본신이 온다.
 - 시간을 바꾸려면 `Game.Clock.Set(day, minutes)`, 날씨는 `Game.Weather.Force(Weather.Rain)`.
 - 시간을 빨리 돌리려면 `Game.Clock.Speed`.
 - `FishingController.Autoplay = true`면 파이팅을 봇이 대신한다.

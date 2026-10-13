@@ -73,7 +73,7 @@ namespace Fishing.Core
             if (Game.Profile.Data.totalCatches == 0 && !Game.SaveDisabled)
             {
                 Game.UI.OpenExclusive(Game.UI.Help);
-                Game.Toast("한강에 오신 걸 환영합니다! 낚시점 앞에서 시작합니다.", ToastKind.Great);
+                Game.Toast("한강에 오신 걸 환영합니다! 설명은 U, 도움말은 F1입니다.", ToastKind.Great);
             }
             if (q != null) Game.Toast($"조합 퀘스트: {q.Title} - {q.GoalText}");
             _nextAutoSave = Time.time + AutoSaveInterval;

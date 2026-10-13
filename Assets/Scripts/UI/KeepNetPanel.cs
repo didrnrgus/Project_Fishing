@@ -50,7 +50,7 @@ namespace Fishing.UI
             }
 
             var footer = rows.Next(50, 14);
-            Cell(footer, $"합계 {total:N0}골드  ·  판매는 낚시점에서", 8, 360, 18, UIFactory.TextDim);
+            Cell(footer, $"합계 {total:N0}골드  ·  판매는 상점(F12)에서", 8, 360, 18, UIFactory.TextDim);
             int kimbap = p.Count(GearDatabase.KimbapId);
             RowButton(footer, $"김밥 먹기 ({kimbap}개)", EatKimbap, 450, 250, new Color(0.25f, 0.45f, 0.25f), kimbap > 0, 19);
         }

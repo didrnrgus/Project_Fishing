@@ -39,6 +39,7 @@ namespace Fishing.World
             BuildTrees();
             BuildLamps();
             BuildCity();
+            BuildProps();
             return _root;
         }
 
@@ -244,6 +245,72 @@ namespace Fishing.World
                 light.intensity = 1.6f;
                 light.color = new Color(1f, 0.82f, 0.55f);
                 Lamps.Add(light);
+            }
+        }
+
+        /// <summary>원작 영상의 한강 소품: 계류 말뚝, 노란 부표, 드럼통 뗏목과 다른 낚시꾼, 요트, 다리 조명.</summary>
+        void BuildProps()
+        {
+            var props = new GameObject("Props").transform;
+            props.SetParent(_root, false);
+
+            var bollard = Mats.Lit(new Color(0.18f, 0.19f, 0.2f), 0.4f, 0.5f);
+            for (float x = -150f; x <= 150f; x += 14f)
+            {
+                if (Mathf.Abs(x + 6f - HanRiverMap.Pier.center.x) < 4f) continue;
+                Mats.Prim(PrimitiveType.Cylinder, "Bollard", props, new Vector3(x + 6f, HanRiverMap.LandY + 0.35f, HanRiverMap.RiverMinZ - 1.2f),
+                    new Vector3(0.45f, 0.35f, 0.45f), bollard);
+            }
+
+            var buoy = Mats.Lit(new Color(0.95f, 0.8f, 0.15f), 0.5f);
+            for (int i = 0; i < 14; i++)
+            {
+                var pos = new Vector3(R(-140f, 140f), HanRiverMap.WaterY + 0.15f, R(-35f, 20f));
+                Mats.Prim(PrimitiveType.Cylinder, "Buoy", props, pos, new Vector3(0.7f, 0.45f, 0.7f), buoy, false,
+                    Quaternion.Euler(90f, R(0f, 180f), 0f));
+            }
+
+            // 드럼통 뗏목 (C1 칸) 위의 다른 낚시꾼들
+            var raft = new GameObject("Raft").transform;
+            raft.SetParent(props, false);
+            raft.localPosition = new Vector3(-30f, HanRiverMap.WaterY, -48f);
+            raft.localRotation = Quaternion.Euler(0f, 25f, 0f);
+            var barrel = Mats.Lit(new Color(0.55f, 0.22f, 0.18f), 0.4f);
+            for (int bx = 0; bx < 4; bx++)
+            for (int bz = 0; bz < 2; bz++)
+                Mats.Prim(PrimitiveType.Cylinder, "Barrel", raft, new Vector3(-2.4f + bx * 1.6f, 0.2f, -0.8f + bz * 1.6f),
+                    new Vector3(1.1f, 0.75f, 1.1f), barrel, false, Quaternion.Euler(90f, 0f, 0f));
+            Mats.Prim(PrimitiveType.Cube, "Deck", raft, new Vector3(0f, 0.75f, 0f), new Vector3(6.4f, 0.12f, 3.4f), Mats.Lit(Wood), false);
+            var shirts = new[] { new Color(0.85f, 0.3f, 0.4f), new Color(0.3f, 0.45f, 0.8f) };
+            for (int i = 0; i < 2; i++)
+            {
+                var npc = new Vector3(-1.4f + i * 2.6f, 0.81f, 0.6f);
+                Mats.Prim(PrimitiveType.Capsule, "Angler", raft, npc + Vector3.up * 0.8f, new Vector3(0.55f, 0.8f, 0.5f), Mats.Lit(shirts[i]), false);
+                Mats.Prim(PrimitiveType.Sphere, "Head", raft, npc + Vector3.up * 1.75f, Vector3.one * 0.4f, Mats.Lit(new Color(0.98f, 0.82f, 0.7f)), false);
+                Mats.Prim(PrimitiveType.Cylinder, "Rod", raft, npc + new Vector3(0.3f, 1.6f, 1.2f), new Vector3(0.03f, 1.4f, 0.03f),
+                    Mats.Lit(new Color(0.75f, 0.15f, 0.2f)), false, Quaternion.Euler(55f, 0f, 0f));
+            }
+
+            // 요트
+            var hull = Mats.Lit(new Color(0.92f, 0.92f, 0.94f), 0.6f);
+            var sail = Mats.Lit(new Color(0.85f, 0.88f, 0.9f));
+            for (int i = 0; i < 3; i++)
+            {
+                var boat = new GameObject("Yacht").transform;
+                boat.SetParent(props, false);
+                boat.localPosition = new Vector3(-120f + i * 95f + R(-10f, 10f), HanRiverMap.WaterY, R(30f, 52f));
+                boat.localRotation = Quaternion.Euler(0f, R(0f, 360f), 0f);
+                Mats.Prim(PrimitiveType.Capsule, "Hull", boat, new Vector3(0f, 0.3f, 0f), new Vector3(2.4f, 4.5f, 1.2f), hull, false, Quaternion.Euler(90f, 0f, 0f));
+                Mats.Prim(PrimitiveType.Cylinder, "Mast", boat, new Vector3(0f, 6f, 0.5f), new Vector3(0.15f, 6f, 0.15f), hull, false);
+                Mats.Prim(PrimitiveType.Cube, "Sail", boat, new Vector3(0f, 5.5f, -1.4f), new Vector3(0.05f, 9f, 3.6f), sail, false, Quaternion.Euler(-12f, 0f, 0f));
+            }
+
+            // 다리 조명 (밤에 강물에 비친다)
+            var bridgeLight = Mats.Emissive(new Color(1f, 0.85f, 0.55f), 2.5f);
+            for (float z = -110f; z <= 110f; z += 10f)
+            {
+                Mats.Prim(PrimitiveType.Sphere, "BridgeLight", props, new Vector3(HanRiverMap.BridgeX - 8.8f, 13.9f, z), Vector3.one * 0.5f, bridgeLight, false);
+                Mats.Prim(PrimitiveType.Sphere, "BridgeLight", props, new Vector3(HanRiverMap.BridgeX + 8.8f, 13.9f, z), Vector3.one * 0.5f, bridgeLight, false);
             }
         }
 

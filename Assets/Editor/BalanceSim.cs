@@ -72,6 +72,7 @@ namespace Fishing.EditorTools
                 // 감기/풀기 판단은 ReactionTime마다만 바뀌고(반응 지연), 낚싯대 조준은 매 프레임 따라간다.
                 var held = default(FightInput);
                 float nextDecision = 0f;
+                float nextTap = 0f;
                 while (fight.Outcome == FightOutcome.None && fight.Elapsed < TimeLimit)
                 {
                     var frame = FightBot.Input(fight, 0f);
@@ -84,7 +85,12 @@ namespace Fishing.EditorTools
                     frame.Reeling = held.Reeling;
                     frame.Releasing = held.Releasing;
                     fight.Tick(Dt, frame);
-                    if (fight.CanLand) fight.TryLand();
+                    if (fight.LandingChance) fight.StartLanding();
+                    if (fight.Landing && fight.Elapsed >= nextTap)
+                    {
+                        fight.LandingTap();
+                        nextTap = fight.Elapsed + 1f / FightBot.LandingTapsPerSecond;
+                    }
                 }
                 switch (fight.Outcome)
                 {

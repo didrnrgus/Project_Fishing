@@ -9,8 +9,12 @@ namespace Fishing.Angling
     {
         enum State { Hidden, Flying, Floating }
 
+        const float MaxDip = 0.5f;
+
         public bool Landed => _state == State.Floating;
         public Vector3 Position => transform.position;
+        /// <summary>찌가 잠긴 정도 0~1. 예신은 0.15 정도, 본신은 1까지.</summary>
+        public float SinkAmount => _state == State.Floating ? Mathf.Clamp01(_dip / MaxDip) : 0f;
 
         State _state = State.Hidden;
         Vector3 _from, _to;
@@ -62,13 +66,16 @@ namespace Fishing.Angling
             Effects.Ripple(transform.position, 0.8f, 0.8f);
         }
 
-        /// <summary>본 입질: 찌가 쭉 빨려 들어간다.</summary>
-        public void Sink()
+        /// <summary>본 입질: 찌가 점점 빨려 들어간다. progress 0~1.</summary>
+        public void SetSink(float progress)
         {
-            _sunk = true;
-            _dipTarget = 0.5f;
-            Effects.Ripple(transform.position, 1.4f, 1f);
-            Effects.Splash(transform.position, 8, 0.5f);
+            if (!_sunk)
+            {
+                _sunk = true;
+                Effects.Ripple(transform.position, 1.4f, 1f);
+                Effects.Splash(transform.position, 8, 0.5f);
+            }
+            _dipTarget = MaxDip * Mathf.Clamp01(progress);
         }
 
         public void ResetFloat()
@@ -102,7 +109,7 @@ namespace Fishing.Angling
                         _nibbleTimer -= Time.deltaTime;
                         if (_nibbleTimer <= 0f && !_sunk) _dipTarget = 0f;
                     }
-                    _dip = Mathf.Lerp(_dip, _dipTarget, Time.deltaTime * (_sunk ? 6f : 18f));
+                    _dip = Mathf.Lerp(_dip, _dipTarget, Time.deltaTime * (_sunk ? 14f : 18f));
                     float bob = Mathf.Sin(Time.time * 2.1f) * 0.012f;
                     transform.position = new Vector3(_to.x, HanRiverMap.WaterY + bob - _dip, _to.z);
                     transform.rotation = Quaternion.Euler(Mathf.Sin(Time.time * 1.3f) * 4f, 0f, Mathf.Cos(Time.time * 1.1f) * 4f);

@@ -47,6 +47,7 @@ namespace Fishing.Core
         public int gold = 3000;
         public float stamina = 100f;
         public int totalCatches;
+        public bool showTips = true; // [설명 끄기 : U]
 
         public string rodId = "rod_basic";
         public string reelId = "reel_basic";

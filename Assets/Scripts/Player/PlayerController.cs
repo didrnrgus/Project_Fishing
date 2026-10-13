@@ -24,6 +24,7 @@ namespace Fishing.PlayerSystems
         public float RodPitch = 35f;
 
         CharacterController _cc;
+        Transform _nameTag;
         Transform _rodPivot;
         float _vy;
         float _currentRodPitch = 35f;
@@ -70,6 +71,21 @@ namespace Fishing.PlayerSystems
                 new Vector3(0.035f, rodLen * 0.5f, 0.035f), rodMat, false, Quaternion.Euler(90f, 0f, 0f));
             Mats.Prim(PrimitiveType.Cylinder, "Reel", _rodPivot, new Vector3(0f, -0.08f, 0.1f), new Vector3(0.12f, 0.03f, 0.12f),
                 Mats.Lit(new Color(0.2f, 0.2f, 0.22f), 0.7f, 0.6f), false, Quaternion.Euler(0f, 0f, 90f));
+
+            // 머리 위 이름표 (원작처럼 캐릭터 이름이 떠 있다)
+            var tag = new GameObject("NameTag");
+            tag.transform.SetParent(transform, false);
+            tag.transform.localPosition = new Vector3(0f, 2.45f, 0f);
+            var tm = tag.AddComponent<TextMesh>();
+            tm.text = "강태공";
+            tm.font = Fishing.UI.UIFactory.Font;
+            tm.fontSize = 48;
+            tm.characterSize = 0.045f;
+            tm.anchor = TextAnchor.MiddleCenter;
+            tm.alignment = TextAlignment.Center;
+            tm.color = Color.white;
+            tag.GetComponent<MeshRenderer>().sharedMaterial = Fishing.UI.UIFactory.Font.material;
+            _nameTag = tag.transform;
 
             RodTip = new GameObject("RodTip").transform;
             RodTip.SetParent(_rodPivot, false);
@@ -137,6 +153,9 @@ namespace Fishing.PlayerSystems
             // 걸을 때 살짝 들썩이는 모션
             float bobOffset = motion.sqrMagnitude > 1f ? Mathf.Abs(Mathf.Sin(_bob)) * 0.06f : 0f;
             Model.localPosition = new Vector3(0f, bobOffset, 0f);
+
+            if (_nameTag != null && Game.CameraRig != null)
+                _nameTag.rotation = Quaternion.LookRotation(_nameTag.position - Game.CameraRig.transform.position);
 
             _currentRodPitch = Mathf.Lerp(_currentRodPitch, RodPitch, Time.deltaTime * 10f);
             _rodPivot.localRotation = Quaternion.Euler(-_currentRodPitch, 0f, 0f);
