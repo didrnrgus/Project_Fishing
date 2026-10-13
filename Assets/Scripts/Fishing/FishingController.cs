@@ -207,6 +207,7 @@ namespace Fishing.Angling
                     return;
                 }
                 Game.Player.RodPitch = 20f;
+                Game.Player.PlayCast();
                 _bobber.Launch(Game.Player.RodTip.position, _castTarget);
                 Game.Sound.Whoosh();
                 Casted?.Invoke(CastDistance);
@@ -370,6 +371,7 @@ namespace Fishing.Angling
                     return;
                 }
                 Game.Profile.ConsumeItem(Game.Profile.Bait.Id);
+                Game.Player.PlayHook();
                 float quality = grade switch { HookGrade.SoSo => 0.25f, HookGrade.Good => 0.5f, HookGrade.Great => 0.75f, _ => 1f };
                 StartFight(PendingBite, Vector3.Distance(Game.Player.transform.position, _bobber.Position), quality,
                     grade == HookGrade.Perfect ? 1 : 0);
@@ -607,6 +609,7 @@ namespace Fishing.Angling
             }
 
             Game.Sound.Success();
+            Game.Player.PlayCheer();
             Effects.Splash(fishPos, 40, 1.8f);
             var species = f.Species;
             var caught = new CaughtFish

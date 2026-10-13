@@ -20,7 +20,7 @@ namespace Fishing.EditorTools
 
         static readonly string[] RuntimeShaders =
         {
-            "Standard", "Unlit/Color", "Skybox/Procedural", "Legacy Shaders/Particles/Alpha Blended", "UI/Default"
+            "Standard", "Unlit/Color", "Skybox/Procedural", "Legacy Shaders/Particles/Alpha Blended", "UI/Default", "Fishing/Clothed", "Fishing/Water", "Fishing/Sky"
         };
 
         [MenuItem("Fishing/Setup Project")]
@@ -67,6 +67,7 @@ namespace Fishing.EditorTools
         public static void BuildWindows()
         {
             if (!File.Exists(ScenePath)) Setup();
+            else AlwaysIncludeShaders();
             var options = new BuildPlayerOptions
             {
                 scenes = new[] { ScenePath },
