@@ -54,6 +54,8 @@ namespace Fishing.Core
         public string lineId = "line_nylon";
         public string baitId = "bait_worm";
         public float rodDurability = 100f;
+        public string boatId = "";      // 장착한 배 (없으면 빈 문자열)
+        public float boatFuel;          // 남은 연료 L
         public List<string> ownedGear = new List<string> { "rod_basic", "reel_basic", "line_nylon" };
         public List<ItemStack> items = new List<ItemStack>
         {

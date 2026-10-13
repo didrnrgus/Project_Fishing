@@ -25,6 +25,11 @@ namespace Fishing.UI
         Text _questTitle, _questGoal;
         Text _hint, _prompt;
         Text _netSlot;
+        Text _nameText;
+        // 배 계기판
+        RectTransform _boatGauges;
+        Image _speedFill, _fuelFill;
+        Text _speedText, _fuelText, _boatHint;
         readonly List<(Image bg, Text label, BaitDef bait)> _baitSlots = new List<(Image, Text, BaitDef)>();
 
         RectTransform _mapRoot;
@@ -62,6 +67,7 @@ namespace Fishing.UI
             BuildCasting();
             BuildHookGauge();
             BuildCenter();
+            BuildBoatGauges();
             _toastRoot = UIFactory.Node("Toasts", _root).At(new Vector2(0.5f, 1), new Vector2(0, -230), new Vector2(1000, 200));
             Game.Toasted += Toast;
         }
@@ -70,37 +76,47 @@ namespace Fishing.UI
 
         void BuildPlayerPanel()
         {
-            var panel = UIFactory.Panel(_root, "PlayerPanel", new Color(0.03f, 0.05f, 0.07f, 0.85f)).rectTransform
-                .At(new Vector2(0, 1), new Vector2(10, -8), new Vector2(380, 92));
-            var portrait = UIFactory.Image(panel, new Color(0.25f, 0.35f, 0.45f), null, "Portrait").rectTransform
-                .At(new Vector2(0, 1), new Vector2(6, -6), new Vector2(80, 80));
-            UIFactory.Image(portrait, new Color(0.98f, 0.82f, 0.7f), UIFactory.Circle, "Face").rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, -6), new Vector2(50, 56));
-            UIFactory.Image(portrait, new Color(0.92f, 0.85f, 0.65f), null, "Hat").rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -10), new Vector2(64, 14));
-            UIFactory.Image(portrait, new Color(0.92f, 0.85f, 0.65f), null, "HatTop").rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -2), new Vector2(34, 12));
+            var panel = UIFactory.Panel(_root, "PlayerPanel", new Color(0.03f, 0.05f, 0.07f, 0.88f)).rectTransform
+                .At(new Vector2(0, 1), new Vector2(10, -8), new Vector2(430, 122));
+            UIFactory.Image(panel, UIFactory.Accent, null, "TopLine").rectTransform.At(new Vector2(0.5f, 1), Vector2.zero, new Vector2(430, 3));
 
-            _levelText = UIFactory.Text(panel, "", 18, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
-            _levelText.rectTransform.At(new Vector2(0, 1), new Vector2(96, -6), new Vector2(280, 24));
+            // 초상화: 내 캐릭터를 비추는 카메라의 렌더 텍스처 (PortraitCamera)
+            var frame = UIFactory.Image(panel, new Color(0.55f, 0.75f, 0.8f, 0.9f), null, "PortraitFrame").rectTransform
+                .At(new Vector2(0, 1), new Vector2(8, -10), new Vector2(106, 106));
+            var portrait = UIFactory.Node("Portrait", frame).Fill(3, 3, 3, 3);
+            var raw = portrait.gameObject.AddComponent<RawImage>();
+            raw.texture = PortraitCamera.Texture;
+            raw.raycastTarget = false;
+            var lvBadge = UIFactory.Image(frame, new Color(0.05f, 0.08f, 0.1f, 0.92f), null, "LevelBadge").rectTransform
+                .At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(54, 24), new Vector2(0, 0));
+            _levelText = UIFactory.Text(lvBadge, "", 16, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            _levelText.rectTransform.Fill();
 
-            UIFactory.Text(panel, "HP", 14, new Color(0.5f, 0.85f, 1f), TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
-                .At(new Vector2(0, 1), new Vector2(96, -32), new Vector2(40, 18));
+            var look = Fishing.Characters.CharacterLook.Player;
+            _nameText = UIFactory.Text(panel, $"{look.Name}  <size=13><color=#7fd8ff>{look.Title}</color></size>", 20, UIFactory.TextMain,
+                TextAnchor.MiddleLeft, FontStyle.Bold);
+            _nameText.rectTransform.At(new Vector2(0, 1), new Vector2(126, -10), new Vector2(290, 26));
+
+            UIFactory.Text(panel, "HP", 13, new Color(0.5f, 0.85f, 1f), TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
+                .At(new Vector2(0, 1), new Vector2(126, -42), new Vector2(40, 18));
             _staminaFill = UIFactory.Bar(panel, new Color(0, 0, 0, 0.6f), new Color(0.4f, 0.8f, 1f), "HP");
-            ((RectTransform)_staminaFill.transform.parent).At(new Vector2(0, 1), new Vector2(132, -36), new Vector2(170, 10));
-            _staminaText = UIFactory.Text(panel, "", 14, UIFactory.TextMain, TextAnchor.MiddleRight);
-            _staminaText.rectTransform.At(new Vector2(0, 1), new Vector2(304, -32), new Vector2(68, 18));
+            ((RectTransform)_staminaFill.transform.parent).At(new Vector2(0, 1), new Vector2(160, -45), new Vector2(190, 12));
+            _staminaText = UIFactory.Text(panel, "", 13, UIFactory.TextMain, TextAnchor.MiddleRight);
+            _staminaText.rectTransform.At(new Vector2(0, 1), new Vector2(352, -42), new Vector2(68, 18));
 
-            UIFactory.Text(panel, "EXP", 14, new Color(0.55f, 0.95f, 0.45f), TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
-                .At(new Vector2(0, 1), new Vector2(96, -52), new Vector2(40, 18));
+            UIFactory.Text(panel, "EXP", 13, new Color(0.55f, 0.95f, 0.45f), TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
+                .At(new Vector2(0, 1), new Vector2(126, -64), new Vector2(40, 18));
             _expFill = UIFactory.Bar(panel, new Color(0, 0, 0, 0.6f), new Color(0.5f, 0.9f, 0.4f), "Exp");
-            ((RectTransform)_expFill.transform.parent).At(new Vector2(0, 1), new Vector2(132, -56), new Vector2(170, 10));
-            _expText = UIFactory.Text(panel, "", 14, UIFactory.TextMain, TextAnchor.MiddleRight);
-            _expText.rectTransform.At(new Vector2(0, 1), new Vector2(304, -52), new Vector2(68, 18));
+            ((RectTransform)_expFill.transform.parent).At(new Vector2(0, 1), new Vector2(160, -67), new Vector2(190, 12));
+            _expText = UIFactory.Text(panel, "", 13, UIFactory.TextMain, TextAnchor.MiddleRight);
+            _expText.rectTransform.At(new Vector2(0, 1), new Vector2(352, -64), new Vector2(68, 18));
 
             _goldText = UIFactory.Text(panel, "", 14, UIFactory.Gold);
-            _goldText.rectTransform.At(new Vector2(0, 1), new Vector2(96, -70), new Vector2(280, 20));
+            _goldText.rectTransform.At(new Vector2(0, 1), new Vector2(126, -90), new Vector2(290, 22));
 
             // 장착 미끼 (원작: 초상화 아래 물고기 아이콘 칸)
             var bait = UIFactory.Panel(_root, "BaitBox", new Color(0.05f, 0.12f, 0.16f, 0.9f)).rectTransform
-                .At(new Vector2(0, 1), new Vector2(16, -106), new Vector2(150, 40));
+                .At(new Vector2(0, 1), new Vector2(16, -138), new Vector2(150, 40));
             UIFactory.Image(bait, UIFactory.Accent, null, "Border").rectTransform.At(new Vector2(0, 0.5f), Vector2.zero, new Vector2(3, 40));
             _baitName = UIFactory.Text(bait, "", 15, UIFactory.TextMain);
             _baitName.rectTransform.At(new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(90, 30));
@@ -203,6 +219,7 @@ namespace Fishing.UI
                 ("U", "설명", () => Game.UI.ToggleTips()),
                 ("F1", "도움말", () => Game.UI.OpenExclusive(Game.UI.Help)),
                 ("F5", "저장", () => Game.UI.SaveNow()),
+                ("B", "배", () => Game.Boat.Toggle()),
             };
             for (int i = 0; i < menu.Length; i++)
             {
@@ -225,6 +242,55 @@ namespace Fishing.UI
             var net = UIFactory.Button(rt, "", () => Game.UI.OpenExclusive(Game.UI.KeepNet), new Color(0.1f, 0.13f, 0.16f, 1f), 14);
             ((RectTransform)net.transform).At(new Vector2(1, 0.5f), new Vector2(-8, 0), new Vector2(110, 40));
             _netSlot = net.GetComponentInChildren<Text>();
+        }
+
+        /// <summary>배 계기판 (원작: 오른쪽 아래 속도계·연료계).</summary>
+        void BuildBoatGauges()
+        {
+            _boatGauges = UIFactory.Node("BoatGauges", _root).At(new Vector2(1, 0), new Vector2(-20, 70), new Vector2(300, 170), new Vector2(1, 0));
+            (_speedFill, _speedText) = Gauge(_boatGauges, new Vector2(-220, 0), "SPEED", new Color(0.35f, 0.85f, 1f));
+            (_fuelFill, _fuelText) = Gauge(_boatGauges, new Vector2(-70, 0), "FUEL", new Color(1f, 0.75f, 0.3f));
+            _boatHint = UIFactory.Text(_boatGauges, "", 14, new Color(1, 1, 1, 0.8f), TextAnchor.MiddleRight);
+            _boatHint.rectTransform.At(new Vector2(1, 1), new Vector2(0, 26), new Vector2(560, 22), new Vector2(1, 1));
+            _boatHint.gameObject.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.8f);
+        }
+
+        static (Image fill, Text value) Gauge(RectTransform parent, Vector2 pos, string label, Color color)
+        {
+            var bg = UIFactory.Image(parent, new Color(0.03f, 0.05f, 0.07f, 0.85f), UIFactory.Circle, label + "Bg").rectTransform
+                .At(new Vector2(1, 0), pos, new Vector2(140, 140), new Vector2(0.5f, 0f));
+            var track = UIFactory.Image(bg, new Color(1, 1, 1, 0.12f), UIFactory.Ring, "Track");
+            track.rectTransform.Fill(8, 8, 8, 8);
+            var fill = UIFactory.Image(bg, color, UIFactory.Ring, "Fill");
+            fill.rectTransform.Fill(8, 8, 8, 8);
+            fill.type = Image.Type.Filled;
+            fill.fillMethod = Image.FillMethod.Radial360;
+            fill.fillOrigin = (int)Image.Origin360.Bottom;
+            fill.fillClockwise = true;
+            var value = UIFactory.Text(bg, "", 26, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            value.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 6), new Vector2(130, 34));
+            UIFactory.Text(bg, label, 12, new Color(1, 1, 1, 0.6f), TextAnchor.MiddleCenter, FontStyle.Bold).rectTransform
+                .At(new Vector2(0.5f, 0.5f), new Vector2(0, -24), new Vector2(100, 18));
+            return (fill, value);
+        }
+
+        void UpdateBoatGauges()
+        {
+            var boat = Game.Boat;
+            bool show = boat != null && boat.Riding;
+            _boatGauges.gameObject.SetActive(show);
+            if (!show) return;
+            var def = boat.Def;
+            float kmh = Mathf.Abs(boat.Speed) * 3.6f;
+            _speedFill.fillAmount = Mathf.Clamp01(Mathf.Abs(boat.Speed) / def.BoatSpeed) * 0.8f;
+            _speedText.text = $"{kmh:0}<size=13>km/h</size>";
+            float fuel = Game.Profile.Data.boatFuel;
+            _fuelFill.fillAmount = Mathf.Clamp01(fuel / def.FuelCapacity) * 0.8f;
+            _fuelFill.color = fuel < def.FuelCapacity * 0.2f ? UIFactory.Danger : new Color(1f, 0.75f, 0.3f);
+            _fuelText.text = $"{fuel:0.0}<size=13>L</size>";
+            _boatHint.text = boat.Seated
+                ? $"{def.Name}  ·  W/S 속도  ·  A/D 방향  ·  멈추면 낚시"
+                : $"{def.Name}  ·  뱃머리에서 낚시할 수 있습니다  ·  물가에서 B로 내리기";
         }
 
         public void SelectBait(int index)
@@ -361,7 +427,7 @@ namespace Fishing.UI
                 return;
             }
 
-            _levelText.text = $"Lv. {d.level}    강태공";
+            _levelText.text = $"Lv.{d.level}";
             _staminaFill.fillAmount = d.stamina / PlayerProfile.MaxStamina;
             _staminaFill.color = d.stamina < 30f ? UIFactory.Danger : new Color(0.4f, 0.8f, 1f);
             _staminaText.text = $"{d.stamina:0.0} %";
@@ -401,6 +467,7 @@ namespace Fishing.UI
             _netSlot.text = $"<size=11><color=#80c8ff>Z</color></size> 살림망\n<b>{d.keepNet.Count}/{PlayerProfile.KeepNetCapacity}</b>";
 
             UpdateMap(playerPos);
+            UpdateBoatGauges();
             UpdateCasting();
             UpdateHookGauge();
             UpdateCenter(playerPos);
@@ -544,7 +611,10 @@ namespace Fishing.UI
             var f = Game.Fishing;
             _hint.text = f.State switch
             {
-                FishingState.Idle => "WASD 이동 · Shift 달리기 · 오른쪽 드래그 시점 · 왼쪽 버튼 당겼다 밀기 = 캐스팅",
+                FishingState.Idle when Game.Player.OnBoat => Game.Boat.Seated
+                    ? "W/S 속도 · A/D 방향 · 멈추면 뱃머리에서 낚시 · 물가에서 B = 내리기"
+                    : "왼쪽 버튼 당겼다 밀기 = 캐스팅 · W = 출발 · 물가에서 B = 내리기",
+                FishingState.Idle => "WASD 이동 · Shift 달리기 · Space 점프 · 물가에서 B = 배 · 왼쪽 버튼 당겼다 밀기 = 캐스팅",
                 FishingState.Waiting => $"{f.CastCellLabel}   ·   R / 이동: 찌 회수",
                 FishingState.Bite => $"{f.CastCellLabel}",
                 _ => ""

@@ -46,6 +46,7 @@ Assets/
       Effects.cs                 물보라(공유 파티클), 파문
     Player/
       PlayerController.cs        3인칭 캐릭터 이동, 낚싯대 기울기
+      BoatController.cs          배: 물가에서 띄우기·운전·연료·부딪힘·물보라 꼬리·내리기 (Game.Boat)
       CameraRig.cs               어깨 너머 3인칭 ↔ 파이팅 1인칭 ↔ 고정(대기실), 흔들림, 충돌 회피
     Fishing/
       FishingController.cs       낚시 상태 머신 (Idle→Charging→Casting→Waiting→Bite→Fighting→Result)
@@ -66,6 +67,7 @@ Assets/
       FishingAreaPanel.cs        낚시터 목록 (한국 지도, MAP/FISH INFO, 채널, 빠른입장)
       KoreaMap.cs                한반도 해안선 다각형 → 지도 텍스처, 경위도 → UV
       AreaMapPanel.cs            지역 지도(M): 격자·서식지·어군·내 위치
+      PortraitCamera.cs          HUD 초상화: 캐릭터 레이어(8)만 비추는 카메라 → 렌더 텍스처
       ResultPanel.cs, KeepNetPanel.cs, DexPanel.cs, ShopPanel.cs, InfoPanels.cs(퀘스트/도움말)
     Audio/SoundFx.cs             절차적 효과음
     Dev/DevAutomation.cs         -autoshot 자동 연출 + 스크린샷
@@ -96,6 +98,8 @@ GameBootstrap.Awake
  └─ LobbyRoom.Build (한강에서 멀리 떨어진 (0,0,-420)에 실내를 짓는다)
 GameBootstrap.Start → GameUI.EnterLobby (Mode=Lobby, 카메라 고정)
 ```
+
+**배에 탄 플레이어**: `PlayerController.Mount(자리, 앉음)`이 CharacterController를 끄고, `BoatController.Update`가 배를 움직인 뒤 `SnapToMount()`로 플레이어를 자리(운전석/뱃머리)에 옮긴다. 플레이어 `Update`는 배 위에서 이동하지 않고 WASD 눌림만 `MovedThisFrame`으로 알린다(찌 회수용). `Dismount`는 `Teleport`로 둔치에 내려놓는다.
 
 **게임 모드** (`Game.Mode`):
 - `Lobby`: 플레이어 이동·낚시·비가 멈추고, 카메라는 `LobbyRoom.CameraPos/Rot`에 고정된다. 필드 HUD 대신 `LobbyView`가 보인다.

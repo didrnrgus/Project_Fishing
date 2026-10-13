@@ -11,12 +11,18 @@ namespace Fishing.Angling
     public class FightRodView : MonoBehaviour
     {
         // 1인칭에서는 화면 안에 끝이 들어오도록 조금 짧게 보여 준다
-        const float FirstPersonLength = 0.75f;
+        const float FirstPersonLength = 0.62f;
+        // 1인칭에서는 휜 모양이 잘 보이도록 조금 더 휘게 보여 준다
+        const float FirstPersonBend = 1.35f;
 
         Transform _root;
         TelescopicRod _rod;
         string _rodId, _reelId;
-        Transform _leftHand;
+        Transform _leftHand, _rightHand;
+        Transform _armL, _armR;
+        // 카메라 기준 어깨 위치 (원작 1인칭: 팔이 화면 아래에서 올라온다)
+        static readonly Vector3 ShoulderL = new Vector3(-0.5f, -0.72f, 0.2f);
+        static readonly Vector3 ShoulderR = new Vector3(0.16f, -0.8f, 0.2f);
         float _reelTurns, _lineOut;
         LineRenderer _line;
         GameObject _fish;
@@ -40,15 +46,16 @@ namespace Fishing.Angling
         {
             _root = new GameObject("RodRoot").transform;
             _root.SetParent(transform, false);
-            _root.localPosition = new Vector3(0.2f, -0.25f, 0.62f); // 릴과 손이 화면 아래쪽에 보이도록
+            // 원작 1인칭처럼 낚싯대는 왼쪽 아래에서 올라오고, 큰 릴과 장갑 낀 손이 보인다
+            _root.localPosition = new Vector3(-0.2f, -0.25f, 0.62f);
 
             var skin = Mats.Lit(new Color(0.98f, 0.82f, 0.7f));
             var glove = Mats.Lit(new Color(0.95f, 0.95f, 0.95f));
 
             BuildRod();
             // 오른손은 릴 시트를 쥐고(릴 다리를 손가락 사이에 끼움), 왼손은 릴 손잡이를 돌린다
-            Mats.Prim(PrimitiveType.Capsule, "HandRight", _root, new Vector3(0f, -0.07f, -0.01f), new Vector3(0.065f, 0.05f, 0.065f), glove, false);
-            Mats.Prim(PrimitiveType.Capsule, "ArmR", _root, new Vector3(0.05f, -0.24f, -0.14f), new Vector3(0.08f, 0.15f, 0.08f), skin, false, Quaternion.Euler(40f, 0f, 20f));
+            _armL = Mats.Prim(PrimitiveType.Capsule, "ArmL", transform, Vector3.zero, Vector3.one * 0.07f, skin, false).transform;
+            _armR = Mats.Prim(PrimitiveType.Capsule, "ArmR", transform, Vector3.zero, Vector3.one * 0.07f, skin, false).transform;
 
             // 밤에도 손과 릴이 보이도록 아주 약한 보조광 (원작 1인칭도 손 주변이 밝다)
             var fill = new GameObject("HandFill").AddComponent<Light>();
@@ -77,16 +84,39 @@ namespace Fishing.Angling
             var p = Game.Profile;
             _rodId = p?.Rod.Id;
             _reelId = p?.Reel.Id;
-            if (_rod == null) _rod = TelescopicRod.Create(_root, p?.Rod, p?.Reel, FirstPersonLength);
-            else _rod.Rebuild(p?.Rod, p?.Reel, FirstPersonLength);
+            if (_rod != null) Destroy(_rod.gameObject);
+            _rod = TelescopicRod.Create(_root, p?.Rod, p?.Reel, FirstPersonLength, 1.8f);
 
             if (_leftHand != null) Destroy(_leftHand.gameObject);
+            if (_rightHand != null) Destroy(_rightHand.gameObject);
+            var glove = Mats.Lit(new Color(0.12f, 0.12f, 0.14f), 0.3f);
+            var cuff = Mats.Lit(new Color(0.95f, 0.55f, 0.15f), 0.4f);
+            // 왼손: 릴 손잡이를 쥐고 같이 돈다 / 오른손: 릴 시트 위 앞손잡이를 쥔다
             var knob = _rod.HandleKnob;
             if (knob != null)
             {
-                _leftHand = Mats.Prim(PrimitiveType.Sphere, "HandLeft", knob, new Vector3(-0.6f, 0f, 0f), new Vector3(3.2f, 2.6f, 3.2f),
-                    Mats.Lit(new Color(0.95f, 0.95f, 0.95f)), false).transform;
+                _leftHand = new GameObject("HandLeft").transform;
+                _leftHand.SetParent(knob, false);
+                _leftHand.localPosition = new Vector3(-0.5f, 0f, 0f);
+                Mats.Prim(PrimitiveType.Sphere, "Glove", _leftHand, Vector3.zero, new Vector3(4.2f, 3.4f, 4.2f), glove, false);
+                Mats.Prim(PrimitiveType.Cylinder, "Cuff", _leftHand, new Vector3(-2.2f, 0f, 0f), new Vector3(3.6f, 1.2f, 3.6f), cuff, false,
+                    Quaternion.Euler(0f, 0f, 90f));
             }
+            _rightHand = new GameObject("HandRight").transform;
+            _rightHand.SetParent(_rod.transform, false);
+            _rightHand.localPosition = new Vector3(0.012f, 0.1f, -0.02f);
+            Mats.Prim(PrimitiveType.Sphere, "Glove", _rightHand, Vector3.zero, new Vector3(0.075f, 0.09f, 0.075f), glove, false);
+            Mats.Prim(PrimitiveType.Cylinder, "Cuff", _rightHand, new Vector3(0.02f, -0.06f, -0.03f), new Vector3(0.07f, 0.02f, 0.07f), cuff, false,
+                Quaternion.Euler(30f, 0f, 0f));
+        }
+
+        /// <summary>어깨에서 손까지 캡슐 하나로 팔을 잇는다.</summary>
+        static void Limb(Transform arm, Vector3 from, Vector3 to)
+        {
+            var d = to - from;
+            arm.position = (from + to) * 0.5f;
+            arm.rotation = Quaternion.FromToRotation(Vector3.up, d);
+            arm.localScale = new Vector3(0.055f, d.magnitude * 0.5f, 0.055f);
         }
 
         /// <summary>릴 회전: 감는 속도(초당 바퀴)와 줄이 풀리는 속도(m/s). FishingController가 매 프레임 넣어 준다.</summary>
@@ -135,7 +165,7 @@ namespace Fishing.Angling
             // 물고기가 날뛰면 초릿대가 떨린다
             float shake = f.Mood == FishMood.Burst ? 1f : f.Mood == FishMood.Run ? 0.5f : 0.15f;
             float jitter = (Mathf.PerlinNoise(Time.time * 11f, 0.3f) - 0.5f) * 2f * shake * (2f + Mathf.Clamp01(f.Tension) * 7f);
-            _rod.Drive(target, fishPos - _rod.transform.position, jitter, Time.deltaTime);
+            _rod.Drive(target * FirstPersonBend, fishPos - _rod.transform.position, jitter, Time.deltaTime);
         }
 
         /// <summary>물고기의 월드 위치. 거리와 좌우 위치(FishX)로 계산한다.</summary>
@@ -153,10 +183,12 @@ namespace Fishing.Angling
             var f = _fight;
 
             float t = Mathf.Clamp01(f.Tension);
-            _root.localRotation = Quaternion.Euler(40f + t * 8f, f.RodX * 28f, -f.RodX * 10f);
+            _root.localRotation = Quaternion.Euler(44f + t * 8f, 10f + f.RodX * 28f, -8f - f.RodX * 10f);
             var fishPos = FishWorldPos(f);
             BendRod(f, fishPos);
             _rod.SpinReel(_reelTurns, _lineOut, Time.deltaTime);
+            if (_leftHand != null) Limb(_armL, transform.TransformPoint(ShoulderL), _leftHand.position);
+            Limb(_armR, transform.TransformPoint(ShoulderR), _rightHand.position);
 
             var tipPos = _rod.Tip.position;
             float sag = Mathf.Lerp(0.8f, 0.02f, Mathf.Clamp01(f.Tension * 1.5f));

@@ -17,6 +17,10 @@ namespace Fishing.PlayerSystems
         public bool MovementLocked;
 
         public Transform RodTip => Rod != null ? Rod.Tip : transform;
+        /// <summary>머리 뼈 (초상화 카메라가 비춘다).</summary>
+        public Transform Head { get; private set; }
+        /// <summary>배에 타고 있는지.</summary>
+        public bool OnBoat => _mount != null;
         public TelescopicRod Rod { get; private set; }
 
         /// <summary>이번 프레임 낚싯대 휨 목표(도)와 줄 방향. FishingController가 매 프레임 넣는다.</summary>
@@ -40,6 +44,10 @@ namespace Fishing.PlayerSystems
         float _currentRodPitch = 35f;
         float _bob;
         float _extendTarget = 1f;
+        Transform _mount;
+        bool _mountSeated;
+        float _airTime;
+        const float JumpSpeed = 6.2f;
         int _extendedSections;
         string _rodId, _reelId;
 
@@ -87,6 +95,41 @@ namespace Fishing.PlayerSystems
             Rod = TelescopicRod.Create(axis, p?.Rod, p?.Reel);
             _rodId = p?.Rod.Id;
             _reelId = p?.Reel.Id;
+
+            // 초상화 카메라가 내 캐릭터만 비추도록 전용 레이어에 둔다
+            foreach (var t in Model.GetComponentsInChildren<Transform>(true))
+            {
+                t.gameObject.layer = Fishing.UI.PortraitCamera.Layer;
+                if (t.name == "Head") Head = t;
+            }
+            if (Head == null) Head = Model;
+            // 낚싯대는 초상화에 비치지 않게 (얼굴 앞을 가로지른다)
+            foreach (var t in _rodPivot.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = 0;
+        }
+
+        // ---------------- 배 ----------------
+
+        /// <summary>배의 자리(운전석/뱃머리)에 올라탄다. seated면 앉아서 배 방향을 본다.</summary>
+        public void Mount(Transform point, bool seated)
+        {
+            _mount = point;
+            _mountSeated = seated;
+            _cc.enabled = false;
+            _vy = 0f;
+        }
+
+        public void Dismount(Vector3 pos, float yaw)
+        {
+            _mount = null;
+            Teleport(pos, yaw);
+        }
+
+        /// <summary>배가 움직인 뒤 자리로 옮긴다 (BoatController가 매 프레임 부른다).</summary>
+        public void SnapToMount()
+        {
+            if (_mount == null) return;
+            transform.position = _mount.position;
+            if (_mountSeated) Model.rotation = Quaternion.Euler(0f, _mount.eulerAngles.y, 0f);
         }
 
         /// <summary>접어 둔 낚싯대를 끝 마디부터 하나씩 뽑아 펼친다 (낚시터에 들어왔을 때).</summary>
@@ -161,6 +204,18 @@ namespace Fishing.PlayerSystems
             if (Game.Mode == GameMode.Lobby) return;
             var input = Vector2.zero;
             bool uiBlocking = Game.UI != null && Game.UI.BlockingPanelOpen;
+
+            if (_mount != null)
+            {
+                // 배 위: 이동은 BoatController가 한다. WASD는 찌 회수 판정에만 쓴다
+                MovedThisFrame = !uiBlocking && (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D));
+                _speedNow = 0f;
+                _airTime = 0f;
+                if (_anim != null) UpdateAnimation();
+                if (_nameTag != null && Game.CameraRig != null)
+                    _nameTag.rotation = Quaternion.LookRotation(_nameTag.position - Game.CameraRig.transform.position);
+                return;
+            }
             if (!uiBlocking)
             {
                 if (Input.GetKey(KeyCode.W)) input.y += 1f;
@@ -195,6 +250,14 @@ namespace Fishing.PlayerSystems
             }
 
             if (_cc.isGrounded && _vy < 0f) _vy = -1f;
+            // 점프 (원작: Space). 낚시 중이거나 창이 열려 있으면 안 된다
+            bool fishingIdle = Game.Fishing == null || Game.Fishing.State == Angling.FishingState.Idle;
+            if (Input.GetKeyDown(KeyCode.Space) && _cc.isGrounded && !uiBlocking && !MovementLocked && fishingIdle)
+            {
+                _vy = JumpSpeed;
+                _anim?.PlayOnce(CharacterAnimator.JumpStart, 1.4f, 0.6f);
+            }
+            _airTime = _cc.isGrounded ? 0f : _airTime + Time.deltaTime;
             _vy -= 20f * Time.deltaTime;
             motion.y = _vy;
             _cc.Move(motion * Time.deltaTime);
@@ -215,6 +278,16 @@ namespace Fishing.PlayerSystems
         void UpdateAnimation()
         {
             bool fishing = Game.Fishing != null && Game.Fishing.State != Angling.FishingState.Idle;
+            if (_mount != null)
+            {
+                _anim.SetLoop(_mountSeated ? CharacterAnimator.Drive : fishing ? CharacterAnimator.HoldRod : CharacterAnimator.Idle);
+                return;
+            }
+            if (_airTime > 0.15f)
+            {
+                _anim.SetLoop(CharacterAnimator.JumpLoop);
+                return;
+            }
             bool running = _speedNow > WalkSpeed + 0.5f;
             if (_speedNow > 0.5f) _anim.SetLoop(running ? CharacterAnimator.Jog : CharacterAnimator.Walk, running ? 1.1f : 1.25f);
             else _anim.SetLoop(fishing ? CharacterAnimator.HoldRod : CharacterAnimator.Idle);

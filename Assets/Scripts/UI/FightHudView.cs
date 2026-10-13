@@ -182,8 +182,9 @@ namespace Fishing.UI
                 .At(new Vector2(0, 1), new Vector2(0, 2), new Vector2(80, 20), new Vector2(0, 0));
             UIFactory.Image(barBack.transform, new Color(1f, 0.2f, 0.15f, 0.95f), null, "LimitLine").rectTransform
                 .At(new Vector2(1, 0.5f), Vector2.zero, new Vector2(4, 34), new Vector2(0.5f, 0.5f));
-            UIFactory.Text(barBack.transform, "한계 · 줄 끊김", 13, new Color(1f, 0.45f, 0.4f), TextAnchor.LowerRight, FontStyle.Bold).rectTransform
-                .At(new Vector2(1, 1), new Vector2(0, 2), new Vector2(140, 20), new Vector2(1, 0));
+            // 현재 % 표시(마커 위)와 겹치지 않게 한계 글자는 바 아래에 둔다
+            UIFactory.Text(barBack.transform, "한계 · 줄 끊김", 13, new Color(1f, 0.45f, 0.4f), TextAnchor.UpperRight, FontStyle.Bold).rectTransform
+                .At(new Vector2(1, 0), new Vector2(0, -4), new Vector2(140, 20), new Vector2(1, 1));
 
             // 위험할 때: 어느 쪽으로 마우스를 끌어야 줄이 늦춰지는지
             _slackHint = UIFactory.Node("SlackHint", _root).At(new Vector2(0.5f, 0), new Vector2(0, 205), new Vector2(560, 46));
