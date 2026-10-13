@@ -110,7 +110,7 @@ namespace Fishing.Data
 
             new FishSpecies { Id = "catfish", Name = "메기", Latin = "Silurus asotus", Temper = "밤이면 깨어나는 묵직한 사냥꾼",
                 MinLen = 25, MaxLen = 90, TrophyLen = 70, TrophyName = "대물", WeightCoef = 0.008f, Rarity = 2,
-                Habitats = new[] { Habitat.Deep, Habitat.Weed }, Baits = new[] { BaitKind.Worm, BaitKind.Minnow, BaitKind.Shrimp },
+                Habitats = new[] { Habitat.Deep, Habitat.Weed }, Baits = new[] { BaitKind.Worm, BaitKind.Minnow, BaitKind.Shrimp , BaitKind.CutBait },
                 Times = new[] { TimeBand.Evening, TimeBand.Night }, Weathers = new[] { Weather.Rain, Weather.Cloudy },
                 Power = 0.9f, Speed = 0.6f, Stamina = 1.3f, Aggression = 0.5f, Exp = 32, Price = 700 },
 
@@ -128,13 +128,13 @@ namespace Fishing.Data
 
             new FishSpecies { Id = "snakehead", Name = "가물치", Latin = "Channa argus", Temper = "수초 속에 숨어 있다가 폭발적으로 덮친다",
                 MinLen = 35, MaxLen = 100, TrophyLen = 80, TrophyName = "대물", WeightCoef = 0.009f, Rarity = 3,
-                Habitats = new[] { Habitat.Weed }, Baits = new[] { BaitKind.Lure, BaitKind.Minnow },
+                Habitats = new[] { Habitat.Weed }, Baits = new[] { BaitKind.Lure, BaitKind.Minnow , BaitKind.CutBait },
                 Times = new[] { TimeBand.Day, TimeBand.Evening }, Weathers = new[] { Weather.Clear },
                 Power = 1.1f, Speed = 0.8f, Stamina = 1.4f, Aggression = 0.7f, Exp = 60, Price = 1500 },
 
             new FishSpecies { Id = "eel", Name = "뱀장어", Latin = "Anguilla japonica", Temper = "비 오는 밤에만 모습을 드러낸다",
                 MinLen = 40, MaxLen = 100, TrophyLen = 85, TrophyName = "대물", WeightCoef = 0.0018f, Rarity = 4,
-                Habitats = new[] { Habitat.Rocky, Habitat.Deep }, Baits = new[] { BaitKind.Worm, BaitKind.Shrimp, BaitKind.Minnow },
+                Habitats = new[] { Habitat.Rocky, Habitat.Deep }, Baits = new[] { BaitKind.Worm, BaitKind.Shrimp, BaitKind.Minnow , BaitKind.CutBait },
                 Times = new[] { TimeBand.Night }, Weathers = new[] { Weather.Rain },
                 Power = 0.8f, Speed = 0.8f, Stamina = 1.4f, Aggression = 0.6f, Exp = 70, Price = 4000 },
 

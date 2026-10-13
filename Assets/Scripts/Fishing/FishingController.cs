@@ -279,6 +279,7 @@ namespace Fishing.Angling
                 Weather = Game.Weather.Current,
                 School = Game.Schools.At(col, row),
                 MapId = FieldMap.Id,
+                BaitPotency = Game.Profile.Bait.Potency,
             };
             CastCellLabel = $"{_cellName} · {FieldMap.HabitatName(_ctx.Habitat)}" + (_ctx.School != null ? $" · {_ctx.School.Name}({_ctx.School.SizeLabel})" : "");
             PendingBite = BiteSelector.Pick(_ctx);

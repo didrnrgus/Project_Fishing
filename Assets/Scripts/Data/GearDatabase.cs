@@ -51,6 +51,12 @@ namespace Fishing.Data
         /// <summary>파는 맵 (null이면 어디서나). 하단 퀵슬롯도 맵에 맞는 미끼만 보여 준다.</summary>
         public string[] Maps;
         public bool SoldIn(string mapId) => Maps == null || System.Array.IndexOf(Maps, mapId) >= 0;
+        /// <summary>사용 레벨 (원작 "습득 레벨 미끼").</summary>
+        public int Level = 1;
+        /// <summary>입질 배율. 좋은 해체 미끼일수록 크고, 큰 고기도 잘 문다.</summary>
+        public float Potency = 1f;
+        /// <summary>상점에서 팔지 않는다 (해체로만 얻는 미끼).</summary>
+        public bool NotSold;
     }
 
     public static class GearDatabase
@@ -97,7 +103,17 @@ namespace Fishing.Data
             new BaitDef { Id = "bait_shrimp", Name = "새우", Kind = BaitKind.Shrimp, PackSize = 20, Price = 600 },
             new BaitDef { Id = "bait_minnow", Name = "생미끼", Kind = BaitKind.Minnow, PackSize = 10, Price = 800 },
             new BaitDef { Id = "bait_lure", Name = "스푼 루어", Kind = BaitKind.Lure, PackSize = 10, Price = 1500 },
+
+            // 해체 미끼 (원작풍 이름: 원작에도 "촉촉한이리" 같은 형용사+부위 미끼가 있었다). 살림망에서 고기를 해체해 얻는다
+            new BaitDef { Id = "bait_cut1", Name = "어분덩이", Kind = BaitKind.CutBait, NotSold = true, Level = 1, Potency = 1.0f },
+            new BaitDef { Id = "bait_cut2", Name = "악취나는살점", Kind = BaitKind.CutBait, NotSold = true, Level = 5, Potency = 1.15f },
+            new BaitDef { Id = "bait_cut3", Name = "덩어리진생선내장", Kind = BaitKind.CutBait, NotSold = true, Level = 8, Potency = 1.3f },
+            new BaitDef { Id = "bait_cut4", Name = "촉촉한이리", Kind = BaitKind.CutBait, NotSold = true, Level = 12, Potency = 1.5f },
+            new BaitDef { Id = "bait_cut5", Name = "비릿한볼살", Kind = BaitKind.CutBait, NotSold = true, Level = 16, Potency = 1.7f },
         };
+
+        /// <summary>어종 등급(★1~5)에 맞는 해체 미끼.</summary>
+        public static BaitDef CutBaitFor(int rarity) => GetBait("bait_cut" + UnityEngine.Mathf.Clamp(rarity, 1, 5));
 
         public const string KimbapId = "food_kimbap";
         public const int FuelPricePerLiter = 30;

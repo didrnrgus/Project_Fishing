@@ -49,13 +49,15 @@ namespace Fishing.UI
                 RowButton(row, $"요리 (+{PlayerProfile.CookStamina(fish):0})", () => Cook(index), 486, 150, new Color(0.45f, 0.3f, 0.15f));
                 if (PlayerProfile.CanMakeBait(fish))
                     RowButton(row, $"미끼 (생미끼 +{PlayerProfile.BaitFromFish(fish)})", () => MakeBait(index), 642, 168, new Color(0.18f, 0.38f, 0.5f));
+                else if (!s.IsJunk)
+                    RowButton(row, $"해체 ({GearDatabase.CutBaitFor(s.Rarity).Name})", () => Dissect(index), 642, 168, new Color(0.45f, 0.22f, 0.22f), true, 14);
             }
 
             var footer = rows.Next(50, 14);
             Cell(footer, $"합계 {total:N0}골드  ·  판매는 상점(F12)에서", 8, 380, 18, UIFactory.TextDim);
             int kimbap = p.Count(GearDatabase.KimbapId);
             RowButton(footer, $"김밥 먹기 ({kimbap}개)", EatKimbap, 560, 250, new Color(0.25f, 0.45f, 0.25f), kimbap > 0, 19);
-            Cell(rows.Next(24), $"{PlayerProfile.BaitFishMaxLength:0}cm 미만의 작은 고기는 생미끼로 만들 수 있습니다. 생미끼는 쏘가리·끄리·메기 같은 육식어가 좋아해요.",
+            Cell(rows.Next(24), $"{PlayerProfile.BaitFishMaxLength:0}cm 미만은 생미끼로, 그보다 큰 고기는 해체해서 해체 미끼·반짝이는 비늘(강화 재료)·별모래를 얻습니다.",
                 8, 800, 14, UIFactory.TextDim);
         }
 
@@ -75,6 +77,12 @@ namespace Fishing.UI
             var name = FishDatabase.Get(fish.speciesId)?.Name;
             Game.Toast($"{name} 요리를 먹었습니다. 체력 +{amount:0}", ToastKind.Good);
             p.NotifyChanged();
+        }
+
+        void Dissect(int index)
+        {
+            var msg = Game.Profile.Dissect(index);
+            if (msg != null) Game.Toast(msg, ToastKind.Good);
         }
 
         void MakeBait(int index)

@@ -46,7 +46,7 @@ namespace Fishing.UI
                 }
                 var row = rows.Next(50, 4);
                 UIFactory.Image(row, new Color(1, 1, 1, 0.04f), null, "Bg").rectTransform.Fill();
-                int plus = g.Slot == GearSlot.Rod ? p.RodLevel(g.Id) : 0;
+                int plus = RodUpgrade.Upgradable(g.Slot) ? p.GearLevel(g.Id) : 0;
                 var shown = plus > 0 ? RodUpgrade.Apply(g, plus) : g;
                 var name = Cell(row, $"<b>{g.Name}</b>{(plus > 0 ? $" <color=#ffd060>+{plus}</color>" : "")}\n<size=14><color=#a0b0c0>{shown.StatLine}</color></size>", 10, 470, 18);
                 name.alignment = TextAnchor.MiddleLeft;
@@ -71,6 +71,7 @@ namespace Fishing.UI
             Cell(rows.Next(30), "미끼 · 먹을거리", 4, 300, 22, UIFactory.Accent, TextAnchor.MiddleLeft, FontStyle.Bold);
             foreach (var b in GearDatabase.Baits)
             {
+                if (b.NotSold || !b.SoldIn(Fishing.World.FieldMap.Id)) continue;
                 var row = rows.Next(40, 4);
                 UIFactory.Image(row, new Color(1, 1, 1, 0.04f), null, "Bg").rectTransform.Fill();
                 Cell(row, $"{b.Name}  <size=14><color=#a0b0c0>{b.PackSize}개 · 보유 {p.Count(b.Id)}</color></size>", 10, 380, 18);
@@ -99,8 +100,7 @@ namespace Fishing.UI
             RowButton(repair, cost > 0 ? $"{cost:N0}골드" : "수리 불필요", () => Repair(cost), 400, 200, null, cost > 0 && p.Data.gold >= cost);
 
             var up = rows.Next(46, 4);
-            int lvNow = p.RodLevel(p.Data.rodId);
-            Cell(up, $"낚싯대 강화  <size=14><color=#a0b0c0>{GearDatabase.GetGear(p.Data.rodId).Name} +{lvNow}</color></size>", 10, 380, 18);
+            Cell(up, $"장비 강화  <size=14><color=#a0b0c0>낚싯대 +{p.GearLevel(p.Data.rodId)} · 릴 +{p.GearLevel(p.Data.reelId)} · 비늘 {p.Count(RodUpgrade.ScaleId)}</color></size>", 10, 380, 18);
             RowButton(up, "강화하러 가기", () => Game.UI.OpenExclusive(Game.UI.Upgrade), 400, 200, new Color(0.55f, 0.35f, 0.1f));
 
             var boat = p.Boat;
