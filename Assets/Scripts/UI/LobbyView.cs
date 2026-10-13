@@ -1,4 +1,5 @@
 using Fishing.Core;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,7 +9,7 @@ namespace Fishing.UI
     public class LobbyView
     {
         readonly RectTransform _root;
-        readonly Text _info, _clock;
+        readonly TMP_Text _info, _clock;
 
         public GameObject Root => _root.gameObject;
 
@@ -16,20 +17,23 @@ namespace Fishing.UI
         {
             _root = UIFactory.Node("Lobby", canvas).Fill();
 
-            var title = UIFactory.Text(_root, "한국 낚시 조합", 34, UIFactory.TextMain, TextAnchor.MiddleCenter, FontStyle.Bold);
-            title.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -24), new Vector2(700, 50));
-            var sub = UIFactory.Text(_root, "KOREA FISHING UNION", 14, new Color(0.7f, 0.85f, 0.95f, 0.8f), TextAnchor.MiddleCenter);
-            sub.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -66), new Vector2(700, 20));
+            // 가운데 위 제목: 유리 알약 위에
+            var titlePill = UIFactory.Panel(_root, "TitlePill", UIFactory.Pill, 0.5f).rectTransform
+                .At(new Vector2(0.5f, 1), new Vector2(0, -18), new Vector2(420, 76));
+            var title = UIFactory.Text(titlePill, "한국 낚시 조합", 32, UIFactory.TextMain, TextAnchor.MiddleCenter, FontStyle.Bold);
+            title.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -8), new Vector2(420, 44));
+            var sub = UIFactory.Text(titlePill, "KOREA FISHING UNION", 12, new Color(0.55f, 0.88f, 0.85f, 0.9f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            sub.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -50), new Vector2(420, 18));
 
-            var panel = UIFactory.Panel(_root, "Info", new Color(0.03f, 0.05f, 0.07f, 0.85f)).rectTransform
-                .At(new Vector2(0, 1), new Vector2(10, -8), new Vector2(380, 92));
+            var panel = UIFactory.Panel(_root, "Info", 20f).rectTransform
+                .At(new Vector2(0, 1), new Vector2(14, -12), new Vector2(390, 100));
             _info = UIFactory.Text(panel, "", 18, UIFactory.TextMain, TextAnchor.UpperLeft);
-            _info.rectTransform.Fill(14, 10, 10, 8);
+            _info.rectTransform.Fill(18, 14, 14, 10);
 
-            var clockPanel = UIFactory.Panel(_root, "Clock", new Color(0.03f, 0.05f, 0.07f, 0.85f)).rectTransform
-                .At(new Vector2(1, 1), new Vector2(-10, -8), new Vector2(300, 62));
-            _clock = UIFactory.Text(clockPanel, "", 18, UIFactory.TextMain, TextAnchor.MiddleLeft);
-            _clock.rectTransform.Fill(14, 10, 6, 6);
+            var clockPanel = UIFactory.Panel(_root, "Clock", UIFactory.Pill, 0.55f).rectTransform
+                .At(new Vector2(1, 1), new Vector2(-14, -12), new Vector2(310, 48));
+            _clock = UIFactory.Text(clockPanel, "", 18, UIFactory.TextMain, TextAnchor.MiddleCenter, FontStyle.Bold);
+            _clock.rectTransform.Fill(14, 14, 0, 0);
 
             (string ko, string en, System.Action act)[] menu =
             {
@@ -39,19 +43,24 @@ namespace Fishing.UI
                 ("수족관", "AQUARIUM", openAquarium),
                 ("거점 이동하기", "BASE", changeBase),
             };
+            // 오른쪽 아래 유리 메뉴판: 첫 버튼(낚시터 선택)을 강조한다
+            var dock = UIFactory.Panel(_root, "MenuDock", UIFactory.RadiusPanel, 0.55f).rectTransform
+                .At(new Vector2(1, 0), new Vector2(-24, 24), new Vector2(352, menu.Length * 70 + 18), new Vector2(1, 0));
             for (int i = 0; i < menu.Length; i++)
             {
                 var (ko, en, act) = menu[i];
-                var b = UIFactory.Button(_root, $"<b>{ko}</b>\n<size=12><color=#9fc8e0>{en}</color></size>", () => act(),
-                    new Color(0.08f, 0.2f, 0.3f, 0.95f), 21);
-                ((RectTransform)b.transform).At(new Vector2(1, 0), new Vector2(-30, 40 + (menu.Length - 1 - i) * 70), new Vector2(320, 62));
-                var outline = b.gameObject.AddComponent<Outline>();
-                outline.effectColor = new Color(0.4f, 0.75f, 0.95f, 0.6f);
-                outline.effectDistance = new Vector2(1.5f, -1.5f);
+                bool primary = i == 0;
+                var b = UIFactory.Button(dock, $"<b>{ko}</b>\n<size=12><color={(primary ? "#d8fff8" : "#9fc8e0")}>{en}</color></size>", () => act(),
+                    primary ? UIFactory.BtnPrimary : new Color(1f, 1f, 1f, 0.08f), 21);
+                UIFactory.SetRadius(b.targetGraphic, 14f);
+                ((RectTransform)b.transform).At(new Vector2(0.5f, 1), new Vector2(0, -12 - i * 70), new Vector2(326, 62), new Vector2(0.5f, 1));
+                if (primary) UIFactory.AddBorder((LeTai.Asset.TranslucentImage.TranslucentImage)b.targetGraphic, new Color(0.6f, 1f, 0.95f, 0.5f), 1.5f, 6f);
             }
 
-            var hint = UIFactory.Text(_root, "[낚시터 선택하기]에서 입장 · 수족관은 조합 안에 있어요", 17, UIFactory.TextDim, TextAnchor.MiddleLeft);
-            hint.rectTransform.At(new Vector2(0, 0), new Vector2(24, 30), new Vector2(700, 26));
+            var hintPill = UIFactory.Panel(_root, "HintPill", UIFactory.Pill, 0.45f).rectTransform
+                .At(new Vector2(0, 0), new Vector2(14, 24), new Vector2(560, 36));
+            var hint = UIFactory.Text(hintPill, "[낚시터 선택하기]에서 입장 · 수족관은 조합 안에 있어요", 16, UIFactory.TextDim, TextAnchor.MiddleCenter);
+            hint.rectTransform.Fill();
         }
 
         public void Update()

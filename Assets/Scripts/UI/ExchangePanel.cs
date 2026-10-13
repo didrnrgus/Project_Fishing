@@ -49,11 +49,11 @@ namespace Fishing.UI
             foreach (var o in _offers)
             {
                 var row = rows.Next(58, 6);
-                UIFactory.Image(row, new Color(1, 1, 1, 0.04f), null, "Bg").rectTransform.Fill();
+                UIFactory.RowBg(row);
                 bool can = o.Can == null || o.Can();
                 Cell(row, $"<b>{o.Name}</b>\n<size=14><color=#a0b0c0>{o.Desc}</color></size>", 12, 560, 19, can ? UIFactory.TextMain : UIFactory.TextDim);
                 var offer = o;
-                RowButton(row, can ? $"소라고동 {o.Cost}개" : "교환 완료", () => Trade(offer), 600, 220, new Color(0.45f, 0.3f, 0.5f), can && conch >= o.Cost, 18);
+                RowButton(row, can ? $"소라고동 {o.Cost}개" : "교환 완료", () => Trade(offer), 600, 220, UIFactory.BtnPurple, can && conch >= o.Cost, 18);
             }
         }
 

@@ -85,6 +85,7 @@ namespace Fishing.Angling
             _rodId = p?.Rod.Id;
             _reelId = p?.Reel.Id;
             if (_rod != null) Destroy(_rod.gameObject);
+            _rodRenderers = null;
             _rod = TelescopicRod.Create(_root, p?.Rod, p?.Reel, FirstPersonLength, 1.8f);
 
             if (_leftHand != null) Destroy(_leftHand.gameObject);
@@ -168,6 +169,30 @@ namespace Fishing.Angling
             _rod.Drive(target * FirstPersonBend, fishPos - _rod.transform.position, jitter, Time.deltaTime);
         }
 
+        Renderer[] _rodRenderers;
+        MaterialPropertyBlock _glowBlock;
+        float _glow;
+
+        /// <summary>원작 0:35: 장력이 HIGH 쪽이면 낚싯대가 금빛으로 달아오른다 (데미지가 커지는 구간이라는 신호).</summary>
+        void UpdateGlow(FishFight f)
+        {
+            if (_rodRenderers == null || _rodRenderers.Length == 0 || _rodRenderers[0] == null)
+                _rodRenderers = System.Array.FindAll(_rod.GetComponentsInChildren<Renderer>(),
+                    r => (_leftHand == null || !r.transform.IsChildOf(_leftHand)) && (_rightHand == null || !r.transform.IsChildOf(_rightHand)));
+            _glowBlock ??= new MaterialPropertyBlock();
+            float target = f.IsDanger ? 0.85f : f.IsHighTension ? 0.6f + Mathf.Sin(Time.time * 10f) * 0.15f : 0f;
+            _glow = Mathf.MoveTowards(_glow, target, Time.deltaTime * 4f);
+            var hot = f.IsDanger ? new Color(1f, 0.45f, 0.3f) : new Color(1f, 0.82f, 0.35f);
+            foreach (var r in _rodRenderers)
+            {
+                if (r == null || r.sharedMaterial == null || !r.sharedMaterial.HasProperty("_Color")) continue;
+                if (_glow < 0.01f) { r.SetPropertyBlock(null); continue; }
+                var baseColor = r.sharedMaterial.color;
+                _glowBlock.SetColor("_Color", Color.Lerp(baseColor, hot * 1.6f, _glow));
+                r.SetPropertyBlock(_glowBlock);
+            }
+        }
+
         /// <summary>물고기의 월드 위치. 거리와 좌우 위치(FishX)로 계산한다.</summary>
         public Vector3 FishWorldPos(FishFight f)
         {
@@ -183,7 +208,12 @@ namespace Fishing.Angling
             var f = _fight;
 
             float t = Mathf.Clamp01(f.Tension);
-            _root.localRotation = Quaternion.Euler(44f + t * 8f, 10f + f.RodX * 28f, -8f - f.RodX * 10f);
+            // 원작: 낚싯대가 물고기 쪽으로 크게 끌려가고, 감을 때는 들썩이며 펌핑한다
+            bool reeling = _reelTurns > 0.1f;
+            float pump = reeling ? Mathf.Sin(Time.time * 9f) * 3f : 0f;
+            float tug = f.Mood == FishMood.Burst ? Mathf.Sin(Time.time * 23f) * 2.5f : 0f;
+            _root.localRotation = Quaternion.Euler(44f + t * 10f + pump + tug, 10f + f.RodX * 28f + f.FishX * 16f, -8f - f.RodX * 10f - f.FishX * 6f);
+            UpdateGlow(f);
             var fishPos = FishWorldPos(f);
             BendRod(f, fishPos);
             _rod.SpinReel(_reelTurns, _lineOut, Time.deltaTime);

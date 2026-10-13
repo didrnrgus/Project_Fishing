@@ -95,7 +95,9 @@ namespace Fishing.Dev
             yield return Shot("02_casting");
             Game.Fishing.DebugResume();
             Game.Fishing.DebugCast(15.5f);
-            yield return new WaitForSeconds(2.5f);
+            yield return new WaitForSeconds(0.45f);
+            yield return Shot("02b_cast_flight");
+            yield return new WaitForSeconds(2.05f);
             yield return Shot("03_waiting");
 
             // 본신: 찌가 잠기는 챔질 게이지
@@ -164,9 +166,14 @@ namespace Fishing.Dev
                 yield return null;
             }
             Debug.Log($"[Dev] 파이팅 종료: 어종={fight.Species.Name} {fight.Length:0.0}cm, 상태={Game.Fishing.State}, 경과={fight.Elapsed:0.0}s, HP={fight.HP:0}/{fight.MaxHP:0}, 결과={fight.Outcome}");
-            yield return new WaitForSeconds(1.3f);
+            if (Game.Fishing.Cheering)
+            {
+                yield return new WaitForSecondsRealtime(0.7f);
+                yield return Shot("09b_cheer");
+            }
+            yield return WaitResult();
             yield return Shot("10_result");
-            if (Game.UI.Result.IsOpen) Game.UI.Result.ChooseByKey(true);
+            yield return CloseResult();
             Game.Fishing.Autoplay = false;
             yield return new WaitForSeconds(0.3f);
 
@@ -187,8 +194,10 @@ namespace Fishing.Dev
 
             yield return new WaitForSeconds(0.5f);
             Game.UI.OpenExclusive(Game.UI.Dex);
+            yield return new WaitForSeconds(0.8f); // 차트 등장 애니메이션이 끝나게
             yield return Shot("11_dex");
             Game.UI.OpenExclusive(Game.UI.KeepNet);
+            yield return new WaitForSeconds(0.8f); // 차트 등장 애니메이션이 끝나게
             yield return Shot("12_keepnet");
             Game.UI.OpenExclusive(Game.UI.Quest);
             yield return Shot("13_quest");
@@ -220,7 +229,7 @@ namespace Fishing.Dev
             p.AddItem(RodUpgrade.StarSandId, 2);
             for (int i = 0; i < 4; i++) p.TryUpgrade(GearSlot.Rod, false);
             Game.UI.OpenExclusive(Game.UI.Upgrade);
-            yield return new WaitForSeconds(0.3f);
+            yield return new WaitForSeconds(0.8f);
             yield return Shot("21_rod_upgrade");
             Game.UI.Upgrade.Close();
             Game.UI.OpenExclusive(Game.UI.KeepNet);
@@ -241,7 +250,7 @@ namespace Fishing.Dev
             }
             Game.UI.OpenExclusive(Game.UI.Costume);
             Fishing.UI.PortraitCamera.FullBody.Spin = 25f;
-            yield return new WaitForSeconds(0.6f);
+            yield return new WaitForSeconds(0.8f);
             yield return Shot("21c_costume");
             Game.UI.Costume.Close();
 
@@ -356,13 +365,33 @@ namespace Fishing.Dev
             float seaTimeout = Time.time + 60f;
             while (Game.Fishing.State == FishingState.Fighting && Time.time < seaTimeout) yield return null;
             if (seaFight != null) Debug.Log($"[Dev] 바다 파이팅 종료: {seaFight.Species.Name} {seaFight.Length:0.0}cm, 결과={seaFight.Outcome}");
-            yield return new WaitForSeconds(1.3f);
+            yield return WaitResult();
             yield return Shot("27_sea_result");
-            if (Game.UI.Result.IsOpen) Game.UI.Result.ChooseByKey(true);
+            yield return CloseResult();
             Game.Fishing.Autoplay = false;
 
             Debug.Log("[Dev] 자동 스크린샷 완료");
             Application.Quit();
+        }
+
+        /// <summary>환호 컷이 끝나고 결과 창이 뜬 뒤 물고기가 튀어 오를 때까지 기다린다.</summary>
+        IEnumerator WaitResult()
+        {
+            float until = Time.realtimeSinceStartup + 4f;
+            while (!Game.UI.Result.IsOpen && Time.realtimeSinceStartup < until) yield return null;
+            yield return new WaitForSecondsRealtime(1.0f);
+        }
+
+        /// <summary>결과 창을 닫는다 (살림망에 넣기). 닫히지 않으면 로그로 알린다.</summary>
+        IEnumerator CloseResult()
+        {
+            float until = Time.realtimeSinceStartup + 3f;
+            while (Game.UI.Result.IsOpen && Time.realtimeSinceStartup < until)
+            {
+                Game.UI.Result.ChooseByKey(true);
+                yield return null;
+            }
+            if (Game.UI.Result.IsOpen) Debug.LogError("[Dev] 결과 창이 닫히지 않았습니다.");
         }
 
         IEnumerator Shot(string name)

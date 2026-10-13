@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Fishing.Core;
 using Fishing.Data;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,12 +18,12 @@ namespace Fishing.UI
         const float MapW = 440f, MapH = 440f * 560f / 420f;
 
         readonly List<(Button btn, Image ring, FishingArea area)> _markers = new List<(Button, Image, FishingArea)>();
-        readonly List<(Text text, FishingArea area)> _listItems = new List<(Text, FishingArea)>();
+        readonly List<(TMP_Text text, FishingArea area)> _listItems = new List<(TMP_Text, FishingArea)>();
         readonly List<(Image bg, int channel)> _channels = new List<(Image, int)>();
-        Text _mapName, _dexRate, _fishName, _fishLatin, _seasonRecord, _records, _status;
+        TMP_Text _mapName, _dexRate, _fishName, _fishLatin, _seasonRecord, _records, _status;
         Image _dexFill, _fishImage;
         RectTransform _mapLabel;
-        Text _mapLabelText;
+        TMP_Text _mapLabelText;
         FishingArea _selected;
         int _fishIndex;
         int _channel = 1;
@@ -35,14 +36,13 @@ namespace Fishing.UI
             BuildFrame(canvas, "FishingAreaPanel", "낚시터 목록  <size=16><color=#80c8ff>FISHINGAREA LIST</color></size>", new Vector2(1240, 900));
 
             // ---- 지도 ----
-            var mapFrame = UIFactory.Image(Body, new Color(0.03f, 0.06f, 0.09f, 1f), null, "MapFrame");
+            var mapFrame = UIFactory.Shape(Body, UIFactory.Surface, UIFactory.RadiusCard, "MapFrame", 0f);
             mapFrame.rectTransform.At(new Vector2(0, 1), Vector2.zero, new Vector2(MapW + 230, MapH + 16));
             UIFactory.Text(mapFrame.transform, "KOREA", 30, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
                 .At(new Vector2(0, 1), new Vector2(14, -10), new Vector2(200, 40));
             var map = UIFactory.Node("Map", mapFrame.transform).At(new Vector2(1, 1), new Vector2(-8, -8), new Vector2(MapW, MapH));
-            var raw = map.gameObject.AddComponent<RawImage>();
-            raw.texture = KoreaMap.Texture;
-            raw.raycastTarget = false;
+            var raw = UIFactory.RoundedTexture(map, KoreaMap.Texture, 10f, "MapTexture");
+            raw.rectTransform.Fill();
 
             float listY = -56f;
             foreach (var area in FishingAreas.Korea)
@@ -51,8 +51,8 @@ namespace Fishing.UI
                 // 왼쪽 이름 목록
                 var item = UIFactory.Button(mapFrame.transform, "", () => Select(a), new Color(0, 0, 0, 0), 17);
                 ((RectTransform)item.transform).At(new Vector2(0, 1), new Vector2(10, listY), new Vector2(200, 28));
-                var t = item.GetComponentInChildren<Text>();
-                t.alignment = TextAnchor.MiddleLeft;
+                var t = item.GetComponentInChildren<TMP_Text>();
+                t.alignment = UIFactory.Align(TextAnchor.MiddleLeft);
                 t.text = a.Name;
                 _listItems.Add((t, a));
                 listY -= 30f;
@@ -70,27 +70,28 @@ namespace Fishing.UI
                 _markers.Add((btn, ring, a));
             }
             _mapLabel = UIFactory.Node("SelectedLabel", map).At(new Vector2(0, 0), Vector2.zero, new Vector2(130, 30), new Vector2(0.5f, 0f));
-            UIFactory.Image(_mapLabel, new Color(0.05f, 0.15f, 0.2f, 0.9f), null, "Bg").rectTransform.Fill();
-            UIFactory.Image(_mapLabel, UIFactory.Accent, null, "Line").rectTransform.At(new Vector2(0.5f, 0), Vector2.zero, new Vector2(130, 2));
+            var labelBg = UIFactory.Shape(_mapLabel, new Color(0.03f, 0.1f, 0.13f, 0.92f), UIFactory.Pill, "Bg", 4f);
+            labelBg.rectTransform.Fill();
+            UIFactory.AddBorder(labelBg, new Color(0.36f, 0.88f, 0.8f, 0.7f), 1.5f);
             _mapLabelText = UIFactory.Text(_mapLabel, "", 17, UIFactory.TextMain, TextAnchor.MiddleCenter, FontStyle.Bold);
             _mapLabelText.rectTransform.Fill();
 
             // ---- MAP INFO ----
             float rightX = MapW + 250f;
-            var info = UIFactory.Image(Body, new Color(0.03f, 0.06f, 0.09f, 1f), null, "MapInfo");
+            var info = UIFactory.Shape(Body, UIFactory.Surface, UIFactory.RadiusCard, "MapInfo", 0f);
             info.rectTransform.At(new Vector2(0, 1), new Vector2(rightX, 0), new Vector2(460, 120));
             Header(info.transform, "MAP INFO");
             _mapName = UIFactory.Text(info.transform, "", 30, new Color(0.45f, 0.95f, 0.6f), TextAnchor.MiddleCenter, FontStyle.Bold);
             _mapName.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -30), new Vector2(440, 40));
             UIFactory.Text(info.transform, "도감 달성도", 16, UIFactory.TextDim, TextAnchor.MiddleLeft).rectTransform
                 .At(new Vector2(0, 1), new Vector2(40, -80), new Vector2(110, 24));
-            _dexFill = UIFactory.Bar(info.transform, new Color(0, 0, 0, 0.6f), UIFactory.Accent, "Dex");
+            _dexFill = UIFactory.Bar(info.transform, new Color(0f, 0f, 0f, 0.4f), UIFactory.Accent, "Dex");
             ((RectTransform)_dexFill.transform.parent).At(new Vector2(0, 1), new Vector2(150, -86), new Vector2(200, 12));
             _dexRate = UIFactory.Text(info.transform, "", 16, UIFactory.TextMain, TextAnchor.MiddleRight);
             _dexRate.rectTransform.At(new Vector2(0, 1), new Vector2(360, -80), new Vector2(70, 24));
 
             // ---- FISH INFO ----
-            var fish = UIFactory.Image(Body, new Color(0.03f, 0.06f, 0.09f, 1f), null, "FishInfo");
+            var fish = UIFactory.Shape(Body, UIFactory.Surface, UIFactory.RadiusCard, "FishInfo", 0f);
             fish.rectTransform.At(new Vector2(0, 1), new Vector2(rightX, -130), new Vector2(460, 340));
             Header(fish.transform, "FISH INFO");
             _fishName = UIFactory.Text(fish.transform, "", 26, UIFactory.TextMain, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -99,17 +100,17 @@ namespace Fishing.UI
             _fishLatin.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -66), new Vector2(440, 22));
             _fishImage = UIFactory.Image(fish.transform, Color.white, UIFactory.Fish, "Fish");
             _fishImage.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -150), new Vector2(240, 110), new Vector2(0.5f, 0.5f));
-            var prev = UIFactory.Button(fish.transform, "◀", () => Flip(-1), new Color(0, 0, 0, 0), 30);
-            ((RectTransform)prev.transform).At(new Vector2(0, 1), new Vector2(14, -126), new Vector2(40, 50));
-            var next = UIFactory.Button(fish.transform, "▶", () => Flip(1), new Color(0, 0, 0, 0), 30);
-            ((RectTransform)next.transform).At(new Vector2(1, 1), new Vector2(-14, -126), new Vector2(40, 50));
+            var prev = UIFactory.IconButton(fish.transform, "◀", () => Flip(-1), UIFactory.BtnGhost, 20);
+            ((RectTransform)prev.transform).At(new Vector2(0, 1), new Vector2(16, -130), new Vector2(42, 42));
+            var next = UIFactory.IconButton(fish.transform, "▶", () => Flip(1), UIFactory.BtnGhost, 20);
+            ((RectTransform)next.transform).At(new Vector2(1, 1), new Vector2(-16, -130), new Vector2(42, 42));
             _seasonRecord = UIFactory.Text(fish.transform, "", 20, new Color(0.75f, 1f, 0.4f), TextAnchor.MiddleCenter, FontStyle.Bold);
             _seasonRecord.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -222), new Vector2(440, 50));
             _records = UIFactory.Text(fish.transform, "", 15, UIFactory.TextDim, TextAnchor.MiddleCenter);
             _records.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -282), new Vector2(440, 50));
 
             // ---- 채널 목록 ----
-            var rooms = UIFactory.Image(Body, new Color(0.03f, 0.06f, 0.09f, 1f), null, "Rooms");
+            var rooms = UIFactory.Shape(Body, UIFactory.Surface, UIFactory.RadiusCard, "Rooms", 0f);
             rooms.rectTransform.At(new Vector2(0, 0), Vector2.zero, new Vector2(MapW + 230, 180));
             var head = UIFactory.Node("Head", rooms.transform).At(new Vector2(0, 1), Vector2.zero, new Vector2(MapW + 230, 26));
             UIFactory.Text(head, "방번호", 14, UIFactory.TextDim, TextAnchor.MiddleLeft).rectTransform.At(new Vector2(0, 0.5f), new Vector2(20, 0), new Vector2(80, 24));
@@ -118,11 +119,11 @@ namespace Fishing.UI
             for (int i = 0; i < 5; i++)
             {
                 int ch = i + 1;
-                var row = UIFactory.Button(rooms.transform, "", () => { _channel = ch; RefreshChannels(); }, new Color(0.08f, 0.12f, 0.16f, 1f), 17);
+                var row = UIFactory.Button(rooms.transform, "", () => { _channel = ch; RefreshChannels(); }, UIFactory.TabOff, 17);
                 ((RectTransform)row.transform).At(new Vector2(0, 1), new Vector2(8, -30 - i * 30), new Vector2(MapW + 214, 27));
-                var label = row.GetComponentInChildren<Text>();
-                label.alignment = TextAnchor.MiddleLeft;
-                label.supportRichText = true;
+                var label = row.GetComponentInChildren<TMP_Text>();
+                label.alignment = UIFactory.Align(TextAnchor.MiddleLeft);
+                label.richText = true;
                 _channels.Add((row.GetComponent<Image>(), ch));
             }
 
@@ -141,15 +142,15 @@ namespace Fishing.UI
 
         static void Header(Transform parent, string text)
         {
-            var bar = UIFactory.Image(parent, new Color(0.1f, 0.2f, 0.28f, 1f), null, "Header");
-            bar.rectTransform.At(new Vector2(0.5f, 1), Vector2.zero, new Vector2(460, 22));
-            UIFactory.Text(bar.transform, text, 14, new Color(0.7f, 0.85f, 0.95f), TextAnchor.MiddleCenter, FontStyle.Bold).rectTransform.Fill();
+            UIFactory.Text(parent, text, 13, UIFactory.TextDim, TextAnchor.MiddleLeft, FontStyle.Bold, "Header").rectTransform
+                .At(new Vector2(0, 1), new Vector2(16, -6), new Vector2(300, 22));
         }
 
         void BigButton(string ko, string en, System.Action onClick, Vector2 bottomOffset, Vector2 size, float x, bool enabled)
         {
             var b = UIFactory.Button(Body, $"<b>{ko}</b>\n<size=12>{en}</size>", onClick,
-                enabled ? new Color(0.12f, 0.28f, 0.38f, 1f) : new Color(0.12f, 0.15f, 0.18f, 1f), 20);
+                enabled ? (en == "QUICK JOIN" ? UIFactory.BtnPrimary : UIFactory.BtnNeutral) : new Color(1f, 1f, 1f, 0.05f), 20);
+            UIFactory.SetRadius(b.targetGraphic, 14f);
             ((RectTransform)b.transform).At(new Vector2(0, 0), new Vector2(x, bottomOffset.y), size);
             b.interactable = enabled;
         }
@@ -237,8 +238,8 @@ namespace Fishing.UI
             foreach (var (bg, ch) in _channels)
             {
                 bool sel = ch == _channel;
-                bg.color = sel ? new Color(0.15f, 0.35f, 0.45f, 1f) : new Color(0.08f, 0.12f, 0.16f, 1f);
-                var t = bg.GetComponentInChildren<Text>();
+                bg.color = sel ? UIFactory.TabOn : UIFactory.TabOff;
+                var t = bg.GetComponentInChildren<TMP_Text>();
                 string state = _selected != null && _selected.Open ? "<color=#60e060>원활</color>" : "<color=#607080>준비 중</color>";
                 t.text = $"   No.{ch:000}        {(_selected?.Name ?? "")} CH.{ch}                                                      {state}";
             }

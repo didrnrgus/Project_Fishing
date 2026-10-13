@@ -153,19 +153,8 @@ namespace Fishing.World
 
         public static void AddSign(Transform parent, string text, Vector3 localPos, Color color)
         {
-            var go = new GameObject("Sign");
-            go.transform.SetParent(parent, false);
-            go.transform.localPosition = localPos;
-            go.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-            var tm = go.AddComponent<TextMesh>();
-            tm.text = text;
-            tm.font = UIFactory.Font;
-            tm.fontSize = 64;
-            tm.characterSize = 0.08f;
-            tm.anchor = TextAnchor.MiddleCenter;
-            tm.alignment = TextAlignment.Center;
-            tm.color = color;
-            go.GetComponent<MeshRenderer>().sharedMaterial = UIFactory.Font.material;
+            var t = UIFactory.WorldText(parent, text, localPos, color, 5f, "Sign");
+            t.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
         }
 
         void BuildWeeds()

@@ -51,6 +51,8 @@ namespace Fishing.UI
             }
 
             PortraitCamera.Create();
+            // 유리 UI: 메인 카메라 화면을 흐리게 만들어 창 뒤에 비춘다
+            UIFactory.InitStyle(Game.CameraRig != null ? Game.CameraRig.Cam : Camera.main);
             var canvas = UIFactory.CreateCanvas("UI", 10).transform;
             Hud = new HudView(canvas);
             Fight = new FightHudView(canvas);
@@ -77,6 +79,9 @@ namespace Fishing.UI
             Aquarium = new AquariumPanel(canvas);
             _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, Upgrade, Inventory, Costume, Exchange, Aquarium };
             LobbyHud.Root.transform.SetAsFirstSibling();
+            // 토스트는 모든 창 위에
+            Hud.ToastLayer.SetParent(canvas, false);
+            Hud.ToastLayer.SetAsLastSibling();
         }
 
         void Start()
@@ -112,7 +117,8 @@ namespace Fishing.UI
             Fight.Update();
             if (AreaMap.IsOpen) AreaMap.Tick();
             NearbyNpc = FindNearbyNpc();
-            Game.Player.NameTagVisible = !Dialog.IsOpen;
+            // 대화 중이거나 카메라가 캐릭터에 바짝 붙는 연출(캐스팅·챔질·환호) 중에는 내 이름표를 숨긴다
+            Game.Player.NameTagVisible = !Dialog.IsOpen && Game.CameraRig.Shot == Fishing.PlayerSystems.CameraRig.ShotKind.Follow;
             Result.Animate();
             HandleKeys();
         }
@@ -200,7 +206,7 @@ namespace Fishing.UI
         {
             if (Result.IsOpen)
             {
-                if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space)) Result.ChooseByKey(true);
+                if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Escape)) Result.ChooseByKey(true);
                 return;
             }
 
@@ -219,7 +225,6 @@ namespace Fishing.UI
                 if (Input.GetKeyDown(KeyCode.P)) OpenExclusive(Dex);
                 if (Input.GetKeyDown(KeyCode.Z)) OpenExclusive(KeepNet);
                 if (Input.GetKeyDown(KeyCode.I)) OpenExclusive(Inventory);
-            if (Input.GetKeyDown(KeyCode.C)) OpenExclusive(Costume);
                 if (Input.GetKeyDown(KeyCode.C)) OpenExclusive(Costume);
                 if (Input.GetKeyDown(KeyCode.F1)) OpenExclusive(Help);
                 return;

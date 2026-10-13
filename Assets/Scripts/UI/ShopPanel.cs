@@ -34,7 +34,7 @@ namespace Fishing.UI
         void BuildGear(RectTransform col, PlayerProfile p)
         {
             var rows = new RowCursor(col);
-            Cell(rows.Next(30), "장비", 4, 300, 22, UIFactory.Accent, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UIFactory.SectionTitle(rows.Next(30), "장비", 4, 22);
             GearSlot? lastSlot = null;
             foreach (var g in GearDatabase.Gear)
             {
@@ -45,53 +45,53 @@ namespace Fishing.UI
                     Cell(rows.Next(22, 2), slotName, 4, 200, 15, UIFactory.TextDim);
                 }
                 var row = rows.Next(50, 4);
-                UIFactory.Image(row, new Color(1, 1, 1, 0.04f), null, "Bg").rectTransform.Fill();
+                UIFactory.RowBg(row);
                 int plus = RodUpgrade.Upgradable(g.Slot) ? p.GearLevel(g.Id) : 0;
                 var shown = plus > 0 ? RodUpgrade.Apply(g, plus) : g;
                 var name = Cell(row, $"<b>{g.Name}</b>{(plus > 0 ? $" <color=#ffd060>+{plus}</color>" : "")}\n<size=14><color=#a0b0c0>{shown.StatLine}</color></size>", 10, 470, 18);
-                name.alignment = TextAnchor.MiddleLeft;
+                name.alignment = UIFactory.Align(TextAnchor.MiddleLeft);
 
                 bool owned = p.Owns(g.Id);
                 bool equipped = g.Id == p.Data.rodId || g.Id == p.Data.reelId || g.Id == p.Data.lineId || g.Id == p.Data.boatId;
                 bool levelOk = p.Data.level >= g.Level;
                 if (equipped)
-                    RowButton(row, "장착 중", null, 560, 220, new Color(0.15f, 0.45f, 0.42f), false);
+                    RowButton(row, "장착 중", null, 560, 220, UIFactory.TabOn, false);
                 else if (owned)
                     RowButton(row, "장착", () => { p.Equip(g); Game.Toast($"{g.Name} 장착"); }, 560, 220);
                 else if (!levelOk)
                     RowButton(row, $"Lv.{g.Level} 필요 · {g.Price:N0}골드", null, 560, 220, null, false, 15);
                 else
-                    RowButton(row, $"구매 {g.Price:N0}골드", () => BuyGear(g), 560, 220, new Color(0.45f, 0.35f, 0.12f), p.Data.gold >= g.Price);
+                    RowButton(row, $"구매 {g.Price:N0}골드", () => BuyGear(g), 560, 220, UIFactory.BtnGold, p.Data.gold >= g.Price);
             }
         }
 
         void BuildItems(RectTransform col, PlayerProfile p)
         {
             var rows = new RowCursor(col);
-            Cell(rows.Next(30), "미끼 · 먹을거리", 4, 300, 22, UIFactory.Accent, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UIFactory.SectionTitle(rows.Next(30), "미끼 · 먹을거리", 4, 22);
             foreach (var b in GearDatabase.Baits)
             {
                 if (b.NotSold || !b.SoldIn(Fishing.World.FieldMap.Id)) continue;
                 var row = rows.Next(40, 4);
-                UIFactory.Image(row, new Color(1, 1, 1, 0.04f), null, "Bg").rectTransform.Fill();
+                UIFactory.RowBg(row);
                 Cell(row, $"{b.Name}  <size=14><color=#a0b0c0>{b.PackSize}개 · 보유 {p.Count(b.Id)}</color></size>", 10, 380, 18);
                 RowButton(row, $"{b.Price:N0}골드", () => BuyItem(b.Id, b.Name, b.PackSize, b.Price), 400, 200,
-                    new Color(0.45f, 0.35f, 0.12f), p.Data.gold >= b.Price);
+                    UIFactory.BtnGold, p.Data.gold >= b.Price);
             }
             var kimbap = rows.Next(40, 4);
-            UIFactory.Image(kimbap, new Color(1, 1, 1, 0.04f), null, "Bg").rectTransform.Fill();
+            UIFactory.RowBg(kimbap);
             Cell(kimbap, $"김밥  <size=14><color=#a0b0c0>체력 +{GearDatabase.KimbapStamina:0} · 보유 {p.Count(GearDatabase.KimbapId)}</color></size>", 10, 380, 18);
             RowButton(kimbap, $"{GearDatabase.KimbapPrice:N0}골드", () => BuyItem(GearDatabase.KimbapId, "김밥", 1, GearDatabase.KimbapPrice), 400, 200,
-                new Color(0.45f, 0.35f, 0.12f), p.Data.gold >= GearDatabase.KimbapPrice);
+                UIFactory.BtnGold, p.Data.gold >= GearDatabase.KimbapPrice);
 
             rows.Next(10);
-            Cell(rows.Next(30), "서비스", 4, 300, 22, UIFactory.Accent, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UIFactory.SectionTitle(rows.Next(30), "서비스", 4, 22);
 
             int total = 0;
             foreach (var f in p.Data.keepNet) total += PlayerProfile.SellPrice(f);
             var sell = rows.Next(46, 4);
             Cell(sell, $"살림망 물고기 모두 판매  <size=14><color=#a0b0c0>{p.Data.keepNet.Count}마리</color></size>", 10, 380, 18);
-            RowButton(sell, $"+{total:N0}골드", SellAll, 400, 200, new Color(0.15f, 0.45f, 0.42f), p.Data.keepNet.Count > 0);
+            RowButton(sell, $"+{total:N0}골드", SellAll, 400, 200, UIFactory.TabOn, p.Data.keepNet.Count > 0);
 
             float dur = p.Data.rodDurability;
             int cost = Mathf.CeilToInt((100f - dur) * RepairCostPerPoint);
@@ -101,7 +101,7 @@ namespace Fishing.UI
 
             var up = rows.Next(46, 4);
             Cell(up, $"장비 강화  <size=14><color=#a0b0c0>낚싯대 +{p.GearLevel(p.Data.rodId)} · 릴 +{p.GearLevel(p.Data.reelId)} · 비늘 {p.Count(RodUpgrade.ScaleId)}</color></size>", 10, 380, 18);
-            RowButton(up, "강화하러 가기", () => Game.UI.OpenExclusive(Game.UI.Upgrade), 400, 200, new Color(0.55f, 0.35f, 0.1f));
+            RowButton(up, "강화하러 가기", () => Game.UI.OpenExclusive(Game.UI.Upgrade), 400, 200, UIFactory.BtnGold);
 
             var boat = p.Boat;
             var fuelRow = rows.Next(46, 4);

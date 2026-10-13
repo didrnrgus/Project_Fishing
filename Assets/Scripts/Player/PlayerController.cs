@@ -31,8 +31,14 @@ namespace Fishing.PlayerSystems
         public float Yaw => Model.eulerAngles.y;
         public bool MovedThisFrame { get; private set; }
 
-        /// <summary>낚싯대 기울기(도). 0 = 수평, 90 = 수직.</summary>
+        /// <summary>낚싯대 기울기(도). 0 = 수평, 90 = 수직, 90 넘으면 머리 뒤로 젖힘.</summary>
         public float RodPitch = 35f;
+        /// <summary>낚싯대 좌우 기울기(도). 챔질할 때 마우스를 흔드는 대로 따라 흔들린다.</summary>
+        public float RodYaw;
+        /// <summary>낚싯대가 목표 각도를 따라가는 빠르기. 캐스팅 순간에는 크게 해서 '휙' 휘두른다.</summary>
+        public float RodPitchSpeed = 10f;
+        /// <summary>상체 기울기(도). +면 뒤로 젖힘(캐스팅 준비), -면 앞으로 숙임(던진 직후·챔질).</summary>
+        public float BodyLean;
 
         CharacterController _cc;
         Transform _nameTag;
@@ -42,6 +48,9 @@ namespace Fishing.PlayerSystems
         Transform _rodPivot;
         float _vy;
         float _currentRodPitch = 35f;
+        float _currentRodYaw;
+        float _currentLean;
+        Transform _spine;
         float _bob;
         float _extendTarget = 1f;
         Transform _mount;
@@ -116,6 +125,7 @@ namespace Fishing.PlayerSystems
             {
                 if (t.name == "hand_r") _hand = t;
                 if (t.name == "Head") Head = t;
+                if (t.name == "spine_02") _spine = t;
                 t.gameObject.layer = Fishing.UI.PortraitCamera.Layer;
             }
             if (Head == null) Head = Model;
@@ -325,9 +335,14 @@ namespace Fishing.PlayerSystems
         void LateUpdate()
         {
             // 애니메이션이 손을 움직인 뒤에 낚싯대를 손에 붙인다
+            // 상체를 젖히거나 숙인다 (애니메이션 위에 덧입힌다). 손 위치가 바뀌므로 낚싯대보다 먼저
+            _currentLean = Mathf.Lerp(_currentLean, BodyLean, Time.deltaTime * 12f);
+            if (_spine != null && Mathf.Abs(_currentLean) > 0.05f)
+                _spine.rotation = Quaternion.AngleAxis(-_currentLean, Model.right) * _spine.rotation;
             if (_hand != null) _rodPivot.position = _hand.position;
-            _currentRodPitch = Mathf.Lerp(_currentRodPitch, RodPitch, Time.deltaTime * 10f);
-            _rodPivot.localRotation = Quaternion.Euler(-_currentRodPitch, 0f, 0f);
+            _currentRodPitch = Mathf.Lerp(_currentRodPitch, RodPitch, Time.deltaTime * RodPitchSpeed);
+            _currentRodYaw = Mathf.Lerp(_currentRodYaw, RodYaw, Time.deltaTime * 14f);
+            _rodPivot.localRotation = Quaternion.Euler(0f, _currentRodYaw, 0f) * Quaternion.Euler(-_currentRodPitch, 0f, 0f);
 
             UpdateRodGear();
             // 펼치기: 1.2초에 걸쳐 끝 마디부터. 마디가 하나 빠질 때마다 '착'
