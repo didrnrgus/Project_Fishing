@@ -3,7 +3,7 @@
 데스크톱(Unity 6000.3.17f1이 설치된 PC)에서 이 문서를 위에서부터 따라 하면 된다.
 클라우드 세션에서는 Unity를 실행할 수 없고 Asset Store·itch.io·Mixamo에도 접속할 수 없어서, **할 수 있는 데까지 만들어 두고 나머지를 여기에 적었다.**
 
-- 브랜치: `claude/character-quality` (main은 그대로)
+- main에 머지됨 (작업 브랜치: `claude/character-quality`)
 - 상태: 캐릭터 FBX·셰이더·코드까지 들어 있지만 **Unity에서 아직 한 번도 열어 보지 않았다.** 1단계 확인부터 할 것.
 
 ---
@@ -60,8 +60,7 @@ headless Blender(PyPI `bpy`)로 원본 Superhero FBX를 가공해 **Angler_Male.
 ## 2. 데스크톱에서 할 일 ① — 시제품 확인 (먼저!)
 
 ```bash
-git fetch origin claude/character-quality
-git checkout claude/character-quality
+git pull origin main
 ```
 Unity로 열면 Angler FBX 두 개가 임포트된다(휴머노이드, AssetImportRules가 자동 설정).
 
