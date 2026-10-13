@@ -292,6 +292,22 @@ namespace Fishing.EditorTools.Tests
         }
 
         [Test]
+        public void DeepSeaLegendsOnlyAtFarSea()
+        {
+            var dotdom = FishDatabase.Get("dotdom");
+            var ctx = new BiteContext { MapId = "honghyeon", Habitat = Habitat.Deep, Bait = BaitKind.Squid, Band = TimeBand.Night, Weather = Weather.Clear,
+                UseSeason = true, Season = Season.Spring, FarSea = true };
+            Assert.Greater(BiteSelector.Weight(dotdom, ctx), 0f);
+            ctx.FarSea = false;
+            Assert.AreEqual(0f, BiteSelector.Weight(dotdom, ctx), "먼바다가 아니면 돗돔은 안 문다");
+            ctx.FarSea = true;
+            ctx.MapId = "seocheon";
+            Assert.AreEqual(0f, BiteSelector.Weight(dotdom, ctx), "서해에는 없다");
+            Assert.AreEqual(0f, BiteSelector.Weight(FishDatabase.Get("dageumbari"), new BiteContext { MapId = "honghyeon", Habitat = Habitat.Rocky,
+                Bait = BaitKind.Squid, Band = TimeBand.Night, Weather = Weather.Clear }));
+        }
+
+        [Test]
         public void SmeltOnlyThroughIceInWinter()
         {
             var smelt = FishDatabase.Get("smelt");

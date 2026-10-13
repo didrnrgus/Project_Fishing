@@ -29,6 +29,8 @@ namespace Fishing.Data
         public string[] Maps = HanOnly;
         /// <summary>true면 어군 안에서만 문다 (자이언트 그루퍼 같은 대물 퀘스트 고기).</summary>
         public bool SchoolOnly;
+        /// <summary>먼바다 포인트(배로 나가는 맵 앞쪽 38%)에서만 문다: 수심 100m 넘는 곳에 사는 다금바리·돗돔.</summary>
+        public bool FarSeaOnly;
         /// <summary>제철 (null이면 사계절). 제철이면 잘 물고 아니면 덜 문다 (<see cref="Seasons.BiteFactor"/>).</summary>
         public Season[] Seasons;
         /// <summary>잡동사니가 걸리는 빈도 배율.</summary>
@@ -241,6 +243,20 @@ namespace Fishing.Data
                 Habitats = new[] { Habitat.Rocky, Habitat.Deep }, Baits = new[] { BaitKind.Squid, BaitKind.CutBait, BaitKind.Minnow },
                 Times = new[] { TimeBand.Evening, TimeBand.Morning }, Weathers = AnyWeather,
                 Power = 1.6f, Speed = 0.9f, Stamina = 2.2f, Aggression = 0.6f, Exp = 350, Price = 40000 },
+
+            // 남해 깊은 바다의 전설 (먼바다 포인트에서만). 언론 보도: 다금바리는 제주·남해 수심 100~200m, 15~20kg이면 대형.
+            // 돗돔은 400~500m 심해 암초에 살다 5~7월 산란하러 100m 안팎으로 올라올 때만 낚인다. 국내 기록 191cm, 한 해 30마리 안팎.
+            new FishSpecies { Id = "dageumbari", Name = "다금바리", Latin = "Niphon spinosus", Temper = "제주·남해 깊은 암초의 최고급 어종. 먼바다 포인트에서 밤·저녁에 아주 드물게 문다", Maps = Sea,
+                MinLen = 45, MaxLen = 120, TrophyLen = 100, TrophyName = "전설의 다금바리", WeightCoef = 0.02f, Rarity = 5, FarSeaOnly = true,
+                Habitats = new[] { Habitat.Rocky, Habitat.Deep }, Baits = new[] { BaitKind.Squid, BaitKind.CutBait, BaitKind.Minnow },
+                Times = new[] { TimeBand.Evening, TimeBand.Night }, Weathers = AnyWeather,
+                Power = 1.5f, Speed = 0.8f, Stamina = 2.0f, Aggression = 0.55f, Exp = 300, Price = 36000 },
+            new FishSpecies { Id = "dotdom", Name = "돗돔", Latin = "Stereolepis doederleini", Temper = "심해의 거인. 봄·여름 산란철에만 먼바다 포인트로 올라온다. 사람 키만 한 괴력",
+                Maps = Sea, Seasons = new[] { Season.Spring, Season.Summer },
+                MinLen = 90, MaxLen = 190, TrophyLen = 165, TrophyName = "전설의 돗돔", WeightCoef = 0.02f, Rarity = 5, FarSeaOnly = true,
+                Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.Squid, BaitKind.CutBait },
+                Times = AnyTime, Weathers = AnyWeather,
+                Power = 1.9f, Speed = 0.6f, Stamina = 2.6f, Aggression = 0.45f, Exp = 450, Price = 60000 },
 
             // 겨울 한강 얼음낚시 (얼음 구멍에서만)
             new FishSpecies { Id = "smelt", Name = "빙어", Latin = "Hypomesus nipponensis", Temper = "얼음 구멍 아래 떼 지어 다니는 겨울 강의 요정. 겨울에만, 얼음 위에서만 낚인다",
