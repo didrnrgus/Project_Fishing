@@ -660,11 +660,13 @@ namespace Fishing.Angling
             var previous = p.Dex(species.Id);
             float prevBest = previous?.maxLength ?? 0f;
             int prevBestDay = previous?.firstDay ?? 0;
+            bool newSpecies = !species.IsJunk && p.Dex(species.Id) == null;
             bool record = p.RecordDex(species, caught.length, caught.weight, caught.day);
             int exp = Mathf.RoundToInt(species.Exp * Mathf.Sqrt(f.Length / species.MinLen) * (species.IsTrophy(f.Length) ? 2f : 1f));
             p.Data.totalCatches++;
             p.AddExp(exp);
-            Game.Quests.OnCatch(new CatchInfo { Species = species, Length = f.Length, Habitat = _ctx.Habitat, Band = Game.Clock.Band });
+            Game.Quests.OnCatch(new CatchInfo { Species = species, Length = f.Length, Habitat = _ctx.Habitat, Band = Game.Clock.Band,
+                MapId = FieldMap.Id, NewSpecies = newSpecies, Combo = f.Combo });
             Game.Schools.OnCatch(_ctx.School, species.Id);
 
             State = FishingState.Result;

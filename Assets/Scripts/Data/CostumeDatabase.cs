@@ -66,6 +66,8 @@ namespace Fishing.Data
             new CostumeDef { Id = "hat_cap", Name = "조합 야구모자", Slot = CostumeSlot.Hat, Color = new Color(0.15f, 0.25f, 0.5f), Style = 1, Price = 3500, Level = 4, BigFish = 0.03f },
             new CostumeDef { Id = "hat_khaki", Name = "카키 벙거지", Slot = CostumeSlot.Hat, Color = new Color(0.5f, 0.52f, 0.35f), Style = 0, Price = 6000, Level = 8, Stamina = 8, BigFish = 0.02f },
             new CostumeDef { Id = "hat_red", Name = "갯바위 레드캡", Slot = CostumeSlot.Hat, Color = new Color(0.8f, 0.15f, 0.12f), Style = 1, Price = 14000, Level = 12, BigFish = 0.05f, Counter = 0.03f },
+            new CostumeDef { Id = "hat_conch", Name = "소라고동 모자", Slot = CostumeSlot.Hat, Color = new Color(0.95f, 0.85f, 0.75f), Style = 2, Reward = true,
+                Stamina = 6, BigFish = 0.04f, Desc = "소라고동 교환소" },
             // 안경
             new CostumeDef { Id = "glass_none", Name = "안경 벗기", Slot = CostumeSlot.Glasses, Style = -1 },
             new CostumeDef { Id = "glass_sun", Name = "편광 선글라스", Slot = CostumeSlot.Glasses, Color = new Color(0.08f, 0.08f, 0.1f), Price = 4000, Level = 3, Stamina = 6,
@@ -78,6 +80,8 @@ namespace Fishing.Data
             new CostumeDef { Id = "top_rash", Name = "래시가드", Slot = CostumeSlot.Top, Color = new Color(0.12f, 0.14f, 0.2f), Price = 9000, Level = 9, Stamina = 8, Drain = 0.05f },
             new CostumeDef { Id = "top_union", Name = "조합 기념 티셔츠", Slot = CostumeSlot.Top, Color = new Color(0.95f, 0.75f, 0.2f), Reward = true,
                 Desc = "자이언트 그루퍼 퀘스트 보상. 원작처럼 능력치는 없다" },
+            new CostumeDef { Id = "top_conch", Name = "소라 무늬 셔츠", Slot = CostumeSlot.Top, Color = new Color(0.95f, 0.6f, 0.55f), Reward = true,
+                BigFish = 0.04f, Drain = 0.05f, Desc = "소라고동 교환소" },
             // 조끼
             new CostumeDef { Id = "vest_green", Name = "낚시 조끼", Slot = CostumeSlot.Vest, Color = new Color(0.25f, 0.4f, 0.3f) },
             new CostumeDef { Id = "vest_none", Name = "조끼 벗기", Slot = CostumeSlot.Vest, Style = -1 },

@@ -30,6 +30,22 @@ namespace Fishing.Core
         public int count;
     }
 
+    /// <summary>오늘의 조합 의뢰 (일일 퀘스트).</summary>
+    [Serializable]
+    public class DailyQuest
+    {
+        public int kind;          // 0 어종 N마리, 1 서식지 N마리, 2 어종 길이 이상
+        public string mapId;
+        public string speciesId;
+        public int habitat;
+        public float minLen;
+        public int count;
+        public int progress;
+        public bool done;
+        public int gold;
+        public int exp;
+    }
+
     [Serializable]
     public class QuestProgress
     {
@@ -60,7 +76,15 @@ namespace Fishing.Core
         public List<string> visitedMaps = new List<string>();
         public List<string> ownedCostumes = new List<string>();
         /// <summary>입은 의상 (CostumeSlot 순서: 모자, 안경, 상의, 조끼, 하의, 신발).</summary>
-        public List<string> costumes = new List<string>(); // 마지막으로 있던 낚시터
+        public List<string> costumes = new List<string>();
+        public List<DailyQuest> daily = new List<DailyQuest>();
+        public int dailyDay = -1;
+        public int dailyCompleted;
+        public List<string> trophyDone = new List<string>();   // 대물 도전 달성한 어종
+        public List<string> achievements = new List<string>();
+        public List<string> specialFinds = new List<string>(); // 로봇 물고기, 생선 캔 같은 특별한 것
+        public int bestCombo;
+        public string title = "";                              // 고른 칭호 (빈 문자열이면 레벨 칭호) // 마지막으로 있던 낚시터
         public string boatId = "";      // 장착한 배 (없으면 빈 문자열)
         public float boatFuel;          // 남은 연료 L
         public List<ItemStack> rodLevels = new List<ItemStack>(); // 낚싯대 강화 단계 (id, count = +N)

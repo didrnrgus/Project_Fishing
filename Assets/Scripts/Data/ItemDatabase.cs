@@ -12,6 +12,7 @@ namespace Fishing.Data
             { GearDatabase.KimbapId, ("김밥", $"체력 +{GearDatabase.KimbapStamina:0}. 출조의 든든한 동반자.", ItemCategory.Food) },
             { RodUpgrade.ScaleId, ("반짝이는 비늘", "큰 고기를 해체하면 나온다. 낚싯대·릴 강화 재료.", ItemCategory.Material) },
             { RodUpgrade.StarSandId, ("별모래", "강화할 때 쓰면 성공 확률이 오른다. 귀한 고기를 해체하면 가끔 나온다.", ItemCategory.Material) },
+            { AchievementDatabase.ConchId, ("소라고동", "도감·대물 도전·일일 의뢰·업적으로 모은다. 조합 연락관에게 귀한 물건으로 바꿀 수 있다 (원작: 도감을 채우면 소라고동).", ItemCategory.Material) },
         };
 
         public static string Name(string id)

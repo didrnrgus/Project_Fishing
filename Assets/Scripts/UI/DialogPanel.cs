@@ -69,7 +69,7 @@ namespace Fishing.UI
             {
                 var (label, action) = options[i];
                 var b = UIFactory.Button(_options, label, () => action(), i == options.Length - 1 ? new Color(0.25f, 0.27f, 0.3f) : UIFactory.ButtonBg, 19);
-                ((RectTransform)b.transform).At(new Vector2(0, 1), new Vector2(0, -i * 54f), new Vector2(340, 48), new Vector2(0, 1));
+                ((RectTransform)b.transform).At(new Vector2(0, 1), new Vector2(0, -i * 46f), new Vector2(340, 42), new Vector2(0, 1));
             }
         }
 
@@ -116,6 +116,7 @@ namespace Fishing.UI
             }
             Show($"한국 낚시 조합 {Npc.Look.Name}입니다.\n지금 맡으신 일은 [{q.Title}] — {q.GoalText} ({Mathf.Min(quests.Progress, q.Count)}/{q.Count}).\n\"{q.Desc}\"",
                 ("퀘스트 자세히 보기", OpenQuest),
+                ("소라고동 교환", () => { Close(); Game.UI.OpenExclusive(Game.UI.Exchange); }),
                 ("조황 정보", () => Show(Report(), ("다른 이야기", UnionGreeting), Bye)),
                 Bye);
         }
