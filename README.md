@@ -96,6 +96,7 @@ sh tools/build.sh
 | [05-dev-guide.md](docs/05-dev-guide.md) | 개발 환경, 에디터 메뉴, 명령줄 도구, 자동 스크린샷, 세이브, 디버깅 |
 | [06-roadmap.md](docs/06-roadmap.md) | 다음 작업: 서천 앞바다·제주, 배, 수족관, NPC 대회 |
 | [08-quality-plan.md](docs/08-quality-plan.md) | 퀄리티 향상: 보통 체형 + 진짜 옷 메쉬 캐릭터(시제품), 데스크톱 확인 절차, 무료 에셋·패키지 계획 |
+| [09-art-plan.md](docs/09-art-plan.md) | 앞으로 할 일: 어종별 고폴리 물고기 모델·애니메이션, 도감 그림, 장비·미끼·재료 아이콘 (검색 → 설계 → 제작 → 적용) |
 
 ## 구조 한눈에
 
