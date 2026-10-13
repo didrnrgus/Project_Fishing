@@ -322,6 +322,36 @@ def model_line(iid):
 
 def model_boat(iid):
     objs = []
+    if iid == 'boat_sail':
+        objs = []
+        mw, mn = mat('#f4f4f2', 0.25, coat=0.8), mat('#1e3a78', 0.3, coat=0.6)
+        objs.append(box((0.42, 1.2, 0.18), mw, loc=(0, 0, 0.09), bevel=0.06))
+        objs.append(box((0.3, 0.3, 0.18), mw, loc=(0, 0.66, 0.09), rot=(0, 0, math.radians(45)), bevel=0.04))
+        objs.append(box((0.44, 1.22, 0.04), mn, loc=(0, 0, 0.03)))
+        objs.append(cyl(0.012, 0.012, 1.3, mat('#d8d8dc', 0.2, metal=0.8), loc=(0, 0.15, 0.82)))
+        # 삼각 돛 두 장 (주돛·앞돛)
+        for (y0, y1, h, c) in ((0.15, -0.45, 1.2, '#fbfaf4'), (0.17, 0.62, 1.0, '#f2f0e8')):
+            bm = bmesh.new()
+            v0 = bm.verts.new((0, y0, 0.25)); v1 = bm.verts.new((0, y1, 0.25)); v2 = bm.verts.new((0, y0, 0.25 + h))
+            bm.faces.new((v0, v1, v2))
+            bmesh.ops.solidify(bm, geom=list(bm.faces), thickness=0.01)
+            objs.append(obj_from_bm(bm, 'Sail', mat(c, 0.5)))
+    elif iid == 'boat_cruiser':
+        objs = []
+        mw, mb, mg = mat('#f2f2f0', 0.25, coat=0.8), mat('#22408a', 0.3, coat=0.6), mat('#88b8e0', 0.05, trans=0.8)
+        objs.append(box((0.6, 1.8, 0.3), mw, loc=(0, 0, 0.15), bevel=0.08))
+        objs.append(box((0.42, 0.42, 0.3), mw, loc=(0, 0.95, 0.15), rot=(0, 0, math.radians(45)), bevel=0.06))
+        objs.append(box((0.62, 1.82, 0.08), mb, loc=(0, 0, 0.06)))
+        objs.append(box((0.48, 0.7, 0.36), mw, loc=(0, -0.2, 0.45), bevel=0.05))   # 선실
+        objs.append(box((0.5, 0.05, 0.18), mg, loc=(0, 0.16, 0.52), rot=(math.radians(-20), 0, 0)))
+        objs.append(cyl(0.012, 0.012, 0.5, mat('#d8d8dc', 0.2, metal=0.8), loc=(0, -0.3, 0.88)))
+        objs.append(box((0.3, 0.02, 0.02), mat('#d8d8dc', 0.2, metal=0.8), loc=(0, -0.3, 1.05)))
+        for s in (-1, 1):
+            objs.append(cyl(0.006, 0.006, 0.9, mat('#202020', 0.3), loc=(s * 0.26, -0.75, 0.6), rot=(math.radians(55), 0, s * 0.3)))  # 낚싯대 거치
+    if iid in ('boat_sail', 'boat_cruiser'):
+        o = join(objs, 'Boat')
+        o.rotation_euler = (0, 0, math.radians(60))
+        return [o], 'item'
     if iid == 'boat_rubber':
         mg, mo = mat('#5a5e64', 0.6), mat('#e8742a', 0.55)
         # U자 고무 튜브: 뒤쪽 두 개 + 앞 반원
@@ -363,7 +393,7 @@ def model_boat(iid):
         objs.append(box((0.04, 0.04, 0.22), mat('#2a2a2c', 0.4), loc=(0, 0.66, -0.02)))
         objs.append(box((0.14, 0.13, 0.05), mbl, loc=(0, 0.62, 0.27), bevel=0.015))
     o = join(objs, 'Boat')
-    o.rotation_euler = (0, 0, math.radians(40 if iid == 'boat_rubber' else 65))
+    o.rotation_euler = (0, 0, math.radians({'boat_rubber': 40, 'boat_sail': 60}.get(iid, 65)))
     return [o], 'item'
 
 
@@ -799,7 +829,7 @@ ITEMS = {
     'rod_basic': model_rod, 'rod_carbon': model_rod, 'rod_bamboo': model_rod, 'rod_heavy': model_rod, 'rod_gege': model_rod,
     'reel_basic': model_reel, 'reel_power': model_reel, 'reel_hispeed': model_reel, 'reel_napal': model_reel,
     'line_nylon': model_line, 'line_carbon': model_line, 'line_pe': model_line,
-    'boat_rubber': model_boat, 'boat_speed': model_boat,
+    'boat_rubber': model_boat, 'boat_speed': model_boat, 'boat_sail': model_boat, 'boat_cruiser': model_boat,
     'bait_worm': model_worm, 'bait_paste': model_paste, 'bait_corn': model_corn, 'bait_krill': model_krill,
     'bait_seaworm': model_seaworm, 'bait_squid': model_squid, 'bait_shrimp': model_shrimp, 'bait_minnow': model_minnow,
     'bait_lure': model_lure, 'bait_egi': model_egi,

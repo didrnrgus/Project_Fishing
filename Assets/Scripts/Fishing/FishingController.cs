@@ -366,14 +366,15 @@ namespace Fishing.Angling
                 School = Game.Schools.At(col, row),
                 MapId = FieldMap.Id,
                 BaitPotency = Game.Profile.Bait.Potency,
-                BigFishBonus = Game.Profile.Costume.BigFish,
+                // 먼바다 포인트는 대물이 잘 문다
+                BigFishBonus = Game.Profile.Costume.BigFish + (FieldMap.IsFarSea(_bobber.Position) ? 0.08f : 0f),
             };
             // 소용돌이 한가운데에 떨어뜨리면 입질이 더 빠르다
             _waitCol = col;
             _waitRow = row;
             _waitInSpot = _ctx.School != null && _ctx.School.InSpot(_bobber.Position);
             CastCellLabel = $"{_cellName} · {FieldMap.HabitatName(_ctx.Habitat)}" + (_ctx.School != null ? $" · {_ctx.School.Name}({_ctx.School.SizeLabel})" : "")
-                + (_waitInSpot ? " · 어군 한가운데!" : "");
+                + (_waitInSpot ? " · 어군 한가운데!" : "") + (FieldMap.IsFarSea(_bobber.Position) ? " · 먼바다 (대물↑)" : "");
             PendingBite = BiteSelector.Pick(_ctx);
             BigBite = false;
 
