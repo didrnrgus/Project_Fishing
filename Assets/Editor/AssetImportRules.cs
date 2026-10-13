@@ -5,7 +5,8 @@ namespace Fishing.EditorTools
     /// <summary>
     /// 외부 에셋(Quaternius, CC0) 임포트 규칙.
     ///  - Resources/Characters, Resources/Animations: 휴머노이드 리그 (애니메이션 리타깃)
-    ///  - 캐릭터 메쉬는 런타임에 옷 마스크(버텍스 컬러)를 굽기 위해 Read/Write 허용
+    ///  - Resources/Characters/Angler_*.fbx: tools/blender/build_characters.py가 만든 낚시꾼(몸 + 옷 메쉬)
+    ///  - ThirdParty/Quaternius/Source: 그 원본 Superhero FBX. 런타임에는 안 쓰므로 가볍게(애니메이션·머티리얼 없음)
     ///  - 이름에 "Loop"가 들어간 클립은 반복 재생
     ///  - Resources/Fish: 레거시 애니메이션 (헤엄 클립 하나라서 Animation 컴포넌트로 충분)
     /// </summary>
@@ -21,13 +22,19 @@ namespace Fishing.EditorTools
             {
                 importer.animationType = ModelImporterAnimationType.Human;
                 importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
-                importer.isReadable = assetPath.Contains("Resources/Characters/");
+                importer.isReadable = false;
                 importer.materialImportMode = ModelImporterMaterialImportMode.None;
                 importer.importAnimation = assetPath.Contains("Resources/Animations/");
             }
             else if (assetPath.Contains("Resources/Characters/Hair/"))
             {
                 importer.animationType = ModelImporterAnimationType.Generic;
+                importer.importAnimation = false;
+                importer.materialImportMode = ModelImporterMaterialImportMode.None;
+            }
+            else if (assetPath.Contains("ThirdParty/Quaternius/Source/"))
+            {
+                importer.animationType = ModelImporterAnimationType.None;
                 importer.importAnimation = false;
                 importer.materialImportMode = ModelImporterMaterialImportMode.None;
             }

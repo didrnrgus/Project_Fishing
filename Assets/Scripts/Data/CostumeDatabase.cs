@@ -18,6 +18,10 @@ namespace Fishing.Data
         public Color Color = Color.white;
         /// <summary>모자 모양: 0 벙거지, 1 야구모자, 2 밀짚모자. -1이면 모자/조끼/안경을 벗는다.</summary>
         public int Style;
+        /// <summary>옷 메쉬 이름 (Angler_Male/Female.fbx 안의 오브젝트). 비우면 부위 기본값.</summary>
+        public string Model;
+        /// <summary>원단 무늬: 0 무지, 1 체크, 2 데님, 3 줄무늬 (Fishing/Garment 셰이더).</summary>
+        public int Pattern;
         public int Price;
         public int Level = 1;
         /// <summary>상점에서 팔지 않음 (퀘스트·대회 보상).</summary>
@@ -74,29 +78,29 @@ namespace Fishing.Data
                 Desc = "원작에서도 선글라스는 HP를 조금 올려 줬다" },
             new CostumeDef { Id = "glass_pro", Name = "프로 미러 선글라스", Slot = CostumeSlot.Glasses, Color = new Color(0.2f, 0.45f, 0.7f), Price = 15000, Level = 12, Stamina = 10, BigFish = 0.03f },
             // 상의 (셔츠)
-            new CostumeDef { Id = "top_white", Name = "흰 반팔 티", Slot = CostumeSlot.Top, Color = new Color(0.92f, 0.92f, 0.94f) },
-            new CostumeDef { Id = "top_check", Name = "체크 남방", Slot = CostumeSlot.Top, Color = new Color(0.65f, 0.25f, 0.22f), Price = 2500, Level = 2, Drain = 0.05f },
-            new CostumeDef { Id = "top_blue", Name = "한강 블루 셔츠", Slot = CostumeSlot.Top, Color = new Color(0.3f, 0.5f, 0.85f), Price = 5000, Level = 5, BigFish = 0.03f },
-            new CostumeDef { Id = "top_rash", Name = "래시가드", Slot = CostumeSlot.Top, Color = new Color(0.12f, 0.14f, 0.2f), Price = 9000, Level = 9, Stamina = 8, Drain = 0.05f },
-            new CostumeDef { Id = "top_union", Name = "조합 기념 티셔츠", Slot = CostumeSlot.Top, Color = new Color(0.95f, 0.75f, 0.2f), Reward = true,
+            new CostumeDef { Id = "top_white", Name = "흰 반팔 티", Slot = CostumeSlot.Top, Model = "Top_Tee", Color = new Color(0.92f, 0.92f, 0.94f) },
+            new CostumeDef { Id = "top_check", Name = "체크 남방", Slot = CostumeSlot.Top, Model = "Top_Long", Pattern = 1, Color = new Color(0.65f, 0.25f, 0.22f), Price = 2500, Level = 2, Drain = 0.05f },
+            new CostumeDef { Id = "top_blue", Name = "한강 블루 셔츠", Slot = CostumeSlot.Top, Model = "Top_Long", Color = new Color(0.3f, 0.5f, 0.85f), Price = 5000, Level = 5, BigFish = 0.03f },
+            new CostumeDef { Id = "top_rash", Name = "래시가드", Slot = CostumeSlot.Top, Model = "Top_Rash", Color = new Color(0.12f, 0.14f, 0.2f), Price = 9000, Level = 9, Stamina = 8, Drain = 0.05f },
+            new CostumeDef { Id = "top_union", Name = "조합 기념 티셔츠", Slot = CostumeSlot.Top, Model = "Top_Tee", Color = new Color(0.95f, 0.75f, 0.2f), Reward = true,
                 Desc = "자이언트 그루퍼 퀘스트 보상. 원작처럼 능력치는 없다" },
-            new CostumeDef { Id = "top_conch", Name = "소라 무늬 셔츠", Slot = CostumeSlot.Top, Color = new Color(0.95f, 0.6f, 0.55f), Reward = true,
+            new CostumeDef { Id = "top_conch", Name = "소라 무늬 셔츠", Slot = CostumeSlot.Top, Model = "Top_Tee", Pattern = 3, Color = new Color(0.95f, 0.6f, 0.55f), Reward = true,
                 BigFish = 0.04f, Drain = 0.05f, Desc = "소라고동 교환소" },
             // 조끼
-            new CostumeDef { Id = "vest_green", Name = "낚시 조끼", Slot = CostumeSlot.Vest, Color = new Color(0.25f, 0.4f, 0.3f) },
+            new CostumeDef { Id = "vest_green", Name = "낚시 조끼", Slot = CostumeSlot.Vest, Model = "Vest_Fishing", Color = new Color(0.25f, 0.4f, 0.3f) },
             new CostumeDef { Id = "vest_none", Name = "조끼 벗기", Slot = CostumeSlot.Vest, Style = -1 },
-            new CostumeDef { Id = "vest_life", Name = "구명조끼", Slot = CostumeSlot.Vest, Color = new Color(0.95f, 0.45f, 0.1f), Price = 3000, Level = 5, Stamina = 10, Desc = "바다에선 안전이 먼저" },
-            new CostumeDef { Id = "vest_pro", Name = "프로 낚시 조끼", Slot = CostumeSlot.Vest, Color = new Color(0.55f, 0.52f, 0.38f), Price = 12000, Level = 10, Damage = 0.05f, Counter = 0.05f },
+            new CostumeDef { Id = "vest_life", Name = "구명조끼", Slot = CostumeSlot.Vest, Model = "Vest_Life", Color = new Color(0.95f, 0.45f, 0.1f), Price = 3000, Level = 5, Stamina = 10, Desc = "바다에선 안전이 먼저" },
+            new CostumeDef { Id = "vest_pro", Name = "프로 낚시 조끼", Slot = CostumeSlot.Vest, Model = "Vest_Fishing", Color = new Color(0.55f, 0.52f, 0.38f), Price = 12000, Level = 10, Damage = 0.05f, Counter = 0.05f },
             // 하의
-            new CostumeDef { Id = "bottom_cargo", Name = "카고 바지", Slot = CostumeSlot.Bottom, Color = new Color(0.32f, 0.36f, 0.3f) },
-            new CostumeDef { Id = "bottom_jeans", Name = "청바지", Slot = CostumeSlot.Bottom, Color = new Color(0.22f, 0.3f, 0.5f), Price = 2000, Level = 2, Damage = 0.02f },
-            new CostumeDef { Id = "bottom_wader", Name = "방수 웨이더", Slot = CostumeSlot.Bottom, Color = new Color(0.2f, 0.28f, 0.22f), Price = 8000, Level = 7, Drain = 0.08f },
-            new CostumeDef { Id = "bottom_tech", Name = "블랙 테크 팬츠", Slot = CostumeSlot.Bottom, Color = new Color(0.1f, 0.1f, 0.12f), Price = 16000, Level = 13, Damage = 0.05f, Counter = 0.05f },
+            new CostumeDef { Id = "bottom_cargo", Name = "카고 바지", Slot = CostumeSlot.Bottom, Model = "Pants_Cargo", Color = new Color(0.32f, 0.36f, 0.3f) },
+            new CostumeDef { Id = "bottom_jeans", Name = "청바지", Slot = CostumeSlot.Bottom, Model = "Pants_Jeans", Pattern = 2, Color = new Color(0.22f, 0.3f, 0.5f), Price = 2000, Level = 2, Damage = 0.02f },
+            new CostumeDef { Id = "bottom_wader", Name = "방수 웨이더", Slot = CostumeSlot.Bottom, Model = "Pants_Wader", Color = new Color(0.2f, 0.28f, 0.22f), Price = 8000, Level = 7, Drain = 0.08f },
+            new CostumeDef { Id = "bottom_tech", Name = "블랙 테크 팬츠", Slot = CostumeSlot.Bottom, Model = "Pants_Jeans", Color = new Color(0.1f, 0.1f, 0.12f), Price = 16000, Level = 13, Damage = 0.05f, Counter = 0.05f },
             // 신발
-            new CostumeDef { Id = "shoes_sneaker", Name = "운동화", Slot = CostumeSlot.Shoes, Color = new Color(0.2f, 0.2f, 0.22f) },
-            new CostumeDef { Id = "shoes_boots", Name = "고무 장화", Slot = CostumeSlot.Shoes, Color = new Color(0.15f, 0.25f, 0.2f), Price = 2500, Level = 3, Cast = 0.5f },
-            new CostumeDef { Id = "shoes_spike", Name = "갯바위 스파이크화", Slot = CostumeSlot.Shoes, Color = new Color(0.6f, 0.6f, 0.62f), Price = 10000, Level = 8, Cast = 1.2f, Stamina = 5 },
-            new CostumeDef { Id = "shoes_gold", Name = "황금 낚시화", Slot = CostumeSlot.Shoes, Color = new Color(0.95f, 0.75f, 0.2f), Price = 30000, Level = 18, Cast = 2f, BigFish = 0.03f },
+            new CostumeDef { Id = "shoes_sneaker", Name = "운동화", Slot = CostumeSlot.Shoes, Model = "Shoes_Sneaker", Color = new Color(0.2f, 0.2f, 0.22f) },
+            new CostumeDef { Id = "shoes_boots", Name = "고무 장화", Slot = CostumeSlot.Shoes, Model = "Shoes_Boots", Color = new Color(0.15f, 0.25f, 0.2f), Price = 2500, Level = 3, Cast = 0.5f },
+            new CostumeDef { Id = "shoes_spike", Name = "갯바위 스파이크화", Slot = CostumeSlot.Shoes, Model = "Shoes_Boots", Color = new Color(0.6f, 0.6f, 0.62f), Price = 10000, Level = 8, Cast = 1.2f, Stamina = 5 },
+            new CostumeDef { Id = "shoes_gold", Name = "황금 낚시화", Slot = CostumeSlot.Shoes, Model = "Shoes_Sneaker", Color = new Color(0.95f, 0.75f, 0.2f), Price = 30000, Level = 18, Cast = 2f, BigFish = 0.03f },
         };
 
         /// <summary>처음부터 가진 기본 의상 (부위 순서대로).</summary>
