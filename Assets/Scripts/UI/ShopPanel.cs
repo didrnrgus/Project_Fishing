@@ -38,6 +38,7 @@ namespace Fishing.UI
             GearSlot? lastSlot = null;
             foreach (var g in GearDatabase.Gear)
             {
+                if (g.NotSold && !p.Owns(g.Id)) continue; // 대회 보상 장비는 받은 뒤에만 보인다
                 if (lastSlot != g.Slot)
                 {
                     lastSlot = g.Slot;

@@ -17,6 +17,7 @@ namespace Fishing.Core
     {
         public static PlayerProfile Profile;
         public static QuestSystem Quests;
+        public static TournamentSystem Tournament;
         public static GameClock Clock;
         public static WeatherSystem Weather;
         public static FishSchoolManager Schools;

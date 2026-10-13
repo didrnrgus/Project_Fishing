@@ -55,6 +55,26 @@ namespace Fishing.Core
         public int exp;
     }
 
+    /// <summary>오늘 대회 참가 기록과 누적 성적.</summary>
+    [Serializable]
+    public class TournamentSave
+    {
+        public int day = -1;          // 참가한 대회 날짜 (-1이면 없음)
+        public string mapId;
+        public bool settled;          // 결과 정산을 마쳤는지
+        public int count;
+        public float longest;
+        public string longestFish;
+        public float total;
+        public int points;            // 누적 포인트 (엠블럼)
+        public int played;
+        public int wins;
+        public int podiums;           // 1~3위 횟수
+        public int bestRank;          // 최고 순위 (0이면 없음)
+        public int lastRank;
+        public int lastDay = -1;
+    }
+
     [Serializable]
     public class QuestProgress
     {
@@ -110,6 +130,7 @@ namespace Fishing.Core
         public List<CaughtFish> keepNet = new List<CaughtFish>();
         public List<DexEntry> dex = new List<DexEntry>();
         public QuestProgress quest = new QuestProgress();
+        public TournamentSave tournament = new TournamentSave();
 
         public int clockDay = 1;
         public float clockMinutes = 6 * 60f;

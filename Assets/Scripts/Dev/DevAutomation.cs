@@ -229,6 +229,19 @@ namespace Fishing.Dev
             yield return Shot("16_help");
             Game.UI.Help.Close();
 
+            // 낚시 대회: 참가해서 몇 마리 낚은 상태 (HUD 순위표 + 퀘스트 창 대회 탭)
+            Game.Clock.Set(1, 12 * 60);
+            Game.Tournament.DebugJoin(4, 63.5f, "잉어", 151.2f);
+            yield return new WaitForSeconds(0.6f);
+            yield return Shot("30_tournament_hud");
+            Game.UI.Quest.ShowTab(4);
+            Game.UI.OpenExclusive(Game.UI.Quest);
+            yield return new WaitForSeconds(0.4f);
+            yield return Shot("31_tournament_rank");
+            Game.UI.Quest.Close();
+            Game.UI.Quest.ShowTab(0);
+            p.Data.tournament.day = -1;
+
             // NPC 대화 (낚시점 김사장), 낚싯대 강화 창
             Game.Player.Teleport(Fishing.World.FieldMap.ShopPos + new Vector3(1.2f, 0.1f, 4.5f), 180f);
             Game.CameraRig.Yaw = 200f;

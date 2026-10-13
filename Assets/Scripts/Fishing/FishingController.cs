@@ -877,6 +877,7 @@ namespace Fishing.Angling
             Game.Quests.OnCatch(new CatchInfo { Species = species, Length = f.Length, Habitat = _ctx.Habitat, Band = Game.Clock.Band,
                 MapId = FieldMap.Id, NewSpecies = newSpecies, Combo = f.Combo });
             Game.Schools.OnCatch(_ctx.School, species.Id);
+            Game.Tournament.OnCatch(species, f.Length);
 
             State = FishingState.Result;
             Fight = null;
