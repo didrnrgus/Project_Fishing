@@ -4,8 +4,12 @@
 
 - **Unity 6000.3.17f1** (Unity Hub 기본 경로 `C:\Program Files\Unity\Hub\Editor\6000.3.17f1`)
 - Windows Build Support 모듈
-- 패키지: `com.unity.ugui 2.0.0` + 기본 모듈
-- 외부 에셋: Quaternius CC0 모델만 (`Assets/Resources/Characters`, `Animations`, `Fish`). 임포트 설정은 `Assets/Editor/AssetImportRules.cs`가 자동으로 맞춘다.
+- 패키지: `com.unity.ugui 2.0.0`, `com.unity.burst`, `com.unity.collections`(Translucent Image가 씀) + 기본 모듈
+- 외부 에셋
+  - Quaternius CC0 모델 (`Assets/Resources/Characters`, `Animations`, `Fish`). 임포트 설정은 `Assets/Editor/AssetImportRules.cs`가 자동으로 맞춘다.
+  - **Translucent Image 7.0.3 + Paraform 1.5.0** (`Assets/Le Tai's Asset`): 유리 UI. 스크립팅 심볼 `LETAI_PARAFORM`이 있어야 둥근 도형이 나온다(ProjectSettings에 등록됨, 에디터가 열릴 때도 자동 추가).
+  - **EasyChart** 무료판 (`Assets/EasyChart`): 선·막대·파이(도넛)·레이더만. 가로 막대·게이지 등은 Pro 전용이라 쓰면 에러 로그가 난다.
+  - **TextMesh Pro** + Jalnan2 글꼴: `Assets/Editor/FontSetup.cs`가 `Resources/Fonts/Jalnan2 SDF`를 만든다(없을 때만). 다시 만들려면 메뉴 **Fishing > Rebuild Jalnan2 TMP Font**.
 - 렌더 파이프라인: Built-in, 입력: 구 Input Manager
 
 ## 처음 열기
@@ -51,14 +55,16 @@ Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.ex
 | 02_casting | 밤의 낚시 데크, 당겼다 미는 캐스팅 (비거리 숫자, 궤적) |
 | 03_waiting | 찌를 던지고 기다림 (찌 클로즈업 게이지) |
 | 04_bite_gauge | 본신: 찌가 잠기고 빨간 `!`, 두근두근 |
-| 05_hook_perfect | 자동 조작으로 PERFECT 챔질 → 파이팅 시작 |
+| 02b_cast_flight | 던진 직후: 어깨 근접 카메라, 찌를 따라 올라가는 비거리 숫자 |
+| 05_hook_perfect | 자동 조작으로 PERFECT 챔질 → HIT · PERFECT!! → 파이팅 시작 |
 | 06_fight | 82cm 잉어 파이팅 |
 | 06c_speedlines | 카운터 찬스 집중선을 강제로 띄워 모서리까지 덮이는지 확인 |
 | 06b_tension_danger | 장력을 0.96으로 강제 → 빨간 화면 테두리 |
 | 07_counter_chance | 카운터 찬스 (속도선, 파란 화살표) |
 | 08_counter | 카운터 성공 |
 | 09_landing | 랜딩 찬스 다이얼 |
-| 10_result | RESULT 화면 |
+| 09b_cheer | 랜딩 직후 환호 클로즈업 |
+| 10_result | RESULT 화면 (3D 물고기, 파이팅 기록 차트) |
 | 11_dex ~ 14_shop | 도감, 살림망, 퀘스트, 상점 (샘플 데이터) |
 | 16_help | 도움말 |
 | 20_npc_dialog | 낚시점 김사장과 대화 (밤, 처마 조명) |
@@ -77,6 +83,10 @@ UI나 연출을 바꾼 뒤 `build.sh` → `autoshot.sh`로 실제 화면을 확�
 - 위치: `%USERPROFILE%\AppData\LocalLow\didrnrgus\Project Fishing - 청풍명월 솔로\save.json`
 - 형식: `SaveData`를 `JsonUtility`로 저장한 JSON. 필드를 추가할 때는 기본값을 두면 이전 세이브와 호환된다.
 - 에디터에서 Play해도 같은 파일을 쓴다. 초기화하려면 `Fishing > Delete Save`.
+
+## 에디터를 닫지 않고 컴파일만 확인하기
+
+에디터가 열려 있으면 배치모드 빌드가 막힌다. 그럴 때는 Unity가 만든 `Library/Bee/artifacts/*/Assembly-CSharp.rsp`를 Unity에 들어 있는 Roslyn(`Editor/Data/DotNetSdkRoslyn/csc.dll`, `Editor/Data/NetCoreRuntime/dotnet.exe`)으로 돌려 오류만 볼 수 있다 (rsp의 소스 목록과 `-out`만 바꿔서).
 
 ## 디버깅 팁
 

@@ -3,7 +3,8 @@
 ## 원칙
 
 - **씬에는 `GameBootstrap` 하나만 둔다.** 월드, 플레이어, 카메라, UI를 모두 코드로 만든다. 씬에 없어도 `RuntimeInitializeOnLoadMethod`로 자동 생성된다.
-- **아트 에셋이 없다.** 프리미티브, 런타임 머티리얼(`Mats`), 절차적 텍스처/스프라이트, 절차적 사운드(`SoundFx`)만 쓴다. 나중에 에셋으로 바꿀 때는 `WorldBuilder`, `PlayerController.BuildModel`, `FightRodView.Build`, `Bobber.Create`만 교체하면 된다.
+- **월드 아트는 코드로 만든다.** 프리미티브, 런타임 머티리얼(`Mats`), 절차적 텍스처/스프라이트, 절차적 사운드(`SoundFx`) + CC0 모델(Quaternius, Kenney). 나중에 에셋으로 바꿀 때는 `WorldBuilder`, `PlayerController.BuildModel`, `FightRodView.Build`, `Bobber.Create`만 교체하면 된다.
+- **UI도 코드로 만들지만 외부 에셋을 쓴다**: Translucent Image + Paraform(유리·둥근 도형), EasyChart(차트), TextMeshPro(Jalnan2 글꼴). 프리팹 없이 `UIFactory`/`UIStyle`/`UIChart`로 조립한다.
 - **게임 규칙은 MonoBehaviour와 분리한다.** `FishFight`, `BiteSelector`, `PlayerProfile`, `QuestSystem`은 순수 C#이라서 에디터에서 밸런스 시뮬레이션을 돌릴 수 있다.
 - **데이터는 C# 정적 테이블이다** (`FishDatabase`, `GearDatabase`, `QuestDatabase`). 텍스트 diff로 리뷰하기 쉽다. 데이터가 많아지면 ScriptableObject나 JSON으로 옮길 수 있다.
 - **입력은 구 Input Manager**(`UnityEngine.Input`)를 쓴다. 프로젝트 설정 `activeInputHandler: 0`.
@@ -49,7 +50,7 @@ Assets/
     Player/
       PlayerController.cs        3인칭 캐릭터 이동, 낚싯대 기울기
       BoatController.cs          배: 물가에서 띄우기·운전·연료·부딪힘·물보라 꼬리·내리기 (Game.Boat)
-      CameraRig.cs               어깨 너머 3인칭 ↔ 파이팅 1인칭 ↔ 고정(대기실), 흔들림, 충돌 회피
+      CameraRig.cs               어깨 너머 3인칭 ↔ 파이팅 1인칭 ↔ 고정(대기실), 연출 구도(Shot: Cast/Bite/Cheer), 흔들림·화각 펀치·킥, 충돌 회피
     Fishing/
       FishingController.cs       낚시 상태 머신 (Idle→Charging→Casting→Waiting→Bite→Fighting→Result)
       FishFight.cs               파이팅 시뮬레이션 (순수 로직)
@@ -60,8 +61,11 @@ Assets/
       FishModels.cs              Fish1~3 모델로 어종별 물고기 (BakeMesh로 원본 길이를 재서 실제 cm에 맞춤)
       FightBot.cs                자동 파이팅 입력 (밸런스 시뮬레이션·자동 스크린샷용)
     UI/
-      GameUI.cs                  모든 UI 생성, 단축키
-      UIFactory.cs               코드 UGUI 헬퍼, 한글 OS 폰트, 절차적 스프라이트
+      GameUI.cs                  모든 UI 생성, 단축키 (블러 소스 InitStyle → 캔버스 → 창들, 토스트는 맨 위)
+      UIFactory.cs               코드 UGUI 헬퍼, TMP 글꼴(Jalnan2)·Outline·WorldText, 절차적 스프라이트, Panel/Button/Bar
+      UIStyle.cs                 다크 유리 스타일: Glass(블러 판)·Shape(둥근 도형)·그림자·테두리·Chip·SectionTitle, 팔레트
+      UIChart.cs                 EasyChart를 코드로: Line/Bars/Donut/Radar + ChartHost(데이터 갱신, 마우스 상호작용 끔)
+      ResultFishStage.cs         결과 화면 3D 물고기: 레이어 9 전용 카메라 → 투명 렌더 텍스처
       UIPanel.cs                 창 공통 틀
       HudView.cs                 필드 HUD (플레이어, 시계, 미니맵, 퀘스트, 미끼 슬롯, 토스트)
       FightHudView.cs            파이팅 HUD (장력 위험 빨간 테두리 포함)
@@ -80,6 +84,9 @@ Assets/
     Water.shader                 버텍스 사인파 3개 + 흐르는 노멀맵 2장, 하늘 반사
     Sky.shader                   Mode 0 달·별, Mode 1 구름(덮임 정도·노을색)
   Resources/                     Quaternius CC0: Characters(+Hair, Textures), Animations/UAL1_Standard, Fish/Fish1~3
+                                 UI/UIGlass·UISolid.mat (Paraform 재질), Fonts/Jalnan2 SDF (TMP, Editor/FontSetup.cs가 생성)
+  EasyChart/, Le Tai's Asset/,   외부 UI 에셋 (차트 / Translucent Image·Paraform). 데모 폴더 포함 그대로 둔다
+  TextMesh Pro/
   ThirdParty/Quaternius/         라이선스 사본
   Editor/
     ProjectTools.cs              Setup(씬·빌드 설정·셰이더), BuildWindows(Always Included Shaders 갱신), DeleteSave
@@ -113,6 +120,20 @@ GameBootstrap.Start → GameUI.EnterLobby (Mode=Lobby, 카메라 고정)
 - `FishingController.Update`가 상태 머신을 진행한다. 파이팅 중에는 `FishFight.Tick(dt, input, 체력계수, 내구도계수)`를 부른다.
 - `GameUI.Update`가 `HudView.Update`와 `FightHudView.Update`를 부른다. 둘 다 상태를 **폴링해서** 그리고, 창은 `PlayerProfile.Changed` 이벤트가 오면 다시 그린다.
 - `Game.Toast()`가 게임 어디서든 화면 위쪽에 메시지를 띄운다.
+
+## 연출 (원작 튜토리얼 영상 분석)
+
+`FishingController.UpdateCameraShot()`이 매 프레임 `CameraRig.Shot`을 정하고, 각 단계에서 캐릭터 자세(`PlayerController.RodPitch/RodYaw/RodPitchSpeed/BodyLean`)를 넣는다.
+
+| 단계 | 카메라 | 캐릭터·효과 |
+|---|---|---|
+| Charging | Cast: 오른쪽 어깨 뒤 근접 | 당긴 만큼 낚싯대를 머리 뒤로(최대 155°), 상체 젖힘 |
+| 놓는 순간 | 흔들림·화각 펀치 | 낚싯대를 빠르게(RodPitchSpeed 40) 앞으로, 초릿대 Kick |
+| Casting | Cast: 날아가는 찌를 본다 | 큰 비거리 숫자가 `FlyingDistance`를 따라 올라감 |
+| Bite | Bite: 옆모습 클로즈업 | 마우스 좌우대로 낚싯대 흔들림(`SwayRod`) |
+| 챔질 성공 | 흔들림·펀치·히트 스톱(0.12초) | 0.35초 동안 홱 채기 → 파이팅, HIT 문자 |
+| Fighting | 1인칭, 물고기 쪽 시선·기울기, 감기 펌핑 | Burst 물보라·흔들림, HIGH 장력 금빛 낚싯대, 카운터 히트 스톱 |
+| 랜딩 | Cheer: 얼굴 앞 1.1초 | 환호 → `ResultPanel.Show` |
 
 ## 상태 머신 (`FishingController`)
 
