@@ -342,6 +342,14 @@ namespace Fishing.Dev
             Game.Boat.DebugThrottle = float.NaN;
             Game.Boat.StowToLand();
 
+            // 흐린 낮 (층구름이 하늘을 덮는다)
+            Game.Player.Teleport(new Vector3(-70f, 1.1f, -64f), 20f);
+            Game.CameraRig.Yaw = 20f;
+            Game.Clock.Set(1, 14 * 60);
+            Game.Weather.Force(Weather.Cloudy);
+            yield return new WaitForSeconds(6f);
+            yield return Shot("15b_cloudy_day");
+
             // 비 오는 밤
             Game.Player.Teleport(new Vector3(-70f, 1.1f, -64f), 20f);
             Game.CameraRig.Yaw = 20f;
