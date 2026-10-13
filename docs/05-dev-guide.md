@@ -1,0 +1,80 @@
+# 05. 개발 가이드
+
+## 환경
+
+- **Unity 6000.3.17f1** (Unity Hub 기본 경로 `C:\Program Files\Unity\Hub\Editor\6000.3.17f1`)
+- Windows Build Support 모듈
+- 패키지: `com.unity.ugui 2.0.0` + 기본 모듈. 외부 에셋 없음
+- 렌더 파이프라인: Built-in, 입력: 구 Input Manager
+
+## 처음 열기
+
+1. Unity Hub → Add → `Project_Fishing` 폴더를 추가한다 (버전 6000.3.17f1).
+2. `Assets/Scenes/HanRiver.unity`를 열고 Play를 누른다.
+   - 다른 씬에서 Play해도 `GameBootstrap`이 자동으로 생성된다.
+3. 씬이나 빌드 설정이 깨졌다면 메뉴 **Fishing > Setup Project**를 실행한다.
+
+## 메뉴 (Fishing)
+
+| 메뉴 | 하는 일 |
+|---|---|
+| Setup Project | `HanRiver.unity` 생성, 빌드 씬 등록, Always Included Shaders 등록, 플레이어 설정 |
+| Build Windows | `Builds/Windows/ProjectFishing.exe` |
+| Balance Simulation | `docs/balance-report.md` 생성 |
+| Delete Save | 세이브 파일 삭제 |
+
+## 명령줄 도구 (`tools/`, Git Bash)
+
+```bash
+sh tools/build.sh                 # 윈도우 빌드
+sh tools/autoshot.sh              # 빌드 실행 → Screenshots/ 에 10장 자동 촬영 후 종료
+sh tools/balance.sh               # 밸런스 리포트 (전체)
+sh tools/balance.sh -simSummary   # 밸런스 리포트 (대물급만)
+```
+
+Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.exe" sh tools/build.sh`처럼 덮어쓴다.
+에디터에 같은 프로젝트가 열려 있으면 배치모드가 실패하니 먼저 닫는다.
+
+## 자동 스크린샷 (`-autoshot`)
+
+`ProjectFishing.exe -autoshot <폴더>`로 실행하면 `DevAutomation`이 아래 장면을 연출하고 찍은 뒤 종료한다. **세이브 파일은 읽지도 쓰지도 않는다.**
+
+| 파일 | 장면 |
+|---|---|
+| 01_field_morning | 시작 위치 (새벽) |
+| 02_waiting_sunset | 낚시 데크 끝에서 찌를 던지고 기다림 (해질녘) |
+| 03_fight | 82cm 잉어 파이팅 (자동 조작) |
+| 04_counter | 첫 카운터 순간 |
+| 05_result | 랜딩 결과 창 |
+| 06_dex ~ 09_shop | 도감, 살림망, 퀘스트, 낚시점 (샘플 데이터) |
+| 10_night_rain | 비 오는 밤, 동작대교 아래 |
+
+로그(`Logs/player.log`)에 파이팅 결과가 남는다. 예: `[Dev] 파이팅 종료: 상태=Result, 경과=20.5s, HP=59/382, 결과=Landed`
+
+UI나 연출을 바꾼 뒤 `build.sh` → `autoshot.sh`로 실제 화면을 확인하는 흐름을 권장한다.
+
+## 세이브
+
+- 위치: `%USERPROFILE%\AppData\LocalLow\didrnrgus\Project Fishing - 청풍명월 솔로\save.json`
+- 형식: `SaveData`를 `JsonUtility`로 저장한 JSON. 필드를 추가할 때는 기본값을 두면 이전 세이브와 호환된다.
+- 에디터에서 Play해도 같은 파일을 쓴다. 초기화하려면 `Fishing > Delete Save`.
+
+## 디버깅 팁
+
+- 파이팅만 바로 시험하려면 `Game.Fishing.DebugStartFight("carp", 90f, 20f)`를 호출한다 (예: 임시 키 바인딩).
+- 시간을 바꾸려면 `Game.Clock.Set(day, minutes)`, 날씨는 `Game.Weather.Force(Weather.Rain)`.
+- 시간을 빨리 돌리려면 `Game.Clock.Speed`.
+- `FishingController.Autoplay = true`면 파이팅을 봇이 대신한다.
+
+## Git
+
+- `.gitignore`는 Unity 표준에 `Builds/`, `Screenshots/`, `Logs/`, `UserSettings/`를 더 뺀다.
+- 문서용 스크린샷은 `docs/images/`에 복사해서 커밋한다.
+- 원격: `https://github.com/didrnrgus/Project_Fishing.git` (비공개 저장소)
+
+## 코딩 컨벤션
+
+- 네임스페이스 `Fishing.*` (`Core`, `Data`, `World`, `PlayerSystems`, `Angling`, `UI`, `Audio`, `Dev`, `EditorTools`)
+  - 낚시 로직 네임스페이스가 `Fishing.Fishing`이 되지 않도록 `Angling`으로 했다.
+- 사용자에게 보이는 문자열과 주석은 한국어로 쓴다.
+- 게임 규칙은 순수 C# 클래스에 둔다(시뮬레이션 가능하게). MonoBehaviour는 입력·표현만 맡는다.

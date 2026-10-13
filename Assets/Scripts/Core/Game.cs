@@ -1,0 +1,54 @@
+using System;
+using Fishing.Audio;
+using Fishing.Angling;
+using Fishing.PlayerSystems;
+using Fishing.UI;
+using Fishing.World;
+
+namespace Fishing.Core
+{
+    public enum ToastKind { Info, Good, Warn, Great }
+
+    /// <summary>씬 전역에서 접근하는 시스템 참조 모음. GameBootstrap이 채운다.</summary>
+    public static class Game
+    {
+        public static PlayerProfile Profile;
+        public static QuestSystem Quests;
+        public static GameClock Clock;
+        public static WeatherSystem Weather;
+        public static FishSchoolManager Schools;
+        public static PlayerController Player;
+        public static CameraRig CameraRig;
+        public static FishingController Fishing;
+        public static GameUI UI;
+        public static SoundFx Sound;
+
+        /// <summary>true면 저장하지 않는다 (자동 스크린샷 등 개발용 실행).</summary>
+        public static bool SaveDisabled;
+
+        public static event Action<string, ToastKind> Toasted;
+
+        public static void Toast(string message, ToastKind kind = ToastKind.Info) => Toasted?.Invoke(message, kind);
+
+        /// <summary>시계, 위치를 SaveData에 반영하고 파일로 저장한다.</summary>
+        public static void Save()
+        {
+            if (Profile == null || SaveDisabled) return;
+            var d = Profile.Data;
+            if (Clock != null)
+            {
+                d.clockDay = Clock.Day;
+                d.clockMinutes = Clock.Minutes;
+            }
+            if (Player != null)
+            {
+                var pos = Player.transform.position;
+                d.posX = pos.x;
+                d.posY = pos.y;
+                d.posZ = pos.z;
+                d.yaw = Player.Yaw;
+            }
+            SaveSystem.Save(d);
+        }
+    }
+}
