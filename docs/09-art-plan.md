@@ -1,6 +1,6 @@
 # 09. 물고기 모델 · 아이템 이미지 계획
 
-> 상태 (2026-10-14): **3장 물고기, 4장 아이템 아이콘 완료** — 32종 모델·텍스처·애니메이션 5종·도감 3D 미리보기·아이콘, 아이템 아이콘 32종 + 잡동사니 6종(아이콘·3D 모델)이 게임에 들어갔다.
+> 상태 (2026-10-14): **3장 물고기, 4장 아이템 아이콘 완료** — 처음 32종, 이후 맵·계절과 함께 9종(서천 6종, 빙어, 다금바리·돗돔)을 더해 **41종** 모델·텍스처·애니메이션 5종·도감 3D 미리보기·아이콘, 아이템 아이콘 37종 + 잡동사니 6종(아이콘·3D 모델)이 게임에 들어갔다.
 > 사용자가 도감 자료를 주기 전에 진행해 달라고 해서, 웹 자료(부록 출처)를 바탕으로 만들었다. 잉어 시제품 확인 단계는 건너뛰었다.
 > 순서: 3장(물고기) → 4장(아이템 이미지).
 
@@ -254,7 +254,7 @@
 | 확인 | `Fishing/Check Fish Models` 메뉴 → `Logs/fish-check.txt` (렌더러·크기·머리 방향 +Z·클립 길이), autoshot `10_result`, `11_dex`, `11b_dex_detail`, `28_aquarium` |
 
 ```bash
-bpyenv/Scripts/python -I tools/blender/build_fish.py                       # 32종 FBX · 텍스처 · 아이콘
+bpyenv/Scripts/python -I tools/blender/build_fish.py                       # 41종 FBX · 텍스처 · 아이콘
 bpyenv/Scripts/python -I tools/blender/build_fish.py --only carp --preview --anim   # 옆·위·비스듬히 + 클립별 4프레임
 bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.png
 ```
@@ -268,7 +268,7 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish
 | 항목 | 결과 |
 |---|---|
 | 스크립트 | `tools/blender/build_icons.py`: 아이템 Id마다 모델 함수 하나 (`model_rod`, `model_reel`, `model_worm` …), 공통 3/4 시점 정사영 카메라 + 왼쪽 위 주광 + 테두리 빛, 물체 크기에 맞춰 자동으로 칸을 채운다 |
-| 아이콘 | `Resources/Icons/Items/<Id>.png` 32종 (낚싯대 5 · 릴 4 · 줄 3 · 배 2 · 미끼 9 · 해체 미끼 5 · 김밥 · 재료 3), 대회 보상 장비(거거 낚시대·나팔고둥 릴) 포함 |
+| 아이콘 | `Resources/Icons/Items/<Id>.png` 37종 (낚싯대 6 · 릴 4 · 줄 3 · 배 4 · 미끼 11 · 해체 미끼 5 · 김밥 · 재료 3), 대회 보상 장비(거거 낚시대·나팔고둥 릴)·플라이대·에기·플라이·돛단배·크루저 포함 |
 | 잡동사니 | `Resources/Icons/Junk/<Id>.png` + `Resources/Junk/<Id>.fbx` 6종 (빈 깡통, 통발, 나무 상자, 생선 캔, 로봇 물고기, 낡은 운동화). 길이 1m 기준 정적 모델, 색은 FBX 머티리얼 그대로. 파이팅·RESULT에 3D로 나온다 |
 | 코드 | `ItemIcons.Get(id)`, `ItemIcons.Place(row, id, x, size)` (그림이 없으면 0을 돌려줘 글자만) |
 | 넣은 곳 | 상점(장비·미끼·김밥), 가방(아이템·배), HUD 미끼 바, 장비 강화(장비 + 비늘·별모래 보유), 소라고동 교환소, RESULT(잡동사니 그림·동그라미 엠블럼 안 어종 아이콘), 도감(물고기 아이콘) |

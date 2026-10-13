@@ -151,12 +151,12 @@ bpyenv/Scripts/python -I tools/blender/build_characters.py --preview --only male
 - [x] 2장 확인 목록 통과 → Angler FBX의 `.meta` 포함해 커밋 (2026-10-14: 빌드·autoshot에서 서 있음·정면·옷 확인)
 - [x] 문제 있으면 2장 표대로 고치거나 `garments.py` 수정 후 3장으로 재생성 (`--preview --closeup`: 발·상체 근접 렌더)
 - [x] Post Processing 패키지 + 코드로 볼륨/레이어 (블룸, Neutral 톤매핑, AO, SMAA, 시간대별 그레이딩) → `Core/PostFx.cs`. ACES는 노을·밤 하늘을 검게 눌러서 Neutral로 바꿨다
-- [ ] Human Basic Motions FREE 임포트 → `CharacterAnimator`에 두 번째 클립 라이브러리, Idle/Walk/Run 교체
+- [ ] Human Basic Motions FREE 임포트 → `CharacterAnimator`에 두 번째 클립 라이브러리, Idle/Walk/Run 교체 — **보류: 에셋 스토어 로그인 필요** (WORK-IN-PROGRESS "사용자가 해야 할 일")
 - [x] 4장 3(장갑)·4(운동화)·5(남방 깃)·6(여자 조끼) → 재생성, 9(머리카락+모자) 확인 (AO는 완료)
 - [x] 데크·둔치·길·방파제 텍스처 (Poly Haven CC0: 풀·나무 데크·콘크리트·아스팔트, `Mats.TexturedBox`). 나무 교체(Hand Painted Nature Pack)는 에셋 스토어 로그인이 필요해 보류
 - [x] 흐림/비 하늘, 반사 프로브: 큐브맵(AllSky)은 에셋 스토어 로그인이 필요해서 대신 `Sky.shader` 구름에 층구름(흐림·비에서 하늘을 덮는 회색 층)을 절차적으로 섞었다(`15b_cloudy_day`). 반사 프로브는 `DayNightCycle`의 하늘 실시간 프로브(시간대마다 갱신)
-- [ ] (선택) VRoid 시험 모델 하나 만들어 비교
-- [ ] `sh tools/build.sh && sh tools/autoshot.sh`로 스크린샷 갱신, README 표·`docs/03-architecture.md`(Clothed → Skin/Garment, CharacterFactory 설명), `docs/05-dev-guide.md`(3장 명령), `docs/06-roadmap.md` 갱신
+- [ ] (선택) VRoid 시험 모델 하나 만들어 비교 — 보류: VRoid Studio(데스크톱 앱) 수작업 필요
+- [x] `sh tools/build.sh && sh tools/autoshot.sh`로 스크린샷 갱신, README 표·`docs/03-architecture.md`(Clothed → Skin/Garment, CharacterFactory 설명), `docs/05-dev-guide.md`(3장 명령), `docs/06-roadmap.md` 갱신 (2026-10-14)
 
 Claude Code에 그대로 시킬 때 예시:
 > `docs/08-quality-plan.md` 2장 확인 목록을 Unity에서 돌려 보고, 실패한 항목은 문제 해결 표대로 고쳐 줘. 통과하면 .meta 포함해서 커밋.

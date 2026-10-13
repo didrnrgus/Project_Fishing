@@ -1,47 +1,48 @@
-# 진행 중인 작업 (v0.3 "얼티밋" 원작화)
+# 진행 상황 메모
 
-세션이 끊겨도 이 파일만 보고 이어서 작업할 수 있게 남기는 메모. 끝나면 로드맵·각 문서에 합친다.
+세션이 끊겨도 이 파일만 보고 이어서 작업할 수 있게 남기는 메모. 끝난 일은 로드맵·각 문서에 합쳤다.
 
-## 사용자 요청 (2026-10-13)
-- Gemini가 준 「청풍명월 사전」 7개 파일(Downloads/ChungPoongMyungWol_Data)을 참고하되, **더 찾아서 진짜 원작처럼 "얼티밋하게"**.
-- 검증 결과: [07-original-data.md](07-original-data.md) — 확인된 것은 원작대로, 근거 없는 것(강화 실패 시 장비 파괴, 낚싯바늘 행동력 등)은 쓰지 않거나 "원작풍"으로만.
-- 맵 범위: 한국만 (해외는 아직).
+## 지금 상태 (2026-10-14)
 
-## 완료 (커밋됨)
-1. [x] 원작 데이터 검증 문서 (07-original-data.md, 출처 포함)
-2. [x] 맵 시스템 일반화(FieldMapDef/FieldMap/MapLoader) + **홍현 앞바다**(A~H×1~8, 방파제·등대·테트라포드·갯바위 섬·다랭이 마을·다도해), 바다 어종 17 + 자이언트 그루퍼(저녁 C4/아침 E3), 바다 미끼, 원작 잡동사니(통발·상자·생선 캔·로봇 물고기), Lv.5 고무보트 지급·홍현 입장, 헌화로 표기 수정, 바다 이야기 퀘스트 5개
-3. [x] 해체(해체 미끼 5등급·반짝이는 비늘·별모래), 낚싯대·릴 +15 강화(원작 인터뷰 규칙), 가방(I)
-4. [x] 의상(C) 25+종, 부위별 능력치, 전신 미리보기, 모자 3종·선글라스 모델
-5. [x] 일일 의뢰·대물 도전·업적 17개·칭호, 소라고동, 소라고동 교환소
-6. [x] 수족관 (대기실 수조에서 실제로 헤엄침, 먹이·배고픔·장식, 대기실 [수족관] 버튼)
+문서(06 로드맵, 08 퀄리티 계획, 09 아트 계획, 이 파일)에 적어 둔 할 일은 아래 "남은 것"을 빼고 모두 끝났다. 기능 단위로 커밋·푸시했다.
 
-## 캐릭터 퀄리티 (2026-10-13, main에 머지됨)
-- 보통 체형 + 진짜 옷 메쉬 캐릭터 시제품, Unity 미확인. **[08-quality-plan.md](08-quality-plan.md) 2장부터** 데스크톱에서 확인.
+| 묶음 | 내용 | 문서 |
+|---|---|---|
+| 맵 3개 | 한강(Lv.1), 홍현 앞바다(남해, Lv.5), 서천 앞바다(서해, Lv.6, 물때·갯벌) | 02 9장·9-6·9-7 |
+| 어종 41종 + 잡동사니 6종 | 어종별 Blender 모델·텍스처·아이콘, 제철, 어군 전용(그루퍼·민어), 먼바다 전용(다금바리·돗돔), 겨울 빙어 | 02 11장, 09 3장 |
+| 낚시법 | 찌, 루어(감기·저킹), 플라이, 트롤링, 겨울 얼음 구멍 | 02 4-1, 10-1 |
+| 배 4종 | 고무보트, 돛단배(바람), 고속보트, 낚시 크루저, 배마다 흔들림, 먼바다 | 02 9-2 |
+| 성장·수집 | 강화 +15, 해체 미끼, 의상 25벌, 도감, 이야기 퀘스트 18개, 일일 의뢰, 대물 도전, 업적 26개, 소라고동 교환소, 수족관 | 02 7·8·13장 |
+| 대회 | 조합 낚시 대회 (AI 7명, 미션 점수, 엠블럼, 거거 낚시대·나팔고둥 릴) | 02 13-1 |
+| 계절 | 한 달 = 게임 7일, 눈, 겨울 한강 얼음 | 02 10-1 |
+| 화면 | 진짜 옷 메쉬 캐릭터(반장갑·운동화 골·남방 깃), 후처리, 밤 물빛, 흐림 층구름, 1인칭 팔·장갑, 아이템 아이콘 | 08, 09 |
+| 소리 | 절차적 낚시 소리 + Kenney CC0 UI 클릭·경고·발소리 | 03 |
+| 편의 | 옵션(O)·키 설정, 패드 진동, 단위 테스트 25개, 밸런스 시뮬레이터 | 04, 05 |
 
-## UI 전면 교체 · 연출 (2026-10-14, 커밋됨)
-- 다크 유리 UI(Translucent Image + Paraform), EasyChart 차트(결과·도감·살림망·강화·의상), Jalnan2 TMP 글꼴.
-- 원작 튜토리얼 영상(youtube sAL6RQI92T0)을 1초 단위로 보고 캐스팅·챔질·파이팅·랜딩 연출 추가 → [03-architecture.md](03-architecture.md) "연출" 표.
-- [x] **홍현 앞바다 지형을 Unity Terrain으로** (2026-10-14): 해변 비탈, 다랭이논 계단, 갯바위 섬, Poly Haven CC0 텍스처 4종 → `World/SeaTerrain.cs`
+## 남은 것
 
-## 아트 계획 (2026-10-14 기록, 아직 시작 안 함)
-- 사용자가 **물고기 도감 자료를 보여 주면** 시작한다. 잉어 한 마리 시제품(모델·텍스처·헤엄)을 먼저 렌더해 보여 주고 방향을 확인받는다.
-- 그다음 아이템 아이콘: 실물 사진을 검색해 참고 → 설계 시트 → Blender로 모델링·렌더 → 게임에 적용.
-- 상세: [09-art-plan.md](09-art-plan.md)
+### 사용자가 해야 할 일 (계정 로그인이 필요해서 Claude가 못 한 것)
 
-## 남은 작업 (다음 세션, 순서대로)
-7. [x] **대회** (완료: 02-game-design 13-1) (원작 확인됨: NPC로 참가, 하루~이틀마다 정해진 시간, 미션 합산 포인트 = 가장 많이·가장 길게·길이 합계, 누적 포인트로 계급 엠블럼, 1~3위 보상 "거거 낚시대"·"나팔고둥"(릴)).
-   - 솔로판: 서천 앞바다 대신 지금 맵에서, AI 낚시꾼 7명 점수 시뮬레이션, 대회 시간 HUD 순위표, 엠블럼(브론즈~다이아), 거거 낚시대(Lv.10 rod)·나팔고둥 릴(Lv.10 reel)을 보상 전용 장비로 GearDatabase에 추가
-8. [x] 밸런스 (5차 조정, 04-balance.md): `sh tools/balance.sh -simSummary`로 바다 어종·그루퍼 확인, 강화 +15·의상 데미지 반영 후 docs/04-balance.md 갱신
-9. [ ] 문서 갱신: README(특징·조작 F/I/C/M/B·스크린샷), 02-game-design(맵 2개·해체·강화·의상·퀘스트·수족관·대회), 03-architecture(FieldMap, MapLoader, 새 패널·데이터 파일), 05-dev-guide(자동 스크린샷 13b~29), 06-roadmap
-10. [ ] 그 밖에 보이는 것:
-    - [x] 1인칭 팔·손 다듬기 (상의 색 소매 + 아래팔, 검정 반장갑 주먹·손가락·주황 손목띠, `FightRodView`)
-    - [x] 밤 강물 반짝임·다리 불빛 반사 (`WaterGlints`), 결과 화면 3D 물고기 (`ResultFishStage`)
-    - [x] 서천 앞바다 (서해, 대회 장소 중 하나)
-    - [ ] 헌화로·거문도 같은 다른 한국 낚시터 (선택, 큰 맵 작업)
+공개 저장소라 에셋 스토어·Mixamo 에셋은 받아도 `.gitignore`된 폴더(예: `Assets/AssetStore/`)에 두고 커밋하지 않는다(08 문서 5장).
+
+| 에셋 | 어디서 | 넣으면 좋아지는 것 | 받은 뒤 할 일 |
+|---|---|---|---|
+| **Human Basic Motions FREE** (Kevin Iglesias) | [Asset Store](https://assetstore.unity.com/packages/3d/animations/human-basic-motions-free-154271) | 지금 주먹 쥔 슈퍼히어로 대기 자세 → 자연스러운 대기·걷기·뛰기 | `CharacterAnimator`가 두 번째 클립 라이브러리에서 Idle/Walk/Run을 찾게 (08 4장 1) |
+| **AllSky Free** | [Asset Store](https://assetstore.unity.com/packages/p/allsky-free-10-sky-skybox-set-146014) | 흐린 날 하늘 큐브맵 (지금은 절차적 층구름으로 대신함) | 흐림·비일 때 `DayNightCycle`에서 큐브맵 섞기 |
+| **Stylized Hand Painted Nature Pack Free** | [Asset Store](https://assetstore.unity.com/packages/3d/vegetation/trees/stylized-hand-painted-nature-pack-free-177775) | 한강 둔치·홍현 나무·풀 (지금 Kenney 나무는 단순) | `KenneyProps`의 나무 배치를 교체 |
+| 국가유산청 전통 배 등 무료 에셋 | Asset Store | 서해·남해 배경 배 | 배경 소품 |
+| **Mixamo** 동작 (Adobe 계정) | mixamo.com | 던지기·당기기·앉아 있기 낚시 동작 | FBX for Unity, Without Skin → 휴머노이드 리타깃 |
+| (선택) **VRoid Studio** 시험 모델 | vroid.com | 원작 '청'·'명' 같은 한국 MMO풍 얼굴 | UniVRM으로 임포트해 지금 캐릭터와 비교 (08 5장) |
+
+- 그 밖에: 예전 스크립트 실수로 생긴 빈 폴더 `C:\Screenshots\fish`는 지워도 된다(보안 규칙 때문에 Claude가 못 지움).
+
+### 다음 개발 후보
+
+- **제주**(원작 이벤트 지역) · 헌화로 · 거문도 같은 국내 맵 (큰 작업: `FieldMapDef` + 지형 + 어종 + 퀘스트, 03 문서 "새 맵 추가")
+- 다리·데크를 모델로 (지금은 프리미티브 + 텍스처)
+- 피부 텍스처 팔 근육 흐리기 (가까이 보는 화면이 생기면, 08 4장 8)
 
 ## 참고
-- 빌드: `sh tools/build.sh`, 확인: `sh tools/autoshot.sh` (Screenshots/ 33장, 홍현·수족관·의상·퀘스트 포함)
-- 새 파일: World/FieldMap.cs, World/HonghyeonMap.cs, World/Aquarium.cs, World/KenneyProps.cs, Core/MapLoader.cs,
-  Data/RodUpgrade.cs(장비 강화), Data/ItemDatabase.cs, Data/CostumeDatabase.cs, Data/AchievementDatabase.cs,
-  UI/AreaMapPanel.cs, UI/DialogPanel.cs, UI/UpgradePanel.cs, UI/InventoryPanel.cs, UI/CostumePanel.cs, UI/ExchangePanel.cs, UI/AquariumPanel.cs, UI/PortraitCamera.cs
-- 단축키: F 대화, I 가방, C 의상, M 지역 지도, B 배, L 퀘스트(탭 4개), Z 살림망(해체), P 도감(맵 탭)
+- 빌드 `sh tools/build.sh` → 확인 `sh tools/autoshot.sh` (Screenshots/ 61장) → 테스트 `sh tools/test.sh` → 밸런스 `sh tools/balance.sh -simSummary`
+- Blender 파이프라인: `bpyenv/Scripts/python -I tools/blender/<build_characters|build_fish|build_icons>.py` (05 문서)
+- 단축키: F 대화, I 가방, C 의상, M 지역 지도, B 배, O 옵션, L 퀘스트(탭 4개), Z 살림망(해체), P 도감(맵 탭)
