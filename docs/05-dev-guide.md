@@ -4,13 +4,15 @@
 
 - **Unity 6000.3.17f1** (Unity Hub 기본 경로 `C:\Program Files\Unity\Hub\Editor\6000.3.17f1`)
 - Windows Build Support 모듈
-- 패키지: `com.unity.ugui 2.0.0`, `com.unity.burst`, `com.unity.collections`(Translucent Image가 씀) + 기본 모듈
+- 패키지: `com.unity.ugui 2.0.0`, `com.unity.burst`, `com.unity.collections`(Translucent Image가 씀), `com.unity.postprocessing 3.4.0`(후처리), `com.unity.inputsystem 1.14.2`(패드 진동만), `com.unity.test-framework 1.5.1` + 기본 모듈
 - 외부 에셋
-  - Quaternius CC0 모델 (`Assets/Resources/Characters`, `Animations`, `Fish`). 임포트 설정은 `Assets/Editor/AssetImportRules.cs`가 자동으로 맞춘다.
+  - Quaternius CC0 모델 (`Assets/Resources/Characters` 원본 몸·머리카락, `Animations`). 임포트 설정은 `Assets/Editor/AssetImportRules.cs`가 자동으로 맞춘다.
+  - Kenney CC0 모델(`Resources/Kenney`)·소리(`Resources/Audio/Kenney`), Poly Haven CC0 텍스처(`Resources/Terrain`). 출처는 각 폴더의 SOURCES.md·라이선스 사본.
+  - 캐릭터 옷·물고기·아이콘은 직접 만든 것: `tools/blender`(아래 "Blender 파이프라인").
   - **Translucent Image 7.0.3 + Paraform 1.5.0** (`Assets/Le Tai's Asset`): 유리 UI. 스크립팅 심볼 `LETAI_PARAFORM`이 있어야 둥근 도형이 나온다(ProjectSettings에 등록됨, 에디터가 열릴 때도 자동 추가).
   - **EasyChart** 무료판 (`Assets/EasyChart`): 선·막대·파이(도넛)·레이더만. 가로 막대·게이지 등은 Pro 전용이라 쓰면 에러 로그가 난다.
   - **TextMesh Pro** + Jalnan2 글꼴: `Assets/Editor/FontSetup.cs`가 `Resources/Fonts/Jalnan2 SDF`를 만든다(없을 때만). 다시 만들려면 메뉴 **Fishing > Rebuild Jalnan2 TMP Font**.
-- 렌더 파이프라인: Built-in, 입력: 구 Input Manager
+- 렌더 파이프라인: Built-in, 입력: 구 Input Manager + 새 Input System(진동만, `activeInputHandler: 2`)
 
 ## 처음 열기
 
@@ -28,12 +30,15 @@
 | Balance Simulation | `docs/balance-report.md` 생성 |
 | Delete Save | 세이브 파일 삭제 |
 | Inspect Imported Assets | 캐릭터·애니메이션·물고기 임포트 결과(뼈, 클립, 크기) → `Logs/asset-inspect.txt` |
+| Check Fish Models | 어종별 물고기 모델 크기·방향·뼈·클립 → `Logs/fish-check.txt` |
+| Reimport Fish Assets | Blender로 다시 만든 물고기 FBX·텍스처를 강제 재임포트 (텍스처 크기 규칙 적용) |
+| Rebuild Jalnan2 TMP Font | TMP 글꼴 에셋 다시 만들기 |
 
 ## 명령줄 도구 (`tools/`, Git Bash)
 
 ```bash
 sh tools/build.sh                 # 윈도우 빌드
-sh tools/autoshot.sh              # 빌드 실행 → Screenshots/ 에 20장 자동 촬영 후 종료
+sh tools/autoshot.sh              # 빌드 실행 → Screenshots/ 에 61장 자동 촬영 후 종료 (약 3분)
 sh tools/balance.sh               # 밸런스 리포트 (전체)
 sh tools/balance.sh -simSummary   # 밸런스 리포트 (대물급만)
 sh tools/test.sh                  # 게임 규칙 단위 테스트 (EditMode, Logs/test-results.xml)
@@ -52,7 +57,28 @@ sh tools/test.sh                  # 게임 규칙 단위 테스트 (EditMode, Lo
 | `PlayerProfileTests` | 레벨업, 아이템, 판매가, 도감 최고 기록 |
 | `SettingsTests` | 키를 겹치게 바꾸면 맞바꾼다, 바꿀 수 없는 키 |
 
-에디터에서는 Window > General > Test Runner > EditMode.
+| `SeasonTests` | 달력·계절, 빙어는 겨울 얼음 구멍에서만, 제철 배율, 다금바리·돗돔은 먼바다에서만 |
+
+에디터에서는 Window > General > Test Runner > EditMode. 지금 25개 통과.
+
+## Blender 파이프라인 (`tools/blender`, Blender 설치 불필요)
+
+PyPI의 `bpy`(headless Blender)로 돌린다. 한 번만:
+```bash
+py -3.13 -m venv bpyenv                    # bpy 5.x는 Python 3.13
+bpyenv/Scripts/pip install bpy pillow numpy
+```
+| 명령 | 결과 |
+|---|---|
+| `bpyenv/Scripts/python -I tools/blender/build_characters.py` | `Resources/Characters/Angler_Male·Female.fbx` (몸 + 옷 메쉬) |
+| `... build_characters.py --preview [--closeup] --only male --out Screenshots/pv` | 렌더로 확인 (08 문서 3장) |
+| `... build_fish.py [--only carp,dotdom]` | `Resources/Fish/Species/*.fbx`, `Fish/Textures`, `Icons/Fish` (09 문서) |
+| `... build_fish.py --preview --only carp --out Screenshots/fish` | 물고기 미리보기 |
+| `... build_icons.py` | `Resources/Icons/Items`, `Icons/Junk`, `Resources/Junk` |
+
+- 스크립트 끝은 `sys.stdout.flush(); os._exit(0)` (bpy 종료 시 충돌 회피). `bpyenv/`는 .gitignore.
+- 물고기를 전부 다시 만들면 바뀌지 않은 어종도 FBX·PNG가 바이트 단위로 달라진다 → 새로 만든 것만 커밋하고 나머지는 `git checkout --`.
+- 만든 뒤 Unity에서 `Fishing > Reimport Fish Assets`(또는 배치모드 빌드가 자동 임포트).
 
 Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.exe" sh tools/build.sh`처럼 덮어쓴다.
 에디터에 같은 프로젝트가 열려 있으면 배치모드가 실패하니 먼저 닫는다.
@@ -63,33 +89,26 @@ Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.ex
 
 | 파일 | 장면 |
 |---|---|
-| 00a_lobby | 대기실(한국 낚시 조합), 오전 10시 |
-| 00b_area_list | 낚시터 목록 (한국 지도, 채널) → 한강 CH.1 입장 |
-| 01_field_morning | 시작 위치 (새벽) |
-| 01b_fish_school | 데크 앞 수면의 어군 소용돌이 (어군 하나를 데크 앞으로 옮겨 찍음) |
-| 00c_rod_extend | 접힌 낚싯대를 끝 마디부터 펼치는 중간 |
-| 00_character | 한낮 캐릭터 정면 클로즈업 (옷, 모자, 이름표, 뽑기대·릴) |
-| 02_casting | 밤의 낚시 데크, 당겼다 미는 캐스팅 (비거리 숫자, 궤적) |
-| 03_waiting | 찌를 던지고 기다림 (찌 클로즈업 게이지) |
-| 04_bite_gauge | 본신: 찌가 잠기고 빨간 `!`, 두근두근 |
-| 02b_cast_flight | 던진 직후: 어깨 근접 카메라, 찌를 따라 올라가는 비거리 숫자 |
-| 05_hook_perfect | 자동 조작으로 PERFECT 챔질 → HIT · PERFECT!! → 파이팅 시작 |
-| 06_fight | 82cm 잉어 파이팅 |
-| 06c_speedlines | 카운터 찬스 집중선을 강제로 띄워 모서리까지 덮이는지 확인 |
-| 06b_tension_danger | 장력을 0.96으로 강제 → 빨간 화면 테두리 |
-| 07_counter_chance | 카운터 찬스 (속도선, 파란 화살표) |
-| 08_counter | 카운터 성공 |
-| 09_landing | 랜딩 찬스 다이얼 |
-| 09b_cheer | 랜딩 직후 환호 클로즈업 |
-| 10_result | RESULT 화면 (3D 물고기, 파이팅 기록 차트) |
-| 11_dex ~ 14_shop | 도감, 살림망, 퀘스트, 상점 (샘플 데이터) |
-| 16_help | 도움말 |
-| 20_npc_dialog | 낚시점 김사장과 대화 (밤, 처마 조명) |
-| 21_rod_upgrade | 낚싯대 강화 창 (+4 시도 후) |
-| 18_boat_drive | 노을 무렵 데크 끝에서 고무보트를 띄워 달리기 (물보라 꼬리, 계기판) |
-| 19_boat_stop | 멈춘 배의 뱃머리에 서서 낚시 준비 |
-| 17_area_map | 지역 지도(M). 어군 하나를 3마리 낚은 것으로 처리해 작은 어군으로 보여 줌 |
-| 15_night_rain | 비 오는 밤, 동작대교 아래 |
+| 00a_lobby, 00b_area_list | 대기실(한국 낚시 조합) → 낚시터 목록 → 한강 CH.1 입장 |
+| 01_field_morning, 00c_rod_extend, 00_character | 시작 위치(새벽), 낚싯대 펼치기, 한낮 캐릭터 정면(옷·반장갑·운동화) |
+| 01b_fish_school | 데크 앞 수면의 어군 소용돌이 |
+| 02_casting, 02b_cast_flight, 03_waiting, 04_bite_gauge | 밤 데크 캐스팅, 날아가는 찌, 찌 대기, 본신 |
+| 05_hook_perfect | PERFECT 챔질 → HIT |
+| 06_fight, 06b_tension_danger, 06c_speedlines | 82cm 잉어 파이팅(1인칭 팔·장갑), 장력 위험 테두리, 카운터 집중선 |
+| 07_counter_chance, 08_counter, 09_landing, 09b_cheer, 10_result | 카운터 찬스·성공, 랜딩 찬스, 환호, RESULT |
+| 11_dex, 11b_dex_detail, 12_keepnet | 도감(아이콘), 도감 상세(3D 물고기), 살림망 |
+| 13_quest, 13b_daily, 13c_achievements, 13d_exchange, 14_shop | 퀘스트, 일일 의뢰, 업적, 소라고동 교환소, 상점 |
+| 16_help, 16b_options | 도움말, 옵션(키 설정) |
+| 05c_lure_action | 루어 감기·저킹 액션 표시 |
+| 30_tournament_hud, 31_tournament_rank | 대회 진행 HUD 순위표, 대회 탭 |
+| 20_npc_dialog, 21_rod_upgrade, 21b_inventory, 21c_costume | NPC 대화, 강화, 가방, 의상(체크 남방·구명조끼) |
+| 17_area_map | 지역 지도(M), 작은 어군 |
+| 18_boat_drive, 19_boat_stop | 노을 고무보트 운전, 멈춘 배 뱃머리 |
+| 15b_cloudy_day, 15_night_rain | 흐린 낮(층구름), 비 오는 밤 |
+| 28_aquarium, 29_lobby_aquarium | 수족관 창, 대기실 수조 |
+| 22_honghyeon_day ~ 27_sea_result | 홍현 앞바다: 낮, 다랭이 마을, 갯바위 섬, 노을, 지도, 배, 바다 파이팅, 결과 |
+| 34_seocheon_harbor ~ 40_seocheon_cruiser | 서천 앞바다: 홍원항, 썰물 갯벌, 동백정, 노을, 파이팅, 결과, 돛단배, 낚시 크루저 |
+| 41_winter_ice, 42_winter_smelt | 겨울 한강 얼음판·얼음 구멍, 빙어 |
 
 로그(`Logs/player.log`)에 파이팅 결과가 남는다. 예: `[Dev] 파이팅 종료: 어종=잉어 82.0cm, 상태=Result, 경과=21.7s, HP=54/382, 결과=Landed`
 
@@ -115,9 +134,9 @@ UI나 연출을 바꾼 뒤 `build.sh` → `autoshot.sh`로 실제 화면을 확�
 
 ## Git
 
-- `.gitignore`는 Unity 표준에 `Builds/`, `Screenshots/`, `Logs/`, `UserSettings/`를 더 뺀다.
+- `.gitignore`는 Unity 표준에 `Builds/`, `Screenshots/`, `Logs/`, `UserSettings/`, `bpyenv/`를 더 뺀다.
 - 문서용 스크린샷은 `docs/images/`에 복사해서 커밋한다.
-- 원격: `https://github.com/didrnrgus/Project_Fishing.git` (비공개 저장소)
+- 원격: `https://github.com/didrnrgus/Project_Fishing.git` (공개 저장소 → 에셋 스토어·Mixamo 에셋은 커밋하지 않는다)
 
 ## 코딩 컨벤션
 
