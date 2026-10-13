@@ -25,6 +25,7 @@ namespace Fishing.UI
         public InventoryPanel Inventory { get; private set; }
         public CostumePanel Costume { get; private set; }
         public ExchangePanel Exchange { get; private set; }
+        public AquariumPanel Aquarium { get; private set; }
         /// <summary>F로 말을 걸 수 있는 가장 가까운 NPC.</summary>
         public Fishing.Characters.NpcAngler NearbyNpc { get; private set; }
 
@@ -63,6 +64,7 @@ namespace Fishing.UI
                 openArea: () => OpenExclusive(Areas),
                 openQuest: () => OpenExclusive(Quest),
                 delivery: () => OpenExclusive(Shop),
+                openAquarium: () => OpenExclusive(Aquarium),
                 changeBase: () => Game.Toast("동남아·지중해 거점은 아직 준비 중입니다. 지금은 한국 낚시 조합만 열려 있어요.", ToastKind.Warn));
             Areas = new FishingAreaPanel(canvas);
             Areas.Enter = (area, channel) => EnterField(area, channel);
@@ -72,7 +74,8 @@ namespace Fishing.UI
             Inventory = new InventoryPanel(canvas);
             Costume = new CostumePanel(canvas);
             Exchange = new ExchangePanel(canvas);
-            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, Upgrade, Inventory, Costume, Exchange };
+            Aquarium = new AquariumPanel(canvas);
+            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, Upgrade, Inventory, Costume, Exchange, Aquarium };
             LobbyHud.Root.transform.SetAsFirstSibling();
         }
 

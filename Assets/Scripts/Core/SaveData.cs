@@ -30,6 +30,15 @@ namespace Fishing.Core
         public int count;
     }
 
+    /// <summary>수족관에 넣은 물고기.</summary>
+    [Serializable]
+    public class AquaFish
+    {
+        public string speciesId;
+        public float length;
+        public float fedAt;   // 마지막으로 먹이를 준 게임 시각 (TotalMinutes)
+    }
+
     /// <summary>오늘의 조합 의뢰 (일일 퀘스트).</summary>
     [Serializable]
     public class DailyQuest
@@ -84,6 +93,8 @@ namespace Fishing.Core
         public List<string> achievements = new List<string>();
         public List<string> specialFinds = new List<string>(); // 로봇 물고기, 생선 캔 같은 특별한 것
         public int bestCombo;
+        public List<AquaFish> aquarium = new List<AquaFish>();
+        public List<string> aquariumDecor = new List<string>();
         public string title = "";                              // 고른 칭호 (빈 문자열이면 레벨 칭호) // 마지막으로 있던 낚시터
         public string boatId = "";      // 장착한 배 (없으면 빈 문자열)
         public float boatFuel;          // 남은 연료 L

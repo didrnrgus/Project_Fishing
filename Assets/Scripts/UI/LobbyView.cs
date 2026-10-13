@@ -12,7 +12,7 @@ namespace Fishing.UI
 
         public GameObject Root => _root.gameObject;
 
-        public LobbyView(Transform canvas, System.Action openArea, System.Action openQuest, System.Action delivery, System.Action changeBase)
+        public LobbyView(Transform canvas, System.Action openArea, System.Action openQuest, System.Action delivery, System.Action changeBase, System.Action openAquarium)
         {
             _root = UIFactory.Node("Lobby", canvas).Fill();
 
@@ -36,6 +36,7 @@ namespace Fishing.UI
                 ("낚시터 선택하기", "FISHING AREA", openArea),
                 ("퀘스트", "QUEST", openQuest),
                 ("납품", "DELIVERY", delivery),
+                ("수족관", "AQUARIUM", openAquarium),
                 ("거점 이동하기", "BASE", changeBase),
             };
             for (int i = 0; i < menu.Length; i++)
@@ -49,14 +50,14 @@ namespace Fishing.UI
                 outline.effectDistance = new Vector2(1.5f, -1.5f);
             }
 
-            var hint = UIFactory.Text(_root, "낚시터 선택하기에서 한강에 입장하세요", 17, UIFactory.TextDim, TextAnchor.MiddleLeft);
+            var hint = UIFactory.Text(_root, "[낚시터 선택하기]에서 입장 · 수족관은 조합 안에 있어요", 17, UIFactory.TextDim, TextAnchor.MiddleLeft);
             hint.rectTransform.At(new Vector2(0, 0), new Vector2(24, 30), new Vector2(700, 26));
         }
 
         public void Update()
         {
             var d = Game.Profile.Data;
-            _info.text = $"<b>Lv. {d.level}    강태공</b>  <size=14><color=#80c8ff>초보 조사</color></size>\n" +
+            _info.text = $"<b>Lv. {d.level}    강태공</b>  <size=14><color=#80c8ff>{Game.Profile.CurrentTitle}</color></size>\n" +
                          $"<color=#ffd060>{d.gold:N0} G</color>   ·   총 {d.totalCatches}마리   ·   도감 {d.dex.Count}종\n" +
                          $"<size=14><color=#a0b0c0>살림망 {d.keepNet.Count}/{Game.Profile.KeepNetSize}</color></size>";
             var c = Game.Clock;

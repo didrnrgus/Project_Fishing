@@ -288,6 +288,20 @@ namespace Fishing.Dev
             yield return new WaitForSeconds(5f);
             yield return Shot("15_night_rain");
 
+            // ================= 수족관 (대기실) =================
+            Game.UI.EnterLobby();
+            Game.Clock.Set(2, 11 * 60);
+            foreach (var (sid, len) in new[] { ("carp", 64f), ("goldkoi", 70f), ("mandarin", 41f) })
+                p.Data.aquarium.Add(new AquaFish { speciesId = sid, length = len, fedAt = Game.Clock.TotalMinutes - (sid == "carp" ? 500f : 0f) });
+            p.Data.aquariumDecor.AddRange(new[] { "coral_red", "seaweed", "coral_pink", "shell", "seaweed", "rock" });
+            Game.Lobby.Tank.Rebuild();
+            Game.UI.OpenExclusive(Game.UI.Aquarium);
+            yield return new WaitForSeconds(1.5f);
+            yield return Shot("28_aquarium");
+            Game.UI.Aquarium.Close();
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("29_lobby_aquarium");
+
             // ================= 홍현 앞바다 =================
             p.Data.level = Mathf.Max(p.Data.level, 10);
             Game.Weather.Force(Weather.Clear);

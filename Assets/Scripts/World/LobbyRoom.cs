@@ -16,6 +16,8 @@ namespace Fishing.World
         public static readonly Vector3 Origin = new Vector3(0f, 0f, -420f);
         const float W = 13f, D = 9f, H = 4.6f;
 
+        public Aquarium Tank { get; private set; }
+
         public Vector3 CameraPos => Origin + new Vector3(-0.9f, 1.7f, 4.3f);
         public Quaternion CameraRot => Quaternion.LookRotation((Origin + new Vector3(0.2f, 1.25f, -1f)) - CameraPos);
 
@@ -94,15 +96,8 @@ namespace Fishing.World
             Mats.Prim(PrimitiveType.Quad, "Flag", t, new Vector3(5.6f, 2.2f, -3.25f), new Vector3(0.8f, 0.54f, 1f), flagMat, false,
                 Quaternion.Euler(0f, 160f, 0f));
 
-            // 의자와 원탁
-            Mats.Prim(PrimitiveType.Cylinder, "Table", t, new Vector3(-2.6f, 0.72f, -2.4f), new Vector3(1.1f, 0.03f, 1.1f), Mats.Lit(Wood, 0.4f), false);
-            Mats.Prim(PrimitiveType.Cylinder, "TableLeg", t, new Vector3(-2.6f, 0.36f, -2.4f), new Vector3(0.1f, 0.36f, 0.1f), dark, false);
-            for (int i = 0; i < 2; i++)
-            {
-                float x = -3.3f + i * 1.4f;
-                Mats.Prim(PrimitiveType.Cube, "ChairSeat", t, new Vector3(x, 0.45f, -2.0f), new Vector3(0.45f, 0.06f, 0.45f), dark, false);
-                Mats.Prim(PrimitiveType.Cube, "ChairBack", t, new Vector3(x, 0.8f, -1.8f), new Vector3(0.45f, 0.6f, 0.05f), dark, false);
-            }
+            // 수족관 (원작: 낚은 물고기·산호·해초로 꾸미는 수족관). 뒷벽 박제 아래
+            Tank = Aquarium.Build(t, new Vector3(-3.5f, 0f, -D / 2f + 0.62f));
 
             // 창문 (블라인드 사이로 빛)
             var window = Mats.Emissive(new Color(1f, 0.92f, 0.75f), 1.2f);
