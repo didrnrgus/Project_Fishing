@@ -65,6 +65,7 @@ namespace Fishing.Core
             Game.CameraRig = new GameObject("MainCamera").AddComponent<CameraRig>();
             Game.CameraRig.Yaw = data.yaw;
             Game.CameraRig.transform.position = spawn + new Vector3(0, 3, -6);
+            PostFx.Attach(Game.CameraRig.Cam);
 
             Game.Sound = Game.CameraRig.gameObject.AddComponent<SoundFx>();
             Game.Fishing = gameObject.AddComponent<FishingController>();

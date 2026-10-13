@@ -146,9 +146,9 @@ bpyenv/Scripts/python -I tools/blender/build_characters.py --preview --only male
 
 ## 6. 데스크톱 작업 순서 (체크리스트)
 
-- [ ] 2장 확인 목록 통과 → Angler FBX의 `.meta` 포함해 커밋
+- [x] 2장 확인 목록 통과 → Angler FBX의 `.meta` 포함해 커밋 (2026-10-14: 빌드·autoshot에서 서 있음·정면·옷 확인)
 - [ ] 문제 있으면 2장 표대로 고치거나 `garments.py` 수정 후 3장으로 재생성
-- [ ] Post Processing 패키지 + 코드로 볼륨/레이어 (블룸, ACES, AO, SMAA, 시간대별 그레이딩)
+- [x] Post Processing 패키지 + 코드로 볼륨/레이어 (블룸, Neutral 톤매핑, AO, SMAA, 시간대별 그레이딩) → `Core/PostFx.cs`. ACES는 노을·밤 하늘을 검게 눌러서 Neutral로 바꿨다
 - [ ] Human Basic Motions FREE 임포트 → `CharacterAnimator`에 두 번째 클립 라이브러리, Idle/Walk/Run 교체
 - [ ] 4장 3(장갑)·4(운동화) → 재생성 (AO는 완료)
 - [ ] 둔치 나무·풀 교체(Hand Painted Nature Pack), 데크·둔치 텍스처(Poly Haven)
