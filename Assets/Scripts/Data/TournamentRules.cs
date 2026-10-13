@@ -38,7 +38,7 @@ namespace Fishing.Data
     /// 원작(게임메카 2012-08 「대회 시스템」): NPC를 통해 참가, 하루~이틀마다 정해진 시간,
     /// 미션(가장 많이 · 가장 길게 · 길이 합계) 포인트 합산으로 순위, 참가만 해도 포인트, 누적 포인트로 계급 엠블럼,
     /// 1~3위 보상 「거거 낚시대」·「나팔고둥」.
-    /// 솔로판에서는 AI 낚시꾼 7명과 겨룬다. 홀수 날은 한강, 짝수 날은 홍현 앞바다에서 열린다.
+    /// 솔로판에서는 AI 낚시꾼 7명과 겨룬다. 날마다 한강 → 서천 앞바다 → 홍현 앞바다 순서로 열린다.
     /// </summary>
     public static class TournamentRules
     {
@@ -92,10 +92,10 @@ namespace Fishing.Data
             return i + 1 < Emblems.Length ? Emblems[i + 1].points - points : 0;
         }
 
-        /// <summary>그날 대회가 열리는 맵. 홀수 날 한강, 짝수 날 홍현 앞바다.</summary>
-        public static string MapOf(int day) => day % 2 == 1 ? "hangang" : "honghyeon";
+        /// <summary>그날 대회가 열리는 맵: 한강 → 서천 앞바다(원작 대회 장소) → 홍현 앞바다 순서로 돈다.</summary>
+        public static string MapOf(int day) => (day % 3) switch { 1 => "hangang", 2 => "seocheon", _ => "honghyeon" };
 
-        public static string MapShortName(string mapId) => mapId == "honghyeon" ? "홍현 앞바다" : "한강";
+        public static string MapShortName(string mapId) => mapId switch { "honghyeon" => "홍현 앞바다", "seocheon" => "서천 앞바다", _ => "한강" };
 
         public static string Title(int day) => $"제{day}회 {MapShortName(MapOf(day))} 조합 낚시 대회";
 
@@ -114,7 +114,7 @@ namespace Fishing.Data
         /// </summary>
         public static List<AiCatch> SimulateAi(int day, string mapId)
         {
-            var rng = new Random(day * 7349 + (mapId == "honghyeon" ? 17 : 3));
+            var rng = new Random(day * 7349 + (mapId == "honghyeon" ? 17 : mapId == "seocheon" ? 29 : 3));
             var pool = FishDatabase.DexOf(mapId).Where(s => !s.IsJunk && !s.SchoolOnly).ToList();
             var weights = pool.Select(s => 1.0 / Math.Pow(s.Rarity, 1.6)).ToArray();
             double wsum = weights.Sum();

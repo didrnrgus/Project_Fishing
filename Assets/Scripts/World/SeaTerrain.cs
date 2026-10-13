@@ -93,93 +93,42 @@ namespace Fishing.World
         {
             _landY = landY;
             _waterY = waterY;
-            var data = new TerrainData { heightmapResolution = Res };
-            data.size = new Vector3(SizeX, Height, SizeZ);
-            var h = new float[Res, Res];
-            for (int iz = 0; iz < Res; iz++)
+            var layers = new[]
             {
-                float z = MinZ + SizeZ * iz / (Res - 1);
-                for (int ix = 0; ix < Res; ix++)
-                {
-                    float x = MinX + SizeX * ix / (Res - 1);
-                    h[iz, ix] = Mathf.Clamp01((HeightAt(x, z) - BaseY) / Height);
-                }
-            }
-            data.SetHeights(0, 0, h);
-
-            data.terrainLayers = new[]
-            {
-                Layer("grass", 9f, 0.05f),
-                Layer("sand", 6f, 0.15f),
-                Layer("rock", 11f, 0.2f),
-                Layer("shore", 7f, 0.25f),
+                new TerrainBuilder.LayerSpec("grass", 9f, 0.05f),
+                new TerrainBuilder.LayerSpec("sand", 6f, 0.15f),
+                new TerrainBuilder.LayerSpec("rock", 11f, 0.2f),
+                new TerrainBuilder.LayerSpec("shore", 7f, 0.25f),
             };
-            data.alphamapResolution = SplatRes;
-            var a = new float[SplatRes, SplatRes, 4];
-            for (int iz = 0; iz < SplatRes; iz++)
-            for (int ix = 0; ix < SplatRes; ix++)
-            {
-                float nx = (ix + 0.5f) / SplatRes, nz = (iz + 0.5f) / SplatRes;
-                float x = MinX + SizeX * nx, z = MinZ + SizeZ * nz;
-                float y = data.GetInterpolatedHeight(nx, nz) + BaseY;
-                float steep = data.GetSteepness(nx, nz);
-                float n = Mathf.PerlinNoise(x * 0.08f, z * 0.08f);
-                bool island = false;
-                for (int i = 0; i < HonghyeonDef.Islands.Length; i++)
-                    if (new Vector2(x - HonghyeonDef.Islands[i].x, z - HonghyeonDef.Islands[i].z).magnitude < HonghyeonDef.IslandRadius[i] + 10f) island = true;
-
-                float rock = Smooth(22f, 34f, steep);
-                float sand = 0f, shore = 0f;
-                if (!island)
+            return TerrainBuilder.Build(parent, "SeaTerrain", new Rect(MinX, MinZ, SizeX, SizeZ), BaseY, Height, Res, HeightAt, layers,
+                (x, z, y, steep, w) =>
                 {
-                    // 해변: 물가 근처 높이대. 서쪽은 모래, 동쪽(포구 쪽)은 자갈
-                    float beach = Smooth(landY + 0.4f, landY - 0.2f, y) * Smooth(waterY - 3f, waterY - 1f, y);
-                    float west = Smooth(10f, -40f, x + (n - 0.5f) * 30f);
-                    sand = beach * west;
-                    shore = beach * (1f - west);
-                    if (y < waterY - 1f) sand = 1f; // 물속은 모래
-                }
-                else
-                {
-                    // 섬: 윗면은 바위, 물가는 젖은 자갈
-                    rock = Mathf.Max(rock, 0.55f + n * 0.4f);
-                    shore = Smooth(landY - 0.3f, waterY + 0.2f, y);
-                }
-                float grass = Mathf.Max(0f, 1f - rock - sand - shore);
-                float sum = grass + sand + rock + shore + 1e-5f;
-                a[iz, ix, 0] = grass / sum;
-                a[iz, ix, 1] = sand / sum;
-                a[iz, ix, 2] = rock / sum;
-                a[iz, ix, 3] = shore / sum;
-            }
-            data.SetAlphamaps(0, 0, a);
-
-            var go = Terrain.CreateTerrainGameObject(data);
-            go.name = "SeaTerrain";
-            go.transform.SetParent(parent, false);
-            go.transform.position = new Vector3(MinX, BaseY, MinZ);
-            var terrain = go.GetComponent<Terrain>();
-            var shader = Shader.Find("Nature/Terrain/Standard");
-            if (shader != null) terrain.materialTemplate = new Material(shader);
-            terrain.heightmapPixelError = 4f;
-            terrain.basemapDistance = 250f;
-            terrain.drawTreesAndFoliage = false;
-            terrain.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
-            return terrain;
-        }
-
-        static TerrainLayer Layer(string name, float tile, float smooth)
-        {
-            var layer = new TerrainLayer
-            {
-                diffuseTexture = Resources.Load<Texture2D>("Terrain/" + name + "_diff"),
-                normalMapTexture = Resources.Load<Texture2D>("Terrain/" + name + "_nor"),
-                tileSize = new Vector2(tile, tile),
-                smoothness = smooth,
-                normalScale = 1f,
-            };
-            if (layer.diffuseTexture == null) layer.diffuseTexture = Texture2D.grayTexture;
-            return layer;
+                    float n = Mathf.PerlinNoise(x * 0.08f, z * 0.08f);
+                    bool island = false;
+                    for (int i = 0; i < HonghyeonDef.Islands.Length; i++)
+                        if (new Vector2(x - HonghyeonDef.Islands[i].x, z - HonghyeonDef.Islands[i].z).magnitude < HonghyeonDef.IslandRadius[i] + 10f) island = true;
+                    float rock = Smooth(22f, 34f, steep);
+                    float sand = 0f, shore = 0f;
+                    if (!island)
+                    {
+                        // 해변: 물가 근처 높이대. 서쪽은 모래, 동쪽(포구 쪽)은 자갈
+                        float beach = Smooth(landY + 0.4f, landY - 0.2f, y) * Smooth(waterY - 3f, waterY - 1f, y);
+                        float west = Smooth(10f, -40f, x + (n - 0.5f) * 30f);
+                        sand = beach * west;
+                        shore = beach * (1f - west);
+                        if (y < waterY - 1f) sand = 1f; // 물속은 모래
+                    }
+                    else
+                    {
+                        // 섬: 윗면은 바위, 물가는 젖은 자갈
+                        rock = Mathf.Max(rock, 0.55f + n * 0.4f);
+                        shore = Smooth(landY - 0.3f, waterY + 0.2f, y);
+                    }
+                    w[0] = Mathf.Max(0f, 1f - rock - sand - shore);
+                    w[1] = sand;
+                    w[2] = rock;
+                    w[3] = shore;
+                }, SplatRes);
         }
     }
 }

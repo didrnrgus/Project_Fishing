@@ -31,6 +31,12 @@ namespace Fishing.World
 
         public float WaterY = 0.2f;
         public float LandY = 1.0f;
+        /// <summary>물때 폭 (m). 0이면 물이 오르내리지 않는다. 서천 앞바다 0.6</summary>
+        public float TideAmplitude;
+        /// <summary>물때 가운데 수면 높이 (물때가 있으면 WaterY = BaseWaterY ± 폭).</summary>
+        public float BaseWaterY = 0.2f;
+        /// <summary>물 색 (깊은 곳, 얕은 곳). a가 0이면 셰이더 기본값 (한강·남해의 청록).</summary>
+        public Color WaterDeep, WaterShallow;
 
         // 격자 (row 0이 시작 둔치/해안에 가장 가깝다)
         public float GridMinX, GridMinZ, CellW, CellH;
@@ -119,8 +125,16 @@ namespace Fishing.World
     {
         public static readonly FieldMapDef HanRiver = new HanRiverDef();
         public static readonly FieldMapDef Honghyeon = new HonghyeonDef();
+        public static readonly FieldMapDef Seocheon = new SeocheonDef();
 
-        public static FieldMapDef Get(string id) => id == Honghyeon.Id ? Honghyeon : HanRiver;
+        /// <summary>열린 낚시터 (도감 탭·대물 도전 순서).</summary>
+        public static readonly FieldMapDef[] All = { HanRiver, Honghyeon, Seocheon };
+
+        public static FieldMapDef Get(string id)
+        {
+            foreach (var m in All) if (m.Id == id) return m;
+            return HanRiver;
+        }
     }
 
     /// <summary>한강 반포지구. 좌표·서식지는 <see cref="HanRiverMap"/>, 월드는 <see cref="WorldBuilder"/>.</summary>

@@ -615,7 +615,8 @@ namespace Fishing.UI
             int h12 = clock.Hour % 12 == 0 ? 12 : clock.Hour % 12;
             string ampm = clock.Hour < 12 ? "AM" : "PM";
             string sky = clock.Band == TimeBand.Night || clock.Band == TimeBand.Dawn ? "<color=#c8d8ff>●</color>" : "<color=#ffd060>●</color>";
-            _channelText.text = $"No. {Game.Channel:000}  {FieldMap.ShortName} CH.{Game.Channel}    ·    {Names.Of(Game.Weather.Current)}";
+            _channelText.text = $"No. {Game.Channel:000}  {FieldMap.ShortName} CH.{Game.Channel}    ·    {Names.Of(Game.Weather.Current)}" +
+                                (Tide.Active ? $"  ·  <color=#7fe8ff>{Tide.Name}</color>" : "");
             _clockText.text = $"{sky}  {month:00}/{day:00}  <size=14>{ampm}</size> {h12:00}:{clock.Minute:00}";
 
             var playerPos = Game.Player.transform.position;

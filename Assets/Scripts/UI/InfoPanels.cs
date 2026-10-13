@@ -127,7 +127,7 @@ namespace Fishing.UI
             var p = Game.Profile;
             Cell(rows.Next(30), $"대물 도전  <size=14><color=#8090a0>어종마다 대물 기준을 처음 넘기면 소라고동 3개 + 경험치 · 달성 {p.Data.trophyDone.Count}종</color></size>",
                 4, 900, 20, UIFactory.Accent);
-            foreach (var map in new[] { Fishing.World.Maps.HanRiver, Fishing.World.Maps.Honghyeon })
+            foreach (var map in Fishing.World.Maps.All)
             {
                 Cell(rows.Next(26), map.ShortName, 4, 300, 17, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
                 var list = FishDatabase.DexOf(map.Id).ToList();
