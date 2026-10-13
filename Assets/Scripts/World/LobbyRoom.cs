@@ -126,6 +126,7 @@ namespace Fishing.World
                 Pants = look.Pants, Shoes = look.Shoes, Hat = look.Hat, HatColor = look.HatColor, Vest = look.Vest, VestColor = look.VestColor
             }, NpcAngler.Role.Angler, showNameTag: false);
             npc.Idle = true;
+            npc.CollapseRod();
         }
 
         void MountFish(Transform parent, string speciesId, float length, Vector3 pos)

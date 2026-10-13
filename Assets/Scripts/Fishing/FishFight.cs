@@ -24,6 +24,8 @@ namespace Fishing.Angling
     ///   거리(Distance) - 너무 멀어지면 줄이 다 풀려 놓친다
     ///   물고기 HP      - 0에 가까워지면 랜딩 가능
     ///   장력(Tension)  - 1.0을 넘으면 줄이 끊어진다, 너무 낮으면 바늘이 빠진다(Hook)
+    /// 드래그 장력: 마우스를 물고기 반대쪽으로 끌면 줄을 당기는 것이라 장력이 쌓이고(계속 당기면 끊어진다),
+    ///   물고기 쪽으로 끌면 줄이 늦춰진다. 낚싯대가 끝까지 가도 계속 끌면 장력은 계속 오른다.
     /// 카운터: 물고기가 질주하거나 한쪽 끝으로 몰렸을 때 반대 방향으로 마우스를 휙 틀면 큰 데미지.
     /// 랜딩: HP가 낮은 물고기를 5m 안으로 끌어오면 랜딩 찬스. 연타로 0m까지 끌어오면 성공.
     /// 원작 안내문: "체력이 높은 물고기를 5m안으로 당겨오면 물고기가 도망가게 됩니다."
@@ -37,6 +39,10 @@ namespace Fishing.Angling
         const float FlickWindow = 0.15f;
         const float FlickThreshold = 12f;
         const float EdgeForCounter = 0.78f;
+        const float DragGain = 0.006f;   // 마우스 이동 1단위(Mouse X 축)당 장력
+        const float DragDecay = 1.6f;    // 당긴 힘이 풀리는 속도(초당, 지수)
+        const float DragMax = 0.6f;
+        const float DragMin = -0.45f;
 
         public readonly FishSpecies Species;
         public readonly float Length;
@@ -56,6 +62,10 @@ namespace Fishing.Angling
         public FightOutcome Outcome { get; private set; }
         public float Elapsed { get; private set; }
         public float Pull { get; private set; }
+        /// <summary>마우스로 당겨서(+) 또는 늦춰서(-) 더해진 장력.</summary>
+        public float DragLoad { get; private set; }
+        /// <summary>물고기가 있는(당기는) 쪽: -1 왼쪽, +1 오른쪽.</summary>
+        public int FishSide => FishX > 0.05f ? 1 : FishX < -0.05f ? -1 : _dir;
 
         public const float LandingTapDistance = 0.32f;
 
@@ -128,6 +138,11 @@ namespace Fishing.Angling
             UpdateRod(dt, input.MouseDX);
             UpdateFish(dt);
 
+            // 마우스를 물고기 반대쪽으로 끌면 줄을 당기고(+), 물고기 쪽으로 끌면 늦춘다(-)
+            float drag = -input.MouseDX * FishSide;
+            DragLoad = Mathf.Clamp(DragLoad + drag * DragGain, DragMin, DragMax);
+            DragLoad *= Mathf.Exp(-DragDecay * dt);
+
             // 낚싯대를 물고기 반대쪽으로 버티면(측면 압박) 데미지가 크고 장력도 오른다
             float opposition = Mathf.Clamp01(0.5f - RodX * FishX * 0.9f);
 
@@ -135,7 +150,7 @@ namespace Fishing.Angling
             float raw = Pull * (0.55f + 0.45f * opposition) + reelForce;
             if (input.Releasing) raw *= 0.45f;
             raw *= 1f - 0.2f * Rod.Flex; // 연조대는 충격을 흡수한다
-            float target = raw / Line.Strength;
+            float target = Mathf.Max(0f, raw / Line.Strength + DragLoad * (1f - 0.25f * Rod.Flex));
             float response = Mathf.Lerp(7f, 4f, Rod.Flex); // 경조대일수록 장력이 빨리 튄다
             Tension = Mathf.Lerp(Tension, target, 1f - Mathf.Exp(-response * dt));
 
@@ -303,6 +318,7 @@ namespace Fishing.Angling
             _dir = want;
             FishX *= 0.7f;
             Tension *= 0.6f;
+            DragLoad = 0f;
             _counterCooldown = 0.8f;
             _flicks.Clear();
             SetMood(FishMood.Rest, 1.3f);

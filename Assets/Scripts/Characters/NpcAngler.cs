@@ -1,4 +1,6 @@
+using Fishing.Angling;
 using Fishing.Core;
+using Fishing.Data;
 using UnityEngine;
 
 namespace Fishing.Characters
@@ -14,6 +16,7 @@ namespace Fishing.Characters
 
         CharacterAnimator _anim;
         Transform _hand, _rod, _nameTag;
+        TelescopicRod _rodModel;
         Role _role;
         float _nextCast;
 
@@ -52,8 +55,14 @@ namespace Fishing.Characters
                 _rod.SetParent(transform, false);
                 _rod.localPosition = new Vector3(0.3f, 1.05f, 0.25f);
                 _rod.localRotation = Quaternion.Euler(-40f, 0f, 0f);
-                Mats.Prim(PrimitiveType.Cylinder, "Blank", _rod, new Vector3(0f, 0f, 1.1f), new Vector3(0.025f, 1.4f, 0.025f),
-                    Mats.Lit(new Color(0.15f, 0.25f, 0.6f), 0.6f), false, Quaternion.Euler(90f, 0f, 0f));
+                // NPC마다 장비가 다르게 보이도록 이름으로 고른다
+                string[] rods = { "rod_basic", "rod_carbon", "rod_bamboo", "rod_heavy" };
+                string[] reels = { "reel_basic", "reel_power", "reel_hispeed" };
+                int h = Mathf.Abs(look.Name?.GetHashCode() ?? 0);
+                var axis = new GameObject("RodAxis").transform;
+                axis.SetParent(_rod, false);
+                axis.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                _rodModel = TelescopicRod.Create(axis, GearDatabase.GetGear(rods[h % rods.Length]), GearDatabase.GetGear(reels[h % reels.Length]));
             }
             if (showNameTag) _nameTag = CharacterFactory.AddNameTag(transform, look.Name, look.Title);
             _nextCast = Time.time + Random.Range(5f, 25f);
@@ -85,9 +94,18 @@ namespace Fishing.Characters
             }
         }
 
+        /// <summary>대기실처럼 낚싯대를 접어 들고 있게 한다 (빗자루 길이).</summary>
+        public void CollapseRod()
+        {
+            if (_rodModel != null) _rodModel.SetExtension(0f);
+        }
+
         void LateUpdate()
         {
             if (_rod != null && _hand != null) _rod.position = _hand.position;
+            // 줄 무게로 초릿대가 살짝 숙여지고, 바람에 조금 흔들린다
+            if (_rodModel != null)
+                _rodModel.Drive(6f + Mathf.PerlinNoise(Time.time * 0.7f, transform.position.x) * 6f, transform.forward - Vector3.up, 0f, Time.deltaTime);
         }
     }
 }

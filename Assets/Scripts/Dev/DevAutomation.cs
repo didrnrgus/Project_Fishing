@@ -68,7 +68,14 @@ namespace Fishing.Dev
             Game.CameraRig.Yaw = Game.Player.Yaw + 180f;
             Game.CameraRig.Pitch = 8f;
             Game.CameraRig.Distance = 3.2f;
-            yield return new WaitForSeconds(2f);
+            yield return new WaitForSeconds(1.5f);
+            // 접힌 낚싯대를 끝 마디부터 펼치는 중간 (빗자루 길이 → 다 펼침)
+            Game.Player.CollapseRod();
+            yield return new WaitForSeconds(0.3f);
+            Game.Player.ExtendRod();
+            yield return new WaitForSeconds(0.5f);
+            yield return Shot("00c_rod_extend");
+            yield return new WaitForSeconds(1.5f);
             yield return Shot("00_character");
             Game.CameraRig.Yaw = Game.Player.Yaw;
             Game.CameraRig.Distance = 7f;

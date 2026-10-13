@@ -1,3 +1,4 @@
+using Fishing.Angling;
 using Fishing.Characters;
 using Fishing.Core;
 using Fishing.World;
@@ -15,7 +16,12 @@ namespace Fishing.PlayerSystems
         /// <summary>낚시 중에는 이동을 막는다.</summary>
         public bool MovementLocked;
 
-        public Transform RodTip { get; private set; }
+        public Transform RodTip => Rod != null ? Rod.Tip : transform;
+        public TelescopicRod Rod { get; private set; }
+
+        /// <summary>이번 프레임 낚싯대 휨 목표(도)와 줄 방향. FishingController가 매 프레임 넣는다.</summary>
+        public float RodBendTarget;
+        public Vector3 RodPullDir;
         public Transform Model { get; private set; }
         public Vector3 EyePos => transform.position + Vector3.up * 1.6f;
         public float Yaw => Model.eulerAngles.y;
@@ -33,6 +39,9 @@ namespace Fishing.PlayerSystems
         float _vy;
         float _currentRodPitch = 35f;
         float _bob;
+        float _extendTarget = 1f;
+        int _extendedSections;
+        string _rodId, _reelId;
 
         void Awake()
         {
@@ -70,18 +79,40 @@ namespace Fishing.PlayerSystems
             _rodPivot.SetParent(Model, false);
             _rodPivot.localPosition = new Vector3(0.3f, 1.05f, 0.25f);
 
-            var rodMat = Mats.Lit(new Color(0.75f, 0.15f, 0.2f), 0.6f);
-            const float rodLen = 2.8f;
-            Mats.Prim(PrimitiveType.Cylinder, "Rod", _rodPivot, new Vector3(0f, 0f, rodLen * 0.5f - 0.3f),
-                new Vector3(0.03f, rodLen * 0.5f, 0.03f), rodMat, false, Quaternion.Euler(90f, 0f, 0f));
-            Mats.Prim(PrimitiveType.Cylinder, "Grip", _rodPivot, new Vector3(0f, 0f, -0.15f),
-                new Vector3(0.045f, 0.18f, 0.045f), Mats.Lit(new Color(0.12f, 0.12f, 0.12f)), false, Quaternion.Euler(90f, 0f, 0f));
-            Mats.Prim(PrimitiveType.Cylinder, "Reel", _rodPivot, new Vector3(0f, -0.07f, 0.05f), new Vector3(0.11f, 0.03f, 0.11f),
-                Mats.Lit(new Color(0.75f, 0.75f, 0.78f), 0.8f, 0.7f), false, Quaternion.Euler(0f, 0f, 90f));
+            // 뽑기대: 낚싯대 축(+Y)을 RodPivot의 앞(+Z)으로, 릴은 아래로
+            var axis = new GameObject("RodAxis").transform;
+            axis.SetParent(_rodPivot, false);
+            axis.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            var p = Game.Profile;
+            Rod = TelescopicRod.Create(axis, p?.Rod, p?.Reel);
+            _rodId = p?.Rod.Id;
+            _reelId = p?.Reel.Id;
+        }
 
-            RodTip = new GameObject("RodTip").transform;
-            RodTip.SetParent(_rodPivot, false);
-            RodTip.localPosition = new Vector3(0f, 0f, rodLen - 0.3f);
+        /// <summary>접어 둔 낚싯대를 끝 마디부터 하나씩 뽑아 펼친다 (낚시터에 들어왔을 때).</summary>
+        public void ExtendRod()
+        {
+            Rod.SetExtension(0f);
+            _extendedSections = 0;
+            _extendTarget = 1f;
+        }
+
+        /// <summary>낚싯대를 접는다 (대기실로 나갈 때).</summary>
+        public void CollapseRod()
+        {
+            _extendTarget = 0f;
+            Rod.SetExtension(0f);
+        }
+
+        public bool RodExtended => Rod.Extension >= 0.999f;
+
+        void UpdateRodGear()
+        {
+            var p = Game.Profile;
+            if (p == null || (p.Rod.Id == _rodId && p.Reel.Id == _reelId)) return;
+            _rodId = p.Rod.Id;
+            _reelId = p.Reel.Id;
+            Rod.Rebuild(p.Rod, p.Reel);
         }
 
         /// <summary>에셋이 없을 때의 프리미티브 캐릭터.</summary>
@@ -195,6 +226,18 @@ namespace Fishing.PlayerSystems
             if (_hand != null) _rodPivot.position = _hand.position;
             _currentRodPitch = Mathf.Lerp(_currentRodPitch, RodPitch, Time.deltaTime * 10f);
             _rodPivot.localRotation = Quaternion.Euler(-_currentRodPitch, 0f, 0f);
+
+            UpdateRodGear();
+            // 펼치기: 1.2초에 걸쳐 끝 마디부터. 마디가 하나 빠질 때마다 '착'
+            if (Rod.Extension < _extendTarget)
+            {
+                Rod.SetExtension(Mathf.MoveTowards(Rod.Extension, _extendTarget, Time.deltaTime / 1.2f));
+                int n = Rod.ExtendedSections;
+                if (n > _extendedSections && Game.Sound != null) Game.Sound.RodSnap(n);
+                _extendedSections = n;
+            }
+            Rod.Drive(RodBendTarget, RodPullDir.sqrMagnitude > 0f ? RodPullDir : Model.forward, 0f, Time.deltaTime);
+            RodBendTarget = 0f;
         }
     }
 }
