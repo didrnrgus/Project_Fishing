@@ -83,6 +83,7 @@ namespace Fishing.Core
             if (q.RewardGold > 0) _profile.AddGold(q.RewardGold);
             if (!string.IsNullOrEmpty(q.RewardBaitId)) _profile.AddItem(q.RewardBaitId, q.RewardBaitCount);
             if (q.RewardKeepNet > 0) _profile.Data.keepNetBonus += q.RewardKeepNet;
+            if (!string.IsNullOrEmpty(q.RewardCostume)) _profile.GiveCostume(q.RewardCostume);
 
             P.index++;
             P.progress = 0;

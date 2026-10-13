@@ -16,6 +16,8 @@ namespace Fishing.Angling
         public string MapId;
         /// <summary>미끼 효과 배율 (해체 미끼가 높다). 0이면 1로 본다.</summary>
         public float BaitPotency;
+        /// <summary>의상 대물 확률 (0.05 = 5%).</summary>
+        public float BigFishBonus;
     }
 
     public struct BiteResult
@@ -74,6 +76,7 @@ namespace Fishing.Angling
             float skew = ctx.School != null && ctx.School.Contains(s.Id) ? ctx.School.LengthSkew : 2.2f;
             // 좋은 미끼(해체 미끼)는 큰 고기가 잘 문다
             if (ctx.BaitPotency > 1f && Contains(s.Baits, ctx.Bait)) skew = Mathf.Max(1.2f, skew - (ctx.BaitPotency - 1f) * 0.8f);
+            if (ctx.BigFishBonus > 0f) skew = Mathf.Max(1.1f, skew * (1f - ctx.BigFishBonus * 2.5f));
             float t = Mathf.Pow(Random.value, skew);
             return Mathf.Round(Mathf.Lerp(s.MinLen, s.MaxLen, t) * 10f) / 10f;
         }

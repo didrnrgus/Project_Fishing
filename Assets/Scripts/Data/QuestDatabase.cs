@@ -20,6 +20,7 @@ namespace Fishing.Data
         public int RewardBaitCount;
         /// <summary>살림망 칸 확장 보상 (원작 자이언트 그루퍼 퀘스트: 3칸).</summary>
         public int RewardKeepNet;
+        public string RewardCostume;
 
         public string GoalText
         {
@@ -49,6 +50,8 @@ namespace Fishing.Data
                 var bait = GearDatabase.GetBait(RewardBaitId);
                 if (bait != null) parts.Add($"{bait.Name} {RewardBaitCount}개");
                 if (RewardKeepNet > 0) parts.Add($"살림망 {RewardKeepNet}칸 확장");
+                var costume = CostumeDatabase.Get(RewardCostume);
+                if (costume != null) parts.Add(costume.Name);
                 return string.Join(", ", parts);
             }
         }
@@ -98,7 +101,7 @@ namespace Fishing.Data
                 RewardBaitId = "bait_squid", RewardBaitCount = 20 },
             new QuestDef { Title = "자이언트 그루퍼", Desc = "암초의 주인 자이언트 그루퍼! 저녁엔 C4, 아침엔 E3 어군에 나타난다지. 헤비대와 강한 줄을 챙기게.",
                 Goal = QuestGoal.CatchSpecies, SpeciesId = "giantgrouper", Count = 1, RewardGold = 50000, RewardExp = 3000,
-                RewardKeepNet = 3 },
+                RewardKeepNet = 3, RewardCostume = "top_union" },
         };
     }
 }

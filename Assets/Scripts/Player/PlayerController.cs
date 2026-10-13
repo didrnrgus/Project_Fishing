@@ -69,11 +69,8 @@ namespace Fishing.PlayerSystems
             if (CharacterFactory.Available)
             {
                 // Quaternius 캐릭터 (CC0) + 코드로 입힌 옷
-                var look = CharacterLook.Player;
-                var character = CharacterFactory.Create(look, Model);
-                _anim = character.GetComponent<CharacterAnimator>();
-                foreach (var t in character.GetComponentsInChildren<Transform>(true))
-                    if (t.name == "hand_r") _hand = t;
+                var look = Game.Profile != null ? Game.Profile.BuildLook() : CharacterLook.Player;
+                BuildCharacter(look);
                 _nameTag = CharacterFactory.AddNameTag(transform, look.Name, look.Title);
             }
             else
@@ -105,6 +102,30 @@ namespace Fishing.PlayerSystems
             if (Head == null) Head = Model;
             // 낚싯대는 초상화에 비치지 않게 (얼굴 앞을 가로지른다)
             foreach (var t in _rodPivot.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = 0;
+        }
+
+        GameObject _character;
+
+        void BuildCharacter(CharacterLook look)
+        {
+            if (_character != null) Destroy(_character);
+            _character = CharacterFactory.Create(look, Model);
+            _anim = _character.GetComponent<CharacterAnimator>();
+            Head = null;
+            foreach (var t in _character.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name == "hand_r") _hand = t;
+                if (t.name == "Head") Head = t;
+                t.gameObject.layer = Fishing.UI.PortraitCamera.Layer;
+            }
+            if (Head == null) Head = Model;
+        }
+
+        /// <summary>의상을 바꾸면 캐릭터를 다시 입힌다 (초상화도 따라 바뀐다).</summary>
+        public void ApplyLook()
+        {
+            if (!CharacterFactory.Available || Game.Profile == null) return;
+            BuildCharacter(Game.Profile.BuildLook());
         }
 
         // ---------------- 배 ----------------

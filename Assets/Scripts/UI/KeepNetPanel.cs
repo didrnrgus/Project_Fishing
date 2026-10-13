@@ -66,7 +66,7 @@ namespace Fishing.UI
             var p = Game.Profile;
             if (index >= p.Data.keepNet.Count) return;
             var fish = p.Data.keepNet[index];
-            if (p.Data.stamina >= PlayerProfile.MaxStamina - 0.5f)
+            if (p.Data.stamina >= p.StaminaCap - 0.5f)
             {
                 Game.Toast("배가 부릅니다.", ToastKind.Warn);
                 return;
@@ -104,7 +104,7 @@ namespace Fishing.UI
         void EatKimbap()
         {
             var p = Game.Profile;
-            if (p.Data.stamina >= PlayerProfile.MaxStamina - 0.5f)
+            if (p.Data.stamina >= p.StaminaCap - 0.5f)
             {
                 Game.Toast("배가 부릅니다.", ToastKind.Warn);
                 return;

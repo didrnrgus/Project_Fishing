@@ -118,16 +118,23 @@ namespace Fishing.World
                 Mats.Prim(PrimitiveType.Sphere, "Lamp", t, new Vector3(i == 0 ? -1.5f : 2.5f, H - 0.45f, i == 0 ? 0.5f : -1.5f), Vector3.one * 0.35f,
                     Mats.Emissive(new Color(1f, 0.85f, 0.6f), 2f), false);
 
-            // 가운데 캐릭터
-            var look = CharacterLook.Player;
-            var npc = NpcAngler.Spawn(t, new Vector3(0.2f, 0f, -0.6f), 0f, new CharacterLook
-            {
-                Name = look.Name, Title = look.Title, Hair = look.Hair, HairColor = look.HairColor, Shirt = look.Shirt,
-                Pants = look.Pants, Shoes = look.Shoes, Hat = look.Hat, HatColor = look.HatColor, Vest = look.Vest, VestColor = look.VestColor
-            }, NpcAngler.Role.Angler, showNameTag: false);
-            npc.Idle = true;
-            npc.CollapseRod();
+            // 가운데 캐릭터 (입은 의상 그대로)
+            _room = t;
+            RefreshPlayer();
         }
+        Transform _room;
+        NpcAngler _me;
+
+        /// <summary>내 캐릭터를 다시 세운다 (의상을 바꿨을 때).</summary>
+        public void RefreshPlayer()
+        {
+            if (_me != null) Destroy(_me.gameObject);
+            var look = Game.Profile != null ? Game.Profile.BuildLook() : CharacterLook.Player;
+            _me = NpcAngler.Spawn(_room, new Vector3(0.2f, 0f, -0.6f), 0f, look, NpcAngler.Role.Angler, showNameTag: false);
+            _me.Idle = true;
+            _me.CollapseRod();
+        }
+
 
         void MountFish(Transform parent, string speciesId, float length, Vector3 pos)
         {

@@ -63,7 +63,7 @@ namespace Fishing.UI
         void EatKimbap()
         {
             var p = Game.Profile;
-            if (p.Data.stamina >= PlayerProfile.MaxStamina - 0.5f) { Game.Toast("배가 부릅니다.", ToastKind.Warn); return; }
+            if (p.Data.stamina >= p.StaminaCap - 0.5f) { Game.Toast("배가 부릅니다.", ToastKind.Warn); return; }
             if (!p.ConsumeItem(GearDatabase.KimbapId)) return;
             p.ChangeStamina(GearDatabase.KimbapStamina);
             Game.Toast($"김밥을 먹었습니다. 체력 +{GearDatabase.KimbapStamina:0}", ToastKind.Good);

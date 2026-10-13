@@ -225,6 +225,19 @@ namespace Fishing.Dev
             yield return Shot("21b_inventory");
             Game.UI.Inventory.Close();
 
+            // 의상: 밀짚모자, 선글라스, 체크 남방, 구명조끼, 장화
+            p.Data.level = Mathf.Max(p.Data.level, 6);
+            foreach (var id in new[] { "hat_straw", "glass_sun", "top_check", "vest_life", "shoes_boots" })
+            {
+                p.GiveCostume(id);
+                p.Wear(CostumeDatabase.Get(id));
+            }
+            Game.UI.OpenExclusive(Game.UI.Costume);
+            Fishing.UI.PortraitCamera.FullBody.Spin = 25f;
+            yield return new WaitForSeconds(0.6f);
+            yield return Shot("21c_costume");
+            Game.UI.Costume.Close();
+
             // 지역 지도(M): 어군 하나는 3마리를 낚아 작은 어군으로 만든다
             var shrink = Game.Schools.Schools[1];
             for (int i = 0; i < Fishing.World.FishSchoolManager.CatchesToShrink; i++) Game.Schools.OnCatch(shrink, shrink.SpeciesIds[0]);
