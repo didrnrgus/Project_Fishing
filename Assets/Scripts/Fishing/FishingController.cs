@@ -421,6 +421,7 @@ namespace Fishing.Angling
                 IceFishing = _iceFishing = SeasonFx.OnIce(Game.Player.transform.position),
                 Season = Seasons.Current,
                 UseSeason = true,
+                FarSea = FieldMap.IsFarSea(_bobber.Position),
                 // 먼바다 포인트는 대물이 잘 문다
                 BigFishBonus = Game.Profile.Costume.BigFish + (FieldMap.IsFarSea(_bobber.Position) ? 0.08f : 0f),
             };

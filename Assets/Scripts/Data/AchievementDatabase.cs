@@ -65,6 +65,8 @@ namespace Fishing.Data
                 Done = p => (p.Dex("octopus")?.count ?? 0) >= 10, Progress = p => (p.Dex("octopus")?.count ?? 0, 10) },
             new AchievementDef { Id = "smelt", Name = "얼음 위의 겨울", Desc = "겨울 한강 얼음 구멍에서 빙어 낚기", Conch = 2,
                 Done = p => p.Dex("smelt") != null },
+            new AchievementDef { Id = "deeplegend", Name = "전설의 심해어", Desc = "홍현 먼바다에서 다금바리나 돗돔 낚기", Title = "심해 사냥꾼", Conch = 5,
+                Done = p => p.Dex("dageumbari") != null || p.Dex("dotdom") != null },
             new AchievementDef { Id = "combo5", Name = "카운터 장인", Desc = "한 번의 파이팅에서 카운터 콤보 5", Title = "카운터 장인", Conch = 3,
                 Done = p => p.Data.bestCombo >= 5, Progress = p => (p.Data.bestCombo, 5) },
             new AchievementDef { Id = "trophy10", Name = "대물 사냥꾼", Desc = "대물 도전 10종 달성", Title = "대물 사냥꾼", Conch = 5,

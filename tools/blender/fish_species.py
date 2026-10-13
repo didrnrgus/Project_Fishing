@@ -207,6 +207,22 @@ SPECIES = {
                                   patterns=[('obliquebands', dict(n=6, color='#1e1a14', a=0.55)), ('mottle', dict(color='#3a3226', a=0.4)),
                                             ('spots', dict(n=60, r=(2, 4), color='#c8b898', v=(0.2, 0.9), a=0.35))]),
                          eye=dict(s=0.1, z=0.42, r=0.015, iris='#806040'), anim=dict(amp=0.8, freq=0.7)),
+    # 다금바리 (Niphon spinosus): 길쭉한 농어형 몸, 등은 자갈색, 배는 은백색, 아가미 뚜껑 가시, 어릴 때 몸 가운데 검은 세로띠 흔적
+    'dageumbari': dict(type='C', name='다금바리', depth=0.26, width=0.15, head_w=1.05, mouth=0.27, snout=0.8, scales=100,
+                       fins=[_fin('dorsal', (0.27, 0.56), 0.32, spiny=True), _fin('dorsal', (0.57, 0.78), 0.34),
+                             _fin('anal', (0.62, 0.78), 0.32), _fin('caudal', h=0.2, shape='fork'),
+                             _fin('pectoral', s=(0.27, 0.27), h=0.15), _fin('pelvic', s=(0.3, 0.3), h=0.12)],
+                       colors=P('#4a3a34', '#8a7060', '#e0d8cc', silver=0.25, fin_up=('#5a463c', '#3a2c26', 0.9), fin_low=('#7a6658', '#5a4a40', 0.9),
+                                patterns=[('stripe', dict(v=0.5, w=0.05, color='#2a201c', a=0.35)), ('mottle', dict(color='#3a2e28', a=0.25))]),
+                       eye=dict(s=0.1, z=0.42, r=0.016, iris='#a08050'), anim=dict(amp=0.8, freq=0.75)),
+    # 돗돔 (Stereolepis doederleini): 높고 두툼한 거대한 몸, 짙은 회흑색, 배는 조금 밝다, 둥근 꼬리
+    'dotdom': dict(type='C', name='돗돔', depth=0.34, width=0.18, head_w=1.12, mouth=0.26, snout=0.75, scales=120,
+                   fins=[_fin('dorsal', (0.28, 0.55), 0.28, spiny=True), _fin('dorsal', (0.56, 0.78), 0.36),
+                         _fin('anal', (0.62, 0.79), 0.36), _fin('caudal', h=0.24, shape='round'),
+                         _fin('pectoral', s=(0.27, 0.27), h=0.17), _fin('pelvic', s=(0.31, 0.31), h=0.13)],
+                   colors=P('#24262a', '#44484c', '#8a8c88', silver=0.1, fin_up=('#2a2c30', '#1a1c1e', 0.95), fin_low=('#3a3c40', '#26282a', 0.95),
+                            patterns=[('mottle', dict(color='#1a1c20', a=0.35))]),
+                   eye=dict(s=0.09, z=0.43, r=0.015, iris='#707060'), anim=dict(amp=0.7, freq=0.6)),
     # ===== D. 도미형 =====
     'blackseabream': dict(type='D', name='감성돔', depth=0.4,
                           colors=P('#2e3438', '#8a9298', '#dcdfe0', silver=0.65, fin_up=('#3a4044', '#2a3034', 0.85), fin_low=('#4a5054', '#3a4044', 0.8),
