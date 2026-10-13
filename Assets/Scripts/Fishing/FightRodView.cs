@@ -27,6 +27,7 @@ namespace Fishing.Angling
         LineRenderer _line;
         GameObject _fish;
         Transform _fishBody;
+        string _fishClip;
         FishFight _fight;
         Vector3 _origin;
         Vector3 _forward;
@@ -139,6 +140,7 @@ namespace Fishing.Angling
             _forward = new Vector3(forward.x, 0f, forward.z).normalized;
             if (_fishBody != null) Destroy(_fishBody.gameObject);
             _fishBody = FishModels.Create(fight.Species, fight.Length, _fish.transform).transform;
+            _fishClip = null;
             gameObject.SetActive(true);
             _line.gameObject.SetActive(true);
         }
@@ -249,6 +251,13 @@ namespace Fishing.Angling
                 look.y = 0f;
                 float wiggle = Mathf.Sin(Time.time * (f.HpLow ? 6f : 14f)) * (f.HpLow ? 10f : 25f);
                 _fish.transform.rotation = Quaternion.LookRotation(look.normalized) * Quaternion.Euler(0f, 90f + wiggle * 0.4f, 0f);
+                // 질주·폭주하면 몸부림, 지치면 천천히, 그 밖에는 빠르게 헤엄
+                string clip = f.HpLow ? FishModels.SwimSlow : f.Mood == FishMood.Burst ? FishModels.Thrash : FishModels.SwimFast;
+                if (clip != _fishClip && _fishBody != null)
+                {
+                    _fishClip = clip;
+                    FishModels.Play(_fishBody.gameObject, clip, f.Mood == FishMood.Run ? 1.3f : 1f);
+                }
             }
         }
     }

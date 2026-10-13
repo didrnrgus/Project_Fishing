@@ -141,8 +141,7 @@ namespace Fishing.World
             holder.localPosition = pos;
             holder.localRotation = Quaternion.Euler(0f, 90f, 0f);
             var fish = FishModels.Create(species, length, holder);
-            var anim = fish.GetComponent<Animation>();
-            if (anim != null) anim.Stop();
+            FishModels.Freeze(fish, FishModels.Flop, 0.15f); // 박제: 몸을 살짝 튼 자세
         }
 
         void AddLight(Vector3 local, float intensity, float range)

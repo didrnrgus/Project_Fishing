@@ -10,6 +10,8 @@ namespace Fishing.UI
     /// 어류 도감. 원작처럼 같은 종을 여러 번 잡아야 정보가 열린다.
     /// 1마리: 이름·성질·기록 / 3마리: 선호 미끼 / 5마리: 활동 시간·서식지
     /// 오른쪽 칸: 이 낚시터 수집률(도넛), 등급별 수집(도넛), 많이 낚은 어종 TOP 5(막대).
+    /// 카드에는 물고기 아이콘(Icons/Fish, 못 낚은 어종은 검은 실루엣). 낚은 어종 카드를 누르면
+    /// 3D 물고기가 천천히 헤엄치며 도는 미리보기(<see cref="ResultFishStage"/>)와 자세한 기록이 나온다.
     /// </summary>
     public class DexPanel : UIPanel
     {
@@ -23,6 +25,14 @@ namespace Fishing.UI
         RectTransform _grid;
         ChartHost _rateChart, _rarityChart, _topChart;
         TMP_Text _rateText, _topEmpty;
+        // 3D 미리보기
+        RectTransform _detail;
+        UnityEngine.UI.RawImage _detailImg;
+        TMP_Text _detailText;
+        ResultFishStage _stage;
+        FishSpecies _selected;
+        float _openedAt;
+        static readonly Vector3 StagePos = new Vector3(0f, -800f, 400f);
 
         static readonly string[] RarityNames = { "", "★ 흔함", "★★ 보통", "★★★ 귀함", "★★★★ 희귀", "★★★★★ 전설" };
         static readonly Color[] RarityColors =
@@ -40,6 +50,70 @@ namespace Fishing.UI
             BuildFrame(canvas, "DexPanel", "어류 도감", new Vector2(FrameW, FrameH));
             _grid = UIFactory.Node("Grid", Body).Fill(0, SideW + 20, 0, 0);
             BuildSide();
+            BuildDetail();
+        }
+
+        void BuildDetail()
+        {
+            _detail = UIFactory.Shape(Body, UIFactory.Surface, UIFactory.RadiusCard, "Detail", 0f).rectTransform;
+            _detail.Fill(0, SideW + 20, 0, 0);
+            var well = UIFactory.Shape(_detail, new Color(0.04f, 0.09f, 0.13f, 0.75f), UIFactory.RadiusCard, "Stage", 0f).rectTransform;
+            well.At(new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(820, 520), new Vector2(0, 0.5f));
+            _detailImg = UIFactory.Node("Fish3D", well).Fill().gameObject.AddComponent<UnityEngine.UI.RawImage>();
+            _detailImg.raycastTarget = false;
+            _detailText = UIFactory.Text(_detail, "", 18, UIFactory.TextMain, TextAnchor.UpperLeft);
+            _detailText.rectTransform.At(new Vector2(0, 1), new Vector2(860, -24), new Vector2(480, 640), new Vector2(0, 1));
+            _detailText.lineSpacing = 8f;
+            var back = UIFactory.Button(_detail, "◀ 목록으로", () => ShowDetail(null), UIFactory.BtnNeutral, 18);
+            UIFactory.SetRadius(back.targetGraphic, UIFactory.Pill);
+            ((RectTransform)back.transform).At(new Vector2(0, 0), new Vector2(860, 22), new Vector2(180, 44), Vector2.zero);
+            _detail.gameObject.SetActive(false);
+        }
+
+        /// <summary>어종 미리보기를 연다 (null이면 목록으로).</summary>
+        public void ShowDetail(FishSpecies s)
+        {
+            _selected = s;
+            _grid.gameObject.SetActive(s == null);
+            _detail.gameObject.SetActive(s != null);
+            if (s == null)
+            {
+                if (_stage != null) _stage.Hide();
+                return;
+            }
+            if (_stage == null) _stage = ResultFishStage.Create(StagePos, "DexFishStage");
+            _detailImg.texture = _stage.Target;
+            var e = Game.Profile.Dex(s.Id);
+            float len = e != null ? e.maxLength : (s.MinLen + s.MaxLen) / 2f;
+            if (_stage.Show(s, len)) Fishing.Angling.FishModels.Play(_stage.Fish, Fishing.Angling.FishModels.SwimSlow, 0.8f, 0f);
+            _openedAt = Time.unscaledTime;
+            _stage.Spin(0f);
+            string Lock(int need, string text) => e != null && e.count >= need ? text : $"<color=#607080>{need}마리 낚으면 공개</color>";
+            _detailText.text =
+                $"<size=34><b>{s.Name}</b></size>  <color=#ffd060>{new string('★', s.Rarity)}</color>\n" +
+                $"<i><color=#8fa3b5>{s.Latin}</color></i>\n" +
+                $"<color=#a0b0c0>{s.Temper}</color>\n\n" +
+                (e != null
+                    ? $"낚은 수   <b>{e.count}</b>마리\n최대 기록   <b>{e.maxLength:0.0}cm</b> · {e.maxWeight / 1000f:0.00}kg" +
+                      (s.IsTrophy(e.maxLength) ? $"  <color=#ff7090>{s.TrophyName}</color>" : "") + $"\n처음 낚은 날   {e.firstDay}일째\n"
+                    : "<color=#607080>아직 낚지 못했습니다</color>\n") +
+                $"길이   {s.MinLen:0}~{s.MaxLen:0}cm  ·  {s.TrophyName} {s.TrophyLen:0.#}cm 이상\n\n" +
+                $"미끼   {Lock(BaitUnlock, string.Join(", ", s.Baits.Select(Names.Of)))}\n" +
+                $"시간   {Lock(HabitatUnlock, string.Join(", ", s.Times.Select(Names.Of)))}\n" +
+                $"장소   {Lock(HabitatUnlock, string.Join(", ", s.Habitats.Select(Names.Of)))}\n" +
+                $"날씨   {Lock(HabitatUnlock, string.Join(", ", (s.Weathers ?? new Weather[0]).Select(Names.Of)))}";
+        }
+
+        /// <summary>미리보기 물고기를 돌린다 (GameUI.Update에서).</summary>
+        public void Tick()
+        {
+            if (_selected != null && _stage != null) _stage.Spin(Time.unscaledTime - _openedAt);
+        }
+
+        public override void Close()
+        {
+            ShowDetail(null);
+            base.Close();
         }
 
         /// <summary>오른쪽 통계 칸. 차트는 한 번만 만들고 Refresh에서 값만 바꾼다.</summary>
@@ -118,6 +192,7 @@ namespace Fishing.UI
             }
 
             BuildCards(p, species);
+            if (_selected != null) ShowDetail(_selected);
             RefreshSide(p, species, known);
         }
 
@@ -138,6 +213,13 @@ namespace Fishing.UI
                 var entry = p.Dex(s.Id);
                 int col = i % cols, row = i / cols;
                 var cardImg = UIFactory.Shape(_grid, entry != null ? UIFactory.SurfaceHi : UIFactory.Surface, UIFactory.RadiusCard, "Card", 0f);
+                if (entry != null)
+                {
+                    var btn = cardImg.gameObject.AddComponent<UnityEngine.UI.Button>();
+                    btn.transition = UnityEngine.UI.Selectable.Transition.None;
+                    var picked = s;
+                    btn.onClick.AddListener(() => ShowDetail(picked));
+                }
                 if (entry != null && s.IsTrophy(entry.maxLength)) UIFactory.AddBorder(cardImg, new Color(1f, 0.45f, 0.6f, 0.55f), 1.5f);
                 var card = cardImg.rectTransform;
                 card.At(new Vector2(0, 1), new Vector2(col * (w + gap), -row * (h + gap)), new Vector2(w, h));
@@ -146,10 +228,20 @@ namespace Fishing.UI
                 Cell(card, $"No.{i + 1:00}", 12, 70, 12, UIFactory.TextFaint, TextAnchor.UpperLeft).rectTransform.offsetMax = new Vector2(82, -10);
                 UIFactory.Shape(card, RarityColors[Mathf.Clamp(s.Rarity, 0, 5)], UIFactory.Pill, "RarityDot", 0f).rectTransform
                     .At(new Vector2(1, 1), new Vector2(-14, -14), new Vector2(8, 8));
+                // 물고기 아이콘 (못 낚은 어종은 검은 실루엣)
+                var icon = Fishing.Angling.FishModels.Icon(s);
+                if (icon != null)
+                {
+                    var img = UIFactory.Image(card, entry != null ? Color.white : new Color(0f, 0f, 0f, 0.55f), icon, "Icon");
+                    img.preserveAspect = true;
+                    img.raycastTarget = false;
+                    if (entry != null) img.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -6), new Vector2(w - 24, 78), new Vector2(0.5f, 1));
+                    else img.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 14), new Vector2(w - 20, h * 0.55f));
+                }
                 if (entry == null)
                 {
-                    var q = UIFactory.Text(card, "???", 38, new Color(1, 1, 1, 0.18f), TextAnchor.MiddleCenter, FontStyle.Bold);
-                    q.rectTransform.Fill();
+                    var q = UIFactory.Text(card, "???", 30, new Color(1, 1, 1, 0.22f), TextAnchor.LowerCenter, FontStyle.Bold);
+                    q.rectTransform.Fill(0, 0, 0, 32);
                     var rarity = UIFactory.Text(card, new string('★', s.Rarity), 13, new Color(1, 0.8f, 0.3f, 0.35f), TextAnchor.LowerCenter);
                     rarity.rectTransform.Fill(0, 0, 0, 12);
                     continue;
@@ -158,7 +250,7 @@ namespace Fishing.UI
                 bool trophy = s.IsTrophy(entry.maxLength);
                 var lines = $"<b><size={body + 7}>{s.Name}</size></b>  <color=#ffd060><size={body - 2}>{new string('★', s.Rarity)}</size></color>\n" +
                             $"<size={body - 3}><i><color=#8fa3b5>{s.Latin}</color></i></size>\n" +
-                            $"<color=#a0b0c0>{s.Temper}</color>\n\n" +
+                            $"<color=#a0b0c0>{s.Temper}</color>\n" +
                             $"낚은 수  {entry.count}마리\n" +
                             $"최대  {entry.maxLength:0.0}cm" + (trophy ? $" <color=#ff7090>{s.TrophyName}</color>" : "") + "\n" +
                             $"길이  {s.MinLen:0}~{s.MaxLen:0}cm\n";
@@ -170,7 +262,7 @@ namespace Fishing.UI
                     : $"<color=#607080>시간/장소  {HabitatUnlock}마리 낚으면 공개</color>";
 
                 var text = UIFactory.Text(card, lines, body, UIFactory.TextMain, TextAnchor.UpperLeft);
-                text.rectTransform.Fill(14, 12, 28, 8);
+                text.rectTransform.Fill(14, 12, icon != null ? 80 : 28, 8);
                 text.lineSpacing = 2f;
             }
         }

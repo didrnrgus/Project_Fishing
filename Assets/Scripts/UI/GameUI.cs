@@ -116,6 +116,7 @@ namespace Fishing.UI
             Hud.Update();
             Fight.Update();
             if (AreaMap.IsOpen) AreaMap.Tick();
+            if (Dex.IsOpen) Dex.Tick();
             NearbyNpc = FindNearbyNpc();
             // 대화 중이거나 카메라가 캐릭터에 바짝 붙는 연출(캐스팅·챔질·환호) 중에는 내 이름표를 숨긴다
             Game.Player.NameTagVisible = !Dialog.IsOpen && Game.CameraRig.Shot == Fishing.PlayerSystems.CameraRig.ShotKind.Follow;

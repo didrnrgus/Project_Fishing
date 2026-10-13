@@ -5,12 +5,152 @@ using UnityEngine;
 namespace Fishing.Angling
 {
     /// <summary>
-    /// Quaternius Animated Fish Pack(CC0)의 Fish1~3으로 어종별 물고기를 만든다.
-    /// 원본 길이(약 2~3.3m)는 처음 만들 때 BakeMesh로 재서 실제 길이에 맞춰 줄이고, 어종 색을 입힌다.
-    /// 에셋이 없으면 캡슐로 대신한다.
+    /// 어종별 물고기 모델.
+    ///  - 우선 <c>Resources/Fish/Species/&lt;어종 Id&gt;</c> (tools/blender/build_fish.py가 만든 모델: 몸·지느러미·LOD1,
+    ///    클립 Swim_Slow · Swim_Fast · Thrash · Flop · Idle_Hover, 텍스처 Fish/Textures/&lt;Id&gt;(_n, _m))
+    ///  - 없으면 Quaternius Animated Fish Pack(CC0) Fish1~3에 어종 색을 입힌다 (예전 방식, 하나씩 바꿔 나갈 수 있게)
+    /// 모델의 머리는 +Z, 길이는 BakeMesh로 재서 실제 cm에 맞춘다.
     /// </summary>
     public static class FishModels
     {
+        public const string SwimSlow = "Swim_Slow", SwimFast = "Swim_Fast", Thrash = "Thrash", Flop = "Flop", IdleHover = "Idle_Hover";
+
+        static readonly System.Collections.Generic.Dictionary<string, (Material body, Material fin)> MatCache =
+            new System.Collections.Generic.Dictionary<string, (Material, Material)>();
+        static readonly System.Collections.Generic.Dictionary<string, Sprite> IconCache = new System.Collections.Generic.Dictionary<string, Sprite>();
+
+        /// <summary>어종 전용 모델이 있는지.</summary>
+        public static bool HasModel(FishSpecies s) => s != null && Resources.Load<GameObject>("Fish/Species/" + s.Id) != null;
+
+        /// <summary>도감 목록 아이콘 (Icons/Fish/&lt;Id&gt;, 없으면 null). 못 낚은 어종은 UI에서 검게 칠해 실루엣으로 쓴다.</summary>
+        public static Sprite Icon(FishSpecies s)
+        {
+            if (s == null) return null;
+            if (IconCache.TryGetValue(s.Id, out var sp)) return sp;
+            sp = Resources.Load<Sprite>("Icons/Fish/" + s.Id);
+            IconCache[s.Id] = sp;
+            return sp;
+        }
+
+        static (Material body, Material fin) SpeciesMats(string id)
+        {
+            if (MatCache.TryGetValue(id, out var m)) return m;
+            var shader = Shader.Find("Fishing/Fish") ?? Shader.Find("Standard");
+            var albedo = Resources.Load<Texture2D>("Fish/Textures/" + id);
+            var normal = Resources.Load<Texture2D>("Fish/Textures/" + id + "_n");
+            var metal = Resources.Load<Texture2D>("Fish/Textures/" + id + "_m");
+            Material Make(bool fin)
+            {
+                var mat = new Material(shader) { name = $"Fish_{id}_{(fin ? "Fin" : "Body")}" };
+                if (albedo != null) mat.SetTexture("_MainTex", albedo);
+                if (normal != null) mat.SetTexture("_BumpMap", normal);
+                if (metal != null) mat.SetTexture("_MetalTex", metal);
+                mat.SetFloat("_Cutoff", fin ? 0.45f : 0f);
+                mat.SetFloat("_Translucency", fin ? 0.6f : 0f);
+                mat.SetFloat("_Sheen", 0.6f);
+                return mat;
+            }
+            m = (Make(false), Make(true));
+            MatCache[id] = m;
+            return m;
+        }
+
+        /// <summary>
+        /// 지금 자세의 실제 월드 바운드 (스킨드 메쉬를 구워서 잰다). 만든 직후에는 SkinnedMeshRenderer.bounds가
+        /// 아직 갱신되지 않아 엉뚱한 값이 나오므로, 화면에 맞춰 크기를 정할 때는 이걸 쓴다.
+        /// </summary>
+        public static Bounds BakedBounds(GameObject go)
+        {
+            bool any = false;
+            var b = new Bounds(go.transform.position, Vector3.zero);
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+            {
+                if (!r.enabled || r.name.EndsWith("_LOD1")) continue;
+                if (r is SkinnedMeshRenderer smr)
+                {
+                    var m = new Mesh();
+                    smr.BakeMesh(m, true); // 크기까지 구운 뒤 위치·회전만 곱한다
+                    var mtx = Matrix4x4.TRS(smr.transform.position, smr.transform.rotation, Vector3.one);
+                    foreach (var v in m.vertices)
+                    {
+                        var w = mtx.MultiplyPoint3x4(v);
+                        if (!any) { b = new Bounds(w, Vector3.zero); any = true; }
+                        else b.Encapsulate(w);
+                    }
+                    Object.Destroy(m);
+                }
+                else
+                {
+                    if (!any) { b = r.bounds; any = true; }
+                    else b.Encapsulate(r.bounds);
+                }
+            }
+            return b;
+        }
+
+        /// <summary>클립을 반복 재생한다 (fade초 동안 섞으며 바꾼다). 예전 모델(클립 하나)은 그대로 둔다.</summary>
+        public static void Play(GameObject fish, string clip, float speed = 1f, float fade = 0.2f)
+        {
+            if (fish == null) return;
+            var anim = fish.GetComponentInChildren<Animation>();
+            if (anim == null || anim[clip] == null) return;
+            anim[clip].wrapMode = WrapMode.Loop;
+            anim[clip].speed = speed;
+            if (fade > 0f && anim.isPlaying) anim.CrossFade(clip, fade);
+            else anim.Play(clip);
+        }
+
+        /// <summary>박제처럼 한 자세로 멈춘다 (대기실 트로피).</summary>
+        public static void Freeze(GameObject fish, string clip = IdleHover, float time = 0f)
+        {
+            var anim = fish != null ? fish.GetComponentInChildren<Animation>() : null;
+            if (anim == null) return;
+            if (anim[clip] == null) { anim.Stop(); return; }
+            anim.Play(clip);
+            anim[clip].time = time;
+            anim[clip].speed = 0f;
+            anim.Sample();
+        }
+
+        static GameObject CreateSpecies(FishSpecies species, GameObject prefab, float lengthCm, Transform parent)
+        {
+            var go = Object.Instantiate(prefab, parent, false);
+            go.name = "Fish_" + species.Id;
+            var path = "Fish/Species/" + species.Id;
+            go.transform.localScale = Vector3.one * (lengthCm / 100f / MeasuredLength(path, go));
+            var (body, fin) = SpeciesMats(species.Id);
+            Renderer lod0Body = null, lod0Fin = null, lod1Body = null, lod1Fin = null;
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+            {
+                bool isFin = r.name.StartsWith("Fins");
+                r.sharedMaterial = isFin ? fin : body;
+                r.shadowCastingMode = isFin ? UnityEngine.Rendering.ShadowCastingMode.Off : UnityEngine.Rendering.ShadowCastingMode.On;
+                if (r is SkinnedMeshRenderer smr) smr.updateWhenOffscreen = true;
+                if (r.name == "Body") lod0Body = r;
+                else if (r.name == "Fins") lod0Fin = r;
+                else if (r.name == "Body_LOD1") lod1Body = r;
+                else if (r.name == "Fins_LOD1") lod1Fin = r;
+            }
+            // 가까이서는 원본, 멀어지면(수족관 여러 마리) 줄인 LOD1
+            if (lod0Body != null && lod1Body != null)
+            {
+                var group = go.AddComponent<LODGroup>();
+                group.SetLODs(new[]
+                {
+                    new LOD(0.08f, new[] { lod0Body, lod0Fin }),
+                    new LOD(0.004f, new[] { lod1Body, lod1Fin }),
+                });
+                group.RecalculateBounds();
+            }
+            var anim = go.GetComponentInChildren<Animation>();
+            if (anim != null)
+            {
+                anim.cullingType = AnimationCullingType.AlwaysAnimate;
+                foreach (AnimationState st in anim) st.wrapMode = WrapMode.Loop;
+                if (anim[SwimSlow] != null) anim.Play(SwimSlow);
+            }
+            return go;
+        }
         static readonly string[] Models =
         {
             "Fish/Fish1", // 몸통이 두툼한 고기: 잉어, 붕어, 메기 …
@@ -93,6 +233,8 @@ namespace Fishing.Angling
 
         public static GameObject Create(FishSpecies species, float lengthCm, Transform parent)
         {
+            var own = species != null && !species.IsJunk ? Resources.Load<GameObject>("Fish/Species/" + species.Id) : null;
+            if (own != null) return CreateSpecies(species, own, lengthCm, parent);
             var path = Models[ModelIndex(species)];
             var prefab = Resources.Load<GameObject>(path);
             GameObject go;

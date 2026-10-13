@@ -17,15 +17,27 @@ namespace Fishing.UI
         const float ShownLength = 1.6f;   // 화면에 보일 몸길이(유닛). 실제 cm과 상관없이 크게
 
         public RenderTexture Target { get; private set; }
+        /// <summary>지금 무대에 올린 물고기 (없으면 null).</summary>
+        public GameObject Fish => _fish;
         Camera _cam;
         Transform _pivot;
         GameObject _fish;
 
-        public static ResultFishStage Create()
+        public static ResultFishStage Create() => Create(StagePos, "ResultFishStage");
+
+        /// <summary>다른 곳(도감 미리보기)에서 쓸 무대. 서로 멀리 떨어뜨려야 카메라에 다른 무대가 안 비친다.</summary>
+        public static ResultFishStage Create(Vector3 pos, string name)
         {
-            var go = new GameObject("ResultFishStage");
-            go.transform.position = StagePos;
+            var go = new GameObject(name);
+            go.transform.position = pos;
             return go.AddComponent<ResultFishStage>();
+        }
+
+        /// <summary>도감: 옆모습을 보여 주며 천천히 돈다. t = 열린 뒤 시간(초).</summary>
+        public void Spin(float t)
+        {
+            if (_fish == null) return;
+            _pivot.localRotation = Quaternion.Euler(Mathf.Sin(t * 0.7f) * 8f, -90f + t * 24f, 0f);
         }
 
         void Awake()
@@ -79,11 +91,12 @@ namespace Fishing.UI
 
             _fish = FishModels.Create(species, lengthCm, _pivot);
             foreach (var t in _fish.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = Layer;
+            FishModels.Play(_fish, FishModels.Flop, 0.9f, 0f); // 물 밖에서 펄떡
             // 길이를 재서 화면 크기에 맞춘다 (가장 긴 축 = 몸길이)
-            var b = Bounds(_fish);
+            var b = FishModels.BakedBounds(_fish);
             float longest = Mathf.Max(b.size.x, Mathf.Max(b.size.y, b.size.z));
             if (longest > 1e-4f) _fish.transform.localScale *= ShownLength / longest;
-            b = Bounds(_fish);
+            b = FishModels.BakedBounds(_fish);
             _fish.transform.position -= b.center - _pivot.position;
             _cam.enabled = true;
             return true;

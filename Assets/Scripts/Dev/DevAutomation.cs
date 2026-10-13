@@ -210,6 +210,10 @@ namespace Fishing.Dev
             Game.UI.OpenExclusive(Game.UI.Dex);
             yield return new WaitForSeconds(0.8f); // 차트 등장 애니메이션이 끝나게
             yield return Shot("11_dex");
+            Game.UI.Dex.ShowDetail(FishDatabase.Get("carp"));
+            yield return new WaitForSeconds(1.2f);
+            yield return Shot("11b_dex_detail");
+            Game.UI.Dex.ShowDetail(null);
             Game.UI.OpenExclusive(Game.UI.KeepNet);
             yield return new WaitForSeconds(0.8f); // 차트 등장 애니메이션이 끝나게
             yield return Shot("12_keepnet");
