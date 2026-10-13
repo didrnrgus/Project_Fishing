@@ -17,6 +17,8 @@ namespace Fishing.UI
         public ShopPanel Shop { get; private set; }
         public QuestPanel Quest { get; private set; }
         public HelpPanel Help { get; private set; }
+        public FishingAreaPanel Areas { get; private set; }
+        public LobbyView LobbyHud { get; private set; }
 
         UIPanel[] _panels;
 
@@ -48,7 +50,15 @@ namespace Fishing.UI
             Quest = new QuestPanel(canvas);
             Help = new HelpPanel(canvas);
             Result = new ResultPanel(canvas);
-            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result };
+            LobbyHud = new LobbyView(canvas,
+                openArea: () => OpenExclusive(Areas),
+                openQuest: () => OpenExclusive(Quest),
+                delivery: () => OpenExclusive(Shop),
+                changeBase: () => Game.Toast("동남아·지중해 거점은 아직 준비 중입니다. 지금은 한국 낚시 조합만 열려 있어요.", ToastKind.Warn));
+            Areas = new FishingAreaPanel(canvas);
+            Areas.Enter = (area, channel) => EnterField(channel);
+            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas };
+            LobbyHud.Root.transform.SetAsFirstSibling();
         }
 
         void Start()
@@ -71,10 +81,39 @@ namespace Fishing.UI
 
         void Update()
         {
+            bool lobby = Game.Mode == GameMode.Lobby;
+            LobbyHud.Root.SetActive(lobby && !BlockingPanelOpen);
+            if (lobby) LobbyHud.Update();
             Hud.Update();
             Fight.Update();
             Result.Animate();
             HandleKeys();
+        }
+
+        /// <summary>한국 낚시 조합(대기실)으로 나간다.</summary>
+        public void EnterLobby()
+        {
+            if (Game.Fishing.State == FishingState.Fighting || Game.Fishing.State == FishingState.Result)
+            {
+                Game.Toast("파이팅 중에는 나갈 수 없습니다.", ToastKind.Warn);
+                return;
+            }
+            Game.Fishing.ForceIdle();
+            foreach (var p in _panels) p.Close();
+            Game.Mode = GameMode.Lobby;
+            Game.CameraRig.SetFixed(Game.Lobby.CameraPos, Game.Lobby.CameraRot);
+            Game.Save();
+        }
+
+        /// <summary>낚시터(한강)에 입장한다.</summary>
+        public void EnterField(int channel)
+        {
+            foreach (var p in _panels) p.Close();
+            Game.Channel = channel;
+            Game.Mode = GameMode.Field;
+            Game.CameraRig.ClearFixed();
+            Game.Toast($"한강 CH.{channel}에 입장했습니다.", ToastKind.Good);
+            if (Game.Profile.Data.totalCatches == 0 && !Game.SaveDisabled) OpenExclusive(Help);
         }
 
         public void OpenShop()
@@ -117,6 +156,15 @@ namespace Fishing.UI
 
             // 설명 끄기/켜기는 파이팅 중에도 된다 (원작: [설명 끄기 : U])
             if (Input.GetKeyDown(KeyCode.U)) ToggleTips();
+
+            if (Game.Mode == GameMode.Lobby)
+            {
+                if (Input.GetKeyDown(KeyCode.L)) OpenExclusive(Quest);
+                if (Input.GetKeyDown(KeyCode.P)) OpenExclusive(Dex);
+                if (Input.GetKeyDown(KeyCode.Z)) OpenExclusive(KeepNet);
+                if (Input.GetKeyDown(KeyCode.F1)) OpenExclusive(Help);
+                return;
+            }
 
             var state = Game.Fishing.State;
             if (state == FishingState.Fighting) return;

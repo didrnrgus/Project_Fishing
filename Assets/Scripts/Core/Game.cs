@@ -9,6 +9,9 @@ namespace Fishing.Core
 {
     public enum ToastKind { Info, Good, Warn, Great }
 
+    /// <summary>대기실(한국 낚시 조합)과 낚시터(필드).</summary>
+    public enum GameMode { Lobby, Field }
+
     /// <summary>씬 전역에서 접근하는 시스템 참조 모음. GameBootstrap이 채운다.</summary>
     public static class Game
     {
@@ -22,6 +25,9 @@ namespace Fishing.Core
         public static FishingController Fishing;
         public static GameUI UI;
         public static SoundFx Sound;
+        public static LobbyRoom Lobby;
+        public static GameMode Mode = GameMode.Field;
+        public static int Channel = 1;
 
         /// <summary>true면 저장하지 않는다 (자동 스크린샷 등 개발용 실행).</summary>
         public static bool SaveDisabled;

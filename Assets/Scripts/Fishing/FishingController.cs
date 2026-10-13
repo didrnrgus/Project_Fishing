@@ -124,6 +124,7 @@ namespace Fishing.Angling
 
         void Update()
         {
+            if (Game.Mode == GameMode.Lobby) return;
             switch (State)
             {
                 case FishingState.Idle: UpdateIdle(); break;
@@ -439,6 +440,14 @@ namespace Fishing.Angling
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             FightStarted?.Invoke();
+        }
+
+        /// <summary>대기실로 나갈 때: 던져 둔 찌를 거둔다.</summary>
+        public void ForceIdle()
+        {
+            if (_bobber == null) return; // 아직 Start 전 (게임 시작 직후)
+            if (State == FishingState.Fighting || State == FishingState.Result) return;
+            ToIdle();
         }
 
         /// <summary>개발/테스트용: 캐스팅 없이 바로 파이팅을 시작한다.</summary>

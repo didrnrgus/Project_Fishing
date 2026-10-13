@@ -112,6 +112,8 @@ namespace Fishing.UI
         {
             var clock = UIFactory.Panel(_root, "Clock", new Color(0.03f, 0.05f, 0.07f, 0.88f)).rectTransform
                 .At(new Vector2(1, 1), new Vector2(-10, -8), new Vector2(340, 62));
+            var exit = UIFactory.Button(clock, "↩ 조합", () => Game.UI.EnterLobby(), new Color(0.6f, 0.15f, 0.12f, 1f), 13);
+            ((RectTransform)exit.transform).At(new Vector2(1, 1), new Vector2(-6, -6), new Vector2(64, 22));
             _channelText = UIFactory.Text(clock, "", 14, new Color(0.45f, 0.85f, 1f), TextAnchor.MiddleLeft, FontStyle.Bold);
             _channelText.rectTransform.At(new Vector2(0, 1), new Vector2(10, -4), new Vector2(320, 20));
             _clockText = UIFactory.Text(clock, "", 22, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
@@ -343,7 +345,8 @@ namespace Fishing.UI
             var p = Game.Profile;
             var d = p.Data;
             var fishing = Game.Fishing;
-            bool fighting = fishing.State == FishingState.Fighting;
+            // 파이팅 중이거나 대기실이면 필드 HUD를 숨긴다 (토스트는 남긴다)
+            bool fighting = fishing.State == FishingState.Fighting || Game.Mode == GameMode.Lobby;
 
             // 파이팅 중에는 필드 HUD를 숨기고 토스트만 남긴다
             foreach (Transform child in _root)
@@ -372,7 +375,7 @@ namespace Fishing.UI
             int h12 = clock.Hour % 12 == 0 ? 12 : clock.Hour % 12;
             string ampm = clock.Hour < 12 ? "AM" : "PM";
             string sky = clock.Band == TimeBand.Night || clock.Band == TimeBand.Dawn ? "<color=#c8d8ff>●</color>" : "<color=#ffd060>●</color>";
-            _channelText.text = $"No. 001  한강 CH.1    ·    {Names.Of(Game.Weather.Current)}";
+            _channelText.text = $"No. {Game.Channel:000}  한강 CH.{Game.Channel}    ·    {Names.Of(Game.Weather.Current)}";
             _clockText.text = $"{sky}  {month:00}/{day:00}  <size=14>{ampm}</size> {h12:00}:{clock.Minute:00}";
 
             var playerPos = Game.Player.transform.position;
