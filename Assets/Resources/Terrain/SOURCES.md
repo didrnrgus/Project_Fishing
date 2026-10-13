@@ -8,3 +8,8 @@ Poly Haven (https://polyhaven.com, CC0 1.0) 1K JPG, 디퓨즈(_diff) + OpenGL �
 | grass_* | Sparse Grass (sparse_grass) | Amal Kumar |
 | rock_* | Aerial Rocks 02 (aerial_rocks_02) | Rob Tuytel |
 | shore_* | Coast Sand Rocks 02 (coast_sand_rocks_02) | Rob Tuytel |
+| deck_* | Wood Floor Deck (wood_floor_deck) | Dimitrios Savva |
+| concrete_* | Concrete Floor 02 (concrete_floor_02) | Rob Tuytel |
+| asphalt_* | Asphalt 02 (asphalt_02) | Rob Tuytel |
+
+지형(SeaTerrain)과 한강·홍현의 데크·길·콘크리트(Mats.Textured)에 쓴다.

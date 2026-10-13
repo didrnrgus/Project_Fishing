@@ -151,7 +151,7 @@ bpyenv/Scripts/python -I tools/blender/build_characters.py --preview --only male
 - [x] Post Processing 패키지 + 코드로 볼륨/레이어 (블룸, Neutral 톤매핑, AO, SMAA, 시간대별 그레이딩) → `Core/PostFx.cs`. ACES는 노을·밤 하늘을 검게 눌러서 Neutral로 바꿨다
 - [ ] Human Basic Motions FREE 임포트 → `CharacterAnimator`에 두 번째 클립 라이브러리, Idle/Walk/Run 교체
 - [ ] 4장 3(장갑)·4(운동화) → 재생성 (AO는 완료)
-- [ ] 둔치 나무·풀 교체(Hand Painted Nature Pack), 데크·둔치 텍스처(Poly Haven)
+- [x] 데크·둔치·길·방파제 텍스처 (Poly Haven CC0: 풀·나무 데크·콘크리트·아스팔트, `Mats.TexturedBox`). 나무 교체(Hand Painted Nature Pack)는 에셋 스토어 로그인이 필요해 보류
 - [ ] 흐림/비 하늘 큐브맵 섞기, 반사 프로브
 - [ ] (선택) VRoid 시험 모델 하나 만들어 비교
 - [ ] `sh tools/build.sh && sh tools/autoshot.sh`로 스크린샷 갱신, README 표·`docs/03-architecture.md`(Clothed → Skin/Garment, CharacterFactory 설명), `docs/05-dev-guide.md`(3장 명령), `docs/06-roadmap.md` 갱신

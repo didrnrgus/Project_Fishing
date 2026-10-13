@@ -39,13 +39,22 @@ namespace Fishing.Core
         }
 
         /// <summary>Resources/Terrain 텍스처(Poly Haven CC0)를 입힌 Standard 머티리얼 (바위·자갈). 없으면 단색.</summary>
-        public static Material Textured(string name, Color tint, float tiling = 1f, float smoothness = 0.2f)
+        public static Material Textured(string name, Color tint, float tiling = 1f, float smoothness = 0.2f) =>
+            Textured(name, tint, new Vector2(tiling, tiling), smoothness);
+
+        /// <summary>
+        /// 크기에 맞춰 반복: 상자 프리미티브는 면마다 UV가 0~1이라, 윗면 크기(가로 x, 세로 z)를 텍스처 한 장 크기(m)로 나눠 반복 횟수를 정한다.
+        /// </summary>
+        public static Material TexturedBox(string name, Color tint, Vector2 sizeXZ, float metersPerTile, float smoothness = 0.2f) =>
+            Textured(name, tint, new Vector2(Mathf.Max(1f, Mathf.Round(sizeXZ.x / metersPerTile)), Mathf.Max(1f, Mathf.Round(sizeXZ.y / metersPerTile))), smoothness);
+
+        public static Material Textured(string name, Color tint, Vector2 tiling, float smoothness = 0.2f)
         {
             string key = $"tex{name}{tint}{tiling}{smoothness}";
             if (Cache.TryGetValue(key, out var m)) return m;
             var diff = Resources.Load<Texture2D>("Terrain/" + name + "_diff");
             if (diff == null) return Lit(tint, smoothness);
-            m = new Material(Shader.Find("Standard")) { color = tint, mainTexture = diff, mainTextureScale = Vector2.one * tiling };
+            m = new Material(Shader.Find("Standard")) { color = tint, mainTexture = diff, mainTextureScale = tiling };
             var nor = Resources.Load<Texture2D>("Terrain/" + name + "_nor");
             if (nor != null)
             {
