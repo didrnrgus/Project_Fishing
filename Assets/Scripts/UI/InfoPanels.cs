@@ -56,7 +56,7 @@ namespace Fishing.UI
             BuildFrame(canvas, "HelpPanel", "청풍명월 솔로 · 도움말", new Vector2(1180, 800));
             var text = UIFactory.Text(Body,
                 "<b><color=#55dcc8>필드</color></b>\n" +
-                "  WASD 이동 · Shift 달리기 · 오른쪽 버튼 드래그 시점 회전 · 휠 줌 · 숫자 1~6 미끼 선택\n" +
+                "  WASD 이동 · Shift 달리기 · Space 점프 · B 배 꺼내기/내리기 · 오른쪽 버튼 드래그 시점 회전 · 휠 줌 · 숫자 1~6 미끼 선택\n" +
                 "  L 퀘스트 · P 도감 · Z 살림망 · M 지역 지도 · F12 상점 · U 설명 켜기/끄기 · F1 도움말 · F5 저장 · Esc 창 닫기\n\n" +
                 "<b><color=#55dcc8>캐스팅</color></b>\n" +
                 "  왼쪽 버튼을 누르고 마우스를 <b>아래로 당긴 다음</b>, <b>빠르게 위로 밀면서</b> 버튼을 놓으세요.\n" +

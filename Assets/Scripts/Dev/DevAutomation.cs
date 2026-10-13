@@ -201,6 +201,32 @@ namespace Fishing.Dev
             yield return Shot("17_area_map");
             Game.UI.AreaMap.Close();
 
+            // 배: 낚시 데크 끝에서 고무보트를 꺼내 노을 진 강으로
+            Game.Weather.Force(Weather.Clear);
+            Game.Clock.Set(1, 17 * 60 + 40);
+            p.Data.level = Mathf.Max(p.Data.level, 3);
+            if (!p.Owns("boat_rubber")) p.Data.ownedGear.Add("boat_rubber");
+            p.Equip(GearDatabase.GetGear("boat_rubber"));
+            Game.Player.Teleport(new Vector3(25f, 1.1f, -27.5f), 0f);
+            Game.CameraRig.Yaw = 0f;
+            Game.CameraRig.Pitch = 14f;
+            Game.CameraRig.Distance = 8f;
+            yield return new WaitForSeconds(1f);
+            Game.Boat.Toggle();
+            Game.Boat.DebugThrottle = 1f;
+            Game.Boat.DebugSteer = 0.25f;
+            yield return new WaitForSeconds(3.5f);
+            yield return Shot("18_boat_drive");
+            Game.Boat.DebugThrottle = 0f;
+            Game.Boat.DebugSteer = 0f;
+            yield return new WaitForSeconds(3.5f);
+            Game.CameraRig.Yaw = Game.Player.Yaw + 150f;
+            Game.CameraRig.Distance = 6f;
+            yield return new WaitForSeconds(1f);
+            yield return Shot("19_boat_stop");
+            Game.Boat.DebugThrottle = float.NaN;
+            Game.Boat.StowToLand();
+
             // 비 오는 밤
             Game.Player.Teleport(new Vector3(-70f, 1.1f, -64f), 20f);
             Game.CameraRig.Yaw = 20f;

@@ -23,6 +23,7 @@ namespace Fishing.Core
         public GearDef Rod => GearDatabase.GetGear(Data.rodId) ?? GearDatabase.GetGear("rod_basic");
         public GearDef Reel => GearDatabase.GetGear(Data.reelId) ?? GearDatabase.GetGear("reel_basic");
         public GearDef Line => GearDatabase.GetGear(Data.lineId) ?? GearDatabase.GetGear("line_nylon");
+        public GearDef Boat => string.IsNullOrEmpty(Data.boatId) ? null : GearDatabase.GetGear(Data.boatId);
         public BaitDef Bait => GearDatabase.GetBait(Data.baitId) ?? GearDatabase.Baits[0];
 
         public static int ExpToNext(int level) => Mathf.RoundToInt(100f * Mathf.Pow(level, 1.5f));
@@ -97,6 +98,10 @@ namespace Fishing.Core
                     break;
                 case GearSlot.Reel: Data.reelId = gear.Id; break;
                 case GearSlot.Line: Data.lineId = gear.Id; break;
+                case GearSlot.Boat:
+                    if (Data.boatId != gear.Id) Data.boatFuel = gear.FuelCapacity; // 새 배는 연료를 가득 채워 준다
+                    Data.boatId = gear.Id;
+                    break;
             }
             NotifyChanged();
         }

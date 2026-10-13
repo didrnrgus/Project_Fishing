@@ -17,11 +17,12 @@
 | ![casting](docs/images/02_casting.png) | ![bite](docs/images/04_bite_gauge.png) |
 | **카운터 찬스** | **랜딩 찬스** |
 | ![counter](docs/images/07_counter_chance.png) | ![landing](docs/images/09_landing.png) |
-| **장력 위험 (빨간 테두리)** | **RESULT** |
-| ![danger](docs/images/06b_tension_danger.png) | ![result](docs/images/10_result.png) |
+| **장력 위험 (빨간 테두리, 휘는 낚싯대)** | **배** |
+| ![danger](docs/images/06b_tension_danger.png) | ![boat](docs/images/18_boat_drive.png) |
 
 ## 특징
 
+- **배**: 물가에서 B로 고무보트·고속보트를 띄워 타고(W/S/A/D), 연료를 쓰며 강 건너편 깊은 칸까지 나가 멈춘 배의 뱃머리에서 낚시한다. 속도계·연료계, 물보라 꼬리, 엔진 소리.
 - **원작 흐름**: 게임은 **한국 낚시 조합(대기실)**에서 시작한다. [낚시터 선택하기] → 한국 지도 낚시터 목록 → 한강 CH.1~5 입장(빠른입장). 필드 오른쪽 위 `↩ 조합`으로 돌아온다.
 - **원작 조작 그대로**
   - **캐스팅**: 왼쪽 버튼을 누르고 당긴 다음, 빠르게 밀면서 놓는다. 큰 비거리 숫자와 하늘색 궤적이 뜬다.
@@ -60,7 +61,8 @@ sh tools/build.sh
 
 | 입력 | 동작 |
 |---|---|
-| WASD / Shift | 이동 / 달리기 |
+| WASD / Shift / Space | 이동 / 달리기 / 점프 |
+| B | 물가에서 배 타기·내리기 (배 위에서 W/S/A/D 운전) |
 | 오른쪽 드래그 · 휠 | 시점 · 줌 |
 | 왼쪽 버튼 누르고 아래로 당김 → 빠르게 위로 밀며 놓기 | 캐스팅 |
 | 왼쪽 버튼 누른 채 좌우로 흔들기 (찌가 잠겼을 때) | 챔질 |

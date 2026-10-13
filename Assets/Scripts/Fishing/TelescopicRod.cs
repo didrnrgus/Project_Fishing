@@ -64,11 +64,14 @@ namespace Fishing.Angling
         Transform _handle, _rotor, _spool;
         float _handleTurns, _spoolSlip;
 
-        public static TelescopicRod Create(Transform parent, GearDef rod, GearDef reel, float lengthScale = 1f)
+        float _reelScale = 1f;
+
+        public static TelescopicRod Create(Transform parent, GearDef rod, GearDef reel, float lengthScale = 1f, float reelScale = 1f)
         {
             var go = new GameObject("TelescopicRod");
             go.transform.SetParent(parent, false);
             var r = go.AddComponent<TelescopicRod>();
+            r._reelScale = reelScale;
             r.Build(StyleFor(rod), reel?.Id, lengthScale);
             return r;
         }
@@ -187,7 +190,7 @@ namespace Fishing.Angling
 
             Reel = new GameObject("Reel").transform;
             Reel.SetParent(transform, false);
-            Reel.localScale = Vector3.one * size;
+            Reel.localScale = Vector3.one * size * _reelScale;
 
             // 다리(시트에 물리는 부분)와 몸통
             Mats.Prim(PrimitiveType.Cube, "Foot", Reel, new Vector3(0f, 0f, 0.028f), new Vector3(0.012f, 0.05f, 0.04f), bodyMat, false);

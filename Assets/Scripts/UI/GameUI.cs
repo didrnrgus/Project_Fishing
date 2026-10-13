@@ -42,6 +42,7 @@ namespace Fishing.UI
                 es.AddComponent<StandaloneInputModule>();
             }
 
+            PortraitCamera.Create();
             var canvas = UIFactory.CreateCanvas("UI", 10).transform;
             Hud = new HudView(canvas);
             Fight = new FightHudView(canvas);
@@ -102,6 +103,7 @@ namespace Fishing.UI
                 return;
             }
             Game.Fishing.ForceIdle();
+            Game.Boat.StowToLand();
             foreach (var p in _panels) p.Close();
             Game.Mode = GameMode.Lobby;
             Game.Player.CollapseRod();
@@ -178,6 +180,7 @@ namespace Fishing.UI
             // 원작 단축키: 퀘스트 L, 도감 P, 살림망 Z, 상점 F12, 지역 지도 M
             if (Input.GetKeyDown(KeyCode.F1)) OpenExclusive(Help);
             if (Input.GetKeyDown(KeyCode.M)) OpenExclusive(AreaMap);
+            if (Input.GetKeyDown(KeyCode.B) && !BlockingPanelOpen) Game.Boat.Toggle();
             if (Input.GetKeyDown(KeyCode.P)) OpenExclusive(Dex);
             if (Input.GetKeyDown(KeyCode.L)) OpenExclusive(Quest);
             if (Input.GetKeyDown(KeyCode.Z)) OpenExclusive(KeepNet);

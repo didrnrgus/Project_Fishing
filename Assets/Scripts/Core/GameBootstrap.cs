@@ -46,6 +46,7 @@ namespace Fishing.Core
 
             var playerGo = new GameObject("Player");
             Game.Player = playerGo.AddComponent<PlayerController>();
+            Game.Boat = gameObject.AddComponent<BoatController>();
             var spawn = new Vector3(data.posX, data.posY, data.posZ);
             if (!HanRiverMap.IsWalkable(spawn)) spawn = HanRiverMap.Spawn;
             Game.Player.Teleport(spawn, data.yaw);

@@ -26,6 +26,7 @@ namespace Fishing.Core
         public static GameUI UI;
         public static SoundFx Sound;
         public static LobbyRoom Lobby;
+        public static BoatController Boat;
         public static GameMode Mode = GameMode.Field;
         public static int Channel = 1;
 
@@ -48,7 +49,8 @@ namespace Fishing.Core
             }
             if (Player != null)
             {
-                var pos = Player.transform.position;
+                // 배 위에서 저장하면 물 위가 아니라 배를 띄운 둔치로 저장한다
+                var pos = Boat != null && Boat.Riding ? Boat.LandPos : Player.transform.position;
                 d.posX = pos.x;
                 d.posY = pos.y;
                 d.posZ = pos.z;

@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Fishing.Data
 {
-    public enum GearSlot { Rod, Reel, Line }
+    public enum GearSlot { Rod, Reel, Line, Boat }
 
     public sealed class GearDef
     {
@@ -26,11 +26,17 @@ namespace Fishing.Data
         // 줄
         public float Strength = 1f;   // 끊어지는 장력 배율
 
+        // 배
+        public float BoatSpeed = 6f;      // 최고 속도 m/s
+        public float FuelCapacity = 20f;  // 연료통 L
+        public float FuelPerKm = 10f;     // 1km 달릴 때 드는 연료 L
+
         public string StatLine => Slot switch
         {
             GearSlot.Rod => $"힘 {Power:0.0} · {(Flex >= 0.6f ? "연조" : Flex <= 0.35f ? "경조" : "중경조")} · 비거리 {CastRange:0}m",
             GearSlot.Reel => $"감기 {ReelSpeed:0.0}m/s · 권사량 {Capacity:0}m",
             GearSlot.Line => $"강도 {Strength:0.0}",
+            GearSlot.Boat => $"최고 {BoatSpeed * 3.6f:0}km/h · 연료통 {FuelCapacity:0}L · 연비 {1000f / FuelPerKm:0}m/L",
             _ => ""
         };
     }
@@ -70,6 +76,11 @@ namespace Fishing.Data
                 Strength = 1.3f, Desc = "잘 끊어지지 않는다." },
             new GearDef { Id = "line_pe", Name = "강사 줄 (PE 4호)", Slot = GearSlot.Line, Price = 6000, Level = 8,
                 Strength = 1.7f, Desc = "대물과의 힘싸움을 버틴다." },
+
+            new GearDef { Id = "boat_rubber", Name = "고무보트", Slot = GearSlot.Boat, Price = 4000, Level = 3,
+                BoatSpeed = 6f, FuelCapacity = 20f, FuelPerKm = 12f, Desc = "물가에서 꺼내 타는 2인용 고무보트. 느리지만 강 건너편 깊은 칸까지 갈 수 있다." },
+            new GearDef { Id = "boat_speed", Name = "고속보트", Slot = GearSlot.Boat, Price = 30000, Level = 10,
+                BoatSpeed = 14f, FuelCapacity = 40f, FuelPerKm = 20f, Desc = "물보라를 가르며 달리는 FRP 고속보트." },
         };
 
         public static readonly List<BaitDef> Baits = new List<BaitDef>
@@ -83,6 +94,7 @@ namespace Fishing.Data
         };
 
         public const string KimbapId = "food_kimbap";
+        public const int FuelPricePerLiter = 30;
         public const int KimbapPrice = 500;
         public const float KimbapStamina = 40f;
 

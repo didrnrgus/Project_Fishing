@@ -4,14 +4,14 @@ using UnityEngine;
 
 namespace Fishing.UI
 {
-    /// <summary>낚시점: 장비 구매/장착, 미끼·김밥 구매, 물고기 판매, 낚싯대 수리.</summary>
+    /// <summary>낚시점: 장비(낚싯대·릴·줄·배) 구매/장착, 미끼·김밥 구매, 물고기 판매, 낚싯대 수리, 배 연료.</summary>
     public class ShopPanel : UIPanel
     {
         const int RepairCostPerPoint = 8;
 
         public ShopPanel(Transform canvas)
         {
-            BuildFrame(canvas, "ShopPanel", "반포 낚시점", new Vector2(1500, 760));
+            BuildFrame(canvas, "ShopPanel", "반포 낚시점", new Vector2(1500, 960));
         }
 
         public override void Refresh()
@@ -41,7 +41,7 @@ namespace Fishing.UI
                 if (lastSlot != g.Slot)
                 {
                     lastSlot = g.Slot;
-                    string slotName = g.Slot switch { GearSlot.Rod => "낚싯대", GearSlot.Reel => "릴", _ => "원줄" };
+                    string slotName = g.Slot switch { GearSlot.Rod => "낚싯대", GearSlot.Reel => "릴", GearSlot.Boat => "배 (물가에서 B로 꺼내 타기)", _ => "원줄" };
                     Cell(rows.Next(22, 2), slotName, 4, 200, 15, UIFactory.TextDim);
                 }
                 var row = rows.Next(50, 4);
@@ -50,7 +50,7 @@ namespace Fishing.UI
                 name.alignment = TextAnchor.MiddleLeft;
 
                 bool owned = p.Owns(g.Id);
-                bool equipped = g.Id == p.Data.rodId || g.Id == p.Data.reelId || g.Id == p.Data.lineId;
+                bool equipped = g.Id == p.Data.rodId || g.Id == p.Data.reelId || g.Id == p.Data.lineId || g.Id == p.Data.boatId;
                 bool levelOk = p.Data.level >= g.Level;
                 if (equipped)
                     RowButton(row, "장착 중", null, 560, 220, new Color(0.15f, 0.45f, 0.42f), false);
@@ -95,6 +95,21 @@ namespace Fishing.UI
             var repair = rows.Next(46, 4);
             Cell(repair, $"낚싯대 수리  <size=14><color=#a0b0c0>내구도 {dur:0}/100</color></size>", 10, 380, 18);
             RowButton(repair, cost > 0 ? $"{cost:N0}골드" : "수리 불필요", () => Repair(cost), 400, 200, null, cost > 0 && p.Data.gold >= cost);
+
+            var boat = p.Boat;
+            var fuelRow = rows.Next(46, 4);
+            if (boat == null)
+            {
+                Cell(fuelRow, "배 연료 채우기  <size=14><color=#a0b0c0>배가 없습니다</color></size>", 10, 380, 18, UIFactory.TextDim);
+            }
+            else
+            {
+                float missing = Mathf.Max(0f, boat.FuelCapacity - p.Data.boatFuel);
+                int fuelCost = Mathf.CeilToInt(missing * GearDatabase.FuelPricePerLiter);
+                Cell(fuelRow, $"{boat.Name} 연료 채우기  <size=14><color=#a0b0c0>{p.Data.boatFuel:0.0}/{boat.FuelCapacity:0}L</color></size>", 10, 380, 18);
+                RowButton(fuelRow, fuelCost > 0 ? $"{fuelCost:N0}골드" : "가득 참", () => Refuel(fuelCost), 400, 200, null,
+                    fuelCost > 0 && p.Data.gold >= fuelCost);
+            }
         }
 
         void BuyGear(GearDef g)
@@ -126,6 +141,16 @@ namespace Fishing.UI
             p.AddGold(total);
             Game.Sound.Coin();
             Game.Toast($"물고기 {n}마리를 {total:N0}골드에 팔았습니다.", ToastKind.Good);
+        }
+
+        void Refuel(int cost)
+        {
+            var p = Game.Profile;
+            if (p.Boat == null || !p.TrySpend(cost)) return;
+            p.Data.boatFuel = p.Boat.FuelCapacity;
+            Game.Sound.Coin();
+            Game.Toast("배에 연료를 가득 채웠습니다.", ToastKind.Good);
+            p.NotifyChanged();
         }
 
         void Repair(int cost)

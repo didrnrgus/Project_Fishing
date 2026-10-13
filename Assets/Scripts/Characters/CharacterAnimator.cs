@@ -24,6 +24,8 @@ namespace Fishing.Characters
         public const string Interact = "Interact";
         public const string Dance = "Dance_Loop";
         public const string Drive = "Driving_Loop";
+        public const string JumpStart = "Jump_Start";
+        public const string JumpLoop = "Jump_Loop";
 
         static Dictionary<string, AnimationClip> _clips;
 

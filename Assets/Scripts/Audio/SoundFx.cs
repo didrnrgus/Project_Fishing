@@ -14,8 +14,8 @@ namespace Fishing.Audio
         AudioClip _click, _splash, _plop, _tick, _whoosh, _counter, _snap, _success, _levelUp, _coin, _heart, _rodSnap;
 
         // 계속 나는 소리: 릴 감기(드르르륵), 드랙(지이이익), 낚싯대 버티는 소리(끼익)
-        AudioSource _reelLoop, _dragLoop, _strainLoop;
-        float _reelTarget, _reelPitch, _dragTarget, _dragPitch, _strainTarget;
+        AudioSource _reelLoop, _dragLoop, _strainLoop, _engineLoop;
+        float _reelTarget, _reelPitch, _dragTarget, _dragPitch, _strainTarget, _engineTarget, _enginePitch;
 
         void Awake()
         {
@@ -35,6 +35,7 @@ namespace Fishing.Audio
             _reelLoop = MakeLoop("reel_loop", ReelLoop);
             _dragLoop = MakeLoop("drag_loop", DragLoop);
             _strainLoop = MakeLoop("strain_loop", StrainLoop);
+            _engineLoop = MakeLoop("engine_loop", EngineLoop);
             _snap = Make("snap", 0.5f, t => Noise() * Mathf.Exp(-t * 70f) + Mathf.Sin(2f * Mathf.PI * 1100f * t) * Mathf.Exp(-t * 10f) * 0.4f);
             _success = Make("success", 0.7f, t => Arpeggio(t, new[] { 523f, 659f, 784f, 1047f }, 0.12f));
             _levelUp = Make("levelup", 0.9f, t => Arpeggio(t, new[] { 392f, 523f, 659f, 784f, 1047f }, 0.1f));
@@ -94,6 +95,21 @@ namespace Fishing.Audio
             return (Mathf.Sin(2f * Mathf.PI * 140f * t + Mathf.Sin(2f * Mathf.PI * 9f * t) * 2f) * 0.35f + Noise() * 0.12f) * wobble;
         }
 
+        /// <summary>선외기 엔진: 낮은 톱니파 웅웅 + 배기 퍼덕임.</summary>
+        static float EngineLoop(float t)
+        {
+            float saw = (t * 55f) % 1f * 2f - 1f;
+            float putt = Mathf.Max(0f, Mathf.Sin(2f * Mathf.PI * 22f * t)) * 0.5f;
+            return saw * 0.25f * (0.6f + putt) + Mathf.Sin(2f * Mathf.PI * 110f * t) * 0.12f + Noise() * 0.05f;
+        }
+
+        /// <summary>배 엔진. throttle 0~1(0이면 꺼짐), speed01: 최고 속도 대비.</summary>
+        public void SetEngine(float throttle, float speed01)
+        {
+            _engineTarget = throttle > 0.01f ? 0.12f + throttle * 0.3f : 0f;
+            _enginePitch = 0.55f + throttle * 0.35f + Mathf.Clamp01(speed01) * 0.6f;
+        }
+
         AudioSource MakeLoop(string name, System.Func<float, float> f)
         {
             var src = gameObject.AddComponent<AudioSource>();
@@ -132,7 +148,9 @@ namespace Fishing.Audio
             _dragLoop.volume = Mathf.Lerp(_dragLoop.volume, _dragTarget, k);
             _dragLoop.pitch = Mathf.Lerp(_dragLoop.pitch, Mathf.Max(0.5f, _dragPitch), k);
             _strainLoop.volume = Mathf.Lerp(_strainLoop.volume, _strainTarget, k * 0.5f);
-            _reelTarget = _dragTarget = _strainTarget = 0f;
+            _engineLoop.volume = Mathf.Lerp(_engineLoop.volume, _engineTarget, k * 0.4f);
+            _engineLoop.pitch = Mathf.Lerp(_engineLoop.pitch, Mathf.Max(0.4f, _enginePitch), k * 0.4f);
+            _reelTarget = _dragTarget = _strainTarget = _engineTarget = 0f;
         }
 
         static float Arpeggio(float t, float[] notes, float step)
