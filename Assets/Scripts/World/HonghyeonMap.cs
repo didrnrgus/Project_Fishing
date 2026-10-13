@@ -161,26 +161,23 @@ namespace Fishing.World
         void BuildSea()
         {
             WaterSurface.Create(_root, new Vector3(0f, _map.WaterY, 180f), new Vector2(900f, 460f), 4f);
-            Mats.Prim(PrimitiveType.Cube, "SeaBed", _root, new Vector3(0f, _map.WaterY - 4f, 180f), new Vector3(900f, 1f, 460f),
-                Mats.Lit(new Color(0.04f, 0.08f, 0.1f)), false);
+            // 땅·바다 밑·갯바위 섬은 지형(Unity Terrain)으로
+            SeaTerrain.Build(_root, _map.LandY, _map.WaterY);
         }
 
         void BuildShore()
         {
-            // 해안 땅 (z < -40). 앞쪽은 갯바위, 뒤쪽은 마을 길
-            float landH = 6f, depth = 200f;
-            Mats.Prim(PrimitiveType.Cube, "Shore", _root, new Vector3(0f, _map.LandY - landH * 0.5f, HonghyeonDef.ShoreZ - depth * 0.5f),
-                new Vector3(700f, landH, depth), Mats.Lit(Grass));
-            Mats.Prim(PrimitiveType.Cube, "CoastRoad", _root, new Vector3(0f, _map.LandY + 0.01f, -62f), new Vector3(700f, 0.02f, 7f),
+            // 해안 땅은 지형(SeaTerrain). 마을 길과 포구 앞 호안(콘크리트 벽)만 따로
+            Mats.Prim(PrimitiveType.Cube, "CoastRoad", _root, new Vector3(0f, _map.LandY + 0.02f, -62f), new Vector3(420f, 0.04f, 7f),
                 Mats.Lit(new Color(0.34f, 0.34f, 0.36f)), false);
-            Mats.Prim(PrimitiveType.Cube, "Seawall", _root, new Vector3(0f, _map.LandY - 0.3f, HonghyeonDef.ShoreZ - 0.4f),
-                new Vector3(700f, 1.4f, 1f), Mats.Lit(Concrete));
+            Mats.Prim(PrimitiveType.Cube, "Seawall", _root, new Vector3(30f, _map.LandY - 1.2f, HonghyeonDef.ShoreZ - 0.4f),
+                new Vector3(90f, 3.2f, 1f), Mats.Lit(Concrete));
             Mats.Prim(PrimitiveType.Cube, "HarborApron", _root, new Vector3(30f, _map.LandY + 0.02f, -47f), new Vector3(70f, 0.04f, 13f),
                 Mats.Lit(new Color(0.62f, 0.62f, 0.6f)), false);
 
             // 해안 갯바위: 물가를 따라 크고 작은 바위
-            var rock = Mats.Lit(Rock, 0.25f);
-            var rockDark = Mats.Lit(RockDark, 0.2f);
+            var rock = Mats.Textured("rock", new Color(0.85f, 0.83f, 0.8f), 1f, 0.25f);
+            var rockDark = Mats.Textured("rock", new Color(0.62f, 0.6f, 0.58f), 1.4f, 0.3f);
             for (float x = -210f; x <= 210f; x += R(4f, 9f))
             {
                 if (x > 0f && x < 62f) continue; // 포구 앞은 비워 둔다
@@ -194,23 +191,20 @@ namespace Fishing.World
         void BuildTerraces()
         {
             // 다랭이논: 남쪽으로 올라가는 계단식 논두렁 비탈과 어촌 집들
+            // 계단 논 자체는 지형(SeaTerrain.HeightAt)이 만든다. 여기서는 논 위 어촌 집과 나무를 지형 높이에 올린다
+            if (!KenneyProps.Available) return;
             for (int i = 0; i < 8; i++)
             {
-                float z = -78f - i * 12f;
-                float h = 1.6f + i * 2.2f;
-                var c = Color.Lerp(Paddy, new Color(0.62f, 0.6f, 0.3f), (i % 3) * 0.3f);
-                Mats.Prim(PrimitiveType.Cube, "Terrace", _root, new Vector3(0f, _map.LandY + h * 0.5f - 0.5f, z), new Vector3(700f, h, 12f), Mats.Lit(c));
-                Mats.Prim(PrimitiveType.Cube, "TerraceWall", _root, new Vector3(0f, _map.LandY + h - 0.45f, z + 5.8f), new Vector3(700f, 0.3f, 0.5f),
-                    Mats.Lit(new Color(0.48f, 0.44f, 0.36f)), false);
-                if (!KenneyProps.Available) continue;
+                float z = -80f - i * 12f;
                 for (float x = -180f; x <= 180f; x += R(18f, 34f))
                 {
+                    float zz = z + R(-2f, 2f);
+                    float y = SeaTerrain.HeightAt(x, zz) - 0.05f;
                     if (_rng.NextDouble() < 0.45)
-                        KenneyProps.Spawn("Kenney/City/building-" + "abcdeh"[_rng.Next(6)], _root,
-                            new Vector3(x, _map.LandY + h - 0.5f, z + R(-2f, 2f)), 180f + R(-15f, 15f), R(5f, 8f));
+                        KenneyProps.Spawn("Kenney/City/building-" + "abcdeh"[_rng.Next(6)], _root, new Vector3(x, y, zz), 180f + R(-15f, 15f), R(5f, 8f));
                     else
                         KenneyProps.Spawn("Kenney/Nature/" + new[] { "tree_default", "tree_oak", "tree_pineRoundA", "tree_fat" }[_rng.Next(4)],
-                            _root, new Vector3(x, _map.LandY + h - 0.5f, z + R(-3f, 3f)), R(0f, 360f), R(4f, 7f));
+                            _root, new Vector3(x, y, zz), R(0f, 360f), R(4f, 7f));
                 }
             }
         }
@@ -261,28 +255,22 @@ namespace Fishing.World
 
         void BuildIslands()
         {
-            var rock = Mats.Lit(Rock, 0.2f);
-            var top = Mats.Lit(new Color(0.42f, 0.4f, 0.35f), 0.15f);
+            var rock = Mats.Textured("rock", new Color(0.78f, 0.76f, 0.72f), 1.2f, 0.3f);
             for (int i = 0; i < HonghyeonDef.Islands.Length; i++)
             {
                 var c = HonghyeonDef.Islands[i];
                 float r = HonghyeonDef.IslandRadius[i];
                 var isl = new GameObject("Island").transform;
                 isl.SetParent(_root, false);
-                // 걸을 수 있는 평평한 윗면 + 둘레의 큰 바위
-                Mats.Prim(PrimitiveType.Cylinder, "Top", isl, new Vector3(c.x, (_map.LandY + _map.WaterY - 4f) * 0.5f, c.z),
-                    new Vector3(r * 2f - 2f, (_map.LandY - (_map.WaterY - 4f)) * 0.5f, r * 2f - 2f), top);
-                for (int k = 0; k < 18; k++)
+                // 섬 몸통·윗면·봉우리는 지형(SeaTerrain). 물가에 굴러떨어진 큰 바위만 따로
+                for (int k = 0; k < 12; k++)
                 {
-                    float a = k / 18f * Mathf.PI * 2f + R(-0.1f, 0.1f);
+                    float a = k / 12f * Mathf.PI * 2f + R(-0.2f, 0.2f);
                     float s = R(3f, 6f);
-                    var p = new Vector3(c.x + Mathf.Cos(a) * (r - 1f), _map.WaterY + R(-0.5f, 1.2f), c.z + Mathf.Sin(a) * (r - 1f));
+                    var p = new Vector3(c.x + Mathf.Cos(a) * (r + 2f), _map.WaterY + R(-0.8f, 0.6f), c.z + Mathf.Sin(a) * (r + 2f));
                     Mats.Prim(PrimitiveType.Sphere, "Rock", isl, p, new Vector3(s, s * R(0.6f, 1f), s * R(0.8f, 1.2f)), rock, false,
                         Quaternion.Euler(R(-20f, 20f), R(0f, 360f), R(-20f, 20f)));
                 }
-                // 섬 꼭대기 바위 봉우리
-                Mats.Prim(PrimitiveType.Sphere, "Peak", isl, new Vector3(c.x + r * 0.35f, _map.LandY + 2f, c.z - r * 0.3f),
-                    new Vector3(r * 0.7f, 6f, r * 0.6f), rock, true);
             }
         }
 
