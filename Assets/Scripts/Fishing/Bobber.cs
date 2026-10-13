@@ -52,6 +52,13 @@ namespace Fishing.Angling
             transform.position = from;
         }
 
+        /// <summary>릴을 감아 떠 있는 찌를 끌어온다.</summary>
+        public void DragTo(Vector3 pos)
+        {
+            if (_state != State.Floating) return;
+            _to = new Vector3(pos.x, FieldMap.WaterY, pos.z);
+        }
+
         public void Hide()
         {
             _state = State.Hidden;

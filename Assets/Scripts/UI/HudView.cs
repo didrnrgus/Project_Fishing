@@ -601,7 +601,7 @@ namespace Fishing.UI
             }
             for (int i = 0; i < schools.Count; i++)
             {
-                var c = FieldMap.CellCenter(schools[i].Col, schools[i].Row);
+                var c = schools[i].Spot;
                 _schoolMarks[i].anchoredPosition = MapPos(c.x, c.z) + new Vector2(Mathf.Sin(Time.time * 1.5f + i) * 3f, 0f);
                 _schoolMarks[i].localScale = Vector3.one * (schools[i].Special ? 1.6f : schools[i].Big ? 1.15f : 0.65f);
                 _schoolMarks[i].gameObject.SetActive(!schools[i].Hidden);
@@ -743,7 +743,7 @@ namespace Fishing.UI
                     ? "W/S 속도 · A/D 방향 · 멈추면 뱃머리에서 낚시 · 물가에서 B = 내리기"
                     : "왼쪽 버튼 당겼다 밀기 = 캐스팅 · W = 출발 · 물가에서 B = 내리기",
                 FishingState.Idle => "WASD 이동 · Shift 달리기 · Space 점프 · 물가에서 B = 배 · 왼쪽 버튼 당겼다 밀기 = 캐스팅",
-                FishingState.Waiting => $"{f.CastCellLabel}   ·   R / 이동: 찌 회수",
+                FishingState.Waiting => $"{f.CastCellLabel}   ·   왼쪽 버튼 꾹: 릴 감기 · R / 이동: 찌 회수",
                 FishingState.Bite => $"{f.CastCellLabel}",
                 _ => ""
             };

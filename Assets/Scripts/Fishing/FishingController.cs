@@ -96,6 +96,11 @@ namespace Fishing.Angling
         bool _cheering;
         float _swayYaw;
         Coroutine _hitStop;
+        // 대기 중 릴 감기
+        int _waitCol, _waitRow;
+        bool _waitInSpot;
+        bool _reeling;
+        float _reelFxAt;
 
         void Start()
         {
@@ -363,11 +368,16 @@ namespace Fishing.Angling
                 BaitPotency = Game.Profile.Bait.Potency,
                 BigFishBonus = Game.Profile.Costume.BigFish,
             };
-            CastCellLabel = $"{_cellName} · {FieldMap.HabitatName(_ctx.Habitat)}" + (_ctx.School != null ? $" · {_ctx.School.Name}({_ctx.School.SizeLabel})" : "");
+            // 소용돌이 한가운데에 떨어뜨리면 입질이 더 빠르다
+            _waitCol = col;
+            _waitRow = row;
+            _waitInSpot = _ctx.School != null && _ctx.School.InSpot(_bobber.Position);
+            CastCellLabel = $"{_cellName} · {FieldMap.HabitatName(_ctx.Habitat)}" + (_ctx.School != null ? $" · {_ctx.School.Name}({_ctx.School.SizeLabel})" : "")
+                + (_waitInSpot ? " · 어군 한가운데!" : "");
             PendingBite = BiteSelector.Pick(_ctx);
             BigBite = false;
 
-            _waitTimer = BiteSelector.WaitSeconds(_ctx) * slowdown;
+            _waitTimer = BiteSelector.WaitSeconds(_ctx) * slowdown * (_waitInSpot ? 0.7f : 1f);
             _nibblesLeft = PendingBite.Species.Aggression > 0.75f ? Random.Range(0, 2) : Random.Range(0, 4);
             _nextNibbleAt = _waitTimer * Random.Range(0.3f, 0.7f);
             _nibbleActive = false;
@@ -426,6 +436,7 @@ namespace Fishing.Angling
         {
             if (WantsRetrieve) { Retrieve("찌를 회수했습니다."); return; }
             if (Time.time >= _castShotUntil) SwayRod(false);
+            if (UpdateReel()) { if (State == FishingState.Waiting && DetectShake()) FalseHook(); return; }
 
             _waitTimer -= Time.deltaTime;
             if (_nibbleActive && Time.time > _nibbleWindowEnd) _nibbleActive = false;
@@ -453,15 +464,63 @@ namespace Fishing.Angling
                 return;
             }
 
-            if (DetectShake())
+            if (DetectShake()) FalseHook();
+        }
+
+        /// <summary>입질 전에 챔질하면 헛챔질. 예신(깔짝)에 속은 경우도 여기.</summary>
+        void FalseHook()
+        {
+            if (Random.value < 0.5f) Game.Profile.ConsumeItem(Game.Profile.Bait.Id);
+            ShowGrade(HookGrade.Bad);
+            Game.Toast(_nibbleActive ? "헛챔질! 예신에 속았다..." : "헛챔질! 고기가 놀라 달아났다.", ToastKind.Warn);
+            Game.Player.RodPitch = 60f;
+            BeginWait(1.3f);
+        }
+
+        /// <summary>
+        /// 원작처럼 대기 중 좌클릭을 누르고 있으면 릴을 감아 찌가 점점 가까이 온다 (좌우로 흔들면 챔질).
+        /// 감는 동안은 입질 시계가 멈추고, 손을 뗐을 때 다른 칸이나 어군 한가운데로 옮겨졌으면 그 자리에서 다시 기다린다.
+        /// 발밑까지 감으면 찌를 회수한다. 감고 있으면 true.
+        /// </summary>
+        bool UpdateReel()
+        {
+            bool hold = Input.GetMouseButton(0) && !_shakeSpent && !UiBlocking;
+            if (!hold)
             {
-                // 예신(깔짝)에 속아 챔질하면 헛챔질
-                if (Random.value < 0.5f) Game.Profile.ConsumeItem(Game.Profile.Bait.Id);
-                ShowGrade(HookGrade.Bad);
-                Game.Toast(_nibbleActive ? "헛챔질! 예신에 속았다..." : "헛챔질! 고기가 놀라 달아났다.", ToastKind.Warn);
-                Game.Player.RodPitch = 60f;
-                BeginWait(1.3f);
+                if (!_reeling) return false;
+                _reeling = false;
+                Game.Player.RodPitch = 28f;
+                FieldMap.TryCell(_bobber.Position, out int col, out int row);
+                col = Mathf.Clamp(col, 0, FieldMap.Cols - 1);
+                row = Mathf.Clamp(row, 0, FieldMap.Rows - 1);
+                var school = Game.Schools.At(col, row);
+                bool inSpot = school != null && school.InSpot(_bobber.Position);
+                if (col != _waitCol || row != _waitRow || inSpot != _waitInSpot) BeginWait(1f);
+                return false;
             }
+
+            _reeling = true;
+            var player = Game.Player.transform.position;
+            var flat = player - _bobber.Position;
+            flat.y = 0f;
+            float step = Game.Profile.Reel.ReelSpeed * Time.deltaTime;
+            var next = _bobber.Position + flat.normalized * Mathf.Min(step, flat.magnitude);
+            if (flat.magnitude - step <= 3f || !FieldMap.IsWater(next))
+            {
+                Retrieve("찌를 다 감았습니다.");
+                return true;
+            }
+            _bobber.DragTo(next);
+            _nibbleActive = false;
+            Game.Player.RodPitch = 48f;
+            Game.Player.RodPitchSpeed = 8f;
+            if (Time.time >= _reelFxAt)
+            {
+                _reelFxAt = Time.time + 0.14f;
+                Game.Sound.ReelClick(0.3f);
+                if (Random.value < 0.4f) Effects.Ripple(next, 0.7f, 0.9f);
+            }
+            return true;
         }
 
         void UpdateBite()
@@ -548,6 +607,7 @@ namespace Fishing.Angling
         {
             _hookAt = 0f;
             _cheering = false;
+            _reeling = false;
             _swayYaw = 0f;
             Game.Player.RodYaw = 0f;
             Game.Player.BodyLean = 0f;
