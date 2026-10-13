@@ -128,15 +128,25 @@ namespace Fishing.World
                 Mats.Prim(PrimitiveType.Cube, "Awning", shop, new Vector3(-3f + i * 1.2f, 2.6f, 2.75f), new Vector3(1.2f, 0.12f, 1.4f),
                     Mats.Lit(c), false, Quaternion.Euler(-18f, 0f, 0f));
             }
-            Mats.Prim(PrimitiveType.Cube, "Counter", shop, new Vector3(0f, 0.6f, 2.6f), new Vector3(5f, 1.2f, 0.6f), Mats.Lit(Wood));
+            Mats.Prim(PrimitiveType.Cube, "Counter", shop, new Vector3(0f, 0.55f, 3.5f), new Vector3(5f, 1.1f, 0.6f), Mats.Lit(Wood));
 
-            // 주인 NPC
-            // 낚시점 주인
-            NpcAngler.Spawn(shop, new Vector3(1.2f, 0f, 1.7f), 0f, new CharacterLook
+            // 처마 조명: 밤에도 카운터와 주인이 보이게
+            var shopLight = new GameObject("ShopLight").AddComponent<Light>();
+            shopLight.transform.SetParent(shop, false);
+            shopLight.transform.localPosition = new Vector3(0f, 2.4f, 3.4f);
+            shopLight.type = LightType.Point;
+            shopLight.range = 7f;
+            shopLight.intensity = 1.3f;
+            shopLight.color = new Color(1f, 0.85f, 0.6f);
+            shopLight.shadows = LightShadows.None;
+
+            // 낚시점 주인: 벽과 카운터 사이에 선다 (건물 상자는 z ±2.25)
+            var owner = NpcAngler.Spawn(shop, new Vector3(1.2f, 0f, 2.75f), 0f, new CharacterLook
             {
                 Name = "낚시점 김사장", Title = "반포 낚시점", Hair = "Hair_Buzzed", Beard = true, HairColor = new Color(0.3f, 0.3f, 0.3f),
                 Shirt = new Color(0.85f, 0.85f, 0.8f), VestColor = new Color(0.55f, 0.35f, 0.2f), Pants = new Color(0.3f, 0.28f, 0.25f), Hat = false
             }, NpcAngler.Role.Talker);
+            owner.NpcId = "shop";
 
             AddSign(shop, "낚시점", new Vector3(0f, 3.9f, 2.3f), new Color(1f, 0.9f, 0.4f));
         }
@@ -371,6 +381,14 @@ namespace Fishing.World
         {
             var parent = new GameObject("BankAnglers").transform;
             parent.SetParent(_root, false);
+            // 한국 낚시 조합 연락관: 데크 입구에서 퀘스트를 주고 보고를 받는다
+            var union = NpcAngler.Spawn(parent, new Vector3(HanRiverMap.Pier.center.x - 4f, HanRiverMap.LandY, HanRiverMap.RiverMinZ - 5f), 200f, new CharacterLook
+            {
+                Name = "박주임", Title = "한국 낚시 조합 연락관", Hair = "Hair_SimpleParted", HairColor = new Color(0.1f, 0.08f, 0.07f),
+                Shirt = new Color(0.92f, 0.93f, 0.95f), Vest = true, VestColor = new Color(0.12f, 0.2f, 0.42f), Pants = new Color(0.15f, 0.16f, 0.2f),
+                Shoes = new Color(0.08f, 0.08f, 0.08f), Hat = false
+            }, NpcAngler.Role.Talker);
+            union.NpcId = "union";
             float z = HanRiverMap.RiverMinZ - 1.6f;
             NpcAngler.Spawn(parent, new Vector3(-46f, HanRiverMap.LandY, z), 0f, new CharacterLook
             {

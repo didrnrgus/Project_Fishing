@@ -199,6 +199,22 @@ namespace Fishing.Dev
             yield return Shot("16_help");
             Game.UI.Help.Close();
 
+            // NPC 대화 (낚시점 김사장), 낚싯대 강화 창
+            Game.Player.Teleport(Fishing.World.HanRiverMap.ShopPos + new Vector3(1.2f, 0.1f, 4.5f), 180f);
+            Game.CameraRig.Yaw = 200f;
+            Game.CameraRig.Distance = 5f;
+            yield return new WaitForSeconds(0.6f);
+            foreach (var npc in Fishing.Characters.NpcAngler.Talkable)
+                if (npc.NpcId == "shop") { Game.UI.TalkTo(npc); break; }
+            yield return new WaitForSeconds(0.8f);
+            yield return Shot("20_npc_dialog");
+            p.Data.gold += 50000;
+            for (int i = 0; i < 4; i++) p.TryUpgradeRod();
+            Game.UI.OpenExclusive(Game.UI.Upgrade);
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("21_rod_upgrade");
+            Game.UI.Upgrade.Close();
+
             // 지역 지도(M): 어군 하나는 3마리를 낚아 작은 어군으로 만든다
             var shrink = Game.Schools.Schools[1];
             for (int i = 0; i < Fishing.World.FishSchoolManager.CatchesToShrink; i++) Game.Schools.OnCatch(shrink, shrink.SpeciesIds[0]);

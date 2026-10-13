@@ -53,6 +53,7 @@ Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.ex
 | 04_bite_gauge | 본신: 찌가 잠기고 빨간 `!`, 두근두근 |
 | 05_hook_perfect | 자동 조작으로 PERFECT 챔질 → 파이팅 시작 |
 | 06_fight | 82cm 잉어 파이팅 |
+| 06c_speedlines | 카운터 찬스 집중선을 강제로 띄워 모서리까지 덮이는지 확인 |
 | 06b_tension_danger | 장력을 0.96으로 강제 → 빨간 화면 테두리 |
 | 07_counter_chance | 카운터 찬스 (속도선, 파란 화살표) |
 | 08_counter | 카운터 성공 |
@@ -60,6 +61,8 @@ Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.ex
 | 10_result | RESULT 화면 |
 | 11_dex ~ 14_shop | 도감, 살림망, 퀘스트, 상점 (샘플 데이터) |
 | 16_help | 도움말 |
+| 20_npc_dialog | 낚시점 김사장과 대화 (밤, 처마 조명) |
+| 21_rod_upgrade | 낚싯대 강화 창 (+4 시도 후) |
 | 18_boat_drive | 노을 무렵 데크 끝에서 고무보트를 띄워 달리기 (물보라 꼬리, 계기판) |
 | 19_boat_stop | 멈춘 배의 뱃머리에 서서 낚시 준비 |
 | 17_area_map | 지역 지도(M). 어군 하나를 3마리 낚은 것으로 처리해 작은 어군으로 보여 줌 |

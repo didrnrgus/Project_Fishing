@@ -27,6 +27,14 @@ namespace Fishing.UI
                 desc.fontStyle = FontStyle.Italic;
                 Cell(rows.Next(30), $"목표: {q.GoalText}   ({Mathf.Min(quests.Progress, q.Count)}/{q.Count})", 4, 700, 20);
                 Cell(rows.Next(30), $"보상: {q.RewardText}", 4, 700, 20, UIFactory.Gold);
+                if (quests.Ready)
+                {
+                    // 대기실(조합)에서는 바로, 필드에서는 박주임과 대화 중일 때 보고할 수 있다
+                    bool canReport = Game.Mode == GameMode.Lobby || (Game.UI.Dialog.Npc != null && Game.UI.Dialog.Npc.NpcId == "union");
+                    var row = rows.Next(52, 8);
+                    if (canReport) RowButton(row, "목표 달성! 보고하고 보상 받기", () => { quests.Claim(); Refresh(); }, 4, 420, new Color(0.2f, 0.5f, 0.3f), true, 20);
+                    else Cell(row, "목표 달성! 데크 입구의 조합 연락관 박주임이나 한국 낚시 조합(대기실)에서 보고하세요.", 4, 700, 17, UIFactory.Good);
+                }
             }
             else
             {
@@ -57,7 +65,7 @@ namespace Fishing.UI
             var text = UIFactory.Text(Body,
                 "<b><color=#55dcc8>필드</color></b>\n" +
                 "  WASD 이동 · Shift 달리기 · Space 점프 · B 배 꺼내기/내리기 · 오른쪽 버튼 드래그 시점 회전 · 휠 줌 · 숫자 1~6 미끼 선택\n" +
-                "  L 퀘스트 · P 도감 · Z 살림망 · M 지역 지도 · F12 상점 · U 설명 켜기/끄기 · F1 도움말 · F5 저장 · Esc 창 닫기\n\n" +
+                "  F NPC와 대화 · L 퀘스트 · P 도감 · Z 살림망 · M 지역 지도 · F12 상점 · U 설명 켜기/끄기 · F1 도움말 · F5 저장 · Esc 창 닫기\n\n" +
                 "<b><color=#55dcc8>캐스팅</color></b>\n" +
                 "  왼쪽 버튼을 누르고 마우스를 <b>아래로 당긴 다음</b>, <b>빠르게 위로 밀면서</b> 버튼을 놓으세요.\n" +
                 "  많이 당기고 빨리 밀수록 멀리 날아갑니다. 화면의 큰 숫자가 비거리입니다.\n\n" +

@@ -30,11 +30,12 @@ Assets/
       FishDatabase.cs            어종 16종 + 잡동사니
       GearDatabase.cs            낚싯대/릴/줄, 미끼, 김밥
       QuestDatabase.cs           스토리 퀘스트 8개
+      RodUpgrade.cs              낚싯대 강화 규칙 (확률, 비용, 단계별 성능)
       FishingAreas.cs            낚시터 목록 11곳(경위도, 열림 여부 — 지금은 한강만)
     Characters/
       CharacterFactory.cs        Quaternius 휴머노이드 + 옷 버텍스 컬러 마스크 + 머리·모자·이름표 (CharacterLook)
       CharacterAnimator.cs       Playables 믹서로 클립 재생 (AnimatorController 없이 SetLoop/PlayOnce)
-      NpcAngler.cs               배경 NPC (Angler/Talker/Sitter, Idle이면 다시 던지지 않음)
+      NpcAngler.cs               NPC (Angler/Talker/Sitter). NpcId(shop/union/angler)로 대화 종류, Talkable 목록, 대화 상대 바라보기
     World/
       HanRiverMap.cs             맵 좌표계, 격자, 서식지, 걸을 수 있는 곳/물 판정
       WorldBuilder.cs            프리미티브로 한강, 다리, 데크, 낚시점, 나무, 도시, NPC 생성
@@ -68,6 +69,8 @@ Assets/
       FishingAreaPanel.cs        낚시터 목록 (한국 지도, MAP/FISH INFO, 채널, 빠른입장)
       KoreaMap.cs                한반도 해안선 다각형 → 지도 텍스처, 경위도 → UV
       AreaMapPanel.cs            지역 지도(M): 격자·서식지·어군·내 위치
+      DialogPanel.cs             NPC 대화창 (shop/union/angler별 대사·선택지, 조황 생성)
+      UpgradePanel.cs            낚싯대 강화 창
       PortraitCamera.cs          HUD 초상화: 캐릭터 레이어(8)만 비추는 카메라 → 렌더 텍스처
       ResultPanel.cs, KeepNetPanel.cs, DexPanel.cs, ShopPanel.cs, InfoPanels.cs(퀘스트/도움말)
     Audio/SoundFx.cs             절차적 효과음

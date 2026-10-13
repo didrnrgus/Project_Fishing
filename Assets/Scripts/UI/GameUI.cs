@@ -20,6 +20,10 @@ namespace Fishing.UI
         public FishingAreaPanel Areas { get; private set; }
         public LobbyView LobbyHud { get; private set; }
         public AreaMapPanel AreaMap { get; private set; }
+        public DialogPanel Dialog { get; private set; }
+        public UpgradePanel Upgrade { get; private set; }
+        /// <summary>F로 말을 걸 수 있는 가장 가까운 NPC.</summary>
+        public Fishing.Characters.NpcAngler NearbyNpc { get; private set; }
 
         UIPanel[] _panels;
 
@@ -60,7 +64,9 @@ namespace Fishing.UI
             Areas = new FishingAreaPanel(canvas);
             Areas.Enter = (area, channel) => EnterField(channel);
             AreaMap = new AreaMapPanel(canvas);
-            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap };
+            Dialog = new DialogPanel(canvas);
+            Upgrade = new UpgradePanel(canvas);
+            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, Upgrade };
             LobbyHud.Root.transform.SetAsFirstSibling();
         }
 
@@ -90,6 +96,8 @@ namespace Fishing.UI
             Hud.Update();
             Fight.Update();
             if (AreaMap.IsOpen) AreaMap.Tick();
+            NearbyNpc = FindNearbyNpc();
+            Game.Player.NameTagVisible = !Dialog.IsOpen;
             Result.Animate();
             HandleKeys();
         }
@@ -180,6 +188,7 @@ namespace Fishing.UI
             // 원작 단축키: 퀘스트 L, 도감 P, 살림망 Z, 상점 F12, 지역 지도 M
             if (Input.GetKeyDown(KeyCode.F1)) OpenExclusive(Help);
             if (Input.GetKeyDown(KeyCode.M)) OpenExclusive(AreaMap);
+            if (Input.GetKeyDown(KeyCode.F) && NearbyNpc != null && idle && !BlockingPanelOpen) TalkTo(NearbyNpc);
             if (Input.GetKeyDown(KeyCode.B) && !BlockingPanelOpen) Game.Boat.Toggle();
             if (Input.GetKeyDown(KeyCode.P)) OpenExclusive(Dex);
             if (Input.GetKeyDown(KeyCode.L)) OpenExclusive(Quest);
@@ -190,6 +199,45 @@ namespace Fishing.UI
             if (idle && !BlockingPanelOpen)
                 for (int i = 0; i < 6; i++)
                     if (Input.GetKeyDown(KeyCode.Alpha1 + i)) Hud.SelectBait(i);
+        }
+
+        Fishing.Characters.NpcAngler FindNearbyNpc()
+        {
+            if (Game.Mode != GameMode.Field || Game.Player.OnBoat || Game.Fishing.State != FishingState.Idle) return null;
+            var p = Game.Player.transform.position;
+            Fishing.Characters.NpcAngler best = null;
+            float bestD = 3.5f * 3.5f;
+            foreach (var npc in Fishing.Characters.NpcAngler.Talkable)
+            {
+                var d = npc.transform.position - p;
+                d.y = 0f;
+                if (d.sqrMagnitude < bestD) { bestD = d.sqrMagnitude; best = npc; }
+            }
+            return best;
+        }
+
+        public void TalkTo(Fishing.Characters.NpcAngler npc)
+        {
+            foreach (var p in _panels) if (p != Result) p.Close();
+            // 어깨 너머로 NPC가 보이게 카메라를 돌린다
+            var d = npc.transform.position - Game.Player.transform.position;
+            d.y = 0f;
+            if (d.sqrMagnitude > 0.01f)
+            {
+                Game.CameraRig.Yaw = Quaternion.LookRotation(d).eulerAngles.y;
+                Game.CameraRig.Distance = Mathf.Min(Game.CameraRig.Distance, 4.5f);
+                Game.Player.FaceYaw(Game.CameraRig.Yaw);
+            }
+            Dialog.Open(npc);
+        }
+
+        /// <summary>한국어 조사: 받침이 있으면 withFinal(과/을/은), 없으면 withoutFinal(와/를/는).</summary>
+        public static string Josa(string word, string withFinal, string withoutFinal)
+        {
+            if (string.IsNullOrEmpty(word)) return withoutFinal;
+            char c = word[word.Length - 1];
+            if (c < 0xAC00 || c > 0xD7A3) return withoutFinal;
+            return (c - 0xAC00) % 28 != 0 ? withFinal : withoutFinal;
         }
 
         public void OpenExclusive(UIPanel panel)
