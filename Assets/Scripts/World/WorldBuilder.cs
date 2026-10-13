@@ -61,23 +61,23 @@ namespace Fishing.World
             float southZ = HanRiverMap.RiverMinZ - depth * 0.5f;
             float northZ = HanRiverMap.RiverMaxZ + depth * 0.5f;
 
-            Mats.Prim(PrimitiveType.Cube, "SouthBank", _root, new Vector3(0f, centerY, southZ), new Vector3(600f, landH, depth), Mats.Lit(Grass));
-            Mats.Prim(PrimitiveType.Cube, "NorthBank", _root, new Vector3(0f, centerY, northZ), new Vector3(600f, landH, depth), Mats.Lit(GrassDark));
+            Mats.Prim(PrimitiveType.Cube, "SouthBank", _root, new Vector3(0f, centerY, southZ), new Vector3(600f, landH, depth), Mats.TexturedBox("grass", new Color(0.8f, 0.95f, 0.75f), new Vector2(600f, depth), 7f, 0.1f));
+            Mats.Prim(PrimitiveType.Cube, "NorthBank", _root, new Vector3(0f, centerY, northZ), new Vector3(600f, landH, depth), Mats.TexturedBox("grass", new Color(0.62f, 0.75f, 0.58f), new Vector2(600f, depth), 7f, 0.1f));
 
             // 둔치 산책로, 자전거도로, 호안 석축
-            Mats.Prim(PrimitiveType.Cube, "Walkway", _root, new Vector3(0f, HanRiverMap.LandY + 0.01f, -66f), new Vector3(600f, 0.02f, 4f), Mats.Lit(Path), false);
-            Mats.Prim(PrimitiveType.Cube, "BikeRoad", _root, new Vector3(0f, HanRiverMap.LandY + 0.01f, -84f), new Vector3(600f, 0.02f, 6f), Mats.Lit(BikeRoad), false);
+            Mats.Prim(PrimitiveType.Cube, "Walkway", _root, new Vector3(0f, HanRiverMap.LandY + 0.01f, -66f), new Vector3(600f, 0.02f, 4f), Mats.TexturedBox("concrete", new Color(0.95f, 0.92f, 0.86f), new Vector2(600f, 4f), 4f, 0.2f), false);
+            Mats.Prim(PrimitiveType.Cube, "BikeRoad", _root, new Vector3(0f, HanRiverMap.LandY + 0.01f, -84f), new Vector3(600f, 0.02f, 6f), Mats.TexturedBox("asphalt", new Color(0.75f, 0.62f, 0.6f), new Vector2(600f, 6f), 6f, 0.15f), false);
             Mats.Prim(PrimitiveType.Cube, "BikeLine", _root, new Vector3(0f, HanRiverMap.LandY + 0.025f, -84f), new Vector3(600f, 0.02f, 0.15f), Mats.Lit(new Color(0.95f, 0.8f, 0.2f)), false);
-            Mats.Prim(PrimitiveType.Cube, "SouthEdge", _root, new Vector3(0f, HanRiverMap.LandY - 0.4f, HanRiverMap.RiverMinZ - 0.3f), new Vector3(600f, 1.2f, 0.8f), Mats.Lit(Stone));
-            Mats.Prim(PrimitiveType.Cube, "NorthEdge", _root, new Vector3(0f, HanRiverMap.LandY - 0.4f, HanRiverMap.RiverMaxZ + 0.3f), new Vector3(600f, 1.2f, 0.8f), Mats.Lit(Stone));
+            Mats.Prim(PrimitiveType.Cube, "SouthEdge", _root, new Vector3(0f, HanRiverMap.LandY - 0.4f, HanRiverMap.RiverMinZ - 0.3f), new Vector3(600f, 1.2f, 0.8f), Mats.TexturedBox("concrete", new Color(0.8f, 0.8f, 0.78f), new Vector2(600f, 1.2f), 2f, 0.2f));
+            Mats.Prim(PrimitiveType.Cube, "NorthEdge", _root, new Vector3(0f, HanRiverMap.LandY - 0.4f, HanRiverMap.RiverMaxZ + 0.3f), new Vector3(600f, 1.2f, 0.8f), Mats.TexturedBox("concrete", new Color(0.8f, 0.8f, 0.78f), new Vector2(600f, 1.2f), 2f, 0.2f));
 
             // 북쪽 강변북로
-            Mats.Prim(PrimitiveType.Cube, "Expressway", _root, new Vector3(0f, HanRiverMap.LandY + 0.02f, 74f), new Vector3(600f, 0.04f, 10f), Mats.Lit(BikeRoad), false);
+            Mats.Prim(PrimitiveType.Cube, "Expressway", _root, new Vector3(0f, HanRiverMap.LandY + 0.02f, 74f), new Vector3(600f, 0.04f, 10f), Mats.TexturedBox("asphalt", Color.white, new Vector2(600f, 10f), 6f, 0.15f), false);
         }
 
         void BuildBridge()
         {
-            var deckMat = Mats.Lit(Concrete);
+            var deckMat = Mats.TexturedBox("concrete", new Color(0.9f, 0.9f, 0.88f), new Vector2(18f, 240f), 6f, 0.2f);
             var steel = Mats.Lit(new Color(0.25f, 0.42f, 0.55f), 0.4f, 0.3f);
             float x = HanRiverMap.BridgeX;
             float deckY = 12f;
@@ -99,7 +99,7 @@ namespace Fishing.World
             var r = HanRiverMap.Pier;
             var pier = new GameObject("FishingPier").transform;
             pier.SetParent(_root, false);
-            var deck = Mats.Lit(Wood);
+            var deck = Mats.TexturedBox("deck", new Color(1f, 0.92f, 0.85f), new Vector2(r.width, r.height), 3f, 0.3f);
             Mats.Prim(PrimitiveType.Cube, "Deck", pier, new Vector3(r.center.x, HanRiverMap.LandY - 0.15f, r.center.y),
                 new Vector3(r.width, 0.3f, r.height), deck);
             for (float z = r.yMin + 2f; z < r.yMax; z += 4f)

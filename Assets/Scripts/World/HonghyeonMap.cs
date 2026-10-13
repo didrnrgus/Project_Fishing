@@ -169,11 +169,11 @@ namespace Fishing.World
         {
             // 해안 땅은 지형(SeaTerrain). 마을 길과 포구 앞 호안(콘크리트 벽)만 따로
             Mats.Prim(PrimitiveType.Cube, "CoastRoad", _root, new Vector3(0f, _map.LandY + 0.02f, -62f), new Vector3(420f, 0.04f, 7f),
-                Mats.Lit(new Color(0.34f, 0.34f, 0.36f)), false);
+                Mats.TexturedBox("asphalt", Color.white, new Vector2(420f, 7f), 6f, 0.15f), false);
             Mats.Prim(PrimitiveType.Cube, "Seawall", _root, new Vector3(30f, _map.LandY - 1.2f, HonghyeonDef.ShoreZ - 0.4f),
-                new Vector3(90f, 3.2f, 1f), Mats.Lit(Concrete));
+                new Vector3(90f, 3.2f, 1f), Mats.TexturedBox("concrete", new Color(0.85f, 0.85f, 0.83f), new Vector2(90f, 3.2f), 3f, 0.2f));
             Mats.Prim(PrimitiveType.Cube, "HarborApron", _root, new Vector3(30f, _map.LandY + 0.02f, -47f), new Vector3(70f, 0.04f, 13f),
-                Mats.Lit(new Color(0.62f, 0.62f, 0.6f)), false);
+                Mats.TexturedBox("concrete", new Color(0.8f, 0.8f, 0.78f), new Vector2(70f, 13f), 4f, 0.2f), false);
 
             // 해안 갯바위: 물가를 따라 크고 작은 바위
             var rock = Mats.Textured("rock", new Color(0.85f, 0.83f, 0.8f), 1f, 0.25f);
@@ -216,7 +216,8 @@ namespace Fishing.World
             bw.SetParent(_root, false);
             float bottom = _map.WaterY - 4f;
             float h = _map.LandY - bottom;
-            Mats.Prim(PrimitiveType.Cube, "Body", bw, new Vector3(b.center.x, bottom + h * 0.5f, b.center.y), new Vector3(b.width, h, b.height), Mats.Lit(Concrete));
+            Mats.Prim(PrimitiveType.Cube, "Body", bw, new Vector3(b.center.x, bottom + h * 0.5f, b.center.y), new Vector3(b.width, h, b.height),
+                Mats.TexturedBox("concrete", new Color(0.92f, 0.92f, 0.9f), new Vector2(b.width, b.height), 4f, 0.2f));
             Mats.Prim(PrimitiveType.Cube, "Parapet", bw, new Vector3(b.xMin + 0.3f, _map.LandY + 0.6f, b.center.y), new Vector3(0.6f, 1.2f, b.height),
                 Mats.Lit(new Color(0.64f, 0.64f, 0.62f)), false);
 
