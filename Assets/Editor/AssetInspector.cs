@@ -11,7 +11,7 @@ namespace Fishing.EditorTools
         [MenuItem("Fishing/Inspect Imported Assets")]
         public static void Run()
         {
-            foreach (var folder in new[] { "Assets/Resources/Characters", "Assets/Resources/Animations", "Assets/Resources/Fish" })
+            foreach (var folder in new[] { "Assets/Resources/Characters", "Assets/Resources/Animations", "Assets/Resources/Fish", "Assets/Resources/Kenney" })
                 AssetDatabase.ImportAsset(folder, ImportAssetOptions.ImportRecursive | ImportAssetOptions.ForceUpdate);
 
             var sb = new StringBuilder();
@@ -27,6 +27,8 @@ namespace Fishing.EditorTools
                     var b = renderers[0].bounds;
                     foreach (var r in renderers) b.Encapsulate(r.bounds);
                     sb.AppendLine($"   bounds size={b.size} center={b.center} renderers={renderers.Length}");
+                    var mats = renderers.SelectMany(r => r.sharedMaterials).Where(m => m != null).Distinct();
+                    sb.AppendLine($"   mats: {string.Join(", ", mats.Select(m => $"{m.name}({m.shader.name}, tex={(m.mainTexture ? m.mainTexture.name : "-")}, col={m.color})"))}");
                 }
                 var smr = go.GetComponentInChildren<SkinnedMeshRenderer>(true);
                 if (smr != null)

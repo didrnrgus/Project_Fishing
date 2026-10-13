@@ -129,6 +129,12 @@ namespace Fishing.Dev
             yield return Shot("06b_tension_danger");
             fight.DebugSetTension(0.5f);
 
+            // 카운터 찬스 집중선 (모서리까지 덮이는지)
+            Fishing.UI.FightHudView.DebugForceCounterChance = true;
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("06c_speedlines");
+            Fishing.UI.FightHudView.DebugForceCounterChance = false;
+
             bool countered = false, chanceShot = false;
             fight.Countered += () => countered = true;
             Game.Fishing.AutoplayCounterChance = 0f;
@@ -205,8 +211,9 @@ namespace Fishing.Dev
             Game.Weather.Force(Weather.Clear);
             Game.Clock.Set(1, 17 * 60 + 40);
             p.Data.level = Mathf.Max(p.Data.level, 3);
-            if (!p.Owns("boat_rubber")) p.Data.ownedGear.Add("boat_rubber");
-            p.Equip(GearDatabase.GetGear("boat_rubber"));
+            p.Data.level = Mathf.Max(p.Data.level, 10);
+            if (!p.Owns("boat_speed")) p.Data.ownedGear.Add("boat_speed");
+            p.Equip(GearDatabase.GetGear("boat_speed"));
             Game.Player.Teleport(new Vector3(25f, 1.1f, -27.5f), 0f);
             Game.CameraRig.Yaw = 0f;
             Game.CameraRig.Pitch = 14f;

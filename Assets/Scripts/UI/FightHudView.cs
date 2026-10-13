@@ -27,6 +27,9 @@ namespace Fishing.UI
         Text _distLabel, _nameText;
         Text _tipTitle, _tipText;
         Image _speedLines;
+        /// <summary>개발용(자동 스크린샷): 카운터 찬스 연출을 강제로 띄운다.</summary>
+        public static bool DebugForceCounterChance;
+        float _speedLinesNext;
         RectTransform _counterArrow;
         Image _counterArrowImg;
         RectTransform _counterMice;
@@ -71,7 +74,8 @@ namespace Fishing.UI
             _vignette.rectTransform.Fill();
 
             _speedLines = UIFactory.Image(_root, new Color(0.85f, 0.95f, 1f, 0.6f), UIFactory.SpeedLines, "SpeedLines");
-            _speedLines.rectTransform.Fill(-200, -200, -200, -200);
+            // 크기는 Update에서 화면 대각선보다 크게 맞춘다 (돌려도 모서리가 비지 않게)
+            _speedLines.rectTransform.At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(2400, 2400));
 
             _chevron = UIFactory.Node("RunChevron", _root).At(new Vector2(0, 0.5f), new Vector2(40, 0), new Vector2(110, 260), new Vector2(0.5f, 0.5f));
             _chevronImg = _chevron.gameObject.AddComponent<Image>();
@@ -328,10 +332,25 @@ namespace Fishing.UI
                 _pips[i].color = i < f.Combo ? new Color(0.3f, 0.75f, 1f) : new Color(1, 1, 1, 0.15f);
 
             // 카운터 찬스: 속도선 + 화살표
-            bool counterChance = f.CounterChance && !f.Landing;
+            bool counterChance = (f.CounterChance || DebugForceCounterChance) && !f.Landing;
             float pulse = 0.75f + Mathf.Sin(Time.time * 12f) * 0.25f;
             _speedLines.gameObject.SetActive(counterChance);
-            if (counterChance) _speedLines.rectTransform.localRotation = Quaternion.Euler(0, 0, Time.time * 40f);
+            if (counterChance)
+            {
+                var size = _root.rect.size;
+                float side = Mathf.Sqrt(size.x * size.x + size.y * size.y) * 1.08f;
+                _speedLines.rectTransform.sizeDelta = new Vector2(side, side);
+                // 만화 집중선처럼 짧은 간격으로 각도가 툭툭 바뀌며 번쩍인다
+                if (Time.time >= _speedLinesNext)
+                {
+                    _speedLinesNext = Time.time + 0.07f;
+                    _speedLines.rectTransform.localRotation = Quaternion.Euler(0, 0, Random.Range(0f, 360f));
+                    _speedLines.rectTransform.localScale = Vector3.one * Random.Range(1f, 1.06f);
+                    var c = _speedLines.color;
+                    c.a = Random.Range(0.45f, 0.65f);
+                    _speedLines.color = c;
+                }
+            }
             _counterArrow.gameObject.SetActive(counterChance);
             if (counterChance)
             {

@@ -41,6 +41,7 @@ Assets/
       LobbyRoom.cs               대기실(한국 낚시 조합) 실내, 박제 물고기, 고정 카메라 구도
       WaterSurface.cs            격자 수면 메쉬 + Fishing/Water 머티리얼
       SkyDecor.cs                달·별·구름 돔 (카메라를 따라다님)
+      KenneyProps.cs             Kenney CC0 모델 배치: 높이/길이에 맞춰 키우기, 나무 색 다시 칠하기, 밤에 빌딩 은은한 발광
       ProceduralTextures.cs      물 노멀맵, 구름 노이즈, 달 텍스처 (주기적 value-noise fbm)
       FishSchoolManager.cs       어군 이동, 큰/작은 어군, 수면 파문
       Effects.cs                 물보라(공유 파티클), 파문

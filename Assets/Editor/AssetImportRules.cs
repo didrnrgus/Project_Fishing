@@ -36,6 +36,14 @@ namespace Fishing.EditorTools
                 importer.animationType = ModelImporterAnimationType.Legacy;
                 importer.materialImportMode = ModelImporterMaterialImportMode.None;
             }
+            else if (assetPath.Contains("Resources/Kenney/"))
+            {
+                // Kenney CC0 정적 모델: 애니메이션 없음, 머티리얼은 FBX 설명대로(colormap 텍스처 또는 단색)
+                importer.animationType = ModelImporterAnimationType.None;
+                importer.importAnimation = false;
+                importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
+                importer.addCollider = false;
+            }
         }
 
         void OnPreprocessAnimation()

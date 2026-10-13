@@ -130,6 +130,7 @@ namespace Fishing.Core
                 _skyProbe.RenderProbe();
             }
 
+            Fishing.World.KenneyProps.SetNightGlow(1f - day);
             bool wantLamps = day < 0.45f || _weatherDim < 0.45f;
             if (wantLamps != _lampsOn) SetLamps(wantLamps);
         }
