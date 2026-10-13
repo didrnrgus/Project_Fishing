@@ -53,6 +53,7 @@ Assets/
       BiteSelector.cs            어떤 고기가 몇 cm로 물지 결정
       Bobber.cs                  찌 비행/부유/예신/본신
       FightRodView.cs            1인칭 낚싯대, 낚싯줄, 물고기 위치·몸체
+      TelescopicRod.cs           뽑기대(마디 펼치기·휨 스프링) + 스피닝 릴(장비별 모양, 손잡이·로터·스풀 회전). 1인칭·플레이어·NPC 공용
       FishModels.cs              Fish1~3 모델로 어종별 물고기 (BakeMesh로 원본 길이를 재서 실제 cm에 맞춤)
       FightBot.cs                자동 파이팅 입력 (밸런스 시뮬레이션·자동 스크린샷용)
     UI/
@@ -138,4 +139,4 @@ GameBootstrap.Start → GameUI.EnterLobby (Mode=Lobby, 카메라 고정)
 - 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/HoldRod/Cast/Hook…)가 클립 이름이다. 다른 라이브러리를 쓰면 이름만 바꾼다.
 - 물고기: `FishModels.Models`(경로)와 `ModelIndex`(어종 → 모델)만 바꾸면 된다. 크기는 BakeMesh로 재서 자동으로 맞춘다.
 - 물: `WaterSurface` + `Fishing/Water` 셰이더 (`_WaveAmp`, `_WaveLen`, 노멀 타일·속도). 하늘 반사는 `DayNightCycle`의 리얼타임 반사 프로브(하늘만, 2초마다).
-- 1인칭 낚싯대: `FightRodView`의 `_segs`(14마디) 구조를 유지하면 `BendRod`의 휘는 연출(줄 방향, Flex별 분포, 스프링)을 그대로 쓸 수 있다.
+- 낚싯대·릴: `TelescopicRod.StyleFor`(낚싯대 색·길이·마디 수)와 `BuildReel`(릴 모양)에서 장비 id별로 고른다. 좌표 규약은 +Y가 낚싯대 방향, 원점이 릴 시트, +Z가 릴 쪽. 휨은 `Drive(목표각, 줄 방향, 떨림, dt)`, 펼치기는 `SetExtension(0~1)`, 릴은 `SpinReel(감기 바퀴/s, 줄 풀림 m/s, dt)`.

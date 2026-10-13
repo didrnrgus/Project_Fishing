@@ -76,7 +76,8 @@ namespace Fishing.Angling
         float _biteTimer;
         float _shake;
         bool _shakeSpent;
-        float _reelClickTimer;
+        float _lastDistance;
+        float _lastTapAt = -10f;
         float _damagePopTimer;
         float _autoTapTimer;
         bool _cursorWasLocked;
@@ -125,6 +126,7 @@ namespace Fishing.Angling
         void Update()
         {
             if (Game.Mode == GameMode.Lobby) return;
+            UpdateThirdPersonRod();
             switch (State)
             {
                 case FishingState.Idle: UpdateIdle(); break;
@@ -291,6 +293,20 @@ namespace Fishing.Angling
             State = FishingState.Waiting;
         }
 
+        /// <summary>3인칭 낚싯대 휨: 줄이 걸린 무게, 본신 때 빨려 들어가는 힘.</summary>
+        void UpdateThirdPersonRod()
+        {
+            var player = Game.Player;
+            if (player == null || player.Rod == null) return;
+            if (State == FishingState.Waiting || State == FishingState.Bite || State == FishingState.Casting)
+            {
+                var dir = _bobber.Position - player.RodTip.position;
+                float bend = State == FishingState.Bite ? 22f + Mathf.Sin(Time.time * 9f) * 6f : State == FishingState.Waiting ? 5f : 2f;
+                player.RodBendTarget = bend;
+                player.RodPullDir = dir;
+            }
+        }
+
         bool WantsRetrieve => Input.GetKeyDown(KeyCode.R) || Game.Player.MovedThisFrame;
 
         /// <summary>좌클릭을 누른 채 좌우로 흔들었는지. 한 번 판정되면 버튼을 뗄 때까지 다시 판정하지 않는다.</summary>
@@ -323,6 +339,7 @@ namespace Fishing.Angling
                 _nibblesLeft--;
                 _bobber.Nibble();
                 Game.Sound.Tick();
+                Game.Player.Rod.Kick(70f); // 예신: 초릿대가 톡
                 _nibbleActive = true;
                 _nibbleWindowEnd = Time.time + 0.3f;
                 _nextNibbleAt = _waitTimer - Random.Range(0.8f, 2f);
@@ -332,6 +349,7 @@ namespace Fishing.Angling
             {
                 State = FishingState.Bite;
                 _biteTimer = 0f;
+                Game.Player.Rod.Kick(160f); // 본신: 초릿대가 쭉 빨려 들어간다
                 BigBite = PendingBite.IsTrophy || PendingBite.Species.Rarity >= 4;
                 Game.Sound.Plop();
                 if (BigBite) Game.Sound.Heartbeat();
@@ -435,6 +453,7 @@ namespace Fishing.Angling
             Game.Player.SetVisible(false);
             Game.CameraRig.EnterFight(Game.Player.EyePos, _castDir);
             _rodView.Show(Fight, Game.Player.transform.position, _castDir);
+            _lastDistance = Fight.Distance;
 
             _cursorWasLocked = Cursor.lockState == CursorLockMode.Locked;
             Cursor.lockState = CursorLockMode.Locked;
@@ -503,8 +522,9 @@ namespace Fishing.Angling
 
         void OnCounter()
         {
-            Game.Sound.Counter();
+            Game.Sound.Counter(Fight.Combo);
             Game.CameraRig.Shake(1.2f);
+            _rodView.Kick(420f); // 낚싯대가 확 휘었다가 튕겨 돌아온다
             var pos = _rodView.FishWorldPos(Fight);
             Effects.Splash(pos, 30, 1.6f);
             Game.UI.Fight.ShowCounter(Fight.Combo);
@@ -537,8 +557,13 @@ namespace Fishing.Angling
                 {
                     f.LandingTap(p.StaminaFactor);
                     Game.Sound.ReelClick(0.8f);
+                    _lastTapAt = Time.time;
                 }
                 f.Tick(Time.deltaTime, default, p.StaminaFactor, p.DurabilityFactor);
+                // 연타할 때마다 릴을 힘차게 돌린다
+                float tapTurns = Time.time - _lastTapAt < 0.18f ? 4.5f : 0f;
+                _rodView.SetReel(tapTurns, 0f);
+                Game.Sound.SetReel(tapTurns, 0.6f);
             }
             else
             {
@@ -550,15 +575,14 @@ namespace Fishing.Angling
                 };
                 f.Tick(Time.deltaTime, input, p.StaminaFactor, p.DurabilityFactor);
 
-                if (input.Reeling)
-                {
-                    _reelClickTimer -= Time.deltaTime;
-                    if (_reelClickTimer <= 0f)
-                    {
-                        _reelClickTimer = 0.07f;
-                        Game.Sound.ReelClick(f.Tension);
-                    }
-                }
+                // 릴: 감으면 손잡이가 돌고(드르르륵), 줄이 풀려 나가면 스풀이 거꾸로 돌며 드랙이 운다(지이이익)
+                float lineOut = Mathf.Max(0f, (f.Distance - _lastDistance) / Mathf.Max(Time.deltaTime, 1e-4f));
+                _lastDistance = f.Distance;
+                float turns = input.Reeling ? f.Reel.ReelSpeed * 0.9f * p.StaminaFactor * Mathf.Lerp(1f, 0.55f, Mathf.Clamp01(f.Tension)) : 0f;
+                _rodView.SetReel(turns, lineOut);
+                Game.Sound.SetReel(turns, f.Tension);
+                Game.Sound.SetDrag(lineOut);
+                Game.Sound.SetStrain(Mathf.InverseLerp(FishFight.HighTension, 1f, f.Tension));
 
                 if (f.LandingChance && f.StartLanding())
                 {

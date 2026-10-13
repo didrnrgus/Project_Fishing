@@ -36,7 +36,9 @@ namespace Fishing.UI
         Text _bigDistance;
         RectTransform _tensionMarker;
         Image _tensionFill;
-        Text _highLabel;
+        Text _highLabel, _tensionPercent;
+        RectTransform _slackHint;
+        Text _slackHintText;
         readonly Image[] _pips = new Image[5];
         Text _counterText, _warnText, _staminaText;
         RectTransform _landingRoot;
@@ -171,6 +173,23 @@ namespace Fishing.UI
             _highLabel.rectTransform.At(new Vector2(1, 0.5f), new Vector2(8, 0), new Vector2(64, 24), new Vector2(0, 0.5f));
             _tensionMarker = UIFactory.Node("Marker", barBack.transform).At(new Vector2(0, 0.5f), Vector2.zero, new Vector2(36, 36), new Vector2(0.5f, 0.5f));
             UIFactory.Text(_tensionMarker, "◆", 34, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold).rectTransform.Fill();
+            _tensionPercent = UIFactory.Text(_tensionMarker, "", 15, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            _tensionPercent.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0, 14), new Vector2(80, 20));
+            _tensionPercent.gameObject.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.8f);
+
+            // 바 이름과 끝(한계) 표시: 오른쪽 끝을 넘으면 줄이 끊어진다
+            UIFactory.Text(barBack.transform, "장력", 15, new Color(1, 1, 1, 0.75f), TextAnchor.LowerLeft, FontStyle.Bold).rectTransform
+                .At(new Vector2(0, 1), new Vector2(0, 2), new Vector2(80, 20), new Vector2(0, 0));
+            UIFactory.Image(barBack.transform, new Color(1f, 0.2f, 0.15f, 0.95f), null, "LimitLine").rectTransform
+                .At(new Vector2(1, 0.5f), Vector2.zero, new Vector2(4, 34), new Vector2(0.5f, 0.5f));
+            UIFactory.Text(barBack.transform, "한계 · 줄 끊김", 13, new Color(1f, 0.45f, 0.4f), TextAnchor.LowerRight, FontStyle.Bold).rectTransform
+                .At(new Vector2(1, 1), new Vector2(0, 2), new Vector2(140, 20), new Vector2(1, 0));
+
+            // 위험할 때: 어느 쪽으로 마우스를 끌어야 줄이 늦춰지는지
+            _slackHint = UIFactory.Node("SlackHint", _root).At(new Vector2(0.5f, 0), new Vector2(0, 205), new Vector2(560, 46));
+            _slackHintText = UIFactory.Text(_slackHint, "", 24, new Color(1f, 0.85f, 0.4f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            _slackHintText.rectTransform.Fill();
+            _slackHintText.gameObject.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.85f);
         }
 
         void BuildCenter()
@@ -295,6 +314,8 @@ namespace Fishing.UI
             _distLabel.text = $"{shownDistance:0}m";
 
             float tension = Mathf.Clamp01(f.Tension);
+            _tensionPercent.text = $"{f.Tension * 100f:0}%";
+            _tensionPercent.color = f.IsDanger ? new Color(1f, 0.45f, 0.4f) : Color.white;
             _tensionFill.fillAmount = tension;
             _tensionFill.color = f.IsDanger ? new Color(1f, 0.35f, 0.3f, 0.85f) : f.IsHighTension ? new Color(1f, 0.7f, 0.3f, 0.85f) : new Color(0.35f, 0.7f, 1f, 0.85f);
             _tensionMarker.anchorMin = _tensionMarker.anchorMax = new Vector2(tension, 0.5f);
@@ -345,12 +366,23 @@ namespace Fishing.UI
             else if (far) tip = "물고기와의 거리가 멀어지면 놓치게 됩니다. 거리를 좁히세요.";
             else if (running) tip = "물고기가 도망가는 반대 방향으로 당겨주세요. 물고기가 한쪽으로 몰리면 도망가기 쉽답니다.";
             else if (f.HpLow) tip = "물고기가 지쳤습니다! 5m 안으로 끌어오면 랜딩 찬스!";
+            else if (f.IsHighTension && f.DragLoad > 0.15f) tip = "물고기 반대쪽으로 계속 당기면 장력이 한계를 넘어 줄이 끊어집니다. 물고기 쪽으로 끌면 줄이 느슨해져요.";
             else tip = "왼쪽 버튼으로 줄을 감고, 오른쪽 버튼으로 풀어주세요. 장력을 HIGH 쪽에 두면 데미지가 커집니다.";
             _tipTitle.gameObject.SetActive(tips);
             _tipText.gameObject.SetActive(tips);
             _tipText.text = tip;
 
-            if (f.IsDanger) _warnText.text = "줄이 끊어지려 한다! 오른쪽 버튼으로 풀어주세요";
+            bool slack = f.IsDanger || (f.IsHighTension && f.DragLoad > 0.2f);
+            _slackHint.gameObject.SetActive(slack);
+            if (slack)
+            {
+                float blink = 0.6f + 0.4f * Mathf.Abs(Mathf.Sin(Time.time * 8f));
+                _slackHintText.text = f.FishSide < 0 ? "◀◀  물고기 쪽으로 끌어 늦추기" : "물고기 쪽으로 끌어 늦추기  ▶▶";
+                _slackHintText.color = new Color(1f, 0.85f, 0.4f, blink);
+                _slackHint.anchoredPosition = new Vector2(f.FishSide * (60f + Mathf.Repeat(Time.time * 1.5f, 1f) * 40f), 205f);
+            }
+
+            if (f.IsDanger) _warnText.text = "줄이 끊어지려 한다! 물고기 쪽으로 끌거나 오른쪽 버튼으로 풀어주세요";
             else if (f.Hook < 30f) _warnText.text = "바늘이 빠지려 한다! 줄을 감아 팽팽하게";
             else _warnText.text = "";
 

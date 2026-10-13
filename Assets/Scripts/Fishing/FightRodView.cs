@@ -10,12 +10,14 @@ namespace Fishing.Angling
     /// </summary>
     public class FightRodView : MonoBehaviour
     {
-        const int Segments = 14;
-        const float SegLen = 0.145f;
+        // 1인칭에서는 화면 안에 끝이 들어오도록 조금 짧게 보여 준다
+        const float FirstPersonLength = 0.75f;
 
         Transform _root;
-        readonly Transform[] _segs = new Transform[Segments];
-        Transform _tip;
+        TelescopicRod _rod;
+        string _rodId, _reelId;
+        Transform _leftHand;
+        float _reelTurns, _lineOut;
         LineRenderer _line;
         GameObject _fish;
         Transform _fishBody;
@@ -23,10 +25,6 @@ namespace Fishing.Angling
         Vector3 _origin;
         Vector3 _forward;
         float _nextSplash;
-
-        // 휨: 스프링으로 따라가서 장력이 갑자기 바뀌면 출렁인다
-        float _bend, _bendVel;
-        Vector3 _bendAxis = Vector3.right;
 
         public static FightRodView Create(Camera cam)
         {
@@ -42,41 +40,25 @@ namespace Fishing.Angling
         {
             _root = new GameObject("RodRoot").transform;
             _root.SetParent(transform, false);
-            _root.localPosition = new Vector3(0.28f, -0.42f, 0.55f);
+            _root.localPosition = new Vector3(0.2f, -0.25f, 0.62f); // 릴과 손이 화면 아래쪽에 보이도록
 
-            var rodMat = Mats.Lit(new Color(0.78f, 0.12f, 0.22f), 0.7f);
-            var grip = Mats.Lit(new Color(0.15f, 0.15f, 0.15f), 0.3f);
             var skin = Mats.Lit(new Color(0.98f, 0.82f, 0.7f));
             var glove = Mats.Lit(new Color(0.95f, 0.95f, 0.95f));
 
-            Mats.Prim(PrimitiveType.Cylinder, "Grip", _root, new Vector3(0f, -0.1f, 0f), new Vector3(0.05f, 0.18f, 0.05f), grip, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Reel", _root, new Vector3(0.06f, 0f, 0f), new Vector3(0.11f, 0.03f, 0.11f),
-                Mats.Lit(new Color(0.75f, 0.75f, 0.78f), 0.8f, 0.8f), false, Quaternion.Euler(0f, 0f, 90f));
-            Mats.Prim(PrimitiveType.Sphere, "HandLow", _root, new Vector3(0f, -0.18f, -0.02f), new Vector3(0.11f, 0.12f, 0.11f), glove, false);
-            Mats.Prim(PrimitiveType.Sphere, "HandHigh", _root, new Vector3(-0.02f, 0.05f, -0.03f), new Vector3(0.1f, 0.11f, 0.1f), glove, false);
-            Mats.Prim(PrimitiveType.Capsule, "ArmL", _root, new Vector3(-0.12f, -0.3f, -0.2f), new Vector3(0.09f, 0.16f, 0.09f), skin, false, Quaternion.Euler(50f, 0f, -20f));
-            Mats.Prim(PrimitiveType.Capsule, "ArmR", _root, new Vector3(0.1f, -0.38f, -0.15f), new Vector3(0.09f, 0.16f, 0.09f), skin, false, Quaternion.Euler(40f, 0f, 20f));
+            BuildRod();
+            // 오른손은 릴 시트를 쥐고(릴 다리를 손가락 사이에 끼움), 왼손은 릴 손잡이를 돌린다
+            Mats.Prim(PrimitiveType.Capsule, "HandRight", _root, new Vector3(0f, -0.07f, -0.01f), new Vector3(0.065f, 0.05f, 0.065f), glove, false);
+            Mats.Prim(PrimitiveType.Capsule, "ArmR", _root, new Vector3(0.05f, -0.24f, -0.14f), new Vector3(0.08f, 0.15f, 0.08f), skin, false, Quaternion.Euler(40f, 0f, 20f));
 
-            Transform parent = _root;
-            for (int i = 0; i < Segments; i++)
-            {
-                var seg = new GameObject($"Seg{i}").transform;
-                seg.SetParent(parent, false);
-                seg.localPosition = i == 0 ? Vector3.zero : new Vector3(0f, SegLen, 0f);
-                float thick = Mathf.Lerp(0.03f, 0.007f, i / (float)(Segments - 1));
-                Mats.Prim(PrimitiveType.Cylinder, "Blank", seg, new Vector3(0f, SegLen * 0.5f, 0f), new Vector3(thick, SegLen * 0.5f, thick), rodMat, false);
-                // 마디 사이가 벌어져 보이지 않게 이음매에 작은 구
-                if (i > 0) Mats.Prim(PrimitiveType.Sphere, "Joint", seg, Vector3.zero, Vector3.one * thick, rodMat, false);
-                // 가이드(줄 고리) 몇 개
-                if (i % 3 == 2) Mats.Prim(PrimitiveType.Cylinder, "Guide", seg, new Vector3(0f, SegLen * 0.5f, thick * 0.9f),
-                    new Vector3(thick * 1.6f, 0.002f, thick * 1.6f), Mats.Lit(new Color(0.8f, 0.8f, 0.82f), 0.8f, 0.8f), false,
-                    Quaternion.Euler(90f, 0f, 0f));
-                _segs[i] = seg;
-                parent = seg;
-            }
-            _tip = new GameObject("Tip").transform;
-            _tip.SetParent(_segs[Segments - 1], false);
-            _tip.localPosition = new Vector3(0f, SegLen, 0f);
+            // 밤에도 손과 릴이 보이도록 아주 약한 보조광 (원작 1인칭도 손 주변이 밝다)
+            var fill = new GameObject("HandFill").AddComponent<Light>();
+            fill.transform.SetParent(_root, false);
+            fill.transform.localPosition = new Vector3(-0.15f, 0.25f, -0.25f);
+            fill.type = LightType.Point;
+            fill.range = 1.2f;
+            fill.intensity = 0.9f;
+            fill.color = new Color(1f, 0.95f, 0.85f);
+            fill.shadows = LightShadows.None;
 
             _line = new GameObject("Line").AddComponent<LineRenderer>();
             _line.transform.SetParent(transform, false);
@@ -90,8 +72,37 @@ namespace Fishing.Angling
             _fish.SetActive(false);
         }
 
+        void BuildRod()
+        {
+            var p = Game.Profile;
+            _rodId = p?.Rod.Id;
+            _reelId = p?.Reel.Id;
+            if (_rod == null) _rod = TelescopicRod.Create(_root, p?.Rod, p?.Reel, FirstPersonLength);
+            else _rod.Rebuild(p?.Rod, p?.Reel, FirstPersonLength);
+
+            if (_leftHand != null) Destroy(_leftHand.gameObject);
+            var knob = _rod.HandleKnob;
+            if (knob != null)
+            {
+                _leftHand = Mats.Prim(PrimitiveType.Sphere, "HandLeft", knob, new Vector3(-0.6f, 0f, 0f), new Vector3(3.2f, 2.6f, 3.2f),
+                    Mats.Lit(new Color(0.95f, 0.95f, 0.95f)), false).transform;
+            }
+        }
+
+        /// <summary>릴 회전: 감는 속도(초당 바퀴)와 줄이 풀리는 속도(m/s). FishingController가 매 프레임 넣어 준다.</summary>
+        public void SetReel(float turnsPerSec, float lineOutSpeed)
+        {
+            _reelTurns = turnsPerSec;
+            _lineOut = lineOutSpeed;
+        }
+
+        /// <summary>카운터 같은 순간에 낚싯대를 확 휘게 한다.</summary>
+        public void Kick(float degPerSec) => _rod.Kick(degPerSec);
+
         public void Show(FishFight fight, Vector3 origin, Vector3 forward)
         {
+            var p = Game.Profile;
+            if (p != null && (p.Rod.Id != _rodId || p.Reel.Id != _reelId)) BuildRod();
             _fight = fight;
             _origin = origin;
             _forward = new Vector3(forward.x, 0f, forward.z).normalized;
@@ -116,37 +127,15 @@ namespace Fishing.Angling
         /// </summary>
         void BendRod(FishFight f, Vector3 fishPos)
         {
-            float dt = Mathf.Min(Time.deltaTime, 0.05f);
-            float flex = Game.Profile != null ? Game.Profile.Rod.Flex : 0.6f;
+            float flex = _rod.Look.Flex;
             float maxBend = Mathf.Lerp(50f, 85f, flex);
             float target = Mathf.Pow(Mathf.Clamp01(f.Tension * 1.05f), 0.8f) * maxBend;
             if (f.Tension > 1f) target += (f.Tension - 1f) * 40f;
 
-            const float stiffness = 140f;
-            float damping = 2f * Mathf.Sqrt(stiffness) * 0.32f;
-            _bendVel += ((target - _bend) * stiffness - _bendVel * damping) * dt;
-            _bend += _bendVel * dt;
-
             // 물고기가 날뛰면 초릿대가 떨린다
             float shake = f.Mood == FishMood.Burst ? 1f : f.Mood == FishMood.Run ? 0.5f : 0.15f;
             float jitter = (Mathf.PerlinNoise(Time.time * 11f, 0.3f) - 0.5f) * 2f * shake * (2f + Mathf.Clamp01(f.Tension) * 7f);
-
-            // 낚싯대 기준으로 줄이 당기는 방향 → 그 방향으로 기울어지는 회전축
-            var local = _root.InverseTransformDirection(fishPos - _root.position);
-            var pull = new Vector3(local.x, 0f, local.z);
-            if (pull.sqrMagnitude < 1e-4f) pull = Vector3.forward;
-            var axis = Vector3.Cross(Vector3.up, pull.normalized);
-            _bendAxis = Vector3.Slerp(_bendAxis, axis, 1f - Mathf.Exp(-8f * dt));
-
-            float exponent = Mathf.Lerp(2.4f, 1.3f, flex);
-            float total = 0f;
-            for (int i = 1; i < Segments; i++) total += Mathf.Pow(i / (float)(Segments - 1), exponent);
-            float bend = Mathf.Max(0f, _bend + jitter);
-            for (int i = 1; i < Segments; i++)
-            {
-                float w = Mathf.Pow(i / (float)(Segments - 1), exponent) / total;
-                _segs[i].localRotation = Quaternion.AngleAxis(bend * w, _bendAxis);
-            }
+            _rod.Drive(target, fishPos - _rod.transform.position, jitter, Time.deltaTime);
         }
 
         /// <summary>물고기의 월드 위치. 거리와 좌우 위치(FishX)로 계산한다.</summary>
@@ -167,8 +156,9 @@ namespace Fishing.Angling
             _root.localRotation = Quaternion.Euler(40f + t * 8f, f.RodX * 28f, -f.RodX * 10f);
             var fishPos = FishWorldPos(f);
             BendRod(f, fishPos);
+            _rod.SpinReel(_reelTurns, _lineOut, Time.deltaTime);
 
-            var tipPos = _tip.position;
+            var tipPos = _rod.Tip.position;
             float sag = Mathf.Lerp(0.8f, 0.02f, Mathf.Clamp01(f.Tension * 1.5f));
             for (int i = 0; i < _line.positionCount; i++)
             {

@@ -104,6 +104,7 @@ namespace Fishing.UI
             Game.Fishing.ForceIdle();
             foreach (var p in _panels) p.Close();
             Game.Mode = GameMode.Lobby;
+            Game.Player.CollapseRod();
             Game.CameraRig.SetFixed(Game.Lobby.CameraPos, Game.Lobby.CameraRot);
             Game.Save();
         }
@@ -115,6 +116,7 @@ namespace Fishing.UI
             Game.Channel = channel;
             Game.Mode = GameMode.Field;
             Game.CameraRig.ClearFixed();
+            Game.Player.ExtendRod();
             Game.Toast($"한강 CH.{channel}에 입장했습니다.", ToastKind.Good);
             if (Game.Profile.Data.totalCatches == 0 && !Game.SaveDisabled) OpenExclusive(Help);
         }
