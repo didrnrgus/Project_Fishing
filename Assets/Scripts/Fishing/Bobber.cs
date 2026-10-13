@@ -59,6 +59,34 @@ namespace Fishing.Angling
             _to = new Vector3(pos.x, FieldMap.WaterY, pos.z);
         }
 
+        GameObject _lure;
+        bool _lureLook;
+
+        /// <summary>
+        /// 루어 낚시면 찌 대신 수면 바로 아래의 루어가 보인다 (스푼은 은빛, 에기는 주황, 플라이는 털바늘).
+        /// 게임답게 키운 크기라 멀리서도 반짝인다.
+        /// </summary>
+        public void SetLureLook(bool lure, Fishing.Data.BaitKind kind)
+        {
+            _lureLook = lure;
+            if (_lure != null) { Destroy(_lure); _lure = null; }
+            foreach (Transform child in transform) child.gameObject.SetActive(!lure);
+            if (!lure) return;
+            _lure = new GameObject("Lure");
+            _lure.transform.SetParent(transform, false);
+            var color = kind switch
+            {
+                Fishing.Data.BaitKind.Egi => new Color(1f, 0.5f, 0.15f),
+                Fishing.Data.BaitKind.Fly => new Color(0.95f, 0.85f, 0.55f),
+                _ => new Color(0.9f, 0.9f, 0.95f),
+            };
+            var mat = kind == Fishing.Data.BaitKind.Lure ? Mats.Lit(color, 0.95f, 0.9f) : Mats.Lit(color, 0.5f);
+            Mats.Prim(PrimitiveType.Sphere, "Body", _lure.transform, Vector3.zero, new Vector3(0.06f, 0.025f, 0.16f), mat, false);
+            if (kind == Fishing.Data.BaitKind.Fly)
+                Mats.Prim(PrimitiveType.Sphere, "Hackle", _lure.transform, new Vector3(0f, 0.02f, 0.06f), new Vector3(0.1f, 0.06f, 0.05f), Mats.Lit(new Color(0.5f, 0.35f, 0.2f)), false);
+            Mats.Prim(PrimitiveType.Sphere, "Glint", _lure.transform, new Vector3(0f, 0.015f, 0f), Vector3.one * 0.03f, Mats.Emissive(new Color(1f, 0.95f, 0.8f), 1.2f), false);
+        }
+
         public void Hide()
         {
             _state = State.Hidden;
@@ -118,7 +146,7 @@ namespace Fishing.Angling
                     }
                     _dip = Mathf.Lerp(_dip, _dipTarget, Time.deltaTime * (_sunk ? 14f : 18f));
                     float bob = Mathf.Sin(Time.time * 2.1f) * 0.012f;
-                    transform.position = new Vector3(_to.x, FieldMap.WaterY + bob - _dip, _to.z);
+                    transform.position = new Vector3(_to.x, FieldMap.WaterY + bob - _dip - (_lureLook ? 0.05f : 0f), _to.z);
                     transform.rotation = Quaternion.Euler(Mathf.Sin(Time.time * 1.3f) * 4f, 0f, Mathf.Cos(Time.time * 1.1f) * 4f);
                     break;
             }

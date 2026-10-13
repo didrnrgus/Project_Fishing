@@ -237,6 +237,22 @@ namespace Fishing.Dev
             yield return Shot("16b_options");
             Game.UI.Options.Close();
 
+            // 루어 낚시: 스푼 루어를 던지고 감으면서 저킹 ("액션!")
+            p.AddItem("bait_lure", 10);
+            p.SelectBait("bait_lure");
+            Game.Player.Teleport(new Vector3(25f, 1.1f, -29f), 0f);
+            Game.CameraRig.Yaw = -10f;
+            Game.CameraRig.Pitch = 16f;
+            Game.CameraRig.Distance = 6f;
+            yield return new WaitForSeconds(0.5f);
+            Game.Fishing.DebugCast(16f);
+            yield return new WaitForSeconds(2.2f);
+            Game.Fishing.DebugTwitch();
+            yield return new WaitForSeconds(0.15f);
+            yield return Shot("05c_lure_action");
+            Game.Fishing.ForceIdle();
+            p.SelectBait("bait_worm");
+
             // 낚시 대회: 참가해서 몇 마리 낚은 상태 (HUD 순위표 + 퀘스트 창 대회 탭). 끝나면 시각을 되돌린다
             float clockBefore = Game.Clock.Minutes;
             Game.Clock.Set(1, 12 * 60);

@@ -729,7 +729,8 @@ namespace Fishing.UI
         {
             var f = Game.Fishing;
             bool tips = Game.Profile.Data.showTips;
-            bool waiting = f.State == FishingState.Waiting || f.State == FishingState.Bite;
+            // 루어 대기 중에는 찌가 없으니 찌 게이지도 없다 (입질이 오면 나온다)
+            bool waiting = (f.State == FishingState.Waiting && !f.LureMode && !f.Trolling) || f.State == FishingState.Bite;
             _hookGauge.gameObject.SetActive(waiting);
             _shakeTip.gameObject.SetActive(f.State == FishingState.Bite && tips);
             if (waiting)
@@ -792,14 +793,41 @@ namespace Fishing.UI
             }
         }
 
+        TMP_Text _actionPopup;
+
+        /// <summary>루어 저킹 "액션!" (루어 위에 잠깐).</summary>
+        void UpdateActionPopup()
+        {
+            if (_actionPopup == null)
+            {
+                _actionPopup = UIFactory.Text(_root, "액션!", 34, new Color(0.45f, 1f, 0.85f), TextAnchor.MiddleCenter, FontStyle.Bold);
+                _actionPopup.rectTransform.At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(240, 50));
+            }
+            var f = Game.Fishing;
+            float age = Time.time - f.LastTwitchAt;
+            bool show = f.LureMode && age < 0.7f;
+            _actionPopup.gameObject.SetActive(show);
+            if (!show) return;
+            var cam = Game.CameraRig.Cam;
+            var sp = cam.WorldToScreenPoint(f.BobberPosition + Vector3.up * (1.2f + age * 1.5f));
+            if (sp.z < 0f) { _actionPopup.gameObject.SetActive(false); return; }
+            var canvas = (RectTransform)_root.parent;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(canvas, sp, null, out var local);
+            _actionPopup.rectTransform.anchoredPosition = local;
+            _actionPopup.color = new Color(0.45f, 1f, 0.85f, 1f - age / 0.7f);
+        }
+
         void UpdateTips()
         {
+            UpdateActionPopup();
             var f = Game.Fishing;
             bool tips = Game.Profile.Data.showTips;
             // 안내문 (원작 문구)
             string tip = f.State switch
             {
                 FishingState.Charging => "왼쪽 버튼을 누르고 당긴 다음 빠르게 밀면서 버튼을 놓으면 캐스팅 됩니다.",
+                FishingState.Waiting when f.Trolling => "트롤링 중: 천천히 몰면 줄이 배 뒤로 끌려간다. 입질이 오면 배가 서고, 좌우로 흔들어 챔질!",
+                FishingState.Waiting when f.LureMode => "루어: 왼쪽 버튼을 꾹 눌러 감고, 감으면서 마우스를 위로 툭 치면 액션! 가만히 두면 잘 안 문다. 입질이 오면 좌우로 흔들어 챔질",
                 FishingState.Waiting => "왼쪽 버튼을 누른 상태로 좌우로 흔들어 챔질하세요. 찌가 깔짝이는 건 예신이니 조심!",
                 FishingState.Bite => "왼쪽 버튼을 누른 상태로 좌우로 흔들어 챔질하세요. 물에 완전히 잠겼을 때 흔들면 퍼펙트",
                 FishingState.Idle => "왼쪽 버튼을 누르고 당긴 다음 빠르게 밀면서 버튼을 놓으면 캐스팅 됩니다.",

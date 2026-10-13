@@ -37,6 +37,10 @@ namespace Fishing.Angling
                 case "rod_heavy":
                     return new Style { Blank = new Color(0.1f, 0.15f, 0.36f), Ferrule = new Color(0.82f, 0.84f, 0.88f), Grip = new Color(0.12f, 0.12f, 0.12f),
                         Length = 3.6f, Sections = 4, ButtDiameter = 0.044f, TipDiameter = 0.01f, Flex = rod.Flex };
+                case "rod_fly":
+                    // 플라이대: 올리브색 블랭크, 코르크 손잡이, 세 마디
+                    return new Style { Blank = new Color(0.28f, 0.34f, 0.2f), Ferrule = new Color(0.75f, 0.62f, 0.3f), Grip = new Color(0.72f, 0.56f, 0.36f),
+                        Length = 2.7f, Sections = 3, ButtDiameter = 0.026f, TipDiameter = 0.004f, Flex = rod.Flex };
                 case "rod_gege":
                     // 대회 보상: 거거(대왕조개) 껍데기처럼 진줏빛 흰 몸통에 금색 링
                     return new Style { Blank = new Color(0.9f, 0.88f, 0.82f), Ferrule = new Color(0.92f, 0.72f, 0.3f), Grip = new Color(0.32f, 0.2f, 0.12f),
