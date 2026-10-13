@@ -91,7 +91,7 @@ namespace Fishing.UI
             if (lv > 0) greet += $"\n그 낚싯대, +{lv}까지 올렸네? 손맛이 다르지.";
             Show(greet,
                 ("물건 사고팔기", () => { Close(); Game.UI.OpenExclusive(Game.UI.Shop); }),
-                ("낚싯대 강화", () => { Close(); Game.UI.OpenExclusive(Game.UI.Upgrade); }),
+                ("장비 강화 (낚싯대·릴)", () => { Close(); Game.UI.OpenExclusive(Game.UI.Upgrade); }),
                 ("오늘 조황 묻기", () => Show(Report(), ("다른 이야기", ShopGreeting), Bye)),
                 Bye);
         }

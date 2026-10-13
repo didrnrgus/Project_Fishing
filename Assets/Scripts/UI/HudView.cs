@@ -233,6 +233,7 @@ namespace Fishing.UI
                 ("L", "퀘스트", () => Game.UI.OpenExclusive(Game.UI.Quest)),
                 ("P", "도감", () => Game.UI.OpenExclusive(Game.UI.Dex)),
                 ("Z", "살림망", () => Game.UI.OpenExclusive(Game.UI.KeepNet)),
+                ("I", "가방", () => Game.UI.OpenExclusive(Game.UI.Inventory)),
                 ("F12", "상점", () => Game.UI.OpenShop()),
                 ("U", "설명", () => Game.UI.ToggleTips()),
                 ("F1", "도움말", () => Game.UI.OpenExclusive(Game.UI.Help)),
@@ -311,15 +312,28 @@ namespace Fishing.UI
         /// <summary>지금 낚시터의 미끼 (최대 6개).</summary>
         public static List<BaitDef> MapBaits()
         {
-            var list = new List<BaitDef>();
+            // 쓸 수 있는 해체 미끼 중 가장 좋은 것 하나를 마지막 칸에
+            BaitDef cut = null;
             foreach (var b in GearDatabase.Baits)
-                if (b.SoldIn(FieldMap.Id) && list.Count < 6) list.Add(b);
+                if (b.NotSold && Game.Profile.Count(b.Id) > 0 && b.Level <= Game.Profile.Data.level && (cut == null || b.Potency > cut.Potency)) cut = b;
+            var list = new List<BaitDef>();
+            int sold = cut != null ? 5 : 6;
+            foreach (var b in GearDatabase.Baits)
+                if (!b.NotSold && b.SoldIn(FieldMap.Id) && list.Count < sold) list.Add(b);
+            if (cut != null) list.Add(cut);
             return list;
+        }
+
+        static string BaitKey()
+        {
+            var sb = new System.Text.StringBuilder(FieldMap.Id);
+            foreach (var b in MapBaits()) sb.Append('|').Append(b.Id);
+            return sb.ToString();
         }
 
         void BuildBaitSlots()
         {
-            _baitsBuiltFor = FieldMap.Id;
+            _baitsBuiltFor = BaitKey();
             foreach (var go in _baitSlotObjects) Object.Destroy(go);
             _baitSlotObjects.Clear();
             _baitSlots.Clear();
@@ -501,7 +515,7 @@ namespace Fishing.UI
                 : Game.Quests.Ready ? $"<color=#70e070>목표 달성! {FieldMap.UnionContact}에게 보고</color>"
                 : $"{quest.GoalText}  {Mathf.Min(Game.Quests.Progress, quest.Count)} / {quest.Count}";
 
-            if (_baitsBuiltFor != FieldMap.Id) BuildBaitSlots();
+            if (Time.frameCount % 20 == 0 && _baitsBuiltFor != BaitKey()) BuildBaitSlots();
             for (int i = 0; i < _baitSlots.Count; i++)
             {
                 var (bg, label, bait) = _baitSlots[i];

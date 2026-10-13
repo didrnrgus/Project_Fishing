@@ -2,44 +2,69 @@ using UnityEngine;
 
 namespace Fishing.Data
 {
-    public enum UpgradeResult { Success, Fail, Downgrade, Max, NoGold }
+    public enum UpgradeResult { Success, Fail, Downgrade, Max, NoGold, NoMaterial }
 
     /// <summary>
-    /// 낚싯대 강화 규칙 (+1 ~ +10). 낚시점 김사장에게 골드를 내고 장착한 낚싯대를 강화한다.
-    ///  - 단계마다 힘 +6%, 비거리 +0.6m
-    ///  - 성공률: +1 100% → +10 20%
-    ///  - +5 이상에서 실패하면 한 단계 떨어진다 (그 아래는 골드만 잃는다)
+    /// 장비 강화 규칙 (낚싯대·릴, +1 ~ +15). 원작 개발실장 인터뷰 기준:
+    ///  - 낚싯대와 릴을 강화한다. 재료는 낚시로 얻고(해체해서 나온 "반짝이는 비늘"), 낚시점 주인에게 맡긴다
+    ///  - 최대 15강. 실패해도 장비는 깨지지 않고, 아주 낮은 확률로만 한 단계 떨어진다 (+7 이상에서 10%)
+    ///  - 별모래를 쓰면 성공 확률이 오른다 (원작에선 캐시 아이템)
+    /// 단계별 성능: 낚싯대 힘 +5%·비거리 +0.4m, 릴 감기 속도 +4%·권사량 +5m.
     /// </summary>
     public static class RodUpgrade
     {
-        public const int MaxLevel = 10;
-        const float PowerPerLevel = 0.06f;
-        const float RangePerLevel = 0.6f;
-        public const int DowngradeFrom = 5;
+        public const int MaxLevel = 15;
+        public const int DowngradeFrom = 7;
+        public const float DowngradeChance = 0.1f;
+        public const float StarSandBonus = 0.15f;
+        public const string ScaleId = "mat_scale";
+        public const string StarSandId = "mat_starsand";
 
-        static readonly float[] Rates = { 1f, 0.95f, 0.9f, 0.8f, 0.7f, 0.6f, 0.5f, 0.4f, 0.3f, 0.2f };
+        static readonly float[] Rates = { 1f, 0.95f, 0.9f, 0.85f, 0.8f, 0.7f, 0.62f, 0.55f, 0.48f, 0.42f, 0.36f, 0.3f, 0.25f, 0.2f, 0.15f };
 
-        /// <summary>현재 단계에서 다음 단계로 올라갈 확률.</summary>
-        public static float SuccessRate(int level) => level >= MaxLevel ? 0f : Rates[Mathf.Clamp(level, 0, Rates.Length - 1)];
-
-        public static int Cost(GearDef rod, int level)
+        /// <summary>현재 단계에서 다음 단계로 올라갈 확률 (별모래 포함).</summary>
+        public static float SuccessRate(int level, bool starSand = false)
         {
-            float c = (200f + rod.Price * 0.08f) * Mathf.Pow(level + 1, 1.5f);
+            if (level >= MaxLevel) return 0f;
+            float r = Rates[Mathf.Clamp(level, 0, Rates.Length - 1)];
+            return starSand ? Mathf.Min(0.95f, r + StarSandBonus) : r;
+        }
+
+        public static int Cost(GearDef gear, int level)
+        {
+            float c = (150f + gear.Price * 0.05f) * Mathf.Pow(level + 1, 1.5f);
             return Mathf.RoundToInt(c / 10f) * 10;
         }
 
-        public static bool FailDowngrades(int level) => level >= DowngradeFrom;
+        /// <summary>필요한 반짝이는 비늘 수.</summary>
+        public static int Scales(int level) => 1 + level / 2;
 
-        /// <summary>강화 단계를 반영한 낚싯대 성능 (원본은 건드리지 않는다).</summary>
-        public static GearDef Apply(GearDef rod, int level)
+        public static bool CanDowngrade(int level) => level >= DowngradeFrom;
+
+        /// <summary>강화 단계를 반영한 성능 (원본은 건드리지 않는다).</summary>
+        public static GearDef Apply(GearDef gear, int level)
         {
-            if (rod == null || level <= 0) return rod;
-            return new GearDef
+            if (gear == null || level <= 0) return gear;
+            var g = new GearDef
             {
-                Id = rod.Id, Name = $"{rod.Name} +{level}", Slot = rod.Slot, Price = rod.Price, Level = rod.Level, Desc = rod.Desc,
-                Power = rod.Power * (1f + PowerPerLevel * level), Flex = rod.Flex, CastRange = rod.CastRange + RangePerLevel * level,
-                ReelSpeed = rod.ReelSpeed, Capacity = rod.Capacity, Strength = rod.Strength,
+                Id = gear.Id, Name = $"{gear.Name} +{level}", Slot = gear.Slot, Price = gear.Price, Level = gear.Level, Desc = gear.Desc,
+                Power = gear.Power, Flex = gear.Flex, CastRange = gear.CastRange,
+                ReelSpeed = gear.ReelSpeed, Capacity = gear.Capacity, Strength = gear.Strength,
+                BoatSpeed = gear.BoatSpeed, FuelCapacity = gear.FuelCapacity, FuelPerKm = gear.FuelPerKm,
             };
+            if (gear.Slot == GearSlot.Rod)
+            {
+                g.Power = gear.Power * (1f + 0.05f * level);
+                g.CastRange = gear.CastRange + 0.4f * level;
+            }
+            else if (gear.Slot == GearSlot.Reel)
+            {
+                g.ReelSpeed = gear.ReelSpeed * (1f + 0.04f * level);
+                g.Capacity = gear.Capacity + 5f * level;
+            }
+            return g;
         }
+
+        public static bool Upgradable(GearSlot slot) => slot == GearSlot.Rod || slot == GearSlot.Reel;
     }
 }

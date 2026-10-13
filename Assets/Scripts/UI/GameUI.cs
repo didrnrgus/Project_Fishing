@@ -22,6 +22,7 @@ namespace Fishing.UI
         public AreaMapPanel AreaMap { get; private set; }
         public DialogPanel Dialog { get; private set; }
         public UpgradePanel Upgrade { get; private set; }
+        public InventoryPanel Inventory { get; private set; }
         /// <summary>F로 말을 걸 수 있는 가장 가까운 NPC.</summary>
         public Fishing.Characters.NpcAngler NearbyNpc { get; private set; }
 
@@ -66,7 +67,8 @@ namespace Fishing.UI
             AreaMap = new AreaMapPanel(canvas);
             Dialog = new DialogPanel(canvas);
             Upgrade = new UpgradePanel(canvas);
-            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, Upgrade };
+            Inventory = new InventoryPanel(canvas);
+            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, Upgrade, Inventory };
             LobbyHud.Root.transform.SetAsFirstSibling();
         }
 
@@ -203,6 +205,7 @@ namespace Fishing.UI
                 if (Input.GetKeyDown(KeyCode.L)) OpenExclusive(Quest);
                 if (Input.GetKeyDown(KeyCode.P)) OpenExclusive(Dex);
                 if (Input.GetKeyDown(KeyCode.Z)) OpenExclusive(KeepNet);
+                if (Input.GetKeyDown(KeyCode.I)) OpenExclusive(Inventory);
                 if (Input.GetKeyDown(KeyCode.F1)) OpenExclusive(Help);
                 return;
             }
@@ -214,6 +217,7 @@ namespace Fishing.UI
             // 원작 단축키: 퀘스트 L, 도감 P, 살림망 Z, 상점 F12, 지역 지도 M
             if (Input.GetKeyDown(KeyCode.F1)) OpenExclusive(Help);
             if (Input.GetKeyDown(KeyCode.M)) OpenExclusive(AreaMap);
+            if (Input.GetKeyDown(KeyCode.I)) OpenExclusive(Inventory);
             if (Input.GetKeyDown(KeyCode.F) && NearbyNpc != null && idle && !BlockingPanelOpen) TalkTo(NearbyNpc);
             if (Input.GetKeyDown(KeyCode.B) && !BlockingPanelOpen) Game.Boat.Toggle();
             if (Input.GetKeyDown(KeyCode.P)) OpenExclusive(Dex);

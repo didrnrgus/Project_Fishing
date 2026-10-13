@@ -23,50 +23,89 @@ namespace Fishing.Core
         public PlayerProfile(SaveData data) { Data = data ?? new SaveData(); }
 
         /// <summary>장착한 낚싯대 (강화 단계가 반영된 성능).</summary>
-        public GearDef Rod
+        public GearDef Rod => Upgraded(GearDatabase.GetGear(Data.rodId) ?? GearDatabase.GetGear("rod_basic"), ref _rodCache, ref _rodCacheLv);
+        /// <summary>장착한 릴 (강화 단계가 반영된 성능).</summary>
+        public GearDef Reel => Upgraded(GearDatabase.GetGear(Data.reelId) ?? GearDatabase.GetGear("reel_basic"), ref _reelCache, ref _reelCacheLv);
+        GearDef _rodCache, _reelCache;
+        int _rodCacheLv = -1, _reelCacheLv = -1;
+
+        GearDef Upgraded(GearDef baseGear, ref GearDef cache, ref int cacheLv)
         {
-            get
+            int lv = GearLevel(baseGear.Id);
+            if (cache == null || cache.Id != baseGear.Id || cacheLv != lv)
             {
-                var baseRod = GearDatabase.GetGear(Data.rodId) ?? GearDatabase.GetGear("rod_basic");
-                int lv = RodLevel(baseRod.Id);
-                if (_rodCache == null || _rodCacheId != baseRod.Id || _rodCacheLevel != lv)
-                {
-                    _rodCache = RodUpgrade.Apply(baseRod, lv);
-                    _rodCacheId = baseRod.Id;
-                    _rodCacheLevel = lv;
-                }
-                return _rodCache;
+                cache = RodUpgrade.Apply(baseGear, lv);
+                cacheLv = lv;
             }
+            return cache;
         }
-        GearDef _rodCache;
-        string _rodCacheId;
-        int _rodCacheLevel = -1;
 
-        public int RodLevel(string rodId) => Data.rodLevels.FirstOrDefault(r => r.id == rodId)?.count ?? 0;
+        /// <summary>장비 강화 단계 (+0 ~ +15). 장비마다 따로 저장된다.</summary>
+        public int GearLevel(string gearId) => Data.rodLevels.FirstOrDefault(r => r.id == gearId)?.count ?? 0;
+        public int RodLevel(string rodId) => GearLevel(rodId);
 
-        void SetRodLevel(string rodId, int level)
+        void SetGearLevel(string gearId, int level)
         {
-            var e = Data.rodLevels.FirstOrDefault(r => r.id == rodId);
-            if (e == null) Data.rodLevels.Add(e = new ItemStack { id = rodId });
+            var e = Data.rodLevels.FirstOrDefault(r => r.id == gearId);
+            if (e == null) Data.rodLevels.Add(e = new ItemStack { id = gearId });
             e.count = Mathf.Clamp(level, 0, RodUpgrade.MaxLevel);
         }
 
-        /// <summary>장착한 낚싯대를 한 번 강화한다 (골드 소모, 확률 성공).</summary>
-        public UpgradeResult TryUpgradeRod()
+        public GearDef EquippedBase(GearSlot slot) => GearDatabase.GetGear(slot == GearSlot.Reel ? Data.reelId : Data.rodId);
+
+        /// <summary>장착한 낚싯대나 릴을 한 번 강화한다 (골드·비늘 소모, 별모래는 선택).</summary>
+        public UpgradeResult TryUpgrade(GearSlot slot, bool useStarSand)
         {
-            var rod = GearDatabase.GetGear(Data.rodId);
-            int lv = RodLevel(rod.Id);
+            var gear = EquippedBase(slot);
+            int lv = GearLevel(gear.Id);
             if (lv >= RodUpgrade.MaxLevel) return UpgradeResult.Max;
-            int cost = RodUpgrade.Cost(rod, lv);
-            if (!TrySpend(cost)) return UpgradeResult.NoGold;
+            int cost = RodUpgrade.Cost(gear, lv);
+            int scales = RodUpgrade.Scales(lv);
+            if (Data.gold < cost) return UpgradeResult.NoGold;
+            if (Count(RodUpgrade.ScaleId) < scales) return UpgradeResult.NoMaterial;
+            bool star = useStarSand && Count(RodUpgrade.StarSandId) > 0;
+            TrySpend(cost);
+            ConsumeItem(RodUpgrade.ScaleId, scales);
+            if (star) ConsumeItem(RodUpgrade.StarSandId);
             UpgradeResult result;
-            if (UnityEngine.Random.value < RodUpgrade.SuccessRate(lv)) { SetRodLevel(rod.Id, lv + 1); result = UpgradeResult.Success; }
-            else if (RodUpgrade.FailDowngrades(lv)) { SetRodLevel(rod.Id, lv - 1); result = UpgradeResult.Downgrade; }
+            if (UnityEngine.Random.value < RodUpgrade.SuccessRate(lv, star)) { SetGearLevel(gear.Id, lv + 1); result = UpgradeResult.Success; }
+            else if (RodUpgrade.CanDowngrade(lv) && UnityEngine.Random.value < RodUpgrade.DowngradeChance) { SetGearLevel(gear.Id, lv - 1); result = UpgradeResult.Downgrade; }
             else result = UpgradeResult.Fail;
             NotifyChanged();
             return result;
         }
-        public GearDef Reel => GearDatabase.GetGear(Data.reelId) ?? GearDatabase.GetGear("reel_basic");
+
+        /// <summary>개발용: 낚싯대를 확실히 강화 (재료 무시).</summary>
+        public void DebugUpgrade(GearSlot slot, int levels)
+        {
+            var gear = EquippedBase(slot);
+            SetGearLevel(gear.Id, GearLevel(gear.Id) + levels);
+            NotifyChanged();
+        }
+
+        /// <summary>
+        /// 살림망의 고기를 해체한다 (20cm 이상). 등급에 맞는 해체 미끼, 반짝이는 비늘, 가끔 별모래.
+        /// 돌려주는 값: 결과 문장.
+        /// </summary>
+        public string Dissect(int index)
+        {
+            if (index < 0 || index >= Data.keepNet.Count) return null;
+            var fish = Data.keepNet[index];
+            var s = FishDatabase.Get(fish.speciesId);
+            if (s == null || s.IsJunk) return null;
+            Data.keepNet.RemoveAt(index);
+            var bait = GearDatabase.CutBaitFor(s.Rarity);
+            int baits = 2 + Mathf.FloorToInt(fish.length / 20f);
+            int scales = Mathf.Max(1, Mathf.RoundToInt((1 + fish.length / 15f) * (1f + s.Rarity * 0.3f)));
+            float starChance = 0.03f * s.Rarity + (s.IsTrophy(fish.length) ? 0.15f : 0f);
+            bool star = UnityEngine.Random.value < starChance;
+            AddItem(bait.Id, baits);
+            AddItem(RodUpgrade.ScaleId, scales);
+            if (star) AddItem(RodUpgrade.StarSandId, 1);
+            NotifyChanged();
+            return $"{s.Name} 해체: {bait.Name} {baits}개, 반짝이는 비늘 {scales}개" + (star ? ", <color=#ffd060>별모래 1개!</color>" : "");
+        }
+
         public GearDef Line => GearDatabase.GetGear(Data.lineId) ?? GearDatabase.GetGear("line_nylon");
         public GearDef Boat => string.IsNullOrEmpty(Data.boatId) ? null : GearDatabase.GetGear(Data.boatId);
         public BaitDef Bait => GearDatabase.GetBait(Data.baitId) ?? GearDatabase.Baits[0];
@@ -151,7 +190,17 @@ namespace Fishing.Core
             NotifyChanged();
         }
 
-        public void SelectBait(string baitId) { Data.baitId = baitId; NotifyChanged(); }
+        public void SelectBait(string baitId)
+        {
+            var b = GearDatabase.GetBait(baitId);
+            if (b != null && b.Level > Data.level)
+            {
+                Game.Toast($"{b.Name}은(는) Lv.{b.Level}부터 쓸 수 있습니다.", ToastKind.Warn);
+                return;
+            }
+            Data.baitId = baitId;
+            NotifyChanged();
+        }
 
         // ---- 살림망 / 도감 ----
         public bool KeepNetFull => Data.keepNet.Count >= KeepNetSize;

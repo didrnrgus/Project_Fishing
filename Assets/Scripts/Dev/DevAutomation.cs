@@ -209,11 +209,21 @@ namespace Fishing.Dev
             yield return new WaitForSeconds(0.8f);
             yield return Shot("20_npc_dialog");
             p.Data.gold += 50000;
-            for (int i = 0; i < 4; i++) p.TryUpgradeRod();
+            p.AddItem(RodUpgrade.ScaleId, 30);
+            p.AddItem(RodUpgrade.StarSandId, 2);
+            for (int i = 0; i < 4; i++) p.TryUpgrade(GearSlot.Rod, false);
             Game.UI.OpenExclusive(Game.UI.Upgrade);
             yield return new WaitForSeconds(0.3f);
             yield return Shot("21_rod_upgrade");
             Game.UI.Upgrade.Close();
+            Game.UI.OpenExclusive(Game.UI.KeepNet);
+            yield return new WaitForSeconds(0.2f);
+            Game.Toast(p.Dissect(0) ?? "", ToastKind.Good);
+            yield return new WaitForSeconds(0.2f);
+            Game.UI.OpenExclusive(Game.UI.Inventory);
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("21b_inventory");
+            Game.UI.Inventory.Close();
 
             // 지역 지도(M): 어군 하나는 3마리를 낚아 작은 어군으로 만든다
             var shrink = Game.Schools.Schools[1];

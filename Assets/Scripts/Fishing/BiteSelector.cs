@@ -14,6 +14,8 @@ namespace Fishing.Angling
         public FishSchool School;
         /// <summary>지금 낚시터 (null이면 모든 어종, 밸런스 시뮬레이션용).</summary>
         public string MapId;
+        /// <summary>미끼 효과 배율 (해체 미끼가 높다). 0이면 1로 본다.</summary>
+        public float BaitPotency;
     }
 
     public struct BiteResult
@@ -36,7 +38,7 @@ namespace Fishing.Angling
             // 대물 퀘스트 고기는 그 어군 안에서만 문다
             if (s.SchoolOnly && (ctx.School == null || !ctx.School.Contains(s.Id))) return 0f;
             w *= Contains(s.Habitats, ctx.Habitat) ? 1f : 0.12f;
-            w *= Contains(s.Baits, ctx.Bait) ? 1f : 0.15f;
+            w *= Contains(s.Baits, ctx.Bait) ? Mathf.Max(1f, ctx.BaitPotency) : 0.15f;
             w *= Contains(s.Times, ctx.Band) ? 1f : 0.3f;
             w *= Contains(s.Weathers, ctx.Weather) ? 1.3f : 1f;
             if (ctx.School != null && ctx.School.Contains(s.Id)) w *= ctx.School.BiteBoost;
@@ -70,6 +72,8 @@ namespace Fishing.Angling
         {
             if (s.MinLen >= s.MaxLen) return s.MinLen;
             float skew = ctx.School != null && ctx.School.Contains(s.Id) ? ctx.School.LengthSkew : 2.2f;
+            // 좋은 미끼(해체 미끼)는 큰 고기가 잘 문다
+            if (ctx.BaitPotency > 1f && Contains(s.Baits, ctx.Bait)) skew = Mathf.Max(1.2f, skew - (ctx.BaitPotency - 1f) * 0.8f);
             float t = Mathf.Pow(Random.value, skew);
             return Mathf.Round(Mathf.Lerp(s.MinLen, s.MaxLen, t) * 10f) / 10f;
         }
