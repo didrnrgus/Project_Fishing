@@ -1,5 +1,6 @@
 using Fishing.Angling;
 using Fishing.Audio;
+using Fishing.Data;
 using Fishing.Dev;
 using Fishing.PlayerSystems;
 using Fishing.UI;
@@ -39,16 +40,19 @@ namespace Fishing.Core
             Game.Clock.Set(data.clockDay, data.clockMinutes);
             Game.Weather = gameObject.AddComponent<WeatherSystem>();
 
-            var world = new WorldBuilder();
-            world.Build();
-            gameObject.AddComponent<DayNightCycle>().Init(world.Lamps, world.LampBulbs);
+            Game.DayNight = gameObject.AddComponent<DayNightCycle>();
+            Game.DayNight.Init(new System.Collections.Generic.List<Light>(), new System.Collections.Generic.List<Renderer>());
             Game.Schools = gameObject.AddComponent<FishSchoolManager>();
+            // 마지막으로 있던 낚시터 (입장 레벨이 안 되면 한강)
+            var startMap = Maps.Get(data.mapId);
+            if (data.level < FishingAreas.EntryLevel(startMap.Id)) startMap = Maps.HanRiver;
+            MapLoader.Load(startMap, false);
 
             var playerGo = new GameObject("Player");
             Game.Player = playerGo.AddComponent<PlayerController>();
             Game.Boat = gameObject.AddComponent<BoatController>();
             var spawn = new Vector3(data.posX, data.posY, data.posZ);
-            if (!HanRiverMap.IsWalkable(spawn)) spawn = HanRiverMap.Spawn;
+            if (!FieldMap.IsWalkable(spawn)) spawn = FieldMap.Spawn;
             Game.Player.Teleport(spawn, data.yaw);
 
             Game.CameraRig = new GameObject("MainCamera").AddComponent<CameraRig>();
@@ -64,6 +68,15 @@ namespace Fishing.Core
             {
                 Game.Toast($"레벨 업! Lv.{level}  체력이 회복되었습니다.", ToastKind.Great);
                 Game.Sound.LevelUp();
+                // 원작: 배는 레벨 5에서 얻는다. 조합이 고무보트를 지급하고 홍현 앞바다가 열린다
+                if (level >= 5 && !Game.Profile.Owns("boat_rubber"))
+                {
+                    Game.Profile.Data.ownedGear.Add("boat_rubber");
+                    if (string.IsNullOrEmpty(Game.Profile.Data.boatId)) Game.Profile.Equip(GearDatabase.GetGear("boat_rubber"));
+                    Game.Toast("한국 낚시 조합이 고무보트를 지급했습니다! 물가에서 B로 꺼내 타세요.", ToastKind.Great);
+                }
+                if (level == FishingAreas.EntryLevel("honghyeon"))
+                    Game.Toast("새 낚시터가 열렸습니다: 홍현 앞바다 (남해). 대기실 [낚시터 선택하기]에서 입장하세요.", ToastKind.Great);
             };
 
             if (devArgs.Enabled) gameObject.AddComponent<DevAutomation>().Init(devArgs);

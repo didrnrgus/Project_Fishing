@@ -29,11 +29,11 @@ namespace Fishing.UI
                 Cell(rows.Next(30), $"보상: {q.RewardText}", 4, 700, 20, UIFactory.Gold);
                 if (quests.Ready)
                 {
-                    // 대기실(조합)에서는 바로, 필드에서는 박주임과 대화 중일 때 보고할 수 있다
+                    // 대기실(조합)에서는 바로, 필드에서는 조합 연락관과 대화 중일 때 보고할 수 있다
                     bool canReport = Game.Mode == GameMode.Lobby || (Game.UI.Dialog.Npc != null && Game.UI.Dialog.Npc.NpcId == "union");
                     var row = rows.Next(52, 8);
                     if (canReport) RowButton(row, "목표 달성! 보고하고 보상 받기", () => { quests.Claim(); Refresh(); }, 4, 420, new Color(0.2f, 0.5f, 0.3f), true, 20);
-                    else Cell(row, "목표 달성! 데크 입구의 조합 연락관 박주임이나 한국 낚시 조합(대기실)에서 보고하세요.", 4, 700, 17, UIFactory.Good);
+                    else Cell(row, $"목표 달성! {Fishing.World.FieldMap.UnionContact}이나 한국 낚시 조합(대기실)에서 보고하세요.", 4, 700, 17, UIFactory.Good);
                 }
             }
             else

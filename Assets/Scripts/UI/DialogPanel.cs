@@ -12,7 +12,7 @@ namespace Fishing.UI
     /// <summary>
     /// NPC 대화창. 가까이 가서 F로 말을 건다.
     ///  - shop (낚시점 김사장): 물건 사고팔기, 낚싯대 강화, 오늘 조황
-    ///  - union (조합 연락관 박주임): 퀘스트 확인, 목표를 채웠으면 보고하고 보상 받기
+    ///  - union (조합 연락관: 한강 박주임, 홍현 정계장): 퀘스트 확인, 목표를 채웠으면 보고하고 보상 받기
     ///  - angler (둔치·뗏목 낚시꾼): 실제 어군 위치를 알려 주는 조황 정보, 한마디
     /// </summary>
     public class DialogPanel : UIPanel
@@ -85,7 +85,7 @@ namespace Fishing.UI
             {
                 TimeBand.Dawn => "새벽부터 나왔구먼! 물안개 낄 때가 붕어 입질이 제일 좋지.",
                 TimeBand.Night => "이 밤에도 낚시를? 메기랑 장어는 밤에 잘 무니까 지렁이 넉넉히 챙겨 가.",
-                _ => "어서 와요, 반포 낚시점이요. 미끼, 장비, 수리, 다 돼."
+                _ => $"어서 와요, {Fishing.World.FieldMap.ShopName}이요. 미끼, 장비, 수리, 다 돼."
             };
             if (Game.Weather.Current == Weather.Rain) greet += "\n비 오는 날엔 붕어가 얕은 데로 붙는다고.";
             if (lv > 0) greet += $"\n그 낚싯대, +{lv}까지 올렸네? 손맛이 다르지.";
@@ -96,7 +96,7 @@ namespace Fishing.UI
                 Bye);
         }
 
-        // ---------------- 박주임 (조합) ----------------
+        // ---------------- 조합 연락관 ----------------
 
         void UnionGreeting()
         {
@@ -113,7 +113,7 @@ namespace Fishing.UI
                     ("보고하고 보상 받기", Claim), Bye);
                 return;
             }
-            Show($"한국 낚시 조합 연락관 박주임입니다.\n지금 맡으신 일은 [{q.Title}] — {q.GoalText} ({Mathf.Min(quests.Progress, q.Count)}/{q.Count}).\n\"{q.Desc}\"",
+            Show($"한국 낚시 조합 {Npc.Look.Name}입니다.\n지금 맡으신 일은 [{q.Title}] — {q.GoalText} ({Mathf.Min(quests.Progress, q.Count)}/{q.Count}).\n\"{q.Desc}\"",
                 ("퀘스트 자세히 보기", OpenQuest),
                 ("조황 정보", () => Show(Report(), ("다른 이야기", UnionGreeting), Bye)),
                 Bye);
@@ -163,7 +163,7 @@ namespace Fishing.UI
                 bool active = Array.IndexOf(s.PreferredTimes, band) >= 0;
                 var lead = FishDatabase.Get(s.SpeciesIds[0]);
                 string bait = lead != null && lead.Baits.Length > 0 ? Names.Of(lead.Baits[0]) : "지렁이";
-                string cell = HanRiverMap.CellName(s.Col, s.Row);
+                string cell = FieldMap.CellName(s.Col, s.Row);
                 if (active)
                     lines.Add($"· {s.Name}가 {cell} 쪽에 {(s.Big ? "크게" : "조금")} 모여 있어. {bait}가 잘 먹혀.");
             }

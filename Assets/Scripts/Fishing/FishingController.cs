@@ -200,8 +200,8 @@ namespace Fishing.Angling
 
                 CastDistance = Mathf.Lerp(4f, rod.CastRange, CastPower);
                 _castTarget = Game.Player.transform.position + _castDir * CastDistance;
-                _castTarget.y = HanRiverMap.WaterY + 0.01f;
-                if (!HanRiverMap.IsWater(_castTarget))
+                _castTarget.y = FieldMap.WaterY + 0.01f;
+                if (!FieldMap.IsWater(_castTarget))
                 {
                     Game.Toast(CastPower < 0.05f
                         ? "왼쪽 버튼을 누르고 당긴 다음, 빠르게 밀면서 놓으세요."
@@ -230,8 +230,8 @@ namespace Fishing.Angling
         {
             var origin = Game.Player.transform.position;
             var target = origin + _castDir * distance;
-            target.y = HanRiverMap.WaterY + 0.03f;
-            CastTargetIsWater = HanRiverMap.IsWater(target);
+            target.y = FieldMap.WaterY + 0.03f;
+            CastTargetIsWater = FieldMap.IsWater(target);
 
             _marker.transform.position = target;
             _markerRenderer.material.color = CastTargetIsWater ? new Color(0.3f, 1f, 0.9f, 0.45f) : new Color(1f, 0.3f, 0.3f, 0.45f);
@@ -239,7 +239,7 @@ namespace Fishing.Angling
 
             var right = Vector3.Cross(Vector3.up, _castDir);
             var start = origin + _castDir * 1.2f;
-            start.y = Mathf.Max(origin.y, HanRiverMap.WaterY) + 0.05f;
+            start.y = Mathf.Max(origin.y, FieldMap.WaterY) + 0.05f;
             for (int i = 0; i < _aimArc.positionCount; i++)
             {
                 float t = i / (float)(_aimArc.positionCount - 1);
@@ -267,19 +267,20 @@ namespace Fishing.Angling
 
         void BeginWait(float slowdown)
         {
-            HanRiverMap.TryCell(_bobber.Position, out int col, out int row);
-            col = Mathf.Clamp(col, 0, HanRiverMap.Cols - 1);
-            row = Mathf.Clamp(row, 0, HanRiverMap.Rows - 1);
-            _cellName = HanRiverMap.CellName(col, row);
+            FieldMap.TryCell(_bobber.Position, out int col, out int row);
+            col = Mathf.Clamp(col, 0, FieldMap.Cols - 1);
+            row = Mathf.Clamp(row, 0, FieldMap.Rows - 1);
+            _cellName = FieldMap.CellName(col, row);
             _ctx = new BiteContext
             {
-                Habitat = HanRiverMap.HabitatAt(col, row),
+                Habitat = FieldMap.HabitatAt(col, row),
                 Bait = Game.Profile.Bait.Kind,
                 Band = Game.Clock.Band,
                 Weather = Game.Weather.Current,
                 School = Game.Schools.At(col, row),
+                MapId = FieldMap.Id,
             };
-            CastCellLabel = $"{_cellName} · {Names.Of(_ctx.Habitat)}" + (_ctx.School != null ? $" · {_ctx.School.Name}({_ctx.School.SizeLabel})" : "");
+            CastCellLabel = $"{_cellName} · {FieldMap.HabitatName(_ctx.Habitat)}" + (_ctx.School != null ? $" · {_ctx.School.Name}({_ctx.School.SizeLabel})" : "");
             PendingBite = BiteSelector.Pick(_ctx);
             BigBite = false;
 
@@ -474,8 +475,8 @@ namespace Fishing.Angling
         {
             if (State != FishingState.Idle) ToIdle();
             _castDir = Game.Player.Model.forward;
-            HanRiverMap.TryCell(Game.Player.transform.position + _castDir * distance, out int col, out int row);
-            _cellName = HanRiverMap.CellName(Mathf.Clamp(col, 0, 5), Mathf.Clamp(row, 0, 3));
+            FieldMap.TryCell(Game.Player.transform.position + _castDir * distance, out int col, out int row);
+            _cellName = FieldMap.CellName(Mathf.Clamp(col, 0, 5), Mathf.Clamp(row, 0, 3));
             _ctx = new BiteContext { Habitat = Habitat.Deep, Band = Game.Clock.Band };
             StartFight(new BiteResult { Species = FishDatabase.Get(speciesId), Length = length }, distance, 0.9f);
         }

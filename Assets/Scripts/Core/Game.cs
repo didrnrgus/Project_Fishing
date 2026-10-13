@@ -27,6 +27,9 @@ namespace Fishing.Core
         public static SoundFx Sound;
         public static LobbyRoom Lobby;
         public static BoatController Boat;
+        public static DayNightCycle DayNight;
+        /// <summary>지금 지어진 낚시터 월드 루트.</summary>
+        public static UnityEngine.Transform World;
         public static GameMode Mode = GameMode.Field;
         public static int Channel = 1;
 

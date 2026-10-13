@@ -19,6 +19,16 @@ namespace Fishing.Core
         Fishing.World.SkyDecor _decor;
         float _nextProbeAt;
 
+        /// <summary>낚시터가 바뀌면 그 맵의 가로등으로 바꾼다.</summary>
+        public void SetLampSet(List<Light> lamps, List<Renderer> bulbs)
+        {
+            _lamps.Clear();
+            _lampBulbs.Clear();
+            _lamps.AddRange(lamps);
+            _lampBulbs.AddRange(bulbs);
+            if (_bulbOn != null) SetLamps(_lampsOn);
+        }
+
         public void Init(List<Light> lamps, List<Renderer> bulbs)
         {
             _lamps.AddRange(lamps);

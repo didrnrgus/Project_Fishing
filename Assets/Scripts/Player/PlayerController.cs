@@ -242,12 +242,12 @@ namespace Fishing.PlayerSystems
 
                 // 걸을 수 없는 곳(강물)으로는 못 가게 축별로 미끄러뜨린다
                 var next = transform.position + motion * Time.deltaTime;
-                if (!HanRiverMap.IsWalkable(next))
+                if (!FieldMap.IsWalkable(next))
                 {
                     var nx = transform.position + new Vector3(motion.x, 0f, 0f) * Time.deltaTime;
                     var nz = transform.position + new Vector3(0f, 0f, motion.z) * Time.deltaTime;
-                    if (HanRiverMap.IsWalkable(nx)) motion = new Vector3(motion.x, 0f, 0f);
-                    else if (HanRiverMap.IsWalkable(nz)) motion = new Vector3(0f, 0f, motion.z);
+                    if (FieldMap.IsWalkable(nx)) motion = new Vector3(motion.x, 0f, 0f);
+                    else if (FieldMap.IsWalkable(nz)) motion = new Vector3(0f, 0f, motion.z);
                     else motion = Vector3.zero;
                 }
                 _bob += Time.deltaTime * speed * 2.2f;

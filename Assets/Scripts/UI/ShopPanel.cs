@@ -11,13 +11,13 @@ namespace Fishing.UI
 
         public ShopPanel(Transform canvas)
         {
-            BuildFrame(canvas, "ShopPanel", "반포 낚시점", new Vector2(1500, 960));
+            BuildFrame(canvas, "ShopPanel", $"{Fishing.World.FieldMap.ShopName}", new Vector2(1500, 960));
         }
 
         public override void Refresh()
         {
             var p = Game.Profile;
-            Title.text = $"반포 낚시점   <size=22><color=#ffd060>{p.Data.gold:N0} 골드</color></size>";
+            Title.text = $"{Fishing.World.FieldMap.ShopName}   <size=22><color=#ffd060>{p.Data.gold:N0} 골드</color></size>";
             UIFactory.ClearChildren(Body);
 
             var gearCol = UIFactory.Node("Gear", Body);

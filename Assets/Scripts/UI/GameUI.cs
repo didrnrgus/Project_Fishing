@@ -62,7 +62,7 @@ namespace Fishing.UI
                 delivery: () => OpenExclusive(Shop),
                 changeBase: () => Game.Toast("동남아·지중해 거점은 아직 준비 중입니다. 지금은 한국 낚시 조합만 열려 있어요.", ToastKind.Warn));
             Areas = new FishingAreaPanel(canvas);
-            Areas.Enter = (area, channel) => EnterField(channel);
+            Areas.Enter = (area, channel) => EnterField(area, channel);
             AreaMap = new AreaMapPanel(canvas);
             Dialog = new DialogPanel(canvas);
             Upgrade = new UpgradePanel(canvas);
@@ -119,7 +119,15 @@ namespace Fishing.UI
             Game.Save();
         }
 
-        /// <summary>낚시터(한강)에 입장한다.</summary>
+        /// <summary>낚시터에 입장한다. 다른 낚시터면 월드를 새로 짓는다.</summary>
+        public void EnterField(Fishing.Data.FishingArea area, int channel)
+        {
+            var map = Maps.Get(area.MapId);
+            if (map.Id != FieldMap.Id) MapLoader.Load(map, true);
+            EnterField(channel);
+        }
+
+        /// <summary>지금 낚시터에 입장한다.</summary>
         public void EnterField(int channel)
         {
             foreach (var p in _panels) p.Close();
@@ -127,7 +135,25 @@ namespace Fishing.UI
             Game.Mode = GameMode.Field;
             Game.CameraRig.ClearFixed();
             Game.Player.ExtendRod();
-            Game.Toast($"한강 CH.{channel}에 입장했습니다.", ToastKind.Good);
+            Game.Toast($"{FieldMap.ShortName} CH.{channel}에 입장했습니다.", ToastKind.Good);
+            var d = Game.Profile.Data;
+            if (!d.visitedMaps.Contains(FieldMap.Id))
+            {
+                d.visitedMaps.Add(FieldMap.Id);
+                if (FieldMap.IsSea)
+                {
+                    // 처음 온 바다: 어촌계 환영 선물로 바다 미끼
+                    Game.Profile.AddItem("bait_krill", 20);
+                    Game.Profile.AddItem("bait_seaworm", 20);
+                    Game.Toast($"{FieldMap.ShortName}에 처음 오셨군요! 어촌계 환영 선물: 크릴 20, 청갯지렁이 20", ToastKind.Great);
+                }
+            }
+            // 이 낚시터에서 쓰지 않는 미끼를 들고 있으면 맞는 미끼로 바꾼다
+            if (!Game.Profile.Bait.SoldIn(FieldMap.Id))
+            {
+                foreach (var b in HudView.MapBaits())
+                    if (Game.Profile.Count(b.Id) > 0) { Game.Profile.SelectBait(b.Id); break; }
+            }
             if (Game.Profile.Data.totalCatches == 0 && !Game.SaveDisabled) OpenExclusive(Help);
         }
 

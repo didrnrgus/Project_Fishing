@@ -8,7 +8,8 @@ namespace Fishing.Data
 
     public enum Weather { Clear, Cloudy, Rain }
 
-    public enum BaitKind { Worm, Paste, Corn, Shrimp, Minnow, Lure }
+    /// <summary>미끼 종류. Krill~CutBait는 바다 미끼(CutBait = 잡은 고기를 해체해 만든 살점·내장류).</summary>
+    public enum BaitKind { Worm, Paste, Corn, Shrimp, Minnow, Lure, Krill, SeaWorm, Squid, CutBait }
 
     public static class Names
     {
@@ -18,6 +19,16 @@ namespace Fishing.Data
             Habitat.Deep => "깊은 물",
             Habitat.Rocky => "석축·교각",
             Habitat.Weed => "수초",
+            _ => h.ToString()
+        };
+
+        /// <summary>바다 맵에서는 같은 서식지를 바다 지형 이름으로 부른다.</summary>
+        public static string Of(Habitat h, bool sea) => !sea ? Of(h) : h switch
+        {
+            Habitat.Shallow => "모래 여울",
+            Habitat.Deep => "먼바다",
+            Habitat.Rocky => "갯바위·암초",
+            Habitat.Weed => "해초밭",
             _ => h.ToString()
         };
 
@@ -47,6 +58,10 @@ namespace Fishing.Data
             BaitKind.Shrimp => "새우",
             BaitKind.Minnow => "생미끼",
             BaitKind.Lure => "루어",
+            BaitKind.Krill => "크릴",
+            BaitKind.SeaWorm => "청갯지렁이",
+            BaitKind.Squid => "오징어살",
+            BaitKind.CutBait => "해체 미끼",
             _ => b.ToString()
         };
     }

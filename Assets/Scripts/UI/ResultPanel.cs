@@ -100,7 +100,7 @@ namespace Fishing.UI
             int bestDay = fish.length >= prevBest ? fish.day : prevBestDay;
             _recordBar.text = s.IsJunk
                 ? "<color=#8090a0>잡동사니는 기록되지 않습니다</color>"
-                : $"<color=#ffb040>WR</color> 한강 최대  {s.MaxLen:0.00}cm        " +
+                : $"<color=#ffb040>WR</color> {Fishing.World.FieldMap.ShortName} 최대  {s.MaxLen:0.00}cm        " +
                   $"<color=#70e070>TR</color> 대물 기준  {s.TrophyLen:0.00}cm ({s.TrophyName})        " +
                   $"<color=#50c8ff>MR</color> 개인기록  {best:0.00}cm ({bestDay}일차)";
 

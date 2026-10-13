@@ -10,7 +10,9 @@ namespace Fishing.Core
     public class PlayerProfile
     {
         public const int MaxLevel = 25;
-        public const int KeepNetCapacity = 20;
+        public const int KeepNetBase = 20;
+        /// <summary>살림망 칸 수 (기본 20 + 퀘스트 확장).</summary>
+        public int KeepNetSize => KeepNetBase + Data.keepNetBonus;
         public const float MaxStamina = 100f;
 
         public SaveData Data { get; private set; }
@@ -152,7 +154,7 @@ namespace Fishing.Core
         public void SelectBait(string baitId) { Data.baitId = baitId; NotifyChanged(); }
 
         // ---- 살림망 / 도감 ----
-        public bool KeepNetFull => Data.keepNet.Count >= KeepNetCapacity;
+        public bool KeepNetFull => Data.keepNet.Count >= KeepNetSize;
 
         public DexEntry Dex(string speciesId) => Data.dex.FirstOrDefault(d => d.speciesId == speciesId);
 

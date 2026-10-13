@@ -103,7 +103,7 @@ namespace Fishing.PlayerSystems
             var orbit = Quaternion.Euler(Pitch, Yaw, 0f);
             var target = Game.Player.transform.position + Vector3.up * 1.6f + (orbit * Vector3.right) * 0.75f;
             var desired = target - orbit * Vector3.forward * Distance;
-            desired.y = Mathf.Max(desired.y, HanRiverMap.WaterY + 0.5f);
+            desired.y = Mathf.Max(desired.y, FieldMap.WaterY + 0.5f);
 
             // 나무·건물에 가리면 카메라를 앞으로 당긴다 (플레이어 자신은 콜라이더가 CharacterController뿐)
             var toCam = desired - target;

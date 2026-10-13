@@ -12,7 +12,7 @@ namespace Fishing.Core
 
     /// <summary>
     /// 한국 낚시 조합의 이야기 퀘스트를 순서대로 진행한다.
-    /// 목표를 채우면 "보고 대기"가 되고, 조합 연락관 박주임(데크 입구)이나 대기실(한국 낚시 조합)에 보고해야 보상을 받는다.
+    /// 목표를 채우면 "보고 대기"가 되고, 낚시터의 조합 연락관(한강 박주임, 홍현 정계장)이나 대기실(한국 낚시 조합)에 보고해야 보상을 받는다.
     /// </summary>
     public class QuestSystem
     {
@@ -62,11 +62,11 @@ namespace Fishing.Core
         void MarkReady(QuestDef q)
         {
             P.ready = true;
-            Game.Toast($"퀘스트 목표 달성: {q.Title}! 데크 입구의 조합 연락관 박주임이나 한국 낚시 조합에 보고하세요.", ToastKind.Great);
+            Game.Toast($"퀘스트 목표 달성: {q.Title}! {Fishing.World.FieldMap.UnionContact}이나 한국 낚시 조합에 보고하세요.", ToastKind.Great);
             if (Game.Sound != null) Game.Sound.Coin();
         }
 
-        /// <summary>보고하고 보상을 받는다 (박주임과 대화하거나 대기실 퀘스트 창에서).</summary>
+        /// <summary>보고하고 보상을 받는다 (조합 연락관과 대화하거나 대기실 퀘스트 창에서).</summary>
         public void Claim()
         {
             var q = Current;
@@ -82,6 +82,7 @@ namespace Fishing.Core
             if (Game.Sound != null) Game.Sound.LevelUp();
             if (q.RewardGold > 0) _profile.AddGold(q.RewardGold);
             if (!string.IsNullOrEmpty(q.RewardBaitId)) _profile.AddItem(q.RewardBaitId, q.RewardBaitCount);
+            if (q.RewardKeepNet > 0) _profile.Data.keepNetBonus += q.RewardKeepNet;
 
             P.index++;
             P.progress = 0;

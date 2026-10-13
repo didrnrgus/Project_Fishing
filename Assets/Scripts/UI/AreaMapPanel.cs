@@ -9,17 +9,17 @@ using UnityEngine.UI;
 namespace Fishing.UI
 {
     /// <summary>
-    /// 지역 지도(M). 원작의 "홍현 앞바다" 지도처럼 수면을 A~F열, 1~4행 격자로 보여 주고
+    /// 지역 지도(M). 원작의 "홍현 앞바다" 지도처럼 수면을 격자(한강 A~F×1~4, 홍현 A~H×1~8)로 보여 주고
     /// 칸마다 서식지 색, 어군(큰/작은), 내 위치와 찌 위치를 표시한다.
     /// 지형은 한 번만 그리고, 움직이는 표시는 <see cref="Tick"/>에서 갱신한다.
     /// </summary>
     public class AreaMapPanel : UIPanel
     {
-        // 지도에 보이는 범위(월드 좌표, m)
-        const float ViewMinX = -160f, ViewMaxX = 160f, ViewMinZ = -88f, ViewMaxZ = 88f;
-        const float MapW = 860f;
-        const float Scale = MapW / (ViewMaxX - ViewMinX);
-        const float MapH = (ViewMaxZ - ViewMinZ) * Scale;
+        // 지도 칸 크기(최대). 맵의 View 범위를 이 안에 맞춰 축척을 정한다
+        const float BoxW = 860f, BoxH = 520f;
+        float ViewMinX, ViewMaxX, ViewMinZ, ViewMaxZ, Scale, MapW, MapH;
+        string _builtFor;
+        RectTransform _mapFrame, _side, _footer;
 
         RectTransform _map;
         RectTransform _player, _bobber, _cellHighlight;
@@ -30,14 +30,30 @@ namespace Fishing.UI
 
         public AreaMapPanel(Transform canvas)
         {
-            BuildFrame(canvas, "AreaMapPanel", "지역 지도", new Vector2(1240, 700));
-            BuildMap();
-            BuildSide();
-            UIFactory.Text(Body, "[M] 또는 [ESC]로 닫기  ·  ▲ 나  ● 찌  ◆ 어군(크기 = 큰/작은 어군)", 14, UIFactory.TextDim, TextAnchor.MiddleLeft)
-                .rectTransform.At(new Vector2(0, 1), new Vector2(4, -(MapH + 20)), new Vector2(MapW, 24), new Vector2(0, 1));
+            BuildFrame(canvas, "AreaMapPanel", "지역 지도", new Vector2(1240, 720));
+            Rebuild();
         }
 
-        static Vector2 ToMap(float x, float z) => new Vector2((x - ViewMinX) * Scale, (z - ViewMinZ) * Scale);
+        /// <summary>지금 낚시터에 맞춰 지도와 옆 패널을 새로 그린다.</summary>
+        void Rebuild()
+        {
+            var map = FieldMap.Current;
+            _builtFor = map.Id;
+            if (_mapFrame != null) Object.Destroy(_mapFrame.gameObject);
+            if (_side != null) Object.Destroy(_side.gameObject);
+            if (_footer != null) Object.Destroy(_footer.gameObject);
+            _schoolMarks.Clear();
+            ViewMinX = map.View.xMin; ViewMaxX = map.View.xMax; ViewMinZ = map.View.yMin; ViewMaxZ = map.View.yMax;
+            Scale = Mathf.Min(BoxW / map.View.width, BoxH / map.View.height);
+            MapW = map.View.width * Scale;
+            MapH = map.View.height * Scale;
+            BuildMap();
+            BuildSide();
+            _footer = UIFactory.Text(Body, "[M] 또는 [ESC]로 닫기  ·  ▲ 나  ● 찌  ◆ 어군(크기 = 큰/작은 어군, 빨강 = 대물 어군)", 14, UIFactory.TextDim, TextAnchor.MiddleLeft)
+                .rectTransform.At(new Vector2(0, 1), new Vector2(4, -(MapH + 20)), new Vector2(BoxW, 24), new Vector2(0, 1));
+        }
+
+        Vector2 ToMap(float x, float z) => new Vector2((x - ViewMinX) * Scale, (z - ViewMinZ) * Scale);
 
         static Color HabitatColor(Habitat h) => h switch
         {
@@ -59,60 +75,72 @@ namespace Fishing.UI
 
         void BuildMap()
         {
-            var frame = UIFactory.Image(Body, new Color(0.02f, 0.04f, 0.06f, 1f), null, "MapFrame").rectTransform
+            var map = FieldMap.Current;
+            _mapFrame = UIFactory.Image(Body, new Color(0.02f, 0.04f, 0.06f, 1f), null, "MapFrame").rectTransform
                 .At(new Vector2(0, 1), Vector2.zero, new Vector2(MapW + 8, MapH + 8), new Vector2(0, 1));
-            _map = UIFactory.Node("Map", frame).At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(MapW, MapH));
+            _map = UIFactory.Node("Map", _mapFrame).At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(MapW, MapH));
             _map.gameObject.AddComponent<RectMask2D>();
 
-            // 둔치(땅), 산책로, 강
+            // 땅 + 물 (첫 표시가 물)
             UIFactory.Image(_map, new Color(0.3f, 0.36f, 0.24f), null, "Land").rectTransform.Fill();
-            foreach (float z in new[] { -75f, 75f })
-                Place(UIFactory.Image(_map, new Color(0.55f, 0.52f, 0.45f, 0.6f), null, "Path").rectTransform, 0f, z,
-                    new Vector2(MapW, 3f * Scale));
-            Place(UIFactory.Image(_map, new Color(0.1f, 0.22f, 0.33f), null, "River").rectTransform, 0f, 0f,
-                new Vector2(MapW, (HanRiverMap.RiverMaxZ - HanRiverMap.RiverMinZ) * Scale));
+            var marks = new List<MapMark>();
+            for (int i = 0; i < map.Marks.Count; i++)
+            {
+                var m = map.Marks[i];
+                if (i == 0)
+                {
+                    Place(UIFactory.Image(_map, m.Color, null, "Water").rectTransform, m.Area.center.x, m.Area.center.y,
+                        new Vector2(m.Area.width * Scale, m.Area.height * Scale));
+                    continue;
+                }
+                marks.Add(m);
+            }
 
             // 격자 칸: 서식지 색 + 칸 이름 + 서식지 이름
-            for (int r = 0; r < HanRiverMap.Rows; r++)
-            for (int c = 0; c < HanRiverMap.Cols; c++)
+            int fs = Mathf.Clamp(Mathf.RoundToInt(map.CellH * Scale * 0.22f), 11, 15);
+            for (int r = 0; r < map.Rows; r++)
+            for (int c = 0; c < map.Cols; c++)
             {
-                var center = HanRiverMap.CellCenter(c, r);
-                var h = HanRiverMap.HabitatAt(c, r);
+                var center = map.CellCenter(c, r);
+                var h = map.HabitatAt(c, r);
                 var cell = Place(UIFactory.Image(_map, HabitatColor(h), null, "Cell").rectTransform, center.x, center.z,
-                    new Vector2(HanRiverMap.CellW * Scale - 3f, HanRiverMap.CellH * Scale - 3f));
-                UIFactory.Text(cell, HanRiverMap.CellName(c, r), 15, new Color(1, 1, 1, 0.85f), TextAnchor.UpperLeft, FontStyle.Bold)
-                    .rectTransform.Fill(6, 6, 4, 4);
-                UIFactory.Text(cell, Names.Of(h), 12, new Color(1, 1, 1, 0.45f), TextAnchor.LowerRight).rectTransform.Fill(6, 6, 4, 4);
+                    new Vector2(map.CellW * Scale - 3f, map.CellH * Scale - 3f));
+                UIFactory.Text(cell, map.CellName(c, r), fs, new Color(1, 1, 1, 0.85f), TextAnchor.UpperLeft, FontStyle.Bold)
+                    .rectTransform.Fill(5, 5, 3, 3);
+                UIFactory.Text(cell, map.HabitatName(h), fs - 3, new Color(1, 1, 1, 0.45f), TextAnchor.LowerRight).rectTransform.Fill(5, 5, 3, 3);
             }
 
-            // 열/행 머리글
-            for (int c = 0; c < HanRiverMap.Cols; c++)
+            // 열 머리글
+            for (int c = 0; c < map.Cols; c++)
             {
-                float x = HanRiverMap.GridMinX + (c + 0.5f) * HanRiverMap.CellW;
+                float x = map.GridMinX + (c + 0.5f) * map.CellW;
                 Place(UIFactory.Text(_map, ((char)('A' + c)).ToString(), 16, UIFactory.Accent, TextAnchor.MiddleCenter, FontStyle.Bold).rectTransform,
-                    x, HanRiverMap.RiverMaxZ + 4f, new Vector2(40, 22));
+                    x, map.GridMaxZ + 12f / Scale, new Vector2(40, 22));
             }
 
-            // 다리, 교각, 잔교, 낚시점
-            Place(UIFactory.Image(_map, new Color(0.82f, 0.82f, 0.8f), null, "Bridge").rectTransform, HanRiverMap.BridgeX, 0f,
-                new Vector2(4f * Scale, MapH));
-            Place(UIFactory.Text(_map, "동작대교", 13, new Color(1, 1, 1, 0.8f), TextAnchor.MiddleCenter).rectTransform,
-                HanRiverMap.BridgeX, -82f, new Vector2(90, 20));
-            var pier = HanRiverMap.Pier;
-            Place(UIFactory.Image(_map, new Color(0.72f, 0.52f, 0.3f), null, "Pier").rectTransform, pier.center.x, pier.center.y,
-                new Vector2(pier.width * Scale, pier.height * Scale));
-            Place(UIFactory.Text(_map, "낚시 데크", 12, new Color(1, 0.85f, 0.6f, 0.9f), TextAnchor.MiddleLeft).rectTransform,
-                pier.xMax + 16f, HanRiverMap.RiverMinZ - 5f, new Vector2(80, 18));
-            Place(UIFactory.Image(_map, UIFactory.Gold, UIFactory.Circle, "Shop").rectTransform,
-                HanRiverMap.ShopPos.x, HanRiverMap.ShopPos.z, new Vector2(14, 14));
-            Place(UIFactory.Text(_map, "낚시점", 13, UIFactory.Gold, TextAnchor.MiddleLeft).rectTransform,
-                HanRiverMap.ShopPos.x + 16f, HanRiverMap.ShopPos.z, new Vector2(70, 20));
-            Place(UIFactory.Text(_map, "N ▲", 14, new Color(1, 1, 1, 0.7f), TextAnchor.MiddleCenter, FontStyle.Bold).rectTransform,
-                ViewMaxX - 10f, ViewMaxZ - 8f, new Vector2(50, 24));
+            // 지형 표시 (다리, 데크, 방파제, 등대, 섬, 낚시점) + 이름
+            foreach (var m in marks)
+            {
+                var size = new Vector2(Mathf.Max(5f, m.Area.width * Scale), Mathf.Max(5f, m.Area.height * Scale));
+                Place(UIFactory.Image(_map, m.Color, m.Kind == MapMark.Shape.Circle ? UIFactory.Circle : null, "Mark").rectTransform,
+                    m.Area.center.x, m.Area.center.y, size);
+                if (!string.IsNullOrEmpty(m.Label))
+                {
+                    var label = UIFactory.Text(_map, m.Label, 13, new Color(1, 0.92f, 0.75f), TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform;
+                    Place(label, m.Area.xMax, m.Area.center.y, new Vector2(110, 20));
+                    label.pivot = new Vector2(0f, 0.5f);
+                    label.anchoredPosition += new Vector2(4f, 0f);
+                }
+            }
+            var north = UIFactory.Text(_map, "N ▲", 14, new Color(1, 1, 1, 0.7f), TextAnchor.MiddleCenter, FontStyle.Bold).rectTransform;
+            north.anchorMin = north.anchorMax = new Vector2(1, 1);
+            north.pivot = new Vector2(1, 1);
+            north.anchoredPosition = new Vector2(-6, -6);
+            north.sizeDelta = new Vector2(50, 24);
 
             // 움직이는 표시: 찌가 있는 칸, 찌, 플레이어
             _cellHighlight = Place(UIFactory.Image(_map, new Color(1f, 0.9f, 0.4f, 0.22f), null, "CellHighlight").rectTransform, 0, 0,
-                new Vector2(HanRiverMap.CellW * Scale, HanRiverMap.CellH * Scale));
+                new Vector2(map.CellW * Scale, map.CellH * Scale));
             _bobber = Place(UIFactory.Image(_map, new Color(1f, 0.3f, 0.2f), UIFactory.Circle, "Bobber").rectTransform, 0, 0, new Vector2(12, 12));
             _player = Place(UIFactory.Text(_map, "▲", 26, new Color(0.45f, 0.9f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold, "Player").rectTransform,
                 0, 0, new Vector2(30, 30));
@@ -121,9 +149,10 @@ namespace Fishing.UI
         void BuildSide()
         {
             var side = UIFactory.Image(Body, new Color(0.08f, 0.12f, 0.16f, 0.95f), null, "Side").rectTransform
-                .At(new Vector2(1, 1), Vector2.zero, new Vector2(310, 600), new Vector2(1, 1));
+                .At(new Vector2(1, 1), Vector2.zero, new Vector2(310, 620), new Vector2(1, 1));
+            _side = side;
 
-            var title = UIFactory.Text(side, HanRiverMap.MapName, 20, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
+            var title = UIFactory.Text(side, FieldMap.MapName, 20, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
             title.rectTransform.At(new Vector2(0, 1), new Vector2(14, -8), new Vector2(290, 30), new Vector2(0, 1));
             _cellInfo = UIFactory.Text(side, "", 14, UIFactory.Accent, TextAnchor.UpperLeft);
             _cellInfo.rectTransform.At(new Vector2(0, 1), new Vector2(14, -40), new Vector2(290, 40), new Vector2(0, 1));
@@ -141,14 +170,14 @@ namespace Fishing.UI
                 var col = HabitatColor(habitats[i]);
                 col.a = 1f;
                 UIFactory.Image(side, col, null, "Swatch").rectTransform.At(new Vector2(0, 1), new Vector2(x, yy), new Vector2(18, 18), new Vector2(0, 1));
-                UIFactory.Text(side, Names.Of(habitats[i]), 14, UIFactory.TextMain, TextAnchor.MiddleLeft).rectTransform
+                UIFactory.Text(side, FieldMap.HabitatName(habitats[i]), 14, UIFactory.TextMain, TextAnchor.MiddleLeft).rectTransform
                     .At(new Vector2(0, 1), new Vector2(x + 24, yy + 1), new Vector2(110, 20), new Vector2(0, 1));
             }
             y -= 58f;
 
             UIFactory.Text(side, "어군", 13, UIFactory.TextDim, TextAnchor.MiddleLeft).rectTransform
                 .At(new Vector2(0, 1), new Vector2(14, y), new Vector2(200, 18), new Vector2(0, 1));
-            _schoolList = UIFactory.Node("SchoolList", side).At(new Vector2(0, 1), new Vector2(14, y - 22f), new Vector2(286, 220), new Vector2(0, 1));
+            _schoolList = UIFactory.Node("SchoolList", side).At(new Vector2(0, 1), new Vector2(14, y - 22f), new Vector2(286, 270), new Vector2(0, 1));
 
             var tip = UIFactory.Text(side,
                 "어군이 있는 칸에 찌를 던지면 입질이 빠르고 그 어군의 고기가 잘 낚입니다.\n" +
@@ -160,6 +189,7 @@ namespace Fishing.UI
 
         public override void Refresh()
         {
+            if (_builtFor != FieldMap.Current.Id) Rebuild();
             _nextListRefresh = 0f;
             Tick();
         }
@@ -178,19 +208,19 @@ namespace Fishing.UI
             var lookPos = showBobber ? Game.Fishing.BobberPosition : playerPos;
             if (showBobber) _bobber.anchoredPosition = ToMap(lookPos.x, lookPos.z);
 
-            bool inCell = HanRiverMap.TryCell(lookPos, out int col, out int row);
+            bool inCell = FieldMap.TryCell(lookPos, out int col, out int row);
             _cellHighlight.gameObject.SetActive(inCell);
             if (inCell)
             {
-                var c = HanRiverMap.CellCenter(col, row);
+                var c = FieldMap.CellCenter(col, row);
                 _cellHighlight.anchoredPosition = ToMap(c.x, c.z);
                 var school = Game.Schools.At(col, row);
-                _cellInfo.text = $"{(showBobber ? "찌 위치" : "현재 위치")} : {HanRiverMap.CellName(col, row)} · {Names.Of(HanRiverMap.HabitatAt(col, row))}" +
+                _cellInfo.text = $"{(showBobber ? "찌 위치" : "현재 위치")} : {FieldMap.CellName(col, row)} · {FieldMap.HabitatName(FieldMap.HabitatAt(col, row))}" +
                                  (school != null ? $"\n{school.Name} ({school.SizeLabel})" : "");
             }
             else
             {
-                _cellInfo.text = $"현재 위치 : {HanRiverMap.AreaName(playerPos)}";
+                _cellInfo.text = $"현재 위치 : {FieldMap.AreaName(playerPos)}";
             }
 
             // 어군 표시
@@ -215,13 +245,15 @@ namespace Fishing.UI
                 var s = schools[i];
                 var (root, halo, label) = _schoolMarks[i];
                 // 같은 칸에 두 어군이 겹치면 살짝 비켜 그린다
-                var c = HanRiverMap.CellCenter(s.Col, s.Row);
+                root.gameObject.SetActive(!s.Hidden);
+                var c = FieldMap.CellCenter(s.Col, s.Row);
                 var offset = new Vector2((i % 2 == 0 ? -1f : 1f) * 22f, (i / 2 == 0 ? 1f : -1f) * 6f);
                 root.anchoredPosition = ToMap(c.x, c.z) + offset;
                 float pulse = 1f + Mathf.Sin(Time.unscaledTime * 3f + i) * 0.08f;
-                halo.rectTransform.localScale = Vector3.one * (s.Big ? 1f : 0.55f) * pulse;
-                root.GetChild(1).localScale = Vector3.one * (s.Big ? 1.2f : 0.75f);
-                label.text = $"{s.Name} · {(s.Big ? "大" : "小")}";
+                halo.rectTransform.localScale = Vector3.one * (s.Special ? 1.4f : s.Big ? 1f : 0.55f) * pulse;
+                halo.color = s.Special ? new Color(1f, 0.3f, 0.25f, 0.45f) : new Color(1f, 0.7f, 0.25f, 0.35f);
+                root.GetChild(1).localScale = Vector3.one * (s.Special ? 1.5f : s.Big ? 1.2f : 0.75f);
+                label.text = s.Special ? $"{s.Name} · 대물" : $"{s.Name} · {(s.Big ? "大" : "小")}";
             }
 
             if (Time.unscaledTime >= _nextListRefresh)
@@ -239,7 +271,12 @@ namespace Fishing.UI
             {
                 var s = schools[i];
                 string state;
-                if (s.Big) state = $"<color=#ffd060>큰 어군</color>  남은 {s.CatchesLeft}마리";
+                if (s.Special)
+                {
+                    string when = s.Schedule == null ? "" : string.Join(" · ", System.Array.ConvertAll(s.Schedule, e => $"{Names.Of(e.band)} {FieldMap.CellName(e.col, e.row)}"));
+                    state = s.Hidden ? $"<color=#9ab0c0>숨어 있음</color>  ({when})" : $"<color=#ff8070>지금 출현!</color>  ({when})";
+                }
+                else if (s.Big) state = $"<color=#ffd060>큰 어군</color>  남은 {s.CatchesLeft}마리";
                 else
                 {
                     float left = Mathf.Max(0f, FishSchoolManager.RegroupMinutes - (Game.Clock.TotalMinutes - s.ShrankAt)) / 60f;
@@ -252,9 +289,9 @@ namespace Fishing.UI
                     if (sp != null) names.Add(sp.Name);
                 }
                 var t = UIFactory.Text(_schoolList,
-                    $"<b>{s.Name}</b>  <color=#80c8ff>{HanRiverMap.CellName(s.Col, s.Row)}</color>\n{state}\n<size=11><color=#8a96a0>{string.Join(", ", names)}</color></size>",
-                    14, UIFactory.TextMain, TextAnchor.UpperLeft);
-                t.rectTransform.At(new Vector2(0, 1), new Vector2(0, -i * 56f), new Vector2(286, 54), new Vector2(0, 1));
+                    $"<b>{s.Name}</b>  <color=#80c8ff>{(s.Hidden ? "-" : FieldMap.CellName(s.Col, s.Row))}</color>  <size=11><color=#8a96a0>{string.Join(", ", names)}</color></size>\n{state}",
+                    13, UIFactory.TextMain, TextAnchor.UpperLeft);
+                t.rectTransform.At(new Vector2(0, 1), new Vector2(0, -i * 52f), new Vector2(286, 50), new Vector2(0, 1));
             }
         }
     }

@@ -15,7 +15,7 @@ namespace Fishing.UI
 
         public UpgradePanel(Transform canvas)
         {
-            BuildFrame(canvas, "UpgradePanel", "낚싯대 강화  ·  반포 낚시점", new Vector2(820, 600));
+            BuildFrame(canvas, "UpgradePanel", "낚싯대 강화", new Vector2(820, 600));
         }
 
         public override void Refresh()
