@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace Fishing.Data
 {
@@ -32,13 +33,23 @@ namespace Fishing.Data
         public float BoatSpeed = 6f;      // 최고 속도 m/s
         public float FuelCapacity = 20f;  // 연료통 L
         public float FuelPerKm = 10f;     // 1km 달릴 때 드는 연료 L
+        /// <summary>파도에 덜 흔들리는 정도 0~1 (고무보트 0.3 ~ 크루저 0.9).</summary>
+        public float Stability = 0.5f;
+        /// <summary>돛단배: 연료 없이 바람으로 달린다 (바람을 거스르면 느리다).</summary>
+        public bool Sail;
+        /// <summary>먼바다(파도 높은 곳)에 나갈 수 있는지.</summary>
+        public bool OpenSea = true;
+
+        static string Stars(float v) => new string('★', Mathf.Clamp(Mathf.RoundToInt(v * 5f), 1, 5));
 
         public string StatLine => Slot switch
         {
             GearSlot.Rod => $"힘 {Power:0.0} · {(Flex >= 0.6f ? "연조" : Flex <= 0.35f ? "경조" : "중경조")} · 비거리 {CastRange:0}m",
             GearSlot.Reel => $"감기 {ReelSpeed:0.0}m/s · 권사량 {Capacity:0}m",
             GearSlot.Line => $"강도 {Strength:0.0}",
-            GearSlot.Boat => $"최고 {BoatSpeed * 3.6f:0}km/h · 연료통 {FuelCapacity:0}L · 연비 {1000f / FuelPerKm:0}m/L",
+            GearSlot.Boat => Sail
+                ? $"최고 {BoatSpeed * 3.6f:0}km/h (바람) · 연료 없음 · 안정성 {Stars(Stability)}"
+                : $"최고 {BoatSpeed * 3.6f:0}km/h · 연료통 {FuelCapacity:0}L · 연비 {1000f / FuelPerKm:0}m/L · 안정성 {Stars(Stability)}" + (OpenSea ? "" : " · 먼바다 불가"),
             _ => ""
         };
     }
@@ -95,9 +106,16 @@ namespace Fishing.Data
                 Strength = 1.7f, Desc = "대물과의 힘싸움을 버틴다." },
 
             new GearDef { Id = "boat_rubber", Name = "고무보트", Slot = GearSlot.Boat, Price = 4000, Level = 3,
-                BoatSpeed = 6f, FuelCapacity = 20f, FuelPerKm = 12f, Desc = "물가에서 꺼내 타는 2인용 고무보트. 느리지만 강 건너편 깊은 칸까지 갈 수 있다." },
+                BoatSpeed = 6f, FuelCapacity = 20f, FuelPerKm = 12f, Stability = 0.3f, OpenSea = false,
+                Desc = "물가에서 꺼내 타는 2인용 고무보트. 느리지만 강 건너편 깊은 칸까지 갈 수 있다. 파도가 높은 먼바다에는 못 나간다." },
+            new GearDef { Id = "boat_sail", Name = "돛단배", Slot = GearSlot.Boat, Price = 18000, Level = 8,
+                BoatSpeed = 9f, FuelCapacity = 0f, FuelPerKm = 0f, Stability = 0.5f, Sail = true,
+                Desc = "바람을 받아 달리는 작은 요트. 연료가 필요 없지만 바람을 거슬러서는 느리다 (옆바람이 가장 빠르다)." },
             new GearDef { Id = "boat_speed", Name = "고속보트", Slot = GearSlot.Boat, Price = 30000, Level = 10,
-                BoatSpeed = 14f, FuelCapacity = 40f, FuelPerKm = 20f, Desc = "물보라를 가르며 달리는 FRP 고속보트." },
+                BoatSpeed = 14f, FuelCapacity = 40f, FuelPerKm = 20f, Stability = 0.55f, Desc = "물보라를 가르며 달리는 FRP 고속보트." },
+            new GearDef { Id = "boat_cruiser", Name = "낚시 크루저", Slot = GearSlot.Boat, Price = 60000, Level = 14,
+                BoatSpeed = 11f, FuelCapacity = 80f, FuelPerKm = 25f, Stability = 0.9f,
+                Desc = "선장과 동행 꾼이 함께 타는 큰 낚싯배 (원작: 최대 10명 승선). 파도에도 거의 흔들리지 않아 먼바다 대물 포인트까지 간다." },
         };
 
         public static readonly List<BaitDef> Baits = new List<BaitDef>

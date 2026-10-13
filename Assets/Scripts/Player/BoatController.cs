@@ -22,7 +22,22 @@ namespace Fishing.PlayerSystems
         public GearDef Def { get; private set; }
         /// <summary>배를 띄운 둔치 위치. 배 위에서 저장하면 이 위치로 저장한다.</summary>
         public Vector3 LandPos { get; private set; }
-        public float MaxSpeed => Def == null ? 0f : Game.Profile.Data.boatFuel > 0f ? Def.BoatSpeed : PaddleSpeed;
+        public float MaxSpeed => Def == null ? 0f : Def.Sail ? Def.BoatSpeed * WindFactor : Game.Profile.Data.boatFuel > 0f ? Def.BoatSpeed : PaddleSpeed;
+
+        /// <summary>
+        /// 돛단배 속도 배율 (0.25~1): 옆바람(바람과 90°)이 가장 빠르고, 뒤바람은 조금 느리고, 맞바람(바람을 거슬러 45° 안)은 거의 못 간다.
+        /// 바람이 셀수록 빠르다.
+        /// </summary>
+        public float WindFactor
+        {
+            get
+            {
+                if (Game.Weather == null) return 0.6f;
+                float rel = Mathf.Abs(Mathf.DeltaAngle(_yaw, Game.Weather.WindYaw)); // 0 = 뒤바람, 180 = 맞바람
+                float shape = rel < 90f ? Mathf.Lerp(0.75f, 1f, rel / 90f) : rel < 135f ? Mathf.Lerp(1f, 0.55f, (rel - 90f) / 45f) : Mathf.Lerp(0.55f, 0.2f, (rel - 135f) / 45f);
+                return Mathf.Clamp(shape * Mathf.Lerp(0.6f, 1.15f, Mathf.InverseLerp(2f, 9f, Game.Weather.WindSpeed)), 0.2f, 1.1f);
+            }
+        }
         public bool Seated { get; private set; }
 
         /// <summary>자동 연출용 입력 (NaN이면 키보드).</summary>
@@ -198,7 +213,7 @@ namespace Fishing.PlayerSystems
             {
                 float moved = (next - _pos).magnitude;
                 _pos = next;
-                if (Game.Profile.Data.boatFuel > 0f && Mathf.Abs(Speed) > PaddleSpeed)
+                if (!Def.Sail && Game.Profile.Data.boatFuel > 0f && Mathf.Abs(Speed) > PaddleSpeed)
                     Game.Profile.Data.boatFuel = Mathf.Max(0f, Game.Profile.Data.boatFuel - moved / 1000f * Def.FuelPerKm);
             }
             else
@@ -214,7 +229,7 @@ namespace Fishing.PlayerSystems
                 Speed = -Speed * 0.2f;
             }
 
-            if (Game.Profile.Data.boatFuel <= 0f && !_fuelWarned)
+            if (!Def.Sail && Game.Profile.Data.boatFuel <= 0f && !_fuelWarned)
             {
                 _fuelWarned = true;
                 Game.Toast("연료가 떨어졌습니다. 노를 저어 천천히 돌아가세요. (낚시점에서 연료 채우기)", ToastKind.Warn);
@@ -232,7 +247,7 @@ namespace Fishing.PlayerSystems
             Game.Player.SnapToMount();
 
             UpdateWake(fwd, dt);
-            Game.Sound.SetEngine(Game.Profile.Data.boatFuel > 0f ? 0.15f + Throttle * 0.85f : 0f, Mathf.Abs(Speed) / Mathf.Max(1f, Def.BoatSpeed));
+            if (!Def.Sail) Game.Sound.SetEngine(Game.Profile.Data.boatFuel > 0f ? 0.15f + Throttle * 0.85f : 0f, Mathf.Abs(Speed) / Mathf.Max(1f, Def.BoatSpeed));
 
             // 달리는 동안 카메라가 배 뒤로 천천히 돈다 (오른쪽 드래그 중이면 그대로)
             if (Seated && Mathf.Abs(Speed) > 1f && !Input.GetMouseButton(1))
@@ -244,9 +259,19 @@ namespace Fishing.PlayerSystems
             if (_boat == null) return;
             float t = Time.time;
             float s01 = Mathf.Clamp01(Mathf.Abs(Speed) / Mathf.Max(1f, Def.BoatSpeed));
-            float y = FieldMap.WaterY + Mathf.Sin(t * 1.6f) * 0.04f + s01 * 0.08f;
-            float pitch = -s01 * 7f + Mathf.Sin(t * 1.25f) * 1.2f + (s01 > 0.3f ? Mathf.Sin(t * 7f) * 0.6f * s01 : 0f);
-            float roll = Mathf.Sin(t * 1.05f) * 1.8f - steer * s01 * 8f;
+            // 파도가 높고 배가 작을수록 크게 흔들린다 (고무보트 > 고속보트·돛단배 > 크루저)
+            float wave = (Game.Weather != null ? Game.Weather.WaveFactor : 1f) * Mathf.Lerp(2.2f, 0.35f, Def.Stability)
+                         * (FieldMap.IsFarSea(_pos) ? 1.4f : 1f);
+            float y = FieldMap.WaterY + Mathf.Sin(t * 1.6f) * 0.04f * wave + s01 * 0.08f;
+            float pitch = -s01 * 7f + Mathf.Sin(t * 1.25f) * 1.2f * wave + (s01 > 0.3f ? Mathf.Sin(t * 7f) * 0.6f * s01 * wave : 0f);
+            float roll = Mathf.Sin(t * 1.05f) * 1.8f * wave + Mathf.Sin(t * 2.3f + 1f) * 0.6f * wave - steer * s01 * (Def.Sail ? 14f : 8f);
+            if (Def.Sail && _sail != null)
+            {
+                // 돛이 바람 쪽으로 돈다 (붐 각도), 옆바람이면 배가 조금 기운다
+                float rel = Mathf.DeltaAngle(_yaw, Game.Weather != null ? Game.Weather.WindYaw : 0f);
+                _sail.localRotation = Quaternion.Euler(0f, Mathf.Clamp(rel * 0.45f, -70f, 70f), 0f);
+                roll += Mathf.Sign(rel) * Mathf.Sin(Mathf.Abs(rel) * Mathf.Deg2Rad) * 6f * s01;
+            }
             _boat.SetPositionAndRotation(new Vector3(_pos.x, y, _pos.z), Quaternion.Euler(pitch, _yaw, roll));
         }
 
@@ -274,9 +299,20 @@ namespace Fishing.PlayerSystems
             }
         }
 
-        /// <summary>배 몸통(앞·가운데·뒤, 양옆)이 모두 물 위인지.</summary>
+        float _farWarnAt;
+
+        /// <summary>배 몸통(앞·가운데·뒤, 양옆)이 모두 물 위인지. 먼바다에 못 나가는 배(고무보트)는 거기서 막힌다.</summary>
         bool HullClear(Vector3 c, float yaw)
         {
+            if (Def != null && !Def.OpenSea && FieldMap.IsFarSea(c))
+            {
+                if (Time.time >= _farWarnAt)
+                {
+                    _farWarnAt = Time.time + 6f;
+                    Game.Toast("파도가 높아 고무보트로는 먼바다에 나갈 수 없습니다. 고속보트나 크루저가 필요합니다.", ToastKind.Warn);
+                }
+                return false;
+            }
             var rot = Quaternion.Euler(0f, yaw, 0f);
             for (int i = -1; i <= 1; i++)
             for (int j = -1; j <= 1; j += 2)
@@ -289,19 +325,31 @@ namespace Fishing.PlayerSystems
 
         // ---------------- 모델 ----------------
 
+        Transform _sail;
+
         void SetSize()
         {
-            bool speedBoat = Def.Id == "boat_speed";
-            _halfLen = speedBoat ? 2.6f : 1.65f;
-            _halfWidth = speedBoat ? 1.0f : 0.8f;
+            (_halfLen, _halfWidth) = Def.Id switch
+            {
+                "boat_speed" => (2.6f, 1.0f),
+                "boat_sail" => (2.5f, 0.95f),
+                "boat_cruiser" => (4.4f, 1.55f),
+                _ => (1.65f, 0.8f),
+            };
         }
 
         void BuildModel()
         {
             if (_boat != null) Destroy(_boat.gameObject);
             _boat = new GameObject("Boat_" + Def.Id).transform;
-            if (Def.Id == "boat_speed") BuildSpeedBoat();
-            else BuildRubberBoat();
+            _sail = null;
+            switch (Def.Id)
+            {
+                case "boat_speed": BuildSpeedBoat(); break;
+                case "boat_sail": BuildSailBoat(); break;
+                case "boat_cruiser": BuildCruiser(); break;
+                default: BuildRubberBoat(); break;
+            }
 
             var wakeGo = new GameObject("BoatWake");
             wakeGo.transform.rotation = Quaternion.LookRotation(Vector3.up); // 수면에 눕힌다
@@ -349,6 +397,53 @@ namespace Fishing.PlayerSystems
             _seat = Point("Seat", new Vector3(0f, 0.05f, -0.75f));
             _bow = Point("Bow", new Vector3(0f, 0.06f, 0.75f));
             _stern = Point("Stern", new Vector3(0f, 0f, -1.7f));
+        }
+
+        /// <summary>돛단배: Kenney 요트 몸통 + 바람 따라 도는 돛 (붐). 뱃머리가 +Z.</summary>
+        void BuildSailBoat()
+        {
+            var white = Mats.Lit(new Color(0.95f, 0.95f, 0.93f), 0.6f);
+            var navy = Mats.Lit(new Color(0.12f, 0.22f, 0.45f), 0.5f);
+            var wood = Mats.Lit(new Color(0.6f, 0.45f, 0.3f), 0.3f);
+            var mast = Mats.Lit(new Color(0.85f, 0.85f, 0.88f), 0.7f, 0.6f);
+            Mats.Prim(PrimitiveType.Cube, "Hull", _boat, new Vector3(0f, 0.1f, -0.35f), new Vector3(1.8f, 0.6f, 3.6f), white, false);
+            Mats.Prim(PrimitiveType.Cube, "Bow", _boat, new Vector3(0f, 0.1f, 1.45f), new Vector3(1.28f, 0.6f, 1.28f), white, false, Quaternion.Euler(0f, 45f, 0f));
+            Mats.Prim(PrimitiveType.Cube, "Stripe", _boat, new Vector3(0f, -0.14f, -0.35f), new Vector3(1.82f, 0.14f, 3.62f), navy, false);
+            Mats.Prim(PrimitiveType.Cube, "Deck", _boat, new Vector3(0f, 0.41f, -0.2f), new Vector3(1.6f, 0.02f, 3.8f), wood, false);
+            Mats.Prim(PrimitiveType.Cube, "Keel", _boat, new Vector3(0f, -0.55f, 0f), new Vector3(0.12f, 0.7f, 1.4f), navy, false);
+            Mats.Prim(PrimitiveType.Cylinder, "Mast", _boat, new Vector3(0f, 3.6f, 0.5f), new Vector3(0.1f, 3.2f, 0.1f), mast, false);
+            _sail = Point("SailPivot", new Vector3(0f, 0.9f, 0.5f));
+            Mats.Prim(PrimitiveType.Cylinder, "Boom", _sail, new Vector3(0f, 0.15f, -1.2f), new Vector3(0.07f, 1.2f, 0.07f), mast, false, Quaternion.Euler(90f, 0f, 0f));
+            // 삼각 돛: 얇은 판을 기울여 세운다
+            var sail = Mats.Lit(new Color(0.97f, 0.96f, 0.92f), 0.2f);
+            Mats.Prim(PrimitiveType.Cube, "Sail", _sail, new Vector3(0f, 2.4f, -1.0f), new Vector3(0.03f, 4.4f, 2.0f), sail, false, Quaternion.Euler(-14f, 0f, 0f));
+            Mats.Prim(PrimitiveType.Cube, "SailStripe", _sail, new Vector3(0.02f, 1.2f, -0.85f), new Vector3(0.03f, 0.3f, 1.6f), navy, false, Quaternion.Euler(-14f, 0f, 0f));
+            _seat = Point("Seat", new Vector3(0f, 0.42f, -1.5f));
+            _bow = Point("Bow", new Vector3(0f, 0.42f, 1.3f));
+            _stern = Point("Stern", new Vector3(0f, 0f, -2.5f));
+        }
+
+        /// <summary>낚시 크루저: Kenney 어선 몸통(9m) + 선장·동행 꾼 NPC.</summary>
+        void BuildCruiser()
+        {
+            if (KenneyProps.Available)
+                KenneyProps.Spawn("Kenney/Watercraft/boat-fishing-small", _boat, new Vector3(0f, -0.55f, 0f), 0f, 0f, 9f);
+            else
+                Mats.Prim(PrimitiveType.Cube, "Hull", _boat, new Vector3(0f, 0.3f, 0f), new Vector3(3f, 1.2f, 8.6f), Mats.Lit(new Color(0.9f, 0.9f, 0.92f), 0.5f), false);
+            Fishing.Characters.NpcAngler.Spawn(_boat, new Vector3(0.4f, 0.75f, -1.8f), 0f, new Fishing.Characters.CharacterLook
+            {
+                Name = "김선장", Title = "크루저 선장", TopModel = "Top_Long", Hair = "Hair_Buzzed", Beard = true, HairColor = new Color(0.3f, 0.3f, 0.3f),
+                Shirt = new Color(0.9f, 0.9f, 0.92f), VestModel = "Vest_Life", VestColor = new Color(0.95f, 0.5f, 0.1f), Pants = new Color(0.15f, 0.18f, 0.3f),
+                HatStyle = 1, HatColor = new Color(0.15f, 0.2f, 0.4f)
+            }, Fishing.Characters.NpcAngler.Role.Sitter, false);
+            Fishing.Characters.NpcAngler.Spawn(_boat, new Vector3(-1.1f, 0.75f, 0.5f), -90f, new Fishing.Characters.CharacterLook
+            {
+                Name = "동행 꾼", Title = "", TopModel = "Top_Rash", VestModel = "Vest_Life", VestColor = new Color(0.95f, 0.75f, 0.1f),
+                Shirt = new Color(0.2f, 0.3f, 0.45f), Pants = new Color(0.2f, 0.2f, 0.22f), HatStyle = 0
+            }, Fishing.Characters.NpcAngler.Role.Angler, false);
+            _seat = Point("Seat", new Vector3(0f, 0.75f, -1.2f));
+            _bow = Point("Bow", new Vector3(0f, 0.85f, 3f));
+            _stern = Point("Stern", new Vector3(0f, 0f, -4.4f));
         }
 
         void BuildSpeedBoat()

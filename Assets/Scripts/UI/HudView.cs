@@ -367,11 +367,21 @@ namespace Fishing.UI
             _speedFill.fillAmount = Mathf.Clamp01(Mathf.Abs(boat.Speed) / def.BoatSpeed) * 0.8f;
             _speedText.text = $"{kmh:0}<size=13>km/h</size>";
             float fuel = Game.Profile.Data.boatFuel;
-            _fuelFill.fillAmount = Mathf.Clamp01(fuel / def.FuelCapacity) * 0.8f;
-            _fuelFill.color = fuel < def.FuelCapacity * 0.2f ? UIFactory.Danger : new Color(1f, 0.75f, 0.3f);
-            _fuelText.text = $"{fuel:0.0}<size=13>L</size>";
+            if (def.Sail)
+            {
+                // 돛단배: 연료 대신 바람 (세기, 지금 방향이 얼마나 좋은지)
+                _fuelFill.fillAmount = Mathf.Clamp01(boat.WindFactor) * 0.8f;
+                _fuelFill.color = new Color(0.6f, 0.95f, 0.75f);
+                _fuelText.text = $"{Game.Weather.WindSpeed:0.0}<size=13>m/s</size>";
+            }
+            else
+            {
+                _fuelFill.fillAmount = Mathf.Clamp01(fuel / def.FuelCapacity) * 0.8f;
+                _fuelFill.color = fuel < def.FuelCapacity * 0.2f ? UIFactory.Danger : new Color(1f, 0.75f, 0.3f);
+                _fuelText.text = $"{fuel:0.0}<size=13>L</size>";
+            }
             _boatHint.text = boat.Seated
-                ? $"{def.Name}  ·  W/S 속도  ·  A/D 방향  ·  멈추면 낚시"
+                ? $"{def.Name}  ·  W/S 속도  ·  A/D 방향  ·  멈추면 낚시" + (def.Sail ? $"  ·  바람 {Game.Weather.WindSpeed:0}m/s, 옆바람이 빠르다" : "")
                 : $"{def.Name}  ·  뱃머리에서 낚시할 수 있습니다  ·  물가에서 B로 내리기";
             FitPill(_boatHintPill, _boatHint, 40f, 900f);
         }

@@ -74,6 +74,9 @@ namespace Fishing.World
         }
 
         public string CellName(int col, int row) => ((char)('A' + col)).ToString() + (row + 1);
+
+        /// <summary>먼바다: 바다 맵에서 격자 6행 이후. 파도가 높아 고무보트로는 못 가고, 대물이 잘 문다.</summary>
+        public bool IsFarSea(Vector3 p) => IsSea && p.z > GridMinZ + CellH * Rows * 0.62f;
         public Habitat HabitatAt(int col, int row) => HabitatGrid[Mathf.Clamp(row, 0, Rows - 1), Mathf.Clamp(col, 0, Cols - 1)];
         public string HabitatName(Habitat h) => Names.Of(h, IsSea);
 
@@ -119,6 +122,7 @@ namespace Fishing.World
         public static string HabitatName(Habitat h) => Current.HabitatName(h);
         public static Vector3 CellCenter(int col, int row) => Current.CellCenter(col, row);
         public static string AreaName(Vector3 p) => Current.AreaName(p);
+        public static bool IsFarSea(Vector3 p) => Current.IsFarSea(p);
     }
 
     public static class Maps

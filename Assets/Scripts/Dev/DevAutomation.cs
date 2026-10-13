@@ -461,6 +461,26 @@ namespace Fishing.Dev
             yield return new WaitForSeconds(0.8f);
             yield return Shot("36b_seocheon_sunset");
 
+            // 돛단배와 낚시 크루저 (홍원항에서 출발)
+            p.Data.level = Mathf.Max(p.Data.level, 14);
+            foreach (var (boatId, shot, secs) in new[] { ("boat_sail", "39_seocheon_sail", 5f), ("boat_cruiser", "40_seocheon_cruiser", 6f) })
+            {
+                if (!p.Data.ownedGear.Contains(boatId)) p.Data.ownedGear.Add(boatId);
+                p.Equip(GearDatabase.GetGear(boatId));
+                Game.Clock.Set(4, 11 * 60);
+                Game.Player.Teleport(new Vector3(20f, 1.1f, -43f), 0f);
+                yield return new WaitForSeconds(0.5f);
+                Game.Boat.Toggle();
+                Game.Boat.DebugThrottle = 1f;
+                Game.Boat.DebugSteer = boatId == "boat_sail" ? 0.25f : -0.1f;
+                Game.CameraRig.Yaw = 0f;
+                Game.CameraRig.Distance = boatId == "boat_cruiser" ? 16f : 11f;
+                yield return new WaitForSeconds(secs);
+                yield return Shot(shot);
+                Game.Boat.DebugThrottle = float.NaN;
+                Game.Boat.StowToLand();
+            }
+
             // 빨간 등대 방파제에서 주꾸미
             Game.Clock.Set(4, 10 * 60);
             var arm = Fishing.World.SeocheonDef.RedArm;

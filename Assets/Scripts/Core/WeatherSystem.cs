@@ -8,6 +8,13 @@ namespace Fishing.Core
     public class WeatherSystem : MonoBehaviour
     {
         public Weather Current { get; private set; } = Weather.Clear;
+
+        /// <summary>바람이 불어 가는 방향 (도, 0 = +Z). 게임 시각에 따라 천천히 돈다.</summary>
+        public float WindYaw => Mathf.PerlinNoise(Game.Clock.TotalMinutes / 900f, 3.7f) * 540f;
+        /// <summary>바람 세기 (m/s). 비 오면 세다.</summary>
+        public float WindSpeed => 2f + Mathf.PerlinNoise(Game.Clock.TotalMinutes / 400f, 8.1f) * 5f + (Current == Weather.Rain ? 4f : Current == Weather.Cloudy ? 1.5f : 0f);
+        /// <summary>파도 높이 배율: 바다가 강보다, 바람·비가 셀수록 높다.</summary>
+        public float WaveFactor => (Fishing.World.FieldMap.IsSea ? 1f : 0.45f) * (0.7f + WindSpeed / 8f + (Current == Weather.Rain ? 0.4f : 0f));
         public event Action Changed;
 
         float _nextChangeAt;
