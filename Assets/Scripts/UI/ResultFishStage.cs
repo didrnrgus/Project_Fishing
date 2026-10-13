@@ -87,7 +87,8 @@ namespace Fishing.UI
         {
             if (_fish != null) Destroy(_fish);
             _fish = null;
-            if (species == null || species.IsJunk) { _cam.enabled = false; return false; }
+            // 잡동사니는 3D 모델(Resources/Junk)이 있을 때만
+            if (species == null || (species.IsJunk && !FishModels.HasJunkModel(species))) { _cam.enabled = false; return false; }
 
             _fish = FishModels.Create(species, lengthCm, _pivot);
             foreach (var t in _fish.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = Layer;

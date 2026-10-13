@@ -204,11 +204,17 @@ namespace Fishing.UI
             };
             _emblem.color = rarityColor;
             _emblemFish.color = rarityColor;
+            // 동그라미 엠블럼 안: 어종 아이콘이 있으면 그 그림
+            var emblemIcon = s.IsJunk ? ItemIcons.Get(s.Id) : Fishing.Angling.FishModels.Icon(s);
+            _emblemFish.sprite = emblemIcon != null ? emblemIcon : UIFactory.Fish;
+            _emblemFish.preserveAspect = emblemIcon != null;
+            if (emblemIcon != null) _emblemFish.color = Color.white;
 
-            _fish.sprite = s.IsJunk ? UIFactory.Circle : UIFactory.Fish;
-            _fish.color = s.Id == "goldkoi" ? new Color(1f, 0.78f, 0.25f) : s.IsJunk ? new Color(0.5f, 0.5f, 0.55f) : FishColor(s.Id);
+            _fish.sprite = s.IsJunk ? (ItemIcons.Get(s.Id) ?? UIFactory.Circle) : UIFactory.Fish;
+            _fish.preserveAspect = s.IsJunk;
+            _fish.color = s.Id == "goldkoi" ? new Color(1f, 0.78f, 0.25f) : s.IsJunk ? (ItemIcons.Get(s.Id) != null ? Color.white : new Color(0.5f, 0.5f, 0.55f)) : FishColor(s.Id);
             float size = Mathf.Lerp(380f, 900f, Mathf.Clamp01(fish.length / 100f));
-            _fish.rectTransform.sizeDelta = s.IsJunk ? new Vector2(180, 180) : new Vector2(size, size * 0.5f);
+            _fish.rectTransform.sizeDelta = s.IsJunk ? new Vector2(360, 360) : new Vector2(size, size * 0.5f);
             bool model = _stage.Show(s, fish.length);
             _fish.enabled = !model;
             _fish3d.enabled = model;

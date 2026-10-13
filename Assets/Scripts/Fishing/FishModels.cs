@@ -19,6 +19,19 @@ namespace Fishing.Angling
             new System.Collections.Generic.Dictionary<string, (Material, Material)>();
         static readonly System.Collections.Generic.Dictionary<string, Sprite> IconCache = new System.Collections.Generic.Dictionary<string, Sprite>();
 
+        /// <summary>잡동사니 3D 모델(Resources/Junk, tools/blender/build_icons.py)이 있는지.</summary>
+        public static bool HasJunkModel(FishSpecies s) => s != null && s.IsJunk && Resources.Load<GameObject>("Junk/" + s.Id) != null;
+
+        /// <summary>잡동사니: 길이 1m로 만든 정적 모델을 실제 크기로. 머티리얼은 FBX 색 그대로.</summary>
+        static GameObject CreateJunk(FishSpecies species, GameObject prefab, float lengthCm, Transform parent)
+        {
+            var go = Object.Instantiate(prefab, parent, false);
+            go.name = "Junk_" + species.Id;
+            go.transform.localScale *= lengthCm / 100f;
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            return go;
+        }
+
         /// <summary>어종 전용 모델이 있는지.</summary>
         public static bool HasModel(FishSpecies s) => s != null && Resources.Load<GameObject>("Fish/Species/" + s.Id) != null;
 
@@ -235,6 +248,8 @@ namespace Fishing.Angling
         {
             var own = species != null && !species.IsJunk ? Resources.Load<GameObject>("Fish/Species/" + species.Id) : null;
             if (own != null) return CreateSpecies(species, own, lengthCm, parent);
+            var junk = species != null && species.IsJunk ? Resources.Load<GameObject>("Junk/" + species.Id) : null;
+            if (junk != null) return CreateJunk(species, junk, lengthCm, parent);
             var path = Models[ModelIndex(species)];
             var prefab = Resources.Load<GameObject>(path);
             GameObject go;

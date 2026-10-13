@@ -10,7 +10,8 @@ namespace Fishing.EditorTools
     ///  - 이름에 "Loop"가 들어간 클립은 반복 재생
     ///  - Resources/Fish: 레거시 애니메이션 (Animation 컴포넌트). Fish/Species는 build_fish.py가 만든 어종별 모델(클립 5개)
     ///  - Resources/Fish/Textures: *_n = 노멀 맵, *_m = 금속성·매끈함(선형), 나머지 = 알베도(알파 = 지느러미)
-    ///  - Resources/Icons: UI 스프라이트 (투명 배경, 밉맵 없음)
+    ///  - Resources/Icons: UI 스프라이트 (투명 배경, 밉맵 없음). Items·Junk = build_icons.py, Fish = build_fish.py
+    ///  - Resources/Junk: 잡동사니 정적 모델 (build_icons.py)
     /// </summary>
     public class AssetImportRules : AssetPostprocessor
     {
@@ -52,6 +53,14 @@ namespace Fishing.EditorTools
                     importer.isReadable = false;
                     importer.optimizeMeshVertices = true;
                 }
+            }
+            else if (assetPath.Contains("Resources/Junk/"))
+            {
+                // 잡동사니 (tools/blender/build_icons.py): 정적 모델, 머티리얼은 FBX 색 그대로
+                importer.animationType = ModelImporterAnimationType.None;
+                importer.importAnimation = false;
+                importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
+                importer.addCollider = false;
             }
             else if (assetPath.Contains("Resources/Kenney/"))
             {
