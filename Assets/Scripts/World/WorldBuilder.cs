@@ -143,7 +143,7 @@ namespace Fishing.World
             // 낚시점 주인: 벽과 카운터 사이에 선다 (건물 상자는 z ±2.25)
             var owner = NpcAngler.Spawn(shop, new Vector3(1.2f, 0f, 2.75f), 0f, new CharacterLook
             {
-                Name = "낚시점 김사장", Title = "반포 낚시점", TopModel = "Top_Long", Hair = "Hair_Buzzed", Beard = true, HairColor = new Color(0.3f, 0.3f, 0.3f),
+                Name = "낚시점 김사장", Title = "반포 낚시점", TopModel = "Top_Shirt", Hair = "Hair_Buzzed", Beard = true, HairColor = new Color(0.3f, 0.3f, 0.3f),
                 Shirt = new Color(0.85f, 0.85f, 0.8f), VestColor = new Color(0.55f, 0.35f, 0.2f), Pants = new Color(0.3f, 0.28f, 0.25f), Hat = false
             }, NpcAngler.Role.Talker);
             owner.NpcId = "shop";

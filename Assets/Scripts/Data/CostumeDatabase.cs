@@ -79,8 +79,8 @@ namespace Fishing.Data
             new CostumeDef { Id = "glass_pro", Name = "프로 미러 선글라스", Slot = CostumeSlot.Glasses, Color = new Color(0.2f, 0.45f, 0.7f), Price = 15000, Level = 12, Stamina = 10, BigFish = 0.03f },
             // 상의 (셔츠)
             new CostumeDef { Id = "top_white", Name = "흰 반팔 티", Slot = CostumeSlot.Top, Model = "Top_Tee", Color = new Color(0.92f, 0.92f, 0.94f) },
-            new CostumeDef { Id = "top_check", Name = "체크 남방", Slot = CostumeSlot.Top, Model = "Top_Long", Pattern = 1, Color = new Color(0.65f, 0.25f, 0.22f), Price = 2500, Level = 2, Drain = 0.05f },
-            new CostumeDef { Id = "top_blue", Name = "한강 블루 셔츠", Slot = CostumeSlot.Top, Model = "Top_Long", Color = new Color(0.3f, 0.5f, 0.85f), Price = 5000, Level = 5, BigFish = 0.03f },
+            new CostumeDef { Id = "top_check", Name = "체크 남방", Slot = CostumeSlot.Top, Model = "Top_Shirt", Pattern = 1, Color = new Color(0.65f, 0.25f, 0.22f), Price = 2500, Level = 2, Drain = 0.05f },
+            new CostumeDef { Id = "top_blue", Name = "한강 블루 셔츠", Slot = CostumeSlot.Top, Model = "Top_Shirt", Color = new Color(0.3f, 0.5f, 0.85f), Price = 5000, Level = 5, BigFish = 0.03f },
             new CostumeDef { Id = "top_rash", Name = "래시가드", Slot = CostumeSlot.Top, Model = "Top_Rash", Color = new Color(0.12f, 0.14f, 0.2f), Price = 9000, Level = 9, Stamina = 8, Drain = 0.05f },
             new CostumeDef { Id = "top_union", Name = "조합 기념 티셔츠", Slot = CostumeSlot.Top, Model = "Top_Tee", Color = new Color(0.95f, 0.75f, 0.2f), Reward = true,
                 Desc = "자이언트 그루퍼 퀘스트 보상. 원작처럼 능력치는 없다" },

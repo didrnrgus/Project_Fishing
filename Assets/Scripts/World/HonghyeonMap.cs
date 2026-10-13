@@ -349,7 +349,7 @@ namespace Fishing.World
 
             var owner = NpcAngler.Spawn(shop, new Vector3(1.2f, 0f, 2.75f), 0f, new CharacterLook
             {
-                Name = "홍현 낚시점 최사장", Title = "홍현 낚시점", TopModel = "Top_Long", Female = true, Hair = "Hair_Buns", HairColor = new Color(0.12f, 0.1f, 0.09f),
+                Name = "홍현 낚시점 최사장", Title = "홍현 낚시점", TopModel = "Top_Shirt", Female = true, Hair = "Hair_Buns", HairColor = new Color(0.12f, 0.1f, 0.09f),
                 Shirt = new Color(0.95f, 0.9f, 0.8f), VestColor = new Color(0.2f, 0.4f, 0.6f), Pants = new Color(0.25f, 0.25f, 0.3f), Hat = false
             }, NpcAngler.Role.Talker);
             owner.NpcId = "shop";

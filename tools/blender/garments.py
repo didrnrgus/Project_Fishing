@@ -218,6 +218,8 @@ def make_object(body, name, P, sel, snap=None, trim=None, pattern=None, thicknes
         col[:, 1] = np.clip(shade, 0, 1)
     col[:, 3] = np.clip(body.P[:, 2] / 2.0, 0, 1)  # 휴식 자세 높이/2: 장화를 신으면 바지 아랫단을 셰이더에서 잘라낸다
     SHELLS[name] = (P.copy(), sel.copy())
+    for a in [a for a in me.color_attributes if a.name.startswith('Col')]:
+        me.color_attributes.remove(a)  # 몸 가림을 구운 뒤 복사하면 몸의 'Col'이 딸려 온다
     attr = me.color_attributes.new('Col', 'FLOAT_COLOR', 'POINT')
     for i in range(n):
         attr.data[i].color = tuple(col[i])
@@ -354,13 +356,15 @@ def surface_hit(obj, origin, direction):
 # 옷 종류
 
 
-def neck_hole(b, P, rx=0.075, ry=0.07, back_drop=0.025, front_drop=0.07):
+def neck_hole(b, P, rx=0.075, ry=0.07, back_drop=0.025, front_drop=0.07, v=0.0):
     """목둘레 구멍: 목 축 둘레 타원 안쪽에서, 깃선(뒤는 얕게, 앞은 깊게)보다 높은 점. True = 잘라낸다.
-    깃선 높이 배열도 돌려준다(목 리브 트림용)."""
+    v > 0이면 앞 깊이가 가운데에서만 깊은 V넥(옆은 덜 판다). 깃선 높이 배열도 돌려준다(목 리브 트림용)."""
     dx = P[:, 0] / rx
     dy = (P[:, 1] - (b.neck_y + 0.012)) / ry
     inside = dx * dx + dy * dy < 1.0
     front = smoothstep(b.neck_y - 0.02, b.neck_y + ry, P[:, 1])
+    if v > 0:
+        front = front * (1 - v * np.clip(np.abs(dx), 0, 1))
     collar = b.neck_z - back_drop - (front_drop - back_drop) * front
     return inside & (P[:, 2] > collar), collar, inside
 
@@ -412,8 +416,11 @@ def vest(b, name, kind='fishing', under=None):
     P0, ax = b.P, b.ax()
     life = kind == 'life'
     hem_z = b.hip_z + (0.05 if life else 0.035)
-    hole, collar, inside = neck_hole(b, P0, rx=0.09 if not life else 0.085, ry=0.085, back_drop=0.02,
-                                     front_drop=0.2 if not life else 0.12)
+    # V넥 깊이·너비는 몸 비율로 (절대값이면 가슴이 앞으로 나온 여자 캐릭터는 윗가슴이 덜 덮였다)
+    drop = b.neck_z - b.chest_z
+    wide = b.chest_half / 0.177
+    hole, collar, inside = neck_hole(b, P0, rx=(0.09 if not life else 0.085) * wide, ry=0.085, back_drop=0.02,
+                                     front_drop=drop * (0.92 if not life else 0.55), v=0.55)
     armhole = b.chest_half * (0.93 if not life else 0.98)
     sel = (P0[:, 2] > hem_z) & ~hole & (b.fam['head'] < 0.2) & (b.fam['torso'] > 0.45) & (b.fam['arm'] < 0.3)
     sel &= ax < armhole
@@ -538,44 +545,144 @@ def pants(b, name, kind='cargo', under=None):
     return obj
 
 
+def shirt(b, name, under=None):
+    """체크 남방: 긴팔 상의 + 셔츠 깃(목둘레 띠 + 접힌 깃 두 장, 앞이 벌어진다) + 앞단추."""
+    obj = top(b, name, 'long', loose=0.8, base=0.011, neck_front=0.09, under=under)
+    rx, ry, cy = 0.075, 0.07, b.neck_y + 0.012
+    back_drop, front_drop = 0.025, 0.09
+    phi_max = math.radians(152)
+    n = 44
+    rows = []
+    for k in range(n + 1):
+        phi = -phi_max + 2 * phi_max * k / n           # 0 = 등 가운데, ± = 앞
+        x, y = rx * math.sin(phi), cy - ry * math.cos(phi)
+        front = float(smoothstep(b.neck_y - 0.02, b.neck_y + ry, np.array([y]))[0])
+        z = b.neck_z - back_drop - (front_drop - back_drop) * front
+        p = np.array([x, y, z])
+        loc, nrm, _, _ = b.bvh.find_nearest(mathutils.Vector(p))
+        radial = np.array([x, y - cy, 0.0])
+        radial /= max(np.linalg.norm(radial), 1e-6)
+        if loc is not None:
+            p = np.array(loc) + np.array(nrm) * 0.016   # 셔츠 바깥면 조금 밖
+        up = np.array([0.0, 0.0, 1.0])
+        tip = smoothstep(0.62 * phi_max, phi_max, abs(phi))   # 앞쪽 깃 끝은 길게 뾰족
+        stand = 0.024 * (1 - 0.5 * tip)
+        c1 = p + up * stand - radial * 0.002
+        c2 = c1 + radial * 0.007 + up * 0.003
+        c3 = c1 + radial * 0.02 - up * 0.012
+        c4 = c1 + radial * (0.034 + 0.012 * tip) - up * (0.036 + 0.03 * tip)
+        rows.append([p, c1, c2, c3, c4])
+    collar = strip_object(b, name + '_Collar', rows, (0.0, 1.0, 0.0, 1.0), thickness=0.003)
+    join(obj, [collar])
+    # 앞단추 4개
+    for i in range(4):
+        z = b.neck_z - front_drop - 0.02 - i * (b.neck_z - front_drop - b.waist_z) / 3.6
+        loc, nrm = surface_hit(obj, (0, 1.0, z), (0, -1, 0))
+        if loc is not None:
+            add_box(obj, b, loc - nrm * 0.002, nrm, (0, 0, 1), (0.012, 0.012, 0.005), color=(1.0, 1.0, 0.0, 1), bevel=0.002)
+    return obj
+
+
+def gloves(b, name):
+    """손가락 끝이 없는 반장갑 (원작 1인칭의 검정 장갑 + 주황 손목띠). 손 껍데기를 3.5mm 띄운다."""
+    P0 = b.P
+    # 손목에서 팔꿈치 쪽으로 잰 거리 (아래팔 뼈 축): 장갑 손목띠 길이
+    back = np.full(len(P0), 1.0)
+    for side in ('l', 'r'):
+        e, wr = b.seg['lowerarm_' + side][0], b.seg['hand_' + side][0]
+        d = wr - e
+        L = np.linalg.norm(d)
+        t = (P0 - e) @ (d / L)
+        near = np.linalg.norm(P0 - wr, axis=1) < 0.14
+        back = np.where(near & (P0[:, 0] * wr[0] > 0), np.minimum(back, L - t), back)
+    tips = np.array([sum(v for bn, v in w.items() if bn.startswith(('index', 'middle', 'ring', 'pinky')) and ('_02' in bn or '_03' in bn or '_04' in bn))
+                     + sum(v for bn, v in w.items() if bn.startswith('thumb') and ('_03' in bn or '_04' in bn)) for w in b.W])
+    sel = (b.fam['hand'] > 0.35) & (tips < 0.35) & (back > -0.2)
+    sel |= (b.fam['arm'] > 0.2) & (back < 0.05) & (b.fam['torso'] < 0.1)
+    sel &= b.fam['head'] < 0.1
+    P = shell(b, sel, 0.0035, smooth_iters=2)
+    P = push_out(P, sel, b, 0.0032)
+
+    trim = np.zeros(len(P0))
+    trim[(back > 0.012) & (back < 0.06)] = 1.0      # 손목띠 (주황)
+    return make_object(b, name, P, sel, trim=trim, thickness=0.002)
+
+
+def strip_object(b, name, rows, color, thickness=0.003):
+    """rows[i][j] 격자(월드 좌표)로 띠 메쉬를 만든다. 각 줄은 첫 점에서 가장 가까운 몸 버텍스의 뼈 가중치를 물려받는다."""
+    from mathutils import kdtree
+    kd = kdtree.KDTree(len(b.P))
+    for i, p in enumerate(b.P):
+        kd.insert(mathutils.Vector(p), i)
+    kd.balance()
+    bm = bmesh.new()
+    grid = [[bm.verts.new(mathutils.Vector(p)) for p in row] for row in rows]
+    for i in range(len(rows) - 1):
+        for j in range(len(rows[i]) - 1):
+            bm.faces.new((grid[i][j], grid[i][j + 1], grid[i + 1][j + 1], grid[i + 1][j]))
+    bm.normal_update()
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    obj = bpy.data.objects.new(name, me)
+    b.obj.users_collection[0].objects.link(obj)
+    obj.matrix_world = b.obj.matrix_world.copy()
+    inv = obj.matrix_world.inverted()
+    for v in me.vertices:
+        v.co = inv @ v.co
+    ncol = len(rows[0])
+    for i, row in enumerate(rows):
+        _, src, _ = kd.find(mathutils.Vector(row[0]))
+        for bone, w in b.W[src].items():
+            g = obj.vertex_groups.get(bone) or obj.vertex_groups.new(name=bone)
+            g.add(list(range(i * ncol, (i + 1) * ncol)), w, 'REPLACE')
+    attr = me.color_attributes.new('Col', 'FLOAT_COLOR', 'POINT')
+    for i in range(len(me.vertices)):
+        attr.data[i].color = color
+    for uvn in [u.name for u in b.obj.data.uv_layers]:
+        uv = me.uv_layers.new(name=uvn)
+        for loop in me.loops:
+            i = loop.vertex_index
+            uv.data[loop.index].uv = (i // ncol * 0.012, i % ncol * 0.01)
+    for p in me.polygons:
+        p.use_smooth = True
+    mod = obj.modifiers.new('Solidify', 'SOLIDIFY')
+    mod.thickness = thickness
+    mod.offset = 0
+    with bpy.context.temp_override(object=obj, active_object=obj, selected_objects=[obj]):
+        bpy.ops.object.modifier_apply(modifier=mod.name)
+    return obj
+
+
+def join(target, others):
+    """others를 target 메쉬에 합친다 (뼈 가중치는 그룹 이름으로 맞춰진다)."""
+    sel = [target] + list(others)
+    with bpy.context.temp_override(object=target, active_object=target, selected_objects=sel, selected_editable_objects=sel):
+        bpy.ops.object.join()
+
+
 def shoes(b, name, kind='sneaker'):
+    """신발 = 발목(장화는 종아리) 껍데기 + 새로 만든 신발 골(loft). 몸의 발 메쉬를 그대로 부풀리면 발가락 사이가 접혀
+    슬리퍼처럼 구겨지므로, 발 부분은 둥근 앞코와 평평한 밑창의 단면을 이어 붙여 새로 만든다."""
     P0 = b.P
     boots = kind == 'boots'
     top_z = (b.knee_z - 0.1) if boots else (b.ankle_z + 0.045)
     sel = (P0[:, 2] < top_z) & (((b.fam['foot'] + b.fam['leg']) > 0.5) | (P0[:, 2] < b.ankle_z))
     base = 0.011 if not boots else 0.014
+    upper = sel & (P0[:, 2] > b.ankle_z - 0.02)
     P = P0 + b.N * base
-    # 발가락 사이 홈을 메운다: 뒤꿈치→앞코 축 둘레 단면 외곽선
-    foot = sel & (P0[:, 2] < b.ankle_z + 0.035)
-    for side in (-1, 1):
-        f = foot & (P0[:, 0] * side > 0)
-        heel = b.seg['foot_l' if side < 0 else 'foot_r'][0].copy()
-        tip = b.seg['ball_leaf_l' if side < 0 else 'ball_leaf_r'][1].copy()
-        heel[1] -= 0.06
-        heel[2], tip[2] = 0.06, 0.016  # 발등은 높고 발가락 쪽은 낮게
-        P = envelope(P, f, heel, tip - heel, window=0.035, bins=28, ang_spread=2)
-    P = smooth(P, b.nbr, foot * 0.8, iters=4)
-    P = push_out(P, sel, b, base)
-    # 앞코를 조금 길고 둥글게
-    ball_y = b.seg['ball_l'][0][1]
-    front = sel & (P0[:, 1] > ball_y)
-    P[front, 1] += 0.012 * smoothstep(ball_y, ball_y + 0.12, P0[front, 1])
-    # 밑창: 바닥 평평하게
-    sole_z = -0.014
-    low = sel & (P[:, 2] < 0.04)
-    P[low, 2] = sole_z + (P[low, 2] - sole_z) * smoothstep(0.0, 0.04, P[low, 2]) * 1.0
-    P[sel & (P0[:, 2] < 0.015), 2] = sole_z
+    P = smooth(P, b.nbr, upper * 0.6, iters=3)
     if boots:
         for side in (-1, 1):
-            leg = sel & (P0[:, 0] * side > 0) & (P0[:, 2] > b.ankle_z - 0.01)
+            leg = upper & (P0[:, 0] * side > 0)
             a = b.seg['calf_l' if side < 0 else 'calf_r'][0]
             t = b.seg['calf_l' if side < 0 else 'calf_r'][1]
             P = drape(P, leg, t, a - t, up_window=0.4, strength=1.0, bins=28, max_grow=0.03)
             # 윗단이 살짝 벌어지게
             rim = leg & (P0[:, 2] > top_z - 0.08)
             P = drape(P, rim, t, a - t, up_window=0.0, strength=0.0, bins=28)
-    P = smooth(P, b.nbr, sel * 0.5, iters=3)
-    P = push_out(P, sel & (P0[:, 2] > 0.02), b, base * 0.8)
+    P = smooth(P, b.nbr, upper * 0.5, iters=3)
+    P = push_out(P, upper, b, base * 0.8)
 
     def snap(p):
         if p[2] > top_z - 0.04:
@@ -583,12 +690,113 @@ def shoes(b, name, kind='sneaker'):
         return None
 
     trim = np.zeros(len(P0))
-    trim[P[:, 2] < 0.012] = 1.0                       # 밑창
     if boots:
         trim[P0[:, 2] > top_z - 0.025] = 1.0          # 장화 윗단
     else:
-        trim[(P0[:, 2] > b.ankle_z + 0.015)] = 0.6    # 발목 칼라
-    return make_object(b, name, P, sel, snap=snap, trim=trim, thickness=0.004)
+        trim[(P0[:, 2] > top_z - 0.014)] = 0.6        # 발목 칼라
+    obj = make_object(b, name, P, upper, snap=snap, trim=trim, thickness=0.004)
+    SHELLS[name] = (P.copy(), sel.copy())  # 몸 가림은 발까지 (신발 골이 덮는다)
+    join(obj, [shoe_loft(b, name + ('_L' if side < 0 else '_R'), side, boots, base) for side in (-1, 1)])
+    return obj
+
+
+def shoe_loft(b, name, side, boots, base, n_top=2.6, n_sec=2.3, NU=40, NA=36):
+    """신발 골: 발 축(뒤꿈치→발끝) u를 따라 초타원 단면을 이어 붙인 닫힌 메쉬.
+    위에서 본 모양은 앞코가 둥글고 뒤꿈치는 조금 더 각지며, 단면 아래쪽은 평평한 밑창.
+    뼈 가중치: 뒤쪽은 foot, 발볼 앞은 ball. 버텍스 컬러: 밑창·옆 줄무늬(R), 끈(B)."""
+    sfx = 'l' if side < 0 else 'r'
+    heel = b.seg['foot_' + sfx][0].copy()
+    tip = b.seg['ball_leaf_' + sfx][1].copy()
+    fw = np.array([tip[0] - heel[0], tip[1] - heel[1], 0.0])
+    fw /= np.linalg.norm(fw)
+    lat = np.array([fw[1], -fw[0], 0.0])
+    foot = (b.fam['foot'] > 0.3) & (b.P[:, 0] * side > 0) & (b.P[:, 2] < b.ankle_z + 0.02)
+    Q = b.P[foot] + b.N[foot] * base
+    u = (Q - heel) @ fw
+    v = (Q - heel) @ lat
+    u0, u1 = u.min() - 0.006, u.max() + (0.026 if boots else 0.03)
+    um, half = (u0 + u1) / 2, (u1 - u0) / 2
+    un_v = (u - um) / half
+    ball = un_v > 0.2
+    vc_b = float(np.median(v[ball]))
+    vc_h = float(np.median(v[un_v < -0.5]))
+    width = float(np.percentile(np.abs(v[ball] - vc_b), 98)) * 1.06
+    sole = -0.014
+    top_ankle = b.ankle_z + (0.05 if boots else 0.035)
+    top_toe = 0.058 if boots else 0.056
+
+    def section(un):
+        """축 위치 un(-1 뒤꿈치 ~ 1 앞코)의 단면: 가운데 v, 반너비 a, 가운데 높이 zc, 반높이 hh."""
+        n_end = n_top if un > 0 else n_top + 1.2
+        taper = max(0.0, 1 - min(abs(un), 1.0) ** n_end) ** (1 / n_end)
+        ss = lambda e0, e1: float(smoothstep(e0, e1, np.array(un)))
+        vc = vc_h + (vc_b - vc_h) * ss(-0.6, 0.2)
+        a = width * (0.84 + 0.16 * ss(-0.7, 0.3)) * taper
+        top = top_toe + (top_ankle - top_toe) * (1 - ss(-0.35, 0.55))
+        return vc, a, (top + sole) / 2, (top - sole) / 2 * max(taper, 0.3)
+
+    bm = bmesh.new()
+    rings = []
+    for i in range(NU + 1):
+        un = -1 + 2 * i / NU
+        un = math.copysign(abs(un) ** 0.8, un)          # 양 끝(앞코·뒤꿈치)에 단면을 촘촘하게
+        vc, a, zc, hh = section(un)
+        ring = []
+        for j in range(NA):
+            th = 2 * math.pi * j / NA
+            c, s = math.cos(th), math.sin(th)
+            p = heel + fw * (um + un * half) + lat * (vc + a * math.copysign(abs(c) ** (2 / n_sec), c))
+            p[2] = max(zc + hh * math.copysign(abs(s) ** (2 / (5.0 if s < 0 else n_sec)), s), sole)  # 밑은 각지게
+            ring.append(bm.verts.new(mathutils.Vector(p)))
+        rings.append(ring)
+    for i in range(NU):
+        for j in range(NA):
+            k = (j + 1) % NA
+            bm.faces.new((rings[i][j], rings[i + 1][j], rings[i + 1][k], rings[i][k]))
+    # 양 끝 단면은 한 점으로 모였다 → 겹친 점을 합쳐 닫는다
+    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-5)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    obj = bpy.data.objects.new(name, me)
+    b.obj.users_collection[0].objects.link(obj)
+    obj.matrix_world = b.obj.matrix_world.copy()
+    inv = obj.matrix_world.inverted()
+
+    # 색·가중치는 (remove_doubles가 인덱스를 바꾸므로) 위치로 계산한다
+    attr = me.color_attributes.new('Col', 'FLOAT_COLOR', 'POINT')
+    gf = obj.vertex_groups.new(name='foot_' + sfx)
+    gb = obj.vertex_groups.new(name='ball_' + sfx)
+    for i, vtx in enumerate(me.vertices):
+        pw = np.array(vtx.co)
+        un = ((pw - heel) @ fw - um) / half
+        vc, a, zc, hh = section(un)
+        cn = ((pw - heel) @ lat - vc) / max(a, 1e-4)
+        sn = (pw[2] - zc) / max(hh, 1e-4)
+        trim = 1.0 if pw[2] < sole + (0.02 if boots else 0.013) else 0.0   # 밑창
+        pat = 0.0
+        if not boots:
+            band = 0.25 + 0.4 * (0.3 - un)
+            if abs(cn) > 0.75 and abs(sn - band * 0.55) < 0.1 and -0.55 < un < 0.3:
+                trim = 1.0                                                  # 옆면 줄무늬(로고)
+            if abs(cn) < 0.3 and sn > 0.75 and -0.2 < un < 0.42:
+                pat = 1.0                                                   # 신발 끈
+        attr.data[i].color = (trim, 1.0, pat, float(np.clip(pw[2] / 2.0, 0, 1)))
+        wb = float(smoothstep(0.05, 0.45, np.array(un)))
+        if wb < 0.999:
+            gf.add([i], 1 - wb, 'REPLACE')
+        if wb > 0.001:
+            gb.add([i], wb, 'REPLACE')
+        vtx.co = inv @ vtx.co
+    for uvn in [uv.name for uv in b.obj.data.uv_layers]:
+        uvl = me.uv_layers.new(name=uvn)
+        for loop in me.loops:
+            co = me.vertices[loop.vertex_index].co
+            uvl.data[loop.index].uv = (co.x * 4 + co.z * 4, co.y * 4)
+    for poly in me.polygons:
+        poly.use_smooth = True
+    return obj
 
 
 # ---------------------------------------------------------------------------------------------
