@@ -362,6 +362,16 @@ namespace Fishing.World
             {
                 Mats.Prim(PrimitiveType.Sphere, "BridgeLight", props, new Vector3(HanRiverMap.BridgeX - 8.8f, 13.9f, z), Vector3.one * 0.5f, bridgeLight, false);
                 Mats.Prim(PrimitiveType.Sphere, "BridgeLight", props, new Vector3(HanRiverMap.BridgeX + 8.8f, 13.9f, z), Vector3.one * 0.5f, bridgeLight, false);
+                // 강 위에 있는 다리 조명만 물에 비친다 (데크 쪽 = 플레이어가 보는 쪽 난간)
+                if (z > HanRiverMap.RiverMinZ && z < HanRiverMap.RiverMaxZ)
+                    WaterGlints.Add(new Vector3(HanRiverMap.BridgeX + 8.8f, 13.9f, z), new Color(1f, 0.85f, 0.55f), 0.7f);
+            }
+            // 건너편(북쪽) 도시 불빛: 아파트 창문 불빛이 강물에 길게 비친다
+            for (int i = 0; i < 9; i++)
+            {
+                float x = -130f + i * 32f + (i % 3) * 5f;
+                var c = i % 3 == 0 ? new Color(0.75f, 0.85f, 1f) : new Color(1f, 0.78f, 0.5f);
+                WaterGlints.Add(new Vector3(x, 18f + (i % 4) * 6f, HanRiverMap.LandFarZ - 10f), c, 0.55f);
             }
         }
 
