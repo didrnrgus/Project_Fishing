@@ -37,6 +37,10 @@ namespace Fishing.Angling
                 case "rod_heavy":
                     return new Style { Blank = new Color(0.1f, 0.15f, 0.36f), Ferrule = new Color(0.82f, 0.84f, 0.88f), Grip = new Color(0.12f, 0.12f, 0.12f),
                         Length = 3.6f, Sections = 4, ButtDiameter = 0.044f, TipDiameter = 0.01f, Flex = rod.Flex };
+                case "rod_gege":
+                    // 대회 보상: 거거(대왕조개) 껍데기처럼 진줏빛 흰 몸통에 금색 링
+                    return new Style { Blank = new Color(0.9f, 0.88f, 0.82f), Ferrule = new Color(0.92f, 0.72f, 0.3f), Grip = new Color(0.32f, 0.2f, 0.12f),
+                        Length = 3.3f, Sections = 5, ButtDiameter = 0.034f, TipDiameter = 0.006f, Flex = rod.Flex };
                 default:
                     return new Style { Blank = new Color(0.75f, 0.13f, 0.2f), Ferrule = new Color(0.8f, 0.8f, 0.84f), Grip = new Color(0.13f, 0.13f, 0.13f),
                         Length = 3.0f, Sections = 4, ButtDiameter = 0.032f, TipDiameter = 0.006f, Flex = rod?.Flex ?? 0.8f };
@@ -179,6 +183,9 @@ namespace Fishing.Angling
                     body = new Color(0.08f, 0.08f, 0.09f); accent = new Color(0.9f, 0.7f, 0.25f); spoolCol = new Color(0.85f, 0.66f, 0.22f); size = 1.2f; break;
                 case "reel_hispeed":
                     body = new Color(0.15f, 0.3f, 0.6f); accent = new Color(0.85f, 0.87f, 0.9f); spoolCol = new Color(0.75f, 0.78f, 0.85f); size = 1.1f; doubleKnob = true; break;
+                case "reel_napal":
+                    // 대회 보상: 나팔고둥 껍데기 색 (크림색 몸통, 주황 갈색 무늬)
+                    body = new Color(0.93f, 0.85f, 0.7f); accent = new Color(0.72f, 0.36f, 0.16f); spoolCol = new Color(0.85f, 0.55f, 0.3f); size = 1.15f; break;
                 default:
                     body = new Color(0.7f, 0.71f, 0.74f); accent = new Color(0.2f, 0.2f, 0.22f); spoolCol = new Color(0.62f, 0.63f, 0.66f); size = 1f; break;
             }

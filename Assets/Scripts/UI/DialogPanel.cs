@@ -107,7 +107,7 @@ namespace Fishing.UI
             var q = quests.Current;
             if (q == null)
             {
-                Show("조합의 이야기 퀘스트를 모두 마치셨습니다. 이제 한강의 진짜 강태공이시네요!", ("퀘스트 기록 보기", OpenQuest), Bye);
+                Show("조합의 이야기 퀘스트를 모두 마치셨습니다. 이제 한강의 진짜 강태공이시네요!", ("퀘스트 기록 보기", OpenQuest), ("낚시 대회", Tournament), Bye);
                 return;
             }
             if (quests.Ready)
@@ -118,9 +118,41 @@ namespace Fishing.UI
             }
             Show($"한국 낚시 조합 {Npc.Look.Name}입니다.\n지금 맡으신 일은 [{q.Title}] — {q.GoalText} ({Mathf.Min(quests.Progress, q.Count)}/{q.Count}).\n\"{q.Desc}\"",
                 ("퀘스트 자세히 보기", OpenQuest),
+                ("낚시 대회", Tournament),
                 ("소라고동 교환", () => { Close(); Game.UI.OpenExclusive(Game.UI.Exchange); }),
                 ("조황 정보", () => Show(Report(), ("다른 이야기", UnionGreeting), Bye)),
                 Bye);
+        }
+
+        /// <summary>낚시 대회 안내와 참가 신청 (원작: 대회는 NPC를 통해 참가).</summary>
+        void Tournament()
+        {
+            var t = Game.Tournament;
+            var s = Game.Profile.Data.tournament;
+            string head = $"오늘은 [{TournamentRules.Title(t.Day)}]가 {TournamentRules.TimeText}에 열립니다.\n" +
+                          "가장 많이, 가장 길게, 길이 합계 — 세 미션 점수로 순위를 매기고, 1위는 거거 낚시대, 2위는 나팔고둥 릴을 드려요.\n" +
+                          $"지금 계급은 {TournamentRules.EmblemColored(s.points)} (누적 {s.points}점)이시네요.";
+            if (t.Joined && !s.settled)
+            {
+                Show(head + "\n<color=#70e070>참가 등록이 되어 있습니다. 행운을 빌어요!</color>", ("순위표 보기", OpenTournamentTab), ("다른 이야기", UnionGreeting), Bye);
+                return;
+            }
+            var why = t.CannotJoinReason();
+            if (why != null)
+            {
+                Show(head + $"\n<color=#ff9a50>{why}</color>", ("대회 기록 보기", OpenTournamentTab), ("다른 이야기", UnionGreeting), Bye);
+                return;
+            }
+            Show(head, ("참가 신청하기", () => { if (t.Join()) Show("등록했습니다! 대회 시간에 대회장에서 낚은 고기만 기록돼요. 시간은 천천히 흐르니 침착하게!",
+                    ("순위표 보기", OpenTournamentTab), Bye); }),
+                ("대회 기록 보기", OpenTournamentTab), ("다른 이야기", UnionGreeting), Bye);
+        }
+
+        void OpenTournamentTab()
+        {
+            Close();
+            Game.UI.Quest.ShowTab(4);
+            Game.UI.OpenExclusive(Game.UI.Quest);
         }
 
         void OpenQuest()

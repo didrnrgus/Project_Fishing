@@ -49,6 +49,7 @@ namespace Fishing.Core
             Game.DayNight = gameObject.AddComponent<DayNightCycle>();
             Game.DayNight.Init(new System.Collections.Generic.List<Light>(), new System.Collections.Generic.List<Renderer>());
             Game.Schools = gameObject.AddComponent<FishSchoolManager>();
+            Game.Tournament = gameObject.AddComponent<TournamentSystem>();
             // 마지막으로 있던 낚시터 (입장 레벨이 안 되면 한강)
             var startMap = Maps.Get(data.mapId);
             if (data.level < FishingAreas.EntryLevel(startMap.Id)) startMap = Maps.HanRiver;

@@ -13,6 +13,8 @@ namespace Fishing.Data
         public int Price;
         public int Level;
         public string Desc;
+        /// <summary>상점에서 팔지 않는다 (대회 보상 장비).</summary>
+        public bool NotSold;
 
         // 낚싯대
         public float Power = 1f;      // 데미지 배율
@@ -71,6 +73,9 @@ namespace Fishing.Data
                 Power = 1.5f, Flex = 0.75f, CastRange = 20f, Desc = "손맛의 정점. 대물의 돌진도 부드럽게 받아낸다." },
             new GearDef { Id = "rod_heavy", Name = "헤비 원투대", Slot = GearSlot.Rod, Price = 25000, Level = 12,
                 Power = 2.0f, Flex = 0.35f, CastRange = 32f, Desc = "멀리, 강하게. 대물 전용." },
+            // 원작 대회 1~3위 보상 「거거 낚시대」 (상점에서 팔지 않음)
+            new GearDef { Id = "rod_gege", Name = "거거 낚시대", Slot = GearSlot.Rod, Price = 0, Level = 10, NotSold = true,
+                Power = 1.85f, Flex = 0.6f, CastRange = 28f, Desc = "조합 낚시 대회 우승 상품. 가볍고 질겨서 손맛과 힘을 모두 잡았다." },
 
             new GearDef { Id = "reel_basic", Name = "기본 스피닝 릴", Slot = GearSlot.Reel, Price = 0, Level = 1,
                 ReelSpeed = 3f, Capacity = 60f, Desc = "무난한 입문용 릴." },
@@ -78,6 +83,9 @@ namespace Fishing.Data
                 ReelSpeed = 4.2f, Capacity = 90f, Desc = "감는 힘이 좋다." },
             new GearDef { Id = "reel_hispeed", Name = "하이기어 릴", Slot = GearSlot.Reel, Price = 15000, Level = 10,
                 ReelSpeed = 5.5f, Capacity = 120f, Desc = "빠르게 거리를 좁힌다." },
+            // 원작 대회 보상 「나팔고둥」 (나팔고둥 껍데기 같은 무늬의 릴)
+            new GearDef { Id = "reel_napal", Name = "나팔고둥 릴", Slot = GearSlot.Reel, Price = 0, Level = 10, NotSold = true,
+                ReelSpeed = 5.0f, Capacity = 140f, Desc = "조합 낚시 대회 입상 상품. 권사량이 넉넉하고 드랙이 부드럽다." },
 
             new GearDef { Id = "line_nylon", Name = "나일론 2호", Slot = GearSlot.Line, Price = 0, Level = 1,
                 Strength = 1.0f, Desc = "기본 원줄." },

@@ -31,11 +31,11 @@ namespace Fishing.UI
             UIFactory.ClearChildren(Body);
             var rows = new RowCursor(Body);
             var tabs = rows.Next(42, 10);
-            string[] names = { "이야기", "일일 의뢰", "대물 도전", "업적 · 칭호" };
+            string[] names = { "이야기", "일일 의뢰", "대물 도전", "업적 · 칭호", "대회" };
             for (int i = 0; i < names.Length; i++)
             {
                 int t = i;
-                var tb = RowButton(tabs, names[i], () => { _tab = t; Refresh(); }, i * 182f, 176,
+                var tb = RowButton(tabs, names[i], () => { _tab = t; Refresh(); }, i * 184f, 176,
                     _tab == i ? UIFactory.TabOn : UIFactory.TabOff, true, 18);
                 UIFactory.SetRadius(tb.targetGraphic, UIFactory.Pill);
             }
@@ -45,7 +45,8 @@ namespace Fishing.UI
                 case 0: Story(rows); break;
                 case 1: Daily(rows); break;
                 case 2: Trophy(rows); break;
-                default: Achievements(rows); break;
+                case 3: Achievements(rows); break;
+                default: Tournament(rows); break;
             }
         }
 
@@ -145,6 +146,70 @@ namespace Fishing.UI
             }
         }
 
+        void Tournament(RowCursor rows)
+        {
+            var t = Game.Tournament;
+            var s = Game.Profile.Data.tournament;
+            int day = Game.Clock.Day;
+            Cell(rows.Next(30), $"조합 낚시 대회  <size=14><color=#8090a0>매일 {TournamentRules.TimeText} · 홀수 날 한강, 짝수 날 홍현 앞바다 · AI 낚시꾼 7명과 겨룬다</color></size>",
+                4, 920, 20, UIFactory.Accent);
+
+            // 오늘 대회 상태
+            var head = rows.Next(46, 6);
+            UIFactory.RowBg(head, true);
+            string phase = t.Phase switch
+            {
+                TournamentRules.Phase.Before => "<color=#8090a0>참가 신청 전 (08:00부터)</color>",
+                TournamentRules.Phase.Registration => "<color=#70e070>참가 신청 중</color>",
+                TournamentRules.Phase.Running => $"<color=#ffd060>진행 중 · 남은 시간 {Mathf.FloorToInt(t.MinutesLeft / 60f)}시간 {Mathf.FloorToInt(t.MinutesLeft % 60f):00}분</color>",
+                _ => "<color=#8090a0>오늘 대회 끝</color>",
+            };
+            Cell(head, $"<b>{TournamentRules.Title(day)}</b>   {phase}" + (t.Joined ? "   <color=#7fd8ff>· 참가 중</color>" : ""), 12, 660, 19);
+            var why = t.CannotJoinReason();
+            if (why == null) RowButton(head, "참가 신청", () => { t.Join(); Refresh(); }, 700, 190, UIFactory.BtnGood, true, 18);
+            else if (!t.Joined) Cell(head, why, 660, 250, 14, UIFactory.TextDim, TextAnchor.MiddleRight);
+
+            Cell(rows.Next(26), "미션: ① 가장 많이 낚기  ② 가장 긴 고기  ③ 길이 합계 — 미션마다 1위 10점 · 2위 6점 · 3위 4점 · 4위 2점 · 그 아래 1점, 합계로 순위",
+                4, 920, 15, UIFactory.TextDim);
+            Cell(rows.Next(26), "보상: 1위 8,000골드 · 소라고동 5 · <color=#ffd060>거거 낚시대</color>   2위 5,000골드 · 소라고동 3 · <color=#ffd060>나팔고둥 릴</color>   3위 3,000골드 · 소라고동 2",
+                4, 920, 15, UIFactory.Gold);
+
+            // 엠블럼
+            var em = rows.Next(40, 8);
+            int toNext = TournamentRules.ToNextEmblem(s.points);
+            Cell(em, $"계급 엠블럼 <size=24>{TournamentRules.EmblemColored(s.points)}</size>   누적 {s.points}점" +
+                     (toNext > 0 ? $"  <size=14><color=#8090a0>다음 단계까지 {toNext}점</color></size>" : ""), 4, 560, 19);
+            Cell(em, $"참가 {s.played}회 · 우승 {s.wins}회 · 입상 {s.podiums}회 · 최고 {(s.bestRank > 0 ? s.bestRank + "위" : "-")}", 560, 360, 16, UIFactory.TextMain, TextAnchor.MiddleRight);
+
+            // 순위표
+            bool show = t.Joined || t.Phase == TournamentRules.Phase.Running || t.Phase == TournamentRules.Phase.Finished;
+            if (!show)
+            {
+                Cell(rows.Next(30), "대회가 시작되면 여기에 순위표가 나옵니다.", 4, 900, 16, UIFactory.TextDim);
+                return;
+            }
+            var entries = t.Entries();
+            UIFactory.SectionTitle(rows.Next(30, 4), t.Joined && s.settled ? "최종 순위" : "현재 순위", 4, 18);
+            var hdr = rows.Next(22, 2);
+            string[] cols = { "순위", "이름", "마릿수", "최장", "가장 긴 고기", "길이 합계", "점수" };
+            float[] xs = { 12, 80, 330, 430, 540, 700, 820 };
+            for (int i = 0; i < cols.Length; i++) Cell(hdr, cols[i], xs[i], 120, 14, UIFactory.TextDim);
+            foreach (var e in entries)
+            {
+                var row = rows.Next(30, 2);
+                UIFactory.RowBg(row, e.IsPlayer);
+                var col = e.IsPlayer ? UIFactory.Gold : e.Rank <= 3 ? UIFactory.TextMain : UIFactory.TextDim;
+                string medal = e.Rank switch { 1 => "<color=#ffd060>1</color>", 2 => "<color=#d0d8e0>2</color>", 3 => "<color=#d09060>3</color>", _ => e.Rank.ToString() };
+                Cell(row, medal, xs[0] + 8, 60, 18, col, TextAnchor.MiddleLeft, FontStyle.Bold);
+                Cell(row, e.Name, xs[1], 240, 17, col);
+                Cell(row, $"{e.Count}", xs[2], 90, 17, col);
+                Cell(row, e.Longest > 0 ? $"{e.Longest:0.0}cm" : "-", xs[3], 100, 17, col);
+                Cell(row, e.LongestFish ?? "-", xs[4], 150, 16, col);
+                Cell(row, $"{e.TotalLength:0.0}cm", xs[5], 110, 17, col);
+                Cell(row, $"{e.Points}", xs[6], 80, 18, col, TextAnchor.MiddleLeft, FontStyle.Bold);
+            }
+        }
+
         void Achievements(RowCursor rows)
         {
             var p = Game.Profile;
@@ -168,6 +233,13 @@ namespace Fishing.UI
                     10, 920, 16, done ? UIFactory.Good : UIFactory.TextMain);
             }
         }
+    }
+
+    public static class TournamentView
+    {
+        /// <summary>순위표 한 줄 문자열 (HUD·퀘스트 창 공용).</summary>
+        public static string Line(TournamentEntry e) =>
+            $"{e.Rank}. {e.Name}  {e.Count}마리 · {e.Longest:0.0}cm · {e.Points}점";
     }
 
     public class HelpPanel : UIPanel

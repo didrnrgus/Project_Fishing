@@ -24,6 +24,9 @@ namespace Fishing.UI
         Image _staminaFill, _expFill;
         TMP_Text _channelText, _clockText, _locationText, _areaText;
         TMP_Text _questTitle, _questGoal;
+        // 대회 순위표 (참가했을 때만)
+        RectTransform _tourBox;
+        TMP_Text _tourTitle, _tourBody;
         TMP_Text _hint, _prompt;
         TMP_Text _netSlot;
         TMP_Text _nameText;
@@ -173,6 +176,47 @@ namespace Fishing.UI
             _questTitle.rectTransform.At(new Vector2(0, 1), new Vector2(16, -30), new Vector2(316, 24));
             _questGoal = UIFactory.Text(quest, "", 15, UIFactory.TextMain, TextAnchor.UpperLeft);
             _questGoal.rectTransform.At(new Vector2(0, 1), new Vector2(22, -56), new Vector2(308, 46));
+
+            // 대회 순위표: 참가한 날 퀘스트 목록 아래에 (원작 대회 HUD 자리는 확인되지 않아 솔로판 배치)
+            _tourBox = UIFactory.Panel(_root, "Tournament").rectTransform
+                .At(new Vector2(1, 1), new Vector2(-14, -474), new Vector2(344, 170));
+            UIFactory.Text(_tourBox, "TOURNAMENT", 12, UIFactory.TextDim, TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
+                .At(new Vector2(0, 1), new Vector2(16, -6), new Vector2(140, 20));
+            _tourTitle = UIFactory.Text(_tourBox, "", 13, UIFactory.Gold, TextAnchor.MiddleRight, FontStyle.Bold);
+            _tourTitle.rectTransform.At(new Vector2(1, 1), new Vector2(-16, -6), new Vector2(200, 20));
+            _tourBody = UIFactory.Text(_tourBox, "", 14, UIFactory.TextMain, TextAnchor.UpperLeft);
+            _tourBody.rectTransform.At(new Vector2(0, 1), new Vector2(16, -30), new Vector2(316, 136));
+            _tourBody.lineSpacing = 4f;
+        }
+
+        void UpdateTournament()
+        {
+            var t = Game.Tournament;
+            bool show = t != null && t.Joined && !Game.Profile.Data.tournament.settled;
+            _tourBox.gameObject.SetActive(show);
+            if (!show) return;
+            if (t.Phase == TournamentRules.Phase.Registration)
+            {
+                _tourTitle.text = "09:00 시작";
+                _tourBody.text = $"{TournamentRules.Title(t.Day)}\n<color=#8090a0>{TournamentRules.MapShortName(t.MapId)}에서 열립니다.\n많이 · 길게 · 길이 합계로 겨뤄요.</color>";
+                return;
+            }
+            float left = t.MinutesLeft;
+            _tourTitle.text = $"남은 시간 {Mathf.FloorToInt(left / 60f)}:{Mathf.FloorToInt(left % 60f):00}";
+            if (Time.frameCount % 15 != 0 && !string.IsNullOrEmpty(_tourBody.text)) return;
+            var entries = t.Entries();
+            var sb = new System.Text.StringBuilder();
+            if (FieldMap.Id != Game.Profile.Data.tournament.mapId)
+                sb.Append($"<color=#ff9a50>대회장은 {TournamentRules.MapShortName(Game.Profile.Data.tournament.mapId)}입니다!</color>\n");
+            int shown = 0;
+            foreach (var e in entries)
+            {
+                if (shown >= 5 && !e.IsPlayer) continue;
+                string line = $"{e.Rank}. {e.Name}  <color=#a0b0c0>{e.Count}마리 · {e.Longest:0.0}cm</color>  <b>{e.Points}</b>";
+                sb.Append(e.IsPlayer ? $"<color=#ffd060>{line}</color>" : line).Append('\n');
+                shown++;
+            }
+            _tourBody.text = sb.ToString();
         }
 
         // 미니맵 좌표: 맵의 View 범위를 320x212 칸에 맞춘다
@@ -574,6 +618,7 @@ namespace Fishing.UI
             }
             _netSlot.text = $"<size=11><color=#80c8ff>Z</color></size> 살림망\n<b>{d.keepNet.Count}/{Game.Profile.KeepNetSize}</b>";
 
+            UpdateTournament();
             UpdateMap(playerPos);
             UpdateBoatGauges();
             UpdateCasting();

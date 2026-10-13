@@ -44,3 +44,6 @@ crashlytics-build.properties
 
 # Python 캐시 (tools/blender)
 __pycache__/
+
+# Blender 파이썬 가상환경 (tools/blender)
+/bpyenv/
