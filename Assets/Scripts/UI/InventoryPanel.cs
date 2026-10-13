@@ -23,8 +23,7 @@ namespace Fishing.UI
             foreach (var cat in new[] { ItemCategory.Bait, ItemCategory.Food, ItemCategory.Material })
             {
                 var items = p.Data.items.Where(i => i.count > 0 && ItemDatabase.Category(i.id) == cat).ToList();
-                Cell(rows.Next(30), cat switch { ItemCategory.Bait => "미끼", ItemCategory.Food => "먹을거리", _ => "재료" }, 4, 300, 20,
-                    UIFactory.Accent, TextAnchor.MiddleLeft, FontStyle.Bold);
+                UIFactory.SectionTitle(rows.Next(30), cat switch { ItemCategory.Bait => "미끼", ItemCategory.Food => "먹을거리", _ => "재료" }, 4, 20);
                 if (items.Count == 0)
                 {
                     Cell(rows.Next(26), "없음", 14, 400, 16, UIFactory.TextDim);
@@ -33,7 +32,7 @@ namespace Fishing.UI
                 foreach (var it in items)
                 {
                     var row = rows.Next(36, 3);
-                    UIFactory.Image(row, new Color(1, 1, 1, 0.04f), null, "Bg").rectTransform.Fill();
+                    UIFactory.RowBg(row);
                     bool equipped = it.id == p.Data.baitId;
                     Cell(row, $"<b>{ItemDatabase.Name(it.id)}</b>  <color=#ffd060>x{it.count}</color>{(equipped ? "  <color=#70e070>장착 중</color>" : "")}", 10, 300, 18);
                     Cell(row, ItemDatabase.Desc(it.id), 310, 400, 14, UIFactory.TextDim);
@@ -47,14 +46,14 @@ namespace Fishing.UI
                     }
                     else if (it.id == GearDatabase.KimbapId)
                     {
-                        RowButton(row, "먹기", EatKimbap, 720, 120, new Color(0.25f, 0.45f, 0.25f), true, 16);
+                        RowButton(row, "먹기", EatKimbap, 720, 120, UIFactory.BtnGood, true, 16);
                     }
                 }
                 rows.Next(8);
             }
 
             // 배
-            Cell(rows.Next(30), "배", 4, 300, 20, UIFactory.Accent, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UIFactory.SectionTitle(rows.Next(30), "배", 4, 20);
             var boat = p.Boat;
             Cell(rows.Next(28), boat == null ? "없음 (Lv.5에 조합이 고무보트를 지급합니다)"
                 : $"{boat.Name}  연료 {p.Data.boatFuel:0.0}/{boat.FuelCapacity:0}L  ·  물가에서 B로 꺼내 타기", 14, 800, 17, boat == null ? UIFactory.TextDim : UIFactory.TextMain);

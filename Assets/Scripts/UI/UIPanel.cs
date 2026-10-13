@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,27 +12,29 @@ namespace Fishing.UI
 
         protected RectTransform Frame;
         protected RectTransform Body;
-        protected Text Title;
+        protected TMP_Text Title;
 
         /// <summary>BuildFrame 대신 전체 화면 등 직접 만든 루트를 쓸 때.</summary>
         protected void SetRoot(GameObject root) => Root = root;
 
         protected void BuildFrame(Transform canvas, string name, string title, Vector2 size, bool closable = true)
         {
-            var dim = UIFactory.Panel(canvas, name, new Color(0, 0, 0, 0.35f));
-            dim.rectTransform.Fill();
-            Root = dim.gameObject;
+            Root = UIFactory.Dim(canvas, name, 0.42f).gameObject;
 
-            Frame = UIFactory.Panel(Root.transform, "Frame").rectTransform.At(new Vector2(0.5f, 0.5f), Vector2.zero, size);
-            UIFactory.Image(Frame, UIFactory.Accent, null, "TopLine").rectTransform.At(new Vector2(0.5f, 1), Vector2.zero, new Vector2(size.x, 4));
-            Title = UIFactory.Text(Frame, title, 28, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
-            Title.rectTransform.At(new Vector2(0, 1), new Vector2(24, -12), new Vector2(size.x - 120, 44));
+            // 유리 창: 뒤 화면이 흐리게 비친다. 제목 줄 아래에 가는 구분선
+            Frame = UIFactory.Glass(Root.transform, "Frame", UIFactory.RadiusPanel, null, 0.7f).rectTransform
+                .At(new Vector2(0.5f, 0.5f), Vector2.zero, size);
+            UIFactory.Shape(Frame, UIFactory.Accent, UIFactory.Pill, "TitleMark", 0f).rectTransform
+                .At(new Vector2(0, 1), new Vector2(26, -24), new Vector2(5, 28));
+            Title = UIFactory.Text(Frame, title, 27, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
+            Title.rectTransform.At(new Vector2(0, 1), new Vector2(42, -14), new Vector2(size.x - 160, 46));
+            UIFactory.Divider(Frame, "TitleLine").rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -68), new Vector2(size.x - 48, 1));
             if (closable)
             {
-                var close = UIFactory.Button(Frame, "✕", Close, new Color(0.3f, 0.15f, 0.15f), 22);
-                ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(-14, -14), new Vector2(40, 40));
+                var close = UIFactory.IconButton(Frame, "×", Close, UIFactory.BtnGhost, 20);
+                ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(-18, -16), new Vector2(40, 40));
             }
-            Body = UIFactory.Node("Body", Frame).Fill(24, 24, 68, 20);
+            Body = UIFactory.Node("Body", Frame).Fill(28, 28, 82, 24);
             Root.SetActive(false);
         }
 
@@ -77,7 +80,7 @@ namespace Fishing.UI
             }
         }
 
-        protected static Text Cell(RectTransform row, string text, float x, float width, int size = 18, Color? color = null,
+        protected static TMP_Text Cell(RectTransform row, string text, float x, float width, int size = 18, Color? color = null,
             TextAnchor anchor = TextAnchor.MiddleLeft, FontStyle style = FontStyle.Normal)
         {
             var t = UIFactory.Text(row, text, size, color ?? UIFactory.TextMain, anchor, style);
@@ -99,7 +102,7 @@ namespace Fishing.UI
             rt.anchorMax = new Vector2(0, 1);
             rt.pivot = new Vector2(0, 0.5f);
             rt.anchoredPosition = new Vector2(x, 0);
-            rt.sizeDelta = new Vector2(width, -6);
+            rt.sizeDelta = new Vector2(width, -8);
             b.interactable = interactable;
             return b;
         }

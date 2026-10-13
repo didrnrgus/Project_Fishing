@@ -1,35 +1,35 @@
 using System;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Fishing.UI
 {
-    /// <summary>코드로 UGUI를 조립하기 위한 헬퍼. 기준 해상도는 1920x1080.</summary>
-    public static class UIFactory
+    /// <summary>코드로 UGUI를 조립하기 위한 헬퍼. 기준 해상도는 1920x1080. 유리·도형 스타일은 UIStyle.cs.</summary>
+    public static partial class UIFactory
     {
-        public static readonly Color PanelBg = new Color(0.05f, 0.08f, 0.11f, 0.88f);
-        public static readonly Color PanelBgLight = new Color(0.12f, 0.17f, 0.22f, 0.92f);
-        public static readonly Color Accent = new Color(0.33f, 0.86f, 0.78f);
+        public static readonly Color Accent = new Color(0.36f, 0.88f, 0.8f);
         public static readonly Color Gold = new Color(1f, 0.82f, 0.35f);
         public static readonly Color Warn = new Color(1f, 0.62f, 0.25f);
         public static readonly Color Danger = new Color(0.95f, 0.3f, 0.28f);
         public static readonly Color Good = new Color(0.45f, 0.9f, 0.45f);
-        public static readonly Color TextMain = new Color(0.94f, 0.96f, 0.98f);
-        public static readonly Color TextDim = new Color(0.64f, 0.7f, 0.76f);
-        public static readonly Color ButtonBg = new Color(0.2f, 0.32f, 0.38f, 1f);
+        public static readonly Color TextMain = new Color(0.95f, 0.97f, 0.99f);
+        public static readonly Color TextDim = new Color(0.62f, 0.69f, 0.76f);
+        public static Color ButtonBg => BtnNeutral;
 
-        static Font _font;
+        static TMP_FontAsset _font;
+        static Material _outlineBase;
+        static readonly Dictionary<(Color, float), Material> _outlines = new Dictionary<(Color, float), Material>();
         static Sprite _white, _circle, _ring, _fish;
 
-        public static Font Font
+        /// <summary>TMP 다이나믹 글꼴 Jalnan2. 에셋은 Editor/FontSetup.cs가 Resources/Fonts에 만든다.</summary>
+        public static TMP_FontAsset Font
         {
             get
             {
-                if (_font == null)
-                {
-                    _font = Font.CreateDynamicFontFromOSFont(
-                        new[] { "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans CJK KR", "NanumGothic", "Arial" }, 32);
-                }
+                if (_font == null) _font = Resources.Load<TMP_FontAsset>("Fonts/Jalnan2 SDF");
+                if (_font == null) _font = TMP_Settings.defaultFontAsset;
                 return _font;
             }
         }
@@ -227,6 +227,8 @@ namespace Fishing.UI
             var canvas = go.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = order;
+            // Paraform(둥근 유리 도형)이 쓰는 정점 채널
+            canvas.additionalShaderChannels |= AdditionalCanvasShaderChannels.TexCoord1 | AdditionalCanvasShaderChannels.TexCoord2 | AdditionalCanvasShaderChannels.TexCoord3;
             var scaler = go.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
@@ -271,55 +273,139 @@ namespace Fishing.UI
             return img;
         }
 
-        public static Image Panel(Transform parent, string name, Color? color = null)
-        {
-            var img = Image(parent, color ?? PanelBg, White, name);
-            img.raycastTarget = true;
-            return img;
-        }
+        /// <summary>HUD·창의 유리 판 (raycast 막음). 예전 이름을 그대로 둔다.</summary>
+        public static Graphic Panel(Transform parent, string name, float radius = RadiusHud, float opacity = 0.62f)
+            => Glass(parent, name, radius, null, opacity);
 
-        public static Text Text(Transform parent, string text, int size, Color color, TextAnchor anchor = TextAnchor.MiddleLeft,
+        /// <summary>
+        /// TMP 텍스트. 가로는 줄바꿈, 세로는 넘쳐도 그린다. 그림자는 글꼴 기본 머티리얼(underlay)에 들어 있다.
+        /// 정렬·스타일은 예전 uGUI Text처럼 TextAnchor/FontStyle로 받는다.
+        /// </summary>
+        public static TextMeshProUGUI Text(Transform parent, string text, float size, Color color, TextAnchor anchor = TextAnchor.MiddleLeft,
             FontStyle style = FontStyle.Normal, string name = "Text")
         {
             var rt = Node(name, parent);
-            var t = rt.gameObject.AddComponent<Text>();
+            var t = rt.gameObject.AddComponent<TextMeshProUGUI>();
             t.font = Font;
             t.text = text;
             t.fontSize = size;
             t.color = color;
-            t.alignment = anchor;
-            t.fontStyle = style;
-            t.horizontalOverflow = HorizontalWrapMode.Wrap;
-            t.verticalOverflow = VerticalWrapMode.Overflow;
+            t.alignment = Align(anchor);
+            t.fontStyle = Style(style);
+            t.textWrappingMode = TextWrappingModes.Normal;
+            t.overflowMode = TextOverflowModes.Overflow;
             t.raycastTarget = false;
-            t.supportRichText = true;
-            var shadow = rt.gameObject.AddComponent<Shadow>();
-            shadow.effectColor = new Color(0f, 0f, 0f, 0.6f);
-            shadow.effectDistance = new Vector2(1.5f, -1.5f);
+            t.richText = true;
             return t;
         }
 
+        /// <summary>월드 공간 TMP 글자(머리 위 이름표·간판). 가운데 정렬, 줄바꿈 없음. fontSize 10 = 글자 높이 1m.</summary>
+        public static TextMeshPro WorldText(Transform parent, string text, Vector3 localPos, Color color, float fontSize, string name = "Text")
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPos;
+            var t = go.AddComponent<TextMeshPro>();
+            t.font = Font;
+            t.text = text;
+            t.fontSize = fontSize;
+            t.color = color;
+            t.alignment = TextAlignmentOptions.Center;
+            t.textWrappingMode = TextWrappingModes.NoWrap;
+            t.overflowMode = TextOverflowModes.Overflow;
+            t.rectTransform.sizeDelta = Vector2.zero;
+            t.fontSharedMaterial = WorldMaterial(t.fontSharedMaterial);
+            return t;
+        }
+
+        static Material _worldMat;
+
+        /// <summary>
+        /// 월드 글자용 머티리얼: 기본 그림자는 글자 크기에 비례해서 가까이서 보면 두껍게 번지므로, 짧고 또렷한 그림자로 바꾼다.
+        /// UNDERLAY_ON 키워드는 그대로 둬서 빌드에 이미 들어간 셰이더 변형을 쓴다.
+        /// </summary>
+        static Material WorldMaterial(Material source)
+        {
+            if (_worldMat != null) return _worldMat;
+            _worldMat = new Material(source) { name = source.name + " (World)" };
+            _worldMat.SetColor(ShaderUtilities.ID_UnderlayColor, new Color(0f, 0f, 0f, 0.45f));
+            _worldMat.SetFloat(ShaderUtilities.ID_UnderlayOffsetX, 0.1f);
+            _worldMat.SetFloat(ShaderUtilities.ID_UnderlayOffsetY, -0.15f);
+            _worldMat.SetFloat(ShaderUtilities.ID_UnderlaySoftness, 0f);
+            ShaderUtilities.UpdateShaderRatios(_worldMat);
+            return _worldMat;
+        }
+
+        public static TextAlignmentOptions Align(TextAnchor anchor) => anchor switch
+        {
+            TextAnchor.UpperLeft => TextAlignmentOptions.TopLeft,
+            TextAnchor.UpperCenter => TextAlignmentOptions.Top,
+            TextAnchor.UpperRight => TextAlignmentOptions.TopRight,
+            TextAnchor.MiddleLeft => TextAlignmentOptions.Left,
+            TextAnchor.MiddleRight => TextAlignmentOptions.Right,
+            TextAnchor.LowerLeft => TextAlignmentOptions.BottomLeft,
+            TextAnchor.LowerCenter => TextAlignmentOptions.Bottom,
+            TextAnchor.LowerRight => TextAlignmentOptions.BottomRight,
+            _ => TextAlignmentOptions.Center,
+        };
+
+        public static FontStyles Style(FontStyle style) => style switch
+        {
+            FontStyle.Bold => FontStyles.Bold,
+            FontStyle.Italic => FontStyles.Italic,
+            FontStyle.BoldAndItalic => FontStyles.Bold | FontStyles.Italic,
+            _ => FontStyles.Normal,
+        };
+
+        /// <summary>
+        /// uGUI Outline 대신 쓰는 TMP 외곽선 (uGUI Shadow/Outline 컴포넌트는 TMP에 안 먹는다).
+        /// px는 화면 픽셀 두께로, 글자 크기에 맞춰 SDF 두께로 바꾼다. 같은 색·두께는 머티리얼을 같이 쓴다.
+        /// 글자 크기를 정한 뒤에 부른다.
+        /// </summary>
+        public static void Outline(TMP_Text t, Color color, float px = 1.5f)
+        {
+            if (_outlineBase == null) _outlineBase = Resources.Load<Material>("Fonts/Jalnan2 SDF - Outline");
+            var font = Font;
+            if (_outlineBase == null || font == null) return;
+            // SDF 두께 1 = 아틀라스에서 (패딩+1)/2 픽셀, 화면에선 거기에 글자크기/샘플크기를 곱한 만큼
+            float width = px * font.faceInfo.pointSize / (Mathf.Max(1f, t.fontSize) * (font.atlasPadding + 1) * 0.5f);
+            width = Mathf.Round(Mathf.Clamp(width, 0.05f, 0.9f) * 20f) / 20f;
+            if (!_outlines.TryGetValue((color, width), out var mat) || mat == null)
+            {
+                mat = new Material(_outlineBase) { name = $"{_outlineBase.name} {ColorUtility.ToHtmlStringRGBA(color)} {width}" };
+                mat.SetColor(ShaderUtilities.ID_OutlineColor, color);
+                mat.SetFloat(ShaderUtilities.ID_OutlineWidth, width);
+                ShaderUtilities.UpdateShaderRatios(mat);
+                _outlines[(color, width)] = mat;
+            }
+            t.fontSharedMaterial = mat;
+        }
+
+        /// <summary>둥근 버튼. 배경색은 BtnNeutral/BtnPrimary/BtnGold … 팔레트를 쓴다.</summary>
         public static Button Button(Transform parent, string label, Action onClick, Color? bg = null, int fontSize = 20)
         {
-            var img = Image(parent, bg ?? ButtonBg, White, "Button");
+            var img = Shape(parent, bg ?? ButtonBg, RadiusButton, "Button", 5f);
             img.raycastTarget = true;
             var btn = img.gameObject.AddComponent<Button>();
+            btn.targetGraphic = img;
             var colors = btn.colors;
-            colors.highlightedColor = new Color(1.2f, 1.2f, 1.2f);
-            colors.pressedColor = new Color(0.8f, 0.8f, 0.8f);
-            colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
+            colors.highlightedColor = new Color(1.25f, 1.25f, 1.25f);
+            colors.pressedColor = new Color(0.82f, 0.82f, 0.82f);
+            colors.selectedColor = Color.white;
+            colors.disabledColor = new Color(0.55f, 0.55f, 0.58f, 0.55f);
+            colors.fadeDuration = 0.08f;
             btn.colors = colors;
             btn.onClick.AddListener(() => onClick?.Invoke());
             var t = Text(img.transform, label, fontSize, TextMain, TextAnchor.MiddleCenter);
-            t.rectTransform.Fill(4, 4, 2, 2);
+            t.rectTransform.Fill(6, 6, 2, 2);
             return btn;
         }
 
-        /// <summary>배경 + 채움 막대. 반환값은 채움 이미지(fillAmount로 조절).</summary>
+        /// <summary>알약 모양 트랙 + 채움 막대. 반환값은 채움 이미지(fillAmount로 조절, 부모가 트랙).</summary>
         public static Image Bar(Transform parent, Color bg, Color fill, string name = "Bar")
         {
-            var back = Image(parent, bg, White, name);
-            var front = Image(back.transform, fill, White, "Fill");
+            var back = Shape(parent, bg, Pill, name, 0f);
+            var front = Shape(back.transform, fill, Pill, "Fill", 0f);
             front.rectTransform.Fill();
             front.type = UnityEngine.UI.Image.Type.Filled;
             front.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;

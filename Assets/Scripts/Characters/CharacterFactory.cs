@@ -216,25 +216,9 @@ namespace Fishing.Characters
             tag.SetParent(parent, false);
             tag.localPosition = new Vector3(0f, height, 0f);
             if (!string.IsNullOrEmpty(title))
-                MakeText(tag, title, new Vector3(0f, 0.2f, 0f), new Color(0.55f, 0.85f, 1f), 0.032f);
-            MakeText(tag, name, Vector3.zero, Color.white, 0.042f);
+                UIFactory.WorldText(tag, title, new Vector3(0f, 0.2f, 0f), new Color(0.55f, 0.85f, 1f), 1.5f);
+            UIFactory.WorldText(tag, name, Vector3.zero, Color.white, 2f);
             return tag;
-        }
-
-        static void MakeText(Transform parent, string text, Vector3 pos, Color color, float size)
-        {
-            var go = new GameObject("Text");
-            go.transform.SetParent(parent, false);
-            go.transform.localPosition = pos;
-            var tm = go.AddComponent<TextMesh>();
-            tm.text = text;
-            tm.font = UIFactory.Font;
-            tm.fontSize = 48;
-            tm.characterSize = size;
-            tm.anchor = TextAnchor.MiddleCenter;
-            tm.alignment = TextAlignment.Center;
-            tm.color = color;
-            go.GetComponent<MeshRenderer>().sharedMaterial = UIFactory.Font.material;
         }
     }
 }

@@ -3,6 +3,7 @@ using Fishing.Angling;
 using Fishing.Core;
 using Fishing.Data;
 using Fishing.World;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -23,8 +24,8 @@ namespace Fishing.UI
 
         RectTransform _map;
         RectTransform _player, _bobber, _cellHighlight;
-        Text _cellInfo;
-        readonly List<(RectTransform root, Image halo, Text label)> _schoolMarks = new List<(RectTransform, Image, Text)>();
+        TMP_Text _cellInfo;
+        readonly List<(RectTransform root, Image halo, TMP_Text label)> _schoolMarks = new List<(RectTransform, Image, TMP_Text)>();
         RectTransform _schoolList;
         float _nextListRefresh;
 
@@ -76,7 +77,7 @@ namespace Fishing.UI
         void BuildMap()
         {
             var map = FieldMap.Current;
-            _mapFrame = UIFactory.Image(Body, new Color(0.02f, 0.04f, 0.06f, 1f), null, "MapFrame").rectTransform
+            _mapFrame = UIFactory.Shape(Body, new Color(0f, 0f, 0f, 0.35f), UIFactory.RadiusCard, "MapFrame", 0f).rectTransform
                 .At(new Vector2(0, 1), Vector2.zero, new Vector2(MapW + 8, MapH + 8), new Vector2(0, 1));
             _map = UIFactory.Node("Map", _mapFrame).At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(MapW, MapH));
             _map.gameObject.AddComponent<RectMask2D>();
@@ -107,7 +108,9 @@ namespace Fishing.UI
                     new Vector2(map.CellW * Scale - 3f, map.CellH * Scale - 3f));
                 UIFactory.Text(cell, map.CellName(c, r), fs, new Color(1, 1, 1, 0.85f), TextAnchor.UpperLeft, FontStyle.Bold)
                     .rectTransform.Fill(5, 5, 3, 3);
-                UIFactory.Text(cell, map.HabitatName(h), fs - 3, new Color(1, 1, 1, 0.45f), TextAnchor.LowerRight).rectTransform.Fill(5, 5, 3, 3);
+                // 칸이 작으면(홍현 8x8) 서식지 이름은 빼고 색과 범례로만 보여 준다 (어군 라벨과 겹치지 않게)
+                if (map.CellH * Scale >= 70f)
+                    UIFactory.Text(cell, map.HabitatName(h), fs - 3, new Color(1, 1, 1, 0.45f), TextAnchor.LowerRight).rectTransform.Fill(5, 5, 3, 3);
             }
 
             // 열 머리글
@@ -148,7 +151,7 @@ namespace Fishing.UI
 
         void BuildSide()
         {
-            var side = UIFactory.Image(Body, new Color(0.08f, 0.12f, 0.16f, 0.95f), null, "Side").rectTransform
+            var side = UIFactory.Shape(Body, UIFactory.Surface, UIFactory.RadiusCard, "Side", 0f).rectTransform
                 .At(new Vector2(1, 1), Vector2.zero, new Vector2(310, 620), new Vector2(1, 1));
             _side = side;
 
@@ -169,7 +172,7 @@ namespace Fishing.UI
                 float yy = y - (i / 2) * 24f;
                 var col = HabitatColor(habitats[i]);
                 col.a = 1f;
-                UIFactory.Image(side, col, null, "Swatch").rectTransform.At(new Vector2(0, 1), new Vector2(x, yy), new Vector2(18, 18), new Vector2(0, 1));
+                UIFactory.Shape(side, col, 5f, "Swatch", 0f).rectTransform.At(new Vector2(0, 1), new Vector2(x, yy), new Vector2(18, 18), new Vector2(0, 1));
                 UIFactory.Text(side, FieldMap.HabitatName(habitats[i]), 14, UIFactory.TextMain, TextAnchor.MiddleLeft).rectTransform
                     .At(new Vector2(0, 1), new Vector2(x + 24, yy + 1), new Vector2(110, 20), new Vector2(0, 1));
             }
@@ -234,7 +237,7 @@ namespace Fishing.UI
                 UIFactory.Text(root, "◆", 18, new Color(1f, 0.8f, 0.3f), TextAnchor.MiddleCenter, FontStyle.Bold, "Diamond").rectTransform
                     .At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(24, 24));
                 // 칸 이름·서식지 글자와 겹쳐도 읽히도록 어두운 띠를 깐다
-                UIFactory.Image(root, new Color(0f, 0f, 0f, 0.6f), null, "LabelBg").rectTransform
+                UIFactory.Shape(root, new Color(0.02f, 0.04f, 0.06f, 0.75f), UIFactory.Pill, "LabelBg", 0f).rectTransform
                     .At(new Vector2(0.5f, 0.5f), new Vector2(0, -24), new Vector2(118, 18));
                 var label = UIFactory.Text(root, "", 12, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold, "Label");
                 label.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, -24), new Vector2(150, 18));
@@ -253,7 +256,7 @@ namespace Fishing.UI
                 halo.rectTransform.localScale = Vector3.one * (s.Special ? 1.4f : s.Big ? 1f : 0.55f) * pulse;
                 halo.color = s.Special ? new Color(1f, 0.3f, 0.25f, 0.45f) : new Color(1f, 0.7f, 0.25f, 0.35f);
                 root.GetChild(1).localScale = Vector3.one * (s.Special ? 1.5f : s.Big ? 1.2f : 0.75f);
-                label.text = s.Special ? $"{s.Name} · 대물" : $"{s.Name} · {(s.Big ? "大" : "小")}";
+                label.text = s.Special ? $"{s.Name} · 대물" : $"{s.Name} · {(s.Big ? "대" : "소")}";
             }
 
             if (Time.unscaledTime >= _nextListRefresh)

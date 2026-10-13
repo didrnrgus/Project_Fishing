@@ -1,6 +1,7 @@
 using System.Linq;
 using Fishing.Core;
 using Fishing.Data;
+using TMPro;
 using UnityEngine;
 
 namespace Fishing.UI
@@ -16,7 +17,7 @@ namespace Fishing.UI
 
         public QuestPanel(Transform canvas)
         {
-            BuildFrame(canvas, "QuestPanel", "조합 퀘스트", new Vector2(980, 800));
+            BuildFrame(canvas, "QuestPanel", "조합 퀘스트", new Vector2(980, 880));
         }
 
         public void ShowTab(int tab)
@@ -34,8 +35,9 @@ namespace Fishing.UI
             for (int i = 0; i < names.Length; i++)
             {
                 int t = i;
-                RowButton(tabs, names[i], () => { _tab = t; Refresh(); }, i * 182f, 176,
-                    _tab == i ? new Color(0.15f, 0.45f, 0.42f) : new Color(0.15f, 0.18f, 0.22f), true, 18);
+                var tb = RowButton(tabs, names[i], () => { _tab = t; Refresh(); }, i * 182f, 176,
+                    _tab == i ? UIFactory.TabOn : UIFactory.TabOff, true, 18);
+                UIFactory.SetRadius(tb.targetGraphic, UIFactory.Pill);
             }
             Title.text = $"조합 퀘스트   <size=18><color=#ffd060>소라고동 {Game.Profile.Count(AchievementDatabase.ConchId)}개</color></size>";
             switch (_tab)
@@ -47,6 +49,20 @@ namespace Fishing.UI
             }
         }
 
+        /// <summary>행 안에 알약 진행 바 + "n/m" 숫자.</summary>
+        static void ProgressBar(RectTransform row, int value, int max, float x, float width)
+        {
+            float t = max > 0 ? Mathf.Clamp01(value / (float)max) : 0f;
+            var fill = UIFactory.Bar(row, new Color(0f, 0f, 0f, 0.35f), t >= 1f ? UIFactory.Good : UIFactory.Accent, "Progress");
+            fill.fillAmount = t;
+            var track = (RectTransform)fill.transform.parent;
+            track.anchorMin = track.anchorMax = new Vector2(0, 0.5f);
+            track.pivot = new Vector2(0, 0.5f);
+            track.anchoredPosition = new Vector2(x, 0);
+            track.sizeDelta = new Vector2(width - 70, 10);
+            Cell(row, $"{value}/{max}", x + width - 64, 64, 16, t >= 1f ? UIFactory.Good : UIFactory.TextMain, TextAnchor.MiddleRight, FontStyle.Bold);
+        }
+
         void Story(RowCursor rows)
         {
             var quests = Game.Quests;
@@ -56,28 +72,32 @@ namespace Fishing.UI
             {
                 Cell(rows.Next(40), q.Title, 4, 900, 28, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
                 var desc = Cell(rows.Next(60), $"\"{q.Desc}\"", 4, 900, 18, UIFactory.TextDim, TextAnchor.UpperLeft);
-                desc.fontStyle = FontStyle.Italic;
-                Cell(rows.Next(30), $"목표: {q.GoalText}   ({Mathf.Min(quests.Progress, q.Count)}/{q.Count})", 4, 900, 20);
+                desc.fontStyle = FontStyles.Italic;
+                var goal = rows.Next(34);
+                Cell(goal, $"목표: {q.GoalText}", 4, 560, 20);
+                ProgressBar(goal, Mathf.Min(quests.Progress, q.Count), q.Count, 580, 300);
                 Cell(rows.Next(30), $"보상: {q.RewardText}", 4, 900, 20, UIFactory.Gold);
                 if (quests.Ready)
                 {
                     // 대기실(조합)에서는 바로, 필드에서는 조합 연락관과 대화 중일 때 보고할 수 있다
                     bool canReport = Game.Mode == GameMode.Lobby || (Game.UI.Dialog.Npc != null && Game.UI.Dialog.Npc.NpcId == "union");
                     var row = rows.Next(52, 8);
-                    if (canReport) RowButton(row, "목표 달성! 보고하고 보상 받기", () => { quests.Claim(); Refresh(); }, 4, 420, new Color(0.2f, 0.5f, 0.3f), true, 20);
+                    if (canReport) RowButton(row, "목표 달성! 보고하고 보상 받기", () => { quests.Claim(); Refresh(); }, 4, 420, UIFactory.BtnGood, true, 20);
                     else Cell(row, $"목표 달성! {Fishing.World.FieldMap.UnionContact}이나 한국 낚시 조합(대기실)에서 보고하세요.", 4, 900, 17, UIFactory.Good);
                 }
             }
             else Cell(rows.Next(40), "모든 이야기 퀘스트를 마쳤습니다!", 4, 900, 26, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
 
             rows.Next(10);
-            Cell(rows.Next(26), $"이야기 ({quests.CompletedCount}/{QuestDatabase.Story.Count})", 4, 600, 18, UIFactory.Accent);
+            var storyHead = rows.Next(28);
+            UIFactory.SectionTitle(storyHead, "이야기", 4, 18);
+            ProgressBar(storyHead, quests.CompletedCount, QuestDatabase.Story.Count, 580, 300);
             for (int i = 0; i < QuestDatabase.Story.Count; i++)
             {
                 var def = QuestDatabase.Story[i];
                 bool done = i < quests.CompletedCount;
                 bool current = i == quests.CompletedCount;
-                string mark = done ? "✔" : current ? "▶" : "·";
+                string mark = done ? "<color=#70e070>●</color>" : current ? "▶" : "○";
                 var color = done ? UIFactory.Good : current ? UIFactory.TextMain : UIFactory.TextDim;
                 Cell(rows.Next(25, 1), $"{mark}  {def.Title}" + (done || current ? $"  <size=14><color=#8090a0>{def.GoalText}</color></size>" : ""),
                     10, 900, 17, color);
@@ -91,10 +111,12 @@ namespace Fishing.UI
             foreach (var q in Game.Quests.Daily)
             {
                 var row = rows.Next(56, 6);
-                UIFactory.Image(row, new Color(1, 1, 1, q.done ? 0.02f : 0.05f), null, "Bg").rectTransform.Fill();
-                Cell(row, $"{(q.done ? "✔ " : "")}<b>{QuestSystem.DailyText(q)}</b>\n<size=14><color=#ffd060>{q.gold:N0}골드 · 경험치 {q.exp} · 소라고동 1</color></size>",
+                UIFactory.RowBg(row, !q.done);
+                Cell(row, $"{(q.done ? "● " : "")}<b>{QuestSystem.DailyText(q)}</b>\n<size=14><color=#ffd060>{q.gold:N0}골드 · 경험치 {q.exp} · 소라고동 1</color></size>",
                     12, 640, 19, q.done ? UIFactory.Good : UIFactory.TextMain);
-                Cell(row, q.done ? "완료" : $"{q.progress}/{q.count}", 700, 160, 22, q.done ? UIFactory.Good : UIFactory.TextMain, TextAnchor.MiddleRight, FontStyle.Bold);
+                if (q.done) UIFactory.Chip(row, "완료", UIFactory.BtnGood, UIFactory.TextMain, 15).transform.parent.GetComponent<RectTransform>()
+                    .At(new Vector2(1, 0.5f), new Vector2(-16, 0), new Vector2(90, 30), new Vector2(1, 0.5f));
+                else ProgressBar(row, q.progress, q.count, 640, 230);
             }
             Cell(rows.Next(30), $"지금까지 완료한 의뢰 {Game.Profile.Data.dailyCompleted}개", 4, 900, 16, UIFactory.TextDim);
         }
@@ -116,7 +138,7 @@ namespace Fishing.UI
                         var s = list[i + k];
                         bool done = p.Data.trophyDone.Contains(s.Id);
                         var best = p.Dex(s.Id)?.maxLength ?? 0f;
-                        Cell(row, $"{(done ? "✔" : "·")} {s.Name} {s.TrophyLen:0.#}cm  <size=12><color=#8090a0>최고 {best:0.0}</color></size>",
+                        Cell(row, $"{(done ? "●" : "○")} {s.Name} {s.TrophyLen:0.#}cm  <size=12><color=#8090a0>최고 {best:0.0}</color></size>",
                             12 + k * 300, 296, 15, done ? UIFactory.Good : UIFactory.TextDim);
                     }
                 }
@@ -126,19 +148,22 @@ namespace Fishing.UI
         void Achievements(RowCursor rows)
         {
             var p = Game.Profile;
+            var head = rows.Next(30, 6);
+            UIFactory.SectionTitle(head, "업적", 4, 18);
+            ProgressBar(head, AchievementDatabase.All.Count(a => p.Data.achievements.Contains(a.Id)), AchievementDatabase.All.Count, 580, 300);
             var titleRow = rows.Next(40, 6);
             Cell(titleRow, $"지금 칭호: <color=#7fd8ff>「{p.CurrentTitle}」</color>", 4, 360, 20);
             var titles = p.Titles;
             for (int i = 0; i < titles.Count && i < 5; i++)
             {
                 string t = titles[titles.Count - 1 - i];
-                RowButton(titleRow, t, () => p.SetTitle(t), 370 + i * 112, 108, t == p.CurrentTitle ? new Color(0.15f, 0.45f, 0.42f) : new Color(0.18f, 0.22f, 0.28f), true, 13);
+                RowButton(titleRow, t, () => p.SetTitle(t), 370 + i * 112, 108, t == p.CurrentTitle ? UIFactory.TabOn : UIFactory.TabOff, true, 13);
             }
             foreach (var a in AchievementDatabase.All)
             {
                 bool done = p.Data.achievements.Contains(a.Id);
                 string prog = !done && a.Progress != null ? $"  ({a.Progress(p).Item1}/{a.Progress(p).Item2})" : "";
-                Cell(rows.Next(24, 1), $"{(done ? "✔" : "·")} <b>{a.Name}</b>  <size=13><color=#8090a0>{a.Desc}{prog}</color></size>" +
+                Cell(rows.Next(24, 1), $"{(done ? "●" : "○")} <b>{a.Name}</b>  <size=13><color=#8090a0>{a.Desc}{prog}</color></size>" +
                                       $"  <size=13><color=#ffd060>소라고동 {a.Conch}</color>{(a.Title != null ? $" · 칭호 「{a.Title}」" : "")}</size>",
                     10, 920, 16, done ? UIFactory.Good : UIFactory.TextMain);
             }
@@ -175,7 +200,7 @@ namespace Fishing.UI
                 "  큰 어군에서 3마리를 낚으면 작은 어군으로 흩어집니다(6시간 뒤 다시 모임). 20cm 미만 작은 고기는 살림망에서 생미끼로 만들 수 있어요.",
                 17, UIFactory.TextMain, TextAnchor.UpperLeft);
             text.rectTransform.Fill();
-            text.lineSpacing = 1.15f;
+            text.lineSpacing = 15f;
         }
 
         public override void Refresh() { }

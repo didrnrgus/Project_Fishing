@@ -1,5 +1,6 @@
 using Fishing.Core;
 using Fishing.Data;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -18,9 +19,45 @@ namespace Fishing.UI
         string _resultText = "";
         Color _resultColor = Color.white;
 
+        const float SideW = 400f;
+        RectTransform _main;
+        ChartHost _rateChart, _statChart;
+        TMP_Text _statTitle;
+
         public UpgradePanel(Transform canvas)
         {
-            BuildFrame(canvas, "UpgradePanel", "장비 강화", new Vector2(860, 640));
+            BuildFrame(canvas, "UpgradePanel", "장비 강화", new Vector2(1300, 700));
+            _main = UIFactory.Node("Main", Body).Fill(0, SideW + 20, 0, 0);
+
+            // 오른쪽: 단계별 성공 확률(막대) + 단계별 성능(꺾은선)
+            var side = UIFactory.Node("Side", Body);
+            side.anchorMin = new Vector2(1, 0);
+            side.anchorMax = new Vector2(1, 1);
+            side.pivot = new Vector2(1, 0.5f);
+            side.anchoredPosition = Vector2.zero;
+            side.sizeDelta = new Vector2(SideW, 0);
+            var levels = new string[RodUpgrade.MaxLevel];
+            for (int i = 0; i < levels.Length; i++) levels[i] = (i + 1) % 3 == 0 || i == 0 ? $"+{i + 1}" : "";
+
+            var rateCard = UIFactory.Shape(side, UIFactory.Surface, UIFactory.RadiusCard, "RateCard", 0f).rectTransform
+                .At(new Vector2(0.5f, 1), Vector2.zero, new Vector2(SideW, 290));
+            UIFactory.Text(rateCard, "단계별 성공 확률 (%)", 15, UIFactory.TextDim, TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
+                .At(new Vector2(0, 1), new Vector2(16, -8), new Vector2(360, 24));
+            _rateChart = UIChart.Bars(rateCard, new Vector2(SideW - 16, 246), levels, new float[RodUpgrade.MaxLevel], UIFactory.Gold, 100f, "0", 0, 11, false, 14f);
+            ((RectTransform)_rateChart.transform).At(new Vector2(0.5f, 0), new Vector2(0, 6), new Vector2(SideW - 16, 246), new Vector2(0.5f, 0));
+
+            var statCard = UIFactory.Shape(side, UIFactory.Surface, UIFactory.RadiusCard, "StatCard", 0f).rectTransform;
+            statCard.anchorMin = Vector2.zero;
+            statCard.anchorMax = Vector2.one;
+            statCard.offsetMin = Vector2.zero;
+            statCard.offsetMax = new Vector2(0, -302);
+            _statTitle = UIFactory.Text(statCard, "", 15, UIFactory.TextDim, TextAnchor.MiddleLeft, FontStyle.Bold);
+            _statTitle.rectTransform.At(new Vector2(0, 1), new Vector2(16, -8), new Vector2(360, 24));
+            var lv16 = new string[RodUpgrade.MaxLevel + 1];
+            for (int i = 0; i < lv16.Length; i++) lv16[i] = i % 3 == 0 ? $"+{i}" : "";
+            _statChart = UIChart.Line(statCard, new Vector2(SideW - 16, 240), lv16,
+                new[] { new UIChart.Series("성능", new float[RodUpgrade.MaxLevel + 1], UIFactory.Accent) }, null, "0.0", 11, true);
+            ((RectTransform)_statChart.transform).At(new Vector2(0.5f, 0), new Vector2(0, 6), new Vector2(SideW - 16, 240), new Vector2(0.5f, 0));
         }
 
         public override void Refresh()
@@ -29,9 +66,10 @@ namespace Fishing.UI
             var gear = p.EquippedBase(_slot);
             int lv = p.GearLevel(gear.Id);
             Title.text = $"장비 강화  <size=18><color=#a0b0c0>{Fishing.World.FieldMap.ShopName}</color></size>";
-            UIFactory.ClearChildren(Body);
+            UIFactory.ClearChildren(_main);
+            RefreshCharts(gear, lv);
 
-            var rows = new RowCursor(Body);
+            var rows = new RowCursor(_main);
             // 탭: 낚싯대 / 릴
             var tabs = rows.Next(42, 8);
             TabButton(tabs, "낚싯대", GearSlot.Rod, 6);
@@ -44,11 +82,11 @@ namespace Fishing.UI
             for (int i = 0; i < RodUpgrade.MaxLevel; i++)
             {
                 var c = i < lv ? (i >= 10 ? new Color(1f, 0.4f, 0.3f) : i >= 5 ? new Color(1f, 0.6f, 0.2f) : UIFactory.Gold) : new Color(1, 1, 1, 0.12f);
-                var img = UIFactory.Image(pips, c, null, "Pip").rectTransform;
+                var img = UIFactory.Shape(pips, c, UIFactory.Pill, "Pip", i < lv ? 3f : 0f).rectTransform;
                 img.anchorMin = img.anchorMax = new Vector2(0, 0.5f);
                 img.pivot = new Vector2(0, 0.5f);
                 img.anchoredPosition = new Vector2(6 + i * 52, 0);
-                img.sizeDelta = new Vector2(46, 20);
+                img.sizeDelta = new Vector2(46, 16);
             }
 
             var now = RodUpgrade.Apply(gear, lv);
@@ -71,8 +109,8 @@ namespace Fishing.UI
                                     $"반짝이는 비늘 <color={(haveScales >= scales ? "#70e070" : "#ff7060")}>{scales}개</color> (보유 {haveScales})", 6, 800, 19);
 
                 var starRow = rows.Next(40, 6);
-                RowButton(starRow, _useStar ? "✔ 별모래 사용 (+15%)" : "별모래 사용 안 함", () => { _useStar = !_useStar; Refresh(); }, 6, 260,
-                    _useStar ? new Color(0.45f, 0.35f, 0.7f) : new Color(0.2f, 0.22f, 0.28f), hasStar, 17);
+                RowButton(starRow, _useStar ? "● 별모래 사용 (+15%)" : "별모래 사용 안 함", () => { _useStar = !_useStar; Refresh(); }, 6, 260,
+                    _useStar ? UIFactory.BtnPurple : UIFactory.BtnNeutral, hasStar, 17);
                 Cell(starRow, $"별모래 보유 {p.Count(RodUpgrade.StarSandId)}개", 280, 300, 16, UIFactory.TextDim);
 
                 Cell(rows.Next(28), RodUpgrade.CanDowngrade(lv)
@@ -80,20 +118,43 @@ namespace Fishing.UI
                         : "실패해도 단계는 내려가지 않습니다 (재료만 소모).", 6, 800, 16, UIFactory.TextDim);
                 var btnRow = rows.Next(64, 12);
                 bool can = p.Data.gold >= cost && haveScales >= scales;
-                RowButton(btnRow, $"강화하기", Try, 6, 360, new Color(0.55f, 0.35f, 0.1f), can, 24);
+                RowButton(btnRow, $"강화하기", Try, 6, 360, UIFactory.BtnGold, can, 24);
                 if (!can) Cell(btnRow, haveScales < scales ? "비늘이 부족합니다. 살림망(Z)에서 큰 고기를 해체하세요." : "골드가 부족합니다.", 380, 420, 16, UIFactory.Danger);
             }
             Cell(rows.Next(26), "장착한 장비만 강화할 수 있습니다. 다른 장비는 상점(F12)에서 장착을 바꾸세요.", 6, 800, 15, UIFactory.TextDim);
 
-            var result = UIFactory.Text(Body, Time.unscaledTime < _resultUntil ? _resultText : "", 38, _resultColor, TextAnchor.MiddleCenter, FontStyle.Bold);
+            var result = UIFactory.Text(_main, Time.unscaledTime < _resultUntil ? _resultText : "", 38, _resultColor, TextAnchor.MiddleCenter, FontStyle.Bold);
             result.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0, 20), new Vector2(800, 60));
-            result.gameObject.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.8f);
+
         }
 
         void TabButton(RectTransform row, string label, GearSlot slot, float x)
         {
             bool sel = _slot == slot;
-            RowButton(row, label, () => { _slot = slot; Refresh(); }, x, 150, sel ? new Color(0.15f, 0.45f, 0.42f) : new Color(0.15f, 0.18f, 0.22f), true, 18);
+            var b = RowButton(row, label, () => { _slot = slot; Refresh(); }, x, 150, sel ? UIFactory.TabOn : UIFactory.TabOff, true, 18);
+            UIFactory.SetRadius(b.targetGraphic, UIFactory.Pill);
+        }
+
+        /// <summary>차트: 단계마다 성공 확률, 그리고 지금 장비의 대표 성능(낚싯대 = 힘, 릴 = 감기 속도)이 +0~+15에서 어떻게 오르는지.</summary>
+        void RefreshCharts(GearDef gear, int lv)
+        {
+            var rates = new float[RodUpgrade.MaxLevel];
+            for (int i = 0; i < rates.Length; i++) rates[i] = RodUpgrade.SuccessRate(i, _useStar) * 100f;
+            UIChart.SetValues(_rateChart.Serie(), rates);
+            _rateChart.Refresh();
+
+            bool reel = gear.Slot == GearSlot.Reel;
+            var stats = new float[RodUpgrade.MaxLevel + 1];
+            for (int i = 0; i < stats.Length; i++)
+            {
+                var g = RodUpgrade.Apply(gear, i);
+                stats[i] = reel ? g.ReelSpeed : g.Power;
+            }
+            UIChart.SetValues(_statChart.Serie(), stats);
+            _statChart.Profile.axes.Find(a => a.id == _statChart.Profile.yAxisId).labelFormat = reel ? "0.00" : "0.0";
+            _statChart.Refresh();
+            var now = reel ? RodUpgrade.Apply(gear, lv).ReelSpeed : RodUpgrade.Apply(gear, lv).Power;
+            _statTitle.text = $"단계별 {(reel ? "감기 속도 (m/s)" : "힘")}   <color=#5ce0cc>지금 +{lv} · {now:0.00}</color>";
         }
 
         static string Stat(GearDef g) => g.Slot == GearSlot.Reel

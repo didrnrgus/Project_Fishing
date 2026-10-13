@@ -3,6 +3,7 @@ using Fishing.Angling;
 using Fishing.Core;
 using Fishing.Data;
 using Fishing.World;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,44 +20,49 @@ namespace Fishing.UI
     {
         readonly RectTransform _root;
 
-        Text _levelText, _staminaText, _expText, _goldText, _baitName, _baitCount;
+        TMP_Text _levelText, _staminaText, _expText, _goldText, _baitName, _baitCount;
         Image _staminaFill, _expFill;
-        Text _channelText, _clockText, _locationText, _areaText;
-        Text _questTitle, _questGoal;
-        Text _hint, _prompt;
-        Text _netSlot;
-        Text _nameText;
+        TMP_Text _channelText, _clockText, _locationText, _areaText;
+        TMP_Text _questTitle, _questGoal;
+        TMP_Text _hint, _prompt;
+        TMP_Text _netSlot;
+        TMP_Text _nameText;
         // 배 계기판
         RectTransform _boatGauges;
         Image _speedFill, _fuelFill;
-        Text _speedText, _fuelText, _boatHint;
-        readonly List<(Image bg, Text label, BaitDef bait)> _baitSlots = new List<(Image, Text, BaitDef)>();
+        TMP_Text _speedText, _fuelText, _boatHint;
+        RectTransform _boatHintPill;
+        readonly List<(Image bg, TMP_Text label, BaitDef bait)> _baitSlots = new List<(Image, TMP_Text, BaitDef)>();
 
         RectTransform _mapRoot;
         RectTransform _playerArrow, _bobberDot;
         readonly List<RectTransform> _schoolMarks = new List<RectTransform>();
 
         // 캐스팅
-        Text _castDistance;
+        TMP_Text _castDistance;
         float _castShownUntil;
         float _castShownValue;
+        float _castLandedAt;
         RectTransform _castTip;
-        Text _tipTitle, _tipText;
+        TMP_Text _tipTitle, _tipText;
         // 챔질
         RectTransform _hookGauge;
         RectTransform _gaugeBobber;
-        readonly Text[] _gradeLabels = new Text[5];
+        readonly TMP_Text[] _gradeLabels = new TMP_Text[5];
         RectTransform _shakeTip;
-        Text _gradePopup;
+        TMP_Text _gradePopup;
         RectTransform _biteAlert;
 
-        readonly List<(Text text, float until)> _toasts = new List<(Text, float)>();
+        readonly List<(RectTransform root, CanvasGroup group, float until)> _toasts = new List<(RectTransform, CanvasGroup, float)>();
         RectTransform _toastRoot;
 
         const float MapScale = 0.95f;
         const float GaugeHeight = 300f;
 
         public GameObject Root => _root.gameObject;
+
+        /// <summary>토스트 묶음. GameUI가 창들보다 위로 옮겨 창이 열려 있어도 가려지지 않게 한다.</summary>
+        public RectTransform ToastLayer => _toastRoot;
 
         public HudView(Transform canvas)
         {
@@ -76,76 +82,80 @@ namespace Fishing.UI
 
         void BuildPlayerPanel()
         {
-            var panel = UIFactory.Panel(_root, "PlayerPanel", new Color(0.03f, 0.05f, 0.07f, 0.88f)).rectTransform
-                .At(new Vector2(0, 1), new Vector2(10, -8), new Vector2(430, 122));
-            UIFactory.Image(panel, UIFactory.Accent, null, "TopLine").rectTransform.At(new Vector2(0.5f, 1), Vector2.zero, new Vector2(430, 3));
+            var panel = UIFactory.Panel(_root, "PlayerPanel", 20f).rectTransform
+                .At(new Vector2(0, 1), new Vector2(14, -12), new Vector2(436, 128));
 
-            // 초상화: 내 캐릭터를 비추는 카메라의 렌더 텍스처 (PortraitCamera)
-            var frame = UIFactory.Image(panel, new Color(0.55f, 0.75f, 0.8f, 0.9f), null, "PortraitFrame").rectTransform
-                .At(new Vector2(0, 1), new Vector2(8, -10), new Vector2(106, 106));
-            var portrait = UIFactory.Node("Portrait", frame).Fill(3, 3, 3, 3);
-            var raw = portrait.gameObject.AddComponent<RawImage>();
-            raw.texture = PortraitCamera.Texture;
-            raw.raycastTarget = false;
-            var lvBadge = UIFactory.Image(frame, new Color(0.05f, 0.08f, 0.1f, 0.92f), null, "LevelBadge").rectTransform
-                .At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(54, 24), new Vector2(0, 0));
-            _levelText = UIFactory.Text(lvBadge, "", 16, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
-            _levelText.rectTransform.Fill();
+            // 초상화: 내 캐릭터를 비추는 카메라의 렌더 텍스처 (PortraitCamera), 둥근 모서리
+            var frame = UIFactory.Shape(panel, new Color(1f, 1f, 1f, 0.08f), 16f, "PortraitFrame", 0f).rectTransform
+                .At(new Vector2(0, 1), new Vector2(10, -10), new Vector2(108, 108));
+            var portrait = UIFactory.RoundedTexture(frame, PortraitCamera.Texture, 14f, "Portrait");
+            portrait.rectTransform.Fill(2, 2, 2, 2);
+            UIFactory.AddBorder(portrait, new Color(0.55f, 0.9f, 0.95f, 0.35f), 1.5f);
+            _levelText = UIFactory.Chip(frame, "", new Color(0.04f, 0.07f, 0.09f, 0.92f), UIFactory.Gold, 15, "LevelBadge");
+            ((RectTransform)_levelText.transform.parent).At(new Vector2(0.5f, 0), new Vector2(0, -8), new Vector2(64, 24), new Vector2(0.5f, 0));
 
             var look = Fishing.Characters.CharacterLook.Player;
             _nameText = UIFactory.Text(panel, $"{look.Name}  <size=13><color=#7fd8ff>{look.Title}</color></size>", 20, UIFactory.TextMain,
                 TextAnchor.MiddleLeft, FontStyle.Bold);
-            _nameText.rectTransform.At(new Vector2(0, 1), new Vector2(126, -10), new Vector2(290, 26));
+            _nameText.rectTransform.At(new Vector2(0, 1), new Vector2(132, -12), new Vector2(290, 26));
 
-            UIFactory.Text(panel, "HP", 13, new Color(0.5f, 0.85f, 1f), TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
-                .At(new Vector2(0, 1), new Vector2(126, -42), new Vector2(40, 18));
-            _staminaFill = UIFactory.Bar(panel, new Color(0, 0, 0, 0.6f), new Color(0.4f, 0.8f, 1f), "HP");
-            ((RectTransform)_staminaFill.transform.parent).At(new Vector2(0, 1), new Vector2(160, -45), new Vector2(190, 12));
+            UIFactory.Text(panel, "HP", 12, new Color(0.5f, 0.85f, 1f), TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
+                .At(new Vector2(0, 1), new Vector2(132, -44), new Vector2(40, 18));
+            _staminaFill = UIFactory.Bar(panel, new Color(0f, 0f, 0f, 0.45f), new Color(0.4f, 0.8f, 1f), "HP");
+            ((RectTransform)_staminaFill.transform.parent).At(new Vector2(0, 1), new Vector2(168, -48), new Vector2(184, 10));
             _staminaText = UIFactory.Text(panel, "", 13, UIFactory.TextMain, TextAnchor.MiddleRight);
-            _staminaText.rectTransform.At(new Vector2(0, 1), new Vector2(352, -42), new Vector2(68, 18));
+            _staminaText.rectTransform.At(new Vector2(0, 1), new Vector2(356, -44), new Vector2(66, 18));
 
-            UIFactory.Text(panel, "EXP", 13, new Color(0.55f, 0.95f, 0.45f), TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
-                .At(new Vector2(0, 1), new Vector2(126, -64), new Vector2(40, 18));
-            _expFill = UIFactory.Bar(panel, new Color(0, 0, 0, 0.6f), new Color(0.5f, 0.9f, 0.4f), "Exp");
-            ((RectTransform)_expFill.transform.parent).At(new Vector2(0, 1), new Vector2(160, -67), new Vector2(190, 12));
+            UIFactory.Text(panel, "EXP", 12, new Color(0.55f, 0.95f, 0.45f), TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
+                .At(new Vector2(0, 1), new Vector2(132, -66), new Vector2(40, 18));
+            _expFill = UIFactory.Bar(panel, new Color(0f, 0f, 0f, 0.45f), new Color(0.5f, 0.9f, 0.4f), "Exp");
+            ((RectTransform)_expFill.transform.parent).At(new Vector2(0, 1), new Vector2(168, -70), new Vector2(184, 10));
             _expText = UIFactory.Text(panel, "", 13, UIFactory.TextMain, TextAnchor.MiddleRight);
-            _expText.rectTransform.At(new Vector2(0, 1), new Vector2(352, -64), new Vector2(68, 18));
+            _expText.rectTransform.At(new Vector2(0, 1), new Vector2(356, -66), new Vector2(66, 18));
 
+            UIFactory.Divider(panel).rectTransform.At(new Vector2(0, 1), new Vector2(132, -88), new Vector2(290, 1));
             _goldText = UIFactory.Text(panel, "", 14, UIFactory.Gold);
-            _goldText.rectTransform.At(new Vector2(0, 1), new Vector2(126, -90), new Vector2(290, 22));
+            _goldText.rectTransform.At(new Vector2(0, 1), new Vector2(132, -94), new Vector2(290, 24));
 
             // 장착 미끼 (원작: 초상화 아래 물고기 아이콘 칸)
-            var bait = UIFactory.Panel(_root, "BaitBox", new Color(0.05f, 0.12f, 0.16f, 0.9f)).rectTransform
-                .At(new Vector2(0, 1), new Vector2(16, -138), new Vector2(150, 40));
-            UIFactory.Image(bait, UIFactory.Accent, null, "Border").rectTransform.At(new Vector2(0, 0.5f), Vector2.zero, new Vector2(3, 40));
+            var bait = UIFactory.Panel(_root, "BaitBox", UIFactory.Pill, 0.55f).rectTransform
+                .At(new Vector2(0, 1), new Vector2(14, -150), new Vector2(170, 38));
+            UIFactory.Shape(bait, UIFactory.Accent, UIFactory.Pill, "Dot", 0f).rectTransform.At(new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(8, 8));
             _baitName = UIFactory.Text(bait, "", 15, UIFactory.TextMain);
-            _baitName.rectTransform.At(new Vector2(0, 0.5f), new Vector2(10, 0), new Vector2(90, 30));
+            _baitName.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+            _baitName.enableAutoSizing = true;
+            _baitName.fontSizeMin = 10f;
+            _baitName.fontSizeMax = 15f;
+            _baitName.rectTransform.At(new Vector2(0, 0.5f), new Vector2(30, 0), new Vector2(84, 30));
             _baitCount = UIFactory.Text(bait, "", 16, UIFactory.Gold, TextAnchor.MiddleRight, FontStyle.Bold);
-            _baitCount.rectTransform.At(new Vector2(1, 0.5f), new Vector2(-8, 0), new Vector2(60, 30));
+            _baitCount.rectTransform.At(new Vector2(1, 0.5f), new Vector2(-14, 0), new Vector2(60, 30));
         }
 
         void BuildClockAndMap()
         {
-            var clock = UIFactory.Panel(_root, "Clock", new Color(0.03f, 0.05f, 0.07f, 0.88f)).rectTransform
-                .At(new Vector2(1, 1), new Vector2(-10, -8), new Vector2(340, 62));
-            var exit = UIFactory.Button(clock, "↩ 조합", () => Game.UI.EnterLobby(), new Color(0.6f, 0.15f, 0.12f, 1f), 13);
-            ((RectTransform)exit.transform).At(new Vector2(1, 1), new Vector2(-6, -6), new Vector2(64, 22));
-            _channelText = UIFactory.Text(clock, "", 14, new Color(0.45f, 0.85f, 1f), TextAnchor.MiddleLeft, FontStyle.Bold);
-            _channelText.rectTransform.At(new Vector2(0, 1), new Vector2(10, -4), new Vector2(320, 20));
+            var clock = UIFactory.Panel(_root, "Clock").rectTransform
+                .At(new Vector2(1, 1), new Vector2(-14, -12), new Vector2(344, 68));
+            var exit = UIFactory.Button(clock, "◀ 조합", () => Game.UI.EnterLobby(), UIFactory.BtnDanger, 13);
+            UIFactory.SetRadius(exit.targetGraphic, UIFactory.Pill);
+            ((RectTransform)exit.transform).At(new Vector2(1, 1), new Vector2(-10, -10), new Vector2(70, 24));
+            _channelText = UIFactory.Text(clock, "", 13, new Color(0.45f, 0.85f, 1f), TextAnchor.MiddleLeft, FontStyle.Bold);
+            _channelText.rectTransform.At(new Vector2(0, 1), new Vector2(16, -8), new Vector2(250, 20));
             _clockText = UIFactory.Text(clock, "", 22, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
-            _clockText.rectTransform.At(new Vector2(0, 1), new Vector2(10, -26), new Vector2(320, 30));
+            _clockText.rectTransform.At(new Vector2(0, 1), new Vector2(16, -30), new Vector2(320, 30));
 
-            var frame = UIFactory.Panel(_root, "Minimap", new Color(0.03f, 0.05f, 0.07f, 0.88f)).rectTransform
-                .At(new Vector2(1, 1), new Vector2(-10, -74), new Vector2(340, 258));
-            UIFactory.Text(frame, "MINIMAP", 13, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
-                .At(new Vector2(0, 1), new Vector2(10, -2), new Vector2(120, 20));
+            var frame = UIFactory.Panel(_root, "Minimap").rectTransform
+                .At(new Vector2(1, 1), new Vector2(-14, -88), new Vector2(344, 262));
+            UIFactory.Text(frame, "MINIMAP", 12, UIFactory.TextDim, TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
+                .At(new Vector2(0, 1), new Vector2(16, -6), new Vector2(120, 20));
             _locationText = UIFactory.Text(frame, "", 13, new Color(0.45f, 0.85f, 1f), TextAnchor.MiddleRight, FontStyle.Bold);
-            _locationText.rectTransform.At(new Vector2(1, 1), new Vector2(-10, -2), new Vector2(200, 20));
+            _locationText.rectTransform.At(new Vector2(1, 1), new Vector2(-16, -6), new Vector2(200, 20));
 
-            _mapRoot = UIFactory.Node("Map", frame).At(new Vector2(0.5f, 0), new Vector2(0, 8), new Vector2(320, 212));
-            _mapRoot.gameObject.AddComponent<RectMask2D>();
-            UIFactory.Text(frame, "[M] 지역 지도", 11, new Color(1, 1, 1, 0.55f), TextAnchor.LowerRight).rectTransform
-                .At(new Vector2(1, 0), new Vector2(-8, 10), new Vector2(120, 16), new Vector2(1, 0));
+            UIFactory.Shape(frame, new Color(0f, 0f, 0f, 0.35f), 10f, "MapWell", 0f).rectTransform
+                .At(new Vector2(0.5f, 0), new Vector2(0, 10), new Vector2(324, 216));
+            _mapRoot = UIFactory.Node("Map", frame).At(new Vector2(0.5f, 0), new Vector2(0, 12), new Vector2(320, 212));
+            _mapRoot.gameObject.AddComponent<RectMask2D>().softness = new Vector2Int(6, 6);
+            UIFactory.Text(frame, "[M] 지역 지도", 11, new Color(1, 1, 1, 0.6f), TextAnchor.LowerRight).rectTransform
+                .At(new Vector2(1, 0), new Vector2(-14, 14), new Vector2(120, 16), new Vector2(1, 0));
             BuildMinimapContent();
             _bobberDot = UIFactory.Image(_mapRoot, new Color(1f, 0.3f, 0.2f), UIFactory.Circle, "Bobber").rectTransform
                 .At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(6, 6));
@@ -153,16 +163,16 @@ namespace Fishing.UI
                 .At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(20, 20));
 
             // QUEST LIST
-            var quest = UIFactory.Panel(_root, "QuestList", new Color(0.03f, 0.05f, 0.07f, 0.88f)).rectTransform
-                .At(new Vector2(1, 1), new Vector2(-10, -336), new Vector2(340, 104));
-            UIFactory.Text(quest, "QUEST LIST", 13, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
-                .At(new Vector2(0, 1), new Vector2(10, -2), new Vector2(200, 20));
+            var quest = UIFactory.Panel(_root, "QuestList").rectTransform
+                .At(new Vector2(1, 1), new Vector2(-14, -358), new Vector2(344, 108));
+            UIFactory.Text(quest, "QUEST LIST", 12, UIFactory.TextDim, TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
+                .At(new Vector2(0, 1), new Vector2(16, -6), new Vector2(200, 20));
             _areaText = UIFactory.Text(quest, "", 12, UIFactory.TextDim, TextAnchor.MiddleRight);
-            _areaText.rectTransform.At(new Vector2(1, 1), new Vector2(-10, -2), new Vector2(200, 20));
-            _questTitle = UIFactory.Text(quest, "", 16, new Color(1f, 0.65f, 0.25f), TextAnchor.MiddleLeft, FontStyle.Bold);
-            _questTitle.rectTransform.At(new Vector2(0, 1), new Vector2(10, -26), new Vector2(320, 24));
+            _areaText.rectTransform.At(new Vector2(1, 1), new Vector2(-16, -6), new Vector2(200, 20));
+            _questTitle = UIFactory.Text(quest, "", 16, new Color(1f, 0.68f, 0.3f), TextAnchor.MiddleLeft, FontStyle.Bold);
+            _questTitle.rectTransform.At(new Vector2(0, 1), new Vector2(16, -30), new Vector2(316, 24));
             _questGoal = UIFactory.Text(quest, "", 15, UIFactory.TextMain, TextAnchor.UpperLeft);
-            _questGoal.rectTransform.At(new Vector2(0, 1), new Vector2(18, -52), new Vector2(312, 46));
+            _questGoal.rectTransform.At(new Vector2(0, 1), new Vector2(22, -56), new Vector2(308, 46));
         }
 
         // 미니맵 좌표: 맵의 View 범위를 320x212 칸에 맞춘다
@@ -219,15 +229,6 @@ namespace Fishing.UI
 
         void BuildBottomBar()
         {
-            var bar = UIFactory.Image(_root, new Color(0.02f, 0.03f, 0.04f, 0.92f), null, "MenuBar");
-            var rt = bar.rectTransform;
-            rt.anchorMin = new Vector2(0, 0);
-            rt.anchorMax = new Vector2(1, 0);
-            rt.pivot = new Vector2(0.5f, 0);
-            rt.anchoredPosition = Vector2.zero;
-            rt.sizeDelta = new Vector2(0, 46);
-            bar.raycastTarget = true;
-
             (string key, string label, System.Action action)[] menu =
             {
                 ("L", "퀘스트", () => Game.UI.OpenExclusive(Game.UI.Quest)),
@@ -241,38 +242,48 @@ namespace Fishing.UI
                 ("F5", "저장", () => Game.UI.SaveNow()),
                 ("B", "배", () => Game.Boat.Toggle()),
             };
+            // 왼쪽 아래 떠 있는 유리 메뉴 독
+            const float slot = 86f;
+            var dock = UIFactory.Panel(_root, "MenuDock", 18f, 0.58f).rectTransform
+                .At(new Vector2(0, 0), new Vector2(14, 12), new Vector2(menu.Length * slot + 12, 58));
             for (int i = 0; i < menu.Length; i++)
             {
                 var (key, label, action) = menu[i];
-                var btn = UIFactory.Button(rt, "", () => action(), new Color(0.1f, 0.13f, 0.16f, 1f), 15);
-                ((RectTransform)btn.transform).At(new Vector2(0, 0.5f), new Vector2(8 + i * 98, 0), new Vector2(94, 38));
-                btn.GetComponentInChildren<Text>().text = $"<size=11><color=#80c8ff>{key}</color></size>\n{label}";
+                var btn = UIFactory.Button(dock, "", () => action(), new Color(1f, 1f, 1f, 0.001f), 15);
+                ((RectTransform)btn.transform).At(new Vector2(0, 0.5f), new Vector2(6 + i * slot, 0), new Vector2(slot - 4, 46));
+                btn.GetComponentInChildren<TMP_Text>().text = $"<size=11><color=#7fd0ff>{key}</color></size>\n{label}";
+                // 마우스를 올리면 은은하게 밝아진다
+                var colors = btn.colors;
+                colors.highlightedColor = new Color(1f, 1f, 1f, 90f);
+                btn.colors = colors;
             }
 
-            // 미끼 퀵슬롯 (숫자키 1~6): 지금 낚시터에서 쓰는 미끼
-            _baitBar = rt;
+            // 미끼 퀵슬롯 (숫자키 1~6): 오른쪽 아래 유리 독, 마지막 칸은 살림망
+            _baitBar = UIFactory.Panel(_root, "BaitDock", 18f, 0.58f).rectTransform
+                .At(new Vector2(1, 0), new Vector2(-14, 12), new Vector2(600, 58), new Vector2(1, 0));
             BuildBaitSlots();
-            var net = UIFactory.Button(rt, "", () => Game.UI.OpenExclusive(Game.UI.KeepNet), new Color(0.1f, 0.13f, 0.16f, 1f), 14);
-            ((RectTransform)net.transform).At(new Vector2(1, 0.5f), new Vector2(-8, 0), new Vector2(110, 40));
-            _netSlot = net.GetComponentInChildren<Text>();
+            var net = UIFactory.Button(_baitBar, "", () => Game.UI.OpenExclusive(Game.UI.KeepNet), UIFactory.BtnGhost, 14);
+            ((RectTransform)net.transform).At(new Vector2(1, 0.5f), new Vector2(-6, 0), new Vector2(104, 46));
+            _netSlot = net.GetComponentInChildren<TMP_Text>();
         }
 
         /// <summary>배 계기판 (원작: 오른쪽 아래 속도계·연료계).</summary>
         void BuildBoatGauges()
         {
-            _boatGauges = UIFactory.Node("BoatGauges", _root).At(new Vector2(1, 0), new Vector2(-20, 70), new Vector2(300, 170), new Vector2(1, 0));
+            _boatGauges = UIFactory.Node("BoatGauges", _root).At(new Vector2(1, 0), new Vector2(-20, 86), new Vector2(300, 170), new Vector2(1, 0));
             (_speedFill, _speedText) = Gauge(_boatGauges, new Vector2(-220, 0), "SPEED", new Color(0.35f, 0.85f, 1f));
             (_fuelFill, _fuelText) = Gauge(_boatGauges, new Vector2(-70, 0), "FUEL", new Color(1f, 0.75f, 0.3f));
-            _boatHint = UIFactory.Text(_boatGauges, "", 14, new Color(1, 1, 1, 0.8f), TextAnchor.MiddleRight);
-            _boatHint.rectTransform.At(new Vector2(1, 1), new Vector2(0, 26), new Vector2(560, 22), new Vector2(1, 1));
-            _boatHint.gameObject.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.8f);
+            _boatHintPill = UIFactory.Glass(_boatGauges, "BoatHint", UIFactory.Pill, null, 0.55f, false, false).rectTransform
+                .At(new Vector2(1, 1), new Vector2(0, 40), new Vector2(560, 32), new Vector2(1, 1));
+            _boatHint = UIFactory.Text(_boatHintPill, "", 14, UIFactory.TextMain, TextAnchor.MiddleCenter);
+            _boatHint.rectTransform.Fill();
         }
 
-        static (Image fill, Text value) Gauge(RectTransform parent, Vector2 pos, string label, Color color)
+        static (Image fill, TMP_Text value) Gauge(RectTransform parent, Vector2 pos, string label, Color color)
         {
-            var bg = UIFactory.Image(parent, new Color(0.03f, 0.05f, 0.07f, 0.85f), UIFactory.Circle, label + "Bg").rectTransform
+            var bg = UIFactory.Glass(parent, label + "Bg", UIFactory.Pill, null, 0.6f, true, false).rectTransform
                 .At(new Vector2(1, 0), pos, new Vector2(140, 140), new Vector2(0.5f, 0f));
-            var track = UIFactory.Image(bg, new Color(1, 1, 1, 0.12f), UIFactory.Ring, "Track");
+            var track = UIFactory.Image(bg, new Color(1, 1, 1, 0.1f), UIFactory.Ring, "Track");
             track.rectTransform.Fill(8, 8, 8, 8);
             var fill = UIFactory.Image(bg, color, UIFactory.Ring, "Fill");
             fill.rectTransform.Fill(8, 8, 8, 8);
@@ -304,6 +315,7 @@ namespace Fishing.UI
             _boatHint.text = boat.Seated
                 ? $"{def.Name}  ·  W/S 속도  ·  A/D 방향  ·  멈추면 낚시"
                 : $"{def.Name}  ·  뱃머리에서 낚시할 수 있습니다  ·  물가에서 B로 내리기";
+            FitPill(_boatHintPill, _boatHint, 40f, 900f);
         }
 
         RectTransform _baitBar;
@@ -343,13 +355,25 @@ namespace Fishing.UI
             {
                 var bait = baits[i];
                 int index = i;
-                var btn = UIFactory.Button(_baitBar, "", () => SelectBait(index), new Color(0.1f, 0.13f, 0.16f, 1f), 13);
-                ((RectTransform)btn.transform).At(new Vector2(1, 0.5f), new Vector2(-210 - (baits.Count - 1 - i) * 82, 0), new Vector2(78, 40));
-                var label = btn.GetComponentInChildren<Text>();
+                var btn = UIFactory.Button(_baitBar, "", () => SelectBait(index), UIFactory.BtnGhost, 13);
+                ((RectTransform)btn.transform).At(new Vector2(1, 0.5f), new Vector2(-122 - (baits.Count - 1 - i) * 84, 0), new Vector2(80, 46));
+                var label = btn.GetComponentInChildren<TMP_Text>();
+                label.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+                label.enableAutoSizing = true;
+                label.fontSizeMin = 10f;
+                label.fontSizeMax = 13f;
                 _baitSlots.Add((btn.GetComponent<Image>(), label, bait));
                 _baitSlotObjects.Add(btn.gameObject);
             }
+            // 독 너비를 칸 수에 맞춘다 (미끼 칸 + 구분선 + 살림망)
+            _baitBar.sizeDelta = new Vector2(122 + baits.Count * 84 + 6, 58);
+            _baitDivider ??= UIFactory.Divider(_baitBar, "Sep").rectTransform.At(new Vector2(1, 0.5f), new Vector2(-116, 0), new Vector2(1, 34));
         }
+
+        RectTransform _baitDivider;
+
+        /// <summary>퀵슬롯 칸에 들어가게 긴 미끼 이름은 앞 4글자만 (전체 이름은 왼쪽 위 장착 미끼 칸·가방에).</summary>
+        static string ShortName(string name) => name.Length > 5 ? name.Substring(0, 4) + ".." : name;
 
         public void SelectBait(int index)
         {
@@ -369,9 +393,7 @@ namespace Fishing.UI
         {
             _castDistance = UIFactory.Text(_root, "", 110, new Color(1, 1, 1, 0.92f), TextAnchor.MiddleCenter, FontStyle.Bold);
             _castDistance.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -150), new Vector2(800, 140));
-            var outline = _castDistance.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0, 0, 0, 0.5f);
-            outline.effectDistance = new Vector2(3, -3);
+            UIFactory.Outline(_castDistance, new Color(0, 0, 0, 0.45f), 1.8f);
 
             _tipTitle = UIFactory.Text(_root, "[설명 끄기 : U]", 18, UIFactory.TextMain, TextAnchor.MiddleCenter);
             _tipTitle.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -122), new Vector2(1200, 26));
@@ -390,10 +412,12 @@ namespace Fishing.UI
         {
             // 찌 클로즈업: 물(하늘색) 위로 찌톱이 떠 있고, 잠길수록 등급이 오른다
             _hookGauge = UIFactory.Node("HookGauge", _root).At(new Vector2(0.5f, 0.5f), new Vector2(330, 20), new Vector2(320, GaugeHeight + 40));
-            var water = UIFactory.Image(_hookGauge, new Color(0.25f, 0.75f, 0.95f, 0.45f), null, "Water");
+            UIFactory.Glass(_hookGauge, "Card", 20f, null, 0.45f, true, false).rectTransform.Fill(-16, -44, -16, -16);
+            var water = UIFactory.Shape(_hookGauge, new Color(0.25f, 0.75f, 0.95f, 0.42f), 12f, "Water", 0f);
+            water.paraformConfig.CornerRadii = new Vector4(0f, 12f, 0f, 12f);
             water.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(200, GaugeHeight * 0.5f));
             UIFactory.Image(_hookGauge, new Color(0.7f, 0.95f, 1f, 0.9f), null, "Surface").rectTransform
-                .At(new Vector2(0, 0), new Vector2(0, GaugeHeight * 0.5f), new Vector2(200, 3));
+                .At(new Vector2(0, 0), new Vector2(0, GaugeHeight * 0.5f), new Vector2(200, 2));
 
             _gaugeBobber = UIFactory.Node("Bobber", _hookGauge).At(new Vector2(0, 0), new Vector2(100, GaugeHeight * 0.5f), new Vector2(14, 160), new Vector2(0.5f, 0f));
             Color[] stripes = { new Color(0.1f, 0.1f, 0.1f), new Color(0.2f, 0.75f, 0.3f), new Color(1f, 0.85f, 0.1f), new Color(0.95f, 0.25f, 0.2f), new Color(0.2f, 0.75f, 0.3f), new Color(1f, 0.85f, 0.1f), new Color(0.95f, 0.25f, 0.2f) };
@@ -418,9 +442,7 @@ namespace Fishing.UI
 
             _gradePopup = UIFactory.Text(_root, "", 80, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.BoldAndItalic);
             _gradePopup.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 40), new Vector2(900, 120));
-            var outline = _gradePopup.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.2f, 0.1f, 0f, 0.9f);
-            outline.effectDistance = new Vector2(3, -3);
+            UIFactory.Outline(_gradePopup, new Color(0.2f, 0.1f, 0f, 0.85f), 2f);
 
             // 본신 경보: 낚싯대 끝 근처의 빨간 느낌표
             _biteAlert = UIFactory.Node("BiteAlert", _root).At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(90, 90));
@@ -431,10 +453,25 @@ namespace Fishing.UI
 
         void BuildCenter()
         {
-            _hint = UIFactory.Text(_root, "", 18, UIFactory.TextMain, TextAnchor.MiddleCenter);
-            _hint.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0, 58), new Vector2(1200, 28));
-            _prompt = UIFactory.Text(_root, "", 22, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
-            _prompt.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0, 92), new Vector2(800, 32));
+            // 아래 가운데 안내문: 글자 길이에 맞춘 유리 알약
+            _hintPill = UIFactory.Glass(_root, "HintPill", UIFactory.Pill, null, 0.5f, false, false).rectTransform
+                .At(new Vector2(0.5f, 0), new Vector2(0, 84), new Vector2(600, 34));
+            _hint = UIFactory.Text(_hintPill, "", 16, UIFactory.TextMain, TextAnchor.MiddleCenter);
+            _hint.rectTransform.Fill();
+            _promptPill = UIFactory.Glass(_root, "PromptPill", UIFactory.Pill, null, 0.62f, true, false).rectTransform
+                .At(new Vector2(0.5f, 0), new Vector2(0, 128), new Vector2(500, 40));
+            _prompt = UIFactory.Text(_promptPill, "", 20, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
+            _prompt.rectTransform.Fill();
+        }
+
+        RectTransform _hintPill, _promptPill;
+
+        /// <summary>알약 배경을 글자 너비에 맞춘다. 글자가 없으면 숨긴다.</summary>
+        static void FitPill(RectTransform pill, TMP_Text text, float pad = 44f, float max = 1500f)
+        {
+            bool show = !string.IsNullOrEmpty(text.text);
+            pill.gameObject.SetActive(show);
+            if (show) pill.sizeDelta = new Vector2(Mathf.Min(max, text.preferredWidth + pad), pill.sizeDelta.y);
         }
 
         // ---------------- 이벤트 ----------------
@@ -454,13 +491,21 @@ namespace Fishing.UI
                 ToastKind.Great => UIFactory.Gold,
                 _ => UIFactory.TextMain
             };
-            var t = UIFactory.Text(_toastRoot, message, kind == ToastKind.Great ? 24 : 20, color, TextAnchor.MiddleCenter,
+            // 메시지마다 글자 너비에 맞춘 유리 알약
+            var pill = UIFactory.Glass(_toastRoot, "Toast", UIFactory.Pill, null, 0.62f, true, false);
+            if (kind != ToastKind.Info) UIFactory.AddBorder(pill, new Color(color.r, color.g, color.b, 0.45f), 1.5f);
+            var root = pill.rectTransform.At(new Vector2(0.5f, 1), Vector2.zero, new Vector2(400, kind == ToastKind.Great ? 42 : 36));
+            var t = UIFactory.Text(root, message, kind == ToastKind.Great ? 22 : 18, color, TextAnchor.MiddleCenter,
                 kind == ToastKind.Great ? FontStyle.Bold : FontStyle.Normal);
-            t.rectTransform.At(new Vector2(0.5f, 1), Vector2.zero, new Vector2(1000, 32));
-            _toasts.Add((t, Time.time + (kind == ToastKind.Great ? 5f : 3.2f)));
+            t.rectTransform.Fill();
+            t.textWrappingMode = TextWrappingModes.NoWrap;
+            root.sizeDelta = new Vector2(Mathf.Min(1100f, t.preferredWidth + 48f), root.sizeDelta.y);
+            var group = root.gameObject.AddComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+            _toasts.Add((root, group, Time.time + (kind == ToastKind.Great ? 5f : 3.2f)));
             while (_toasts.Count > 5)
             {
-                Object.Destroy(_toasts[0].text.gameObject);
+                Object.Destroy(_toasts[0].root.gameObject);
                 _toasts.RemoveAt(0);
             }
         }
@@ -473,12 +518,12 @@ namespace Fishing.UI
             var d = p.Data;
             var fishing = Game.Fishing;
             // 파이팅 중이거나 대기실이면 필드 HUD를 숨긴다 (토스트는 남긴다)
-            bool fighting = fishing.State == FishingState.Fighting || Game.Mode == GameMode.Lobby;
+            bool fighting = fishing.State == FishingState.Fighting || fishing.State == FishingState.Result || fishing.Hooking || Game.Mode == GameMode.Lobby;
 
             // 파이팅 중에는 필드 HUD를 숨기고 토스트만 남긴다
             foreach (Transform child in _root)
                 if (child != _toastRoot && child != _gradePopup.transform) child.gameObject.SetActive(!fighting);
-            _toastRoot.anchoredPosition = new Vector2(0, fighting ? -330 : -230);
+
             UpdateToasts();
             if (fighting)
             {
@@ -523,9 +568,9 @@ namespace Fishing.UI
                 var (bg, label, bait) = _baitSlots[i];
                 bool selected = d.baitId == bait.Id;
                 int count = p.Count(bait.Id);
-                label.text = $"<size=10><color=#80c8ff>{i + 1}</color></size> {bait.Name}\n<b>x{count}</b>";
+                label.text = $"<size=75%><color=#80c8ff>{i + 1}</color></size> {ShortName(bait.Name)}\n<b>x{count}</b>";
                 label.color = count > 0 ? UIFactory.TextMain : UIFactory.TextDim;
-                bg.color = selected ? new Color(0.12f, 0.4f, 0.45f, 1f) : new Color(0.1f, 0.13f, 0.16f, 1f);
+                bg.color = selected ? UIFactory.BtnPrimary : UIFactory.BtnGhost;
             }
             _netSlot.text = $"<size=11><color=#80c8ff>Z</color></size> 살림망\n<b>{d.keepNet.Count}/{Game.Profile.KeepNetSize}</b>";
 
@@ -575,8 +620,22 @@ namespace Fishing.UI
                 _castDistance.text = $"{f.CastDistance:0.00}m";
                 _castDistance.color = f.CastTargetIsWater ? new Color(1, 1, 1, 0.92f) : new Color(1f, 0.5f, 0.45f, 0.92f);
             }
+            else if (f.State == FishingState.Casting)
+            {
+                // 원작: 찌가 날아가는 동안 숫자가 7.18 → 12.34 → 19.83 … 처럼 따라 올라간다
+                _castDistance.gameObject.SetActive(true);
+                _castDistance.text = $"{f.FlyingDistance:0.00}m";
+                _castDistance.color = new Color(1, 1, 1, 0.95f);
+                _castDistance.rectTransform.localScale = Vector3.one;
+                _castShownUntil = Time.time + 1.4f;
+                _castShownValue = f.CastDistance;
+                _castLandedAt = Time.time;
+            }
             else if (showNumber)
             {
+                // 착수 순간 숫자가 '툭' 커졌다가 돌아온다
+                float since = Time.time - _castLandedAt;
+                _castDistance.rectTransform.localScale = Vector3.one * (1f + Mathf.Max(0f, 0.18f - since) * 1.6f);
                 _castDistance.text = $"{_castShownValue:0.00}m";
                 var c = Color.white;
                 c.a = Mathf.Clamp01((_castShownUntil - Time.time) / 0.6f) * 0.92f;
@@ -634,7 +693,7 @@ namespace Fishing.UI
                 _gradePopup.text = f.LastGrade switch
                 {
                     HookGrade.Bad => "BAD",
-                    HookGrade.SoSo => "SO SO",
+                    HookGrade.SoSo => "SO SO~",
                     HookGrade.Good => "GOOD",
                     HookGrade.Great => "GREAT!",
                     _ => "PERFECT!!"
@@ -643,8 +702,12 @@ namespace Fishing.UI
                 {
                     HookGrade.Bad => new Color(0.7f, 0.7f, 0.75f, 1f - age),
                     HookGrade.Perfect => new Color(1f, 0.85f, 0.3f, 1f - age * 0.5f),
+                    HookGrade.SoSo => new Color(0.62f, 0.95f, 0.3f, 1f - age * 0.7f),
+                    HookGrade.Good => new Color(0.36f, 0.9f, 0.8f, 1f - age * 0.7f),
                     _ => new Color(0.6f, 0.9f, 1f, 1f - age * 0.7f)
                 };
+                // 파이팅 중에는 HIT 아래에 (원작: HIT → SOSO~)
+                _gradePopup.rectTransform.anchoredPosition = new Vector2(0, f.State == FishingState.Fighting ? -130f : 40f);
                 _gradePopup.rectTransform.localScale = Vector3.one * (1f + Mathf.Max(0f, 0.2f - age) * 2f);
             }
         }
@@ -684,36 +747,50 @@ namespace Fishing.UI
                 FishingState.Bite => $"{f.CastCellLabel}",
                 _ => ""
             };
+            FitPill(_hintPill, _hint);
+            if (Game.UI.BlockingPanelOpen) _hintPill.gameObject.SetActive(false);
 
             var npc = Game.UI.NearbyNpc;
             bool nearShop = Vector3.Distance(playerPos, FieldMap.ShopPos) < FieldMap.ShopRadius;
-            if (Game.UI.BlockingPanelOpen) { _prompt.text = ""; return; }
+            if (Game.UI.BlockingPanelOpen) { _prompt.text = ""; _promptPill.gameObject.SetActive(false); return; }
             _prompt.text = npc != null ? $"<color=#ffd060>[F]</color> {npc.Look.Name}{GameUI.Josa(npc.Look.Name, "과", "와")} 대화" + (npc.NpcId == "union" && Game.Quests.Ready ? "  <color=#70e070>· 퀘스트 보고</color>" : "")
                 : nearShop && f.State == FishingState.Idle ? $"{FieldMap.ShopName}  [F12] 상점 이용" : "";
             if (Game.Profile.Data.stamina < 30f && f.State == FishingState.Idle)
                 _prompt.text = "지쳤습니다... 살림망(Z)에서 요리하거나 김밥을 드세요";
             if (f.State == FishingState.Bite && f.BigBite)
                 _prompt.text = "<color=#ff7090>♥ 두근두근 ♥</color>";
+            FitPill(_promptPill, _prompt, 48f);
         }
 
         void UpdateToasts()
         {
             for (int i = _toasts.Count - 1; i >= 0; i--)
             {
-                var (text, until) = _toasts[i];
+                var (root, group, until) = _toasts[i];
                 float left = until - Time.time;
                 if (left <= 0f)
                 {
-                    Object.Destroy(text.gameObject);
+                    Object.Destroy(root.gameObject);
                     _toasts.RemoveAt(i);
                     continue;
                 }
-                var c = text.color;
-                c.a = Mathf.Clamp01(left / 0.6f);
-                text.color = c;
+                group.alpha = Mathf.Clamp01(left / 0.6f);
             }
+            // 자리: 결과 화면 = 오른쪽 위(대물 배지·물고기와 안 겹치게), 창이 열림 = 맨 위 가운데, 파이팅 = 조금 아래
+            bool result = Game.UI.Result != null && Game.UI.Result.IsOpen;
+            bool fight = Game.Fishing.State == FishingState.Fighting || Game.Fishing.Cheering;
+            float ax = result || fight ? 1f : 0.5f;
+            _toastRoot.anchorMin = _toastRoot.anchorMax = _toastRoot.pivot = new Vector2(ax, 1f);
+            _toastRoot.anchoredPosition = result ? new Vector2(-40, -78)
+                : fight ? new Vector2(-30, -200)
+                : Game.UI.BlockingPanelOpen ? new Vector2(0, -16)
+                : new Vector2(0, -262);
             for (int i = 0; i < _toasts.Count; i++)
-                _toasts[i].text.rectTransform.anchoredPosition = new Vector2(0, -(_toasts.Count - 1 - i) * 34f);
+            {
+                var rt = _toasts[i].root;
+                rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(ax, 1f);
+                rt.anchoredPosition = new Vector2(0, -(_toasts.Count - 1 - i) * 44f);
+            }
         }
     }
 }

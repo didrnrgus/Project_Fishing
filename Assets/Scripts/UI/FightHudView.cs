@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Fishing.Angling;
 using Fishing.Core;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,15 +18,15 @@ namespace Fishing.UI
     /// </summary>
     public class FightHudView
     {
-        const float RulerWidth = 640f;
+        const float RulerWidth = 560f;
 
         readonly RectTransform _root;
         Image _hookRing, _ringBack;
         RectTransform _reelHandle;
         Image _hpFill;
         RectTransform _distMarker;
-        Text _distLabel, _nameText;
-        Text _tipTitle, _tipText;
+        TMP_Text _distLabel, _nameText;
+        TMP_Text _tipTitle, _tipText;
         Image _speedLines;
         /// <summary>개발용(자동 스크린샷): 카운터 찬스 연출을 강제로 띄운다.</summary>
         public static bool DebugForceCounterChance;
@@ -36,23 +37,26 @@ namespace Fishing.UI
         RectTransform _chevron;
         Image _chevronImg;
         RectTransform _runMouse;
-        Text _bigDistance;
+        TMP_Text _bigDistance;
         RectTransform _tensionMarker;
         Image _tensionFill;
-        Text _highLabel, _tensionPercent;
+        TMP_Text _highLabel, _tensionPercent;
         RectTransform _slackHint;
-        Text _slackHintText;
+        TMP_Text _slackHintText;
         readonly Image[] _pips = new Image[5];
-        Text _counterText, _warnText, _staminaText;
+        TMP_Text _counterText, _warnText, _staminaText, _hitText;
+        FishFight _hitShownFor;
+        float _hitAt;
+        RectTransform _warnPill;
         RectTransform _landingRoot;
         Image _landingFill;
-        Text _landingValue;
+        TMP_Text _landingValue;
         float _counterUntil, _escapeUntil, _landingFlashUntil;
         float _reelAngle;
         Image _vignette;
         float _vignetteAlpha;
 
-        readonly List<(Text text, Vector3 world, float born, bool big)> _pops = new List<(Text, Vector3, float, bool)>();
+        readonly List<(TMP_Text text, Vector3 world, float born, bool big)> _pops = new List<(TMP_Text, Vector3, float, bool)>();
 
         public FightHudView(Transform canvas)
         {
@@ -103,9 +107,9 @@ namespace Fishing.UI
         {
             var top = UIFactory.Node("Top", _root).At(new Vector2(0.5f, 1), new Vector2(0, -18), new Vector2(900, 110));
             // 원작처럼 비스듬히 잘린 어두운 띠
-            UIFactory.Image(top, new Color(0, 0, 0, 0.55f), null, "Band").rectTransform.Fill(52, 20, 18, 30);
+            UIFactory.Glass(top, "Band", UIFactory.RadiusHud, null, 0.55f, true, false).rectTransform.Fill(52, 10, 14, 24);
 
-            _ringBack = UIFactory.Image(top, new Color(0.06f, 0.07f, 0.08f, 0.95f), UIFactory.Circle, "RingBack");
+            _ringBack = UIFactory.Glass(top, "RingBack", UIFactory.Pill, null, 0.8f, true, false);
             _ringBack.rectTransform.At(new Vector2(0, 0.5f), new Vector2(0, 4), new Vector2(110, 110));
             _hookRing = UIFactory.Image(_ringBack.transform, UIFactory.Good, UIFactory.Ring, "Ring");
             _hookRing.rectTransform.Fill(6, 6, 6, 6);
@@ -120,12 +124,12 @@ namespace Fishing.UI
 
             UIFactory.Text(top, "HP", 18, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
                 .At(new Vector2(0, 1), new Vector2(122, -22), new Vector2(40, 24));
-            _nameText = UIFactory.Text(top, "", 17, UIFactory.TextMain, TextAnchor.MiddleRight);
-            _nameText.rectTransform.At(new Vector2(1, 1), new Vector2(-24, -20), new Vector2(420, 24));
+            _nameText = UIFactory.Text(top, "", 16, UIFactory.TextMain, TextAnchor.MiddleCenter, FontStyle.Bold);
+            _nameText.rectTransform.At(new Vector2(1, 1), new Vector2(-18, -22), new Vector2(150, 26));
 
             _hpFill = UIFactory.Bar(top, new Color(0.12f, 0.04f, 0.04f, 0.9f), Color.white, "HP");
             _hpFill.sprite = UIFactory.HpGradient;
-            ((RectTransform)_hpFill.transform.parent).At(new Vector2(0, 1), new Vector2(160, -24), new Vector2(700, 22));
+            ((RectTransform)_hpFill.transform.parent).At(new Vector2(0, 1), new Vector2(160, -24), new Vector2(560, 22));
 
             // 거리 눈금자 + 마커
             var ruler = UIFactory.Node("Ruler", top).At(new Vector2(0, 1), new Vector2(160, -60), new Vector2(RulerWidth, 12));
@@ -138,7 +142,7 @@ namespace Fishing.UI
             raw.raycastTarget = false;
             _distMarker = UIFactory.Node("Marker", ruler).At(new Vector2(0, 1), Vector2.zero, new Vector2(16, 16), new Vector2(0.5f, 0.5f));
             UIFactory.Text(_distMarker, "◆", 16, UIFactory.Gold, TextAnchor.MiddleCenter).rectTransform.Fill();
-            var labelBg = UIFactory.Image(_distMarker, new Color(0, 0, 0, 0.75f), null, "LabelBg");
+            var labelBg = UIFactory.Shape(_distMarker, new Color(0.02f, 0.04f, 0.06f, 0.85f), UIFactory.Pill, "LabelBg", 0f);
             labelBg.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(46, 0), new Vector2(66, 24));
             _distLabel = UIFactory.Text(labelBg.transform, "", 17, UIFactory.TextMain, TextAnchor.MiddleCenter, FontStyle.Bold);
             _distLabel.rectTransform.Fill();
@@ -156,19 +160,22 @@ namespace Fishing.UI
         {
             var bottom = UIFactory.Node("Bottom", _root).At(new Vector2(0.5f, 0), new Vector2(0, 70), new Vector2(1060, 34));
 
-            var pipBox = UIFactory.Image(bottom, new Color(0, 0, 0, 0.7f), null, "PipBox");
-            pipBox.rectTransform.At(new Vector2(0, 0.5f), new Vector2(30, 46), new Vector2(170, 40));
+            var pipBox = UIFactory.Glass(bottom, "PipBox", UIFactory.Pill, null, 0.6f, true, false);
+            pipBox.rectTransform.At(new Vector2(0, 0.5f), new Vector2(30, 60), new Vector2(176, 42));
             for (int i = 0; i < _pips.Length; i++)
             {
                 var ring = UIFactory.Image(pipBox.transform, new Color(1, 1, 1, 0.15f), UIFactory.Ring, $"Pip{i}");
-                ring.rectTransform.At(new Vector2(0, 0.5f), new Vector2(8 + i * 31, 0), new Vector2(28, 28));
+                ring.rectTransform.At(new Vector2(0, 0.5f), new Vector2(11 + i * 31, 0), new Vector2(28, 28));
                 _pips[i] = ring;
             }
 
-            var barBack = UIFactory.Image(bottom, Color.white, UIFactory.TensionGradient, "TensionBack");
+            var barBack = UIFactory.Shape(bottom, Color.white, UIFactory.Pill, "TensionBack", 4f);
+            barBack.sprite = UIFactory.TensionGradient;
+            UIFactory.AddShadow(barBack, 16f, new Vector2(0, -4), 0.5f);
+            UIFactory.AddBorder(barBack, new Color(1f, 1f, 1f, 0.18f), 1.2f);
             barBack.rectTransform.At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1000, 22));
-            _tensionFill = UIFactory.Image(barBack.transform, new Color(0.35f, 0.7f, 1f, 0.85f), null, "Fill");
-            _tensionFill.rectTransform.Fill(2, 2, 3, 3);
+            _tensionFill = UIFactory.Shape(barBack.transform, new Color(0.35f, 0.7f, 1f, 0.85f), UIFactory.Pill, "Fill", 0f);
+            _tensionFill.rectTransform.Fill(3, 3, 3, 3);
             _tensionFill.type = Image.Type.Filled;
             _tensionFill.fillMethod = Image.FillMethod.Horizontal;
             UIFactory.Text(barBack.transform, "LOW", 18, new Color(0.45f, 0.7f, 1f), TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
@@ -177,9 +184,11 @@ namespace Fishing.UI
             _highLabel.rectTransform.At(new Vector2(1, 0.5f), new Vector2(8, 0), new Vector2(64, 24), new Vector2(0, 0.5f));
             _tensionMarker = UIFactory.Node("Marker", barBack.transform).At(new Vector2(0, 0.5f), Vector2.zero, new Vector2(36, 36), new Vector2(0.5f, 0.5f));
             UIFactory.Text(_tensionMarker, "◆", 34, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold).rectTransform.Fill();
-            _tensionPercent = UIFactory.Text(_tensionMarker, "", 15, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
-            _tensionPercent.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0, 14), new Vector2(80, 20));
-            _tensionPercent.gameObject.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.8f);
+            var pctPill = UIFactory.Shape(_tensionMarker, new Color(0.02f, 0.04f, 0.06f, 0.88f), UIFactory.Pill, "PercentPill", 0f);
+            UIFactory.AddBorder(pctPill, new Color(1f, 0.82f, 0.35f, 0.6f), 1.2f);
+            pctPill.rectTransform.At(new Vector2(0.5f, 1f), new Vector2(0, 30), new Vector2(60, 24), new Vector2(0.5f, 0.5f));
+            _tensionPercent = UIFactory.Text(pctPill.rectTransform, "", 15, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            _tensionPercent.rectTransform.Fill();
 
             // 바 이름과 끝(한계) 표시: 오른쪽 끝을 넘으면 줄이 끊어진다
             UIFactory.Text(barBack.transform, "장력", 15, new Color(1, 1, 1, 0.75f), TextAnchor.LowerLeft, FontStyle.Bold).rectTransform
@@ -191,23 +200,33 @@ namespace Fishing.UI
                 .At(new Vector2(1, 0), new Vector2(0, -4), new Vector2(140, 20), new Vector2(1, 1));
 
             // 위험할 때: 어느 쪽으로 마우스를 끌어야 줄이 늦춰지는지
-            _slackHint = UIFactory.Node("SlackHint", _root).At(new Vector2(0.5f, 0), new Vector2(0, 205), new Vector2(560, 46));
-            _slackHintText = UIFactory.Text(_slackHint, "", 24, new Color(1f, 0.85f, 0.4f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            _slackHint = UIFactory.Glass(_root, "SlackHint", UIFactory.Pill, null, 0.7f, true, false).rectTransform
+                .At(new Vector2(0.5f, 0), new Vector2(0, 220), new Vector2(380, 44));
+            _slackHintText = UIFactory.Text(_slackHint, "", 21, new Color(1f, 0.85f, 0.4f), TextAnchor.MiddleCenter, FontStyle.Bold);
             _slackHintText.rectTransform.Fill();
-            _slackHintText.gameObject.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.85f);
         }
 
         void BuildCenter()
         {
             _counterText = UIFactory.Text(_root, "COUNTER", 120, new Color(1f, 0.82f, 0.45f), TextAnchor.MiddleCenter, FontStyle.BoldAndItalic);
             _counterText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 80), new Vector2(1000, 170));
-            var outline = _counterText.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.35f, 0.15f, 0.02f, 0.95f);
-            outline.effectDistance = new Vector2(4, -4);
+            UIFactory.Outline(_counterText, new Color(0.35f, 0.15f, 0.02f, 0.9f), 2.5f);
             _counterText.gameObject.SetActive(false);
 
-            _warnText = UIFactory.Text(_root, "", 28, UIFactory.Danger, TextAnchor.MiddleCenter, FontStyle.Bold);
-            _warnText.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0, 150), new Vector2(1000, 40));
+            // 원작 0:31: 챔질하면 금속 느낌의 큰 HIT가 쾅 찍힌다
+            _hitText = UIFactory.Text(_root, "HIT", 150, new Color(0.93f, 0.95f, 0.98f), TextAnchor.MiddleCenter, FontStyle.BoldAndItalic);
+            _hitText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 40), new Vector2(900, 220));
+            _hitText.enableVertexGradient = true;
+            _hitText.colorGradient = new TMPro.VertexGradient(Color.white, Color.white, new Color(0.55f, 0.6f, 0.68f), new Color(0.55f, 0.6f, 0.68f));
+            UIFactory.Outline(_hitText, new Color(0.08f, 0.1f, 0.14f, 0.9f), 2.5f);
+            _hitText.gameObject.SetActive(false);
+
+            // 경고문: 빨간 화면 테두리 위에서도 읽히게 어두운 유리 알약
+            _warnPill = UIFactory.Glass(_root, "WarnPill", UIFactory.Pill, new Color(0.12f, 0.02f, 0.02f, 1f), 0.75f, true, false).rectTransform
+                .At(new Vector2(0.5f, 0), new Vector2(0, 156), new Vector2(800, 42));
+            UIFactory.AddBorder((LeTai.Asset.TranslucentImage.TranslucentImage)_warnPill.GetComponent<Image>(), new Color(1f, 0.35f, 0.3f, 0.6f), 1.5f);
+            _warnText = UIFactory.Text(_warnPill, "", 22, new Color(1f, 0.5f, 0.45f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            _warnText.rectTransform.Fill();
             _staminaText = UIFactory.Text(_root, "", 18, UIFactory.Warn, TextAnchor.MiddleLeft);
             _staminaText.rectTransform.At(new Vector2(0, 0), new Vector2(24, 24), new Vector2(500, 26));
         }
@@ -217,11 +236,11 @@ namespace Fishing.UI
             _landingRoot = UIFactory.Node("Landing", _root).At(new Vector2(0.5f, 0.5f), new Vector2(0, -40), new Vector2(560, 300));
             UIFactory.Image(_landingRoot, Color.white, UIFactory.Mouse(true), "Mouse").rectTransform.At(new Vector2(0.5f, 1), new Vector2(-150, 0), new Vector2(60, 90));
             UIFactory.Text(_landingRoot, "or", 26, UIFactory.TextMain, TextAnchor.MiddleCenter).rectTransform.At(new Vector2(0.5f, 1), new Vector2(-70, -30), new Vector2(60, 40));
-            var space = UIFactory.Image(_landingRoot, new Color(1f, 0.45f, 0.4f, 0.9f), null, "Space");
+            var space = UIFactory.Shape(_landingRoot, new Color(1f, 0.45f, 0.4f, 0.92f), 10f, "Space", 5f);
             space.rectTransform.At(new Vector2(0.5f, 1), new Vector2(90, -30), new Vector2(230, 40));
             UIFactory.Text(space.transform, "SPACE BAR", 16, Color.white, TextAnchor.MiddleRight).rectTransform.Fill(0, 10, 0, 0);
 
-            var dial = UIFactory.Image(_landingRoot, new Color(0.08f, 0.06f, 0.05f, 0.9f), UIFactory.Circle, "Dial");
+            var dial = UIFactory.Glass(_landingRoot, "Dial", UIFactory.Pill, new Color(0.08f, 0.06f, 0.05f, 1f), 0.75f, true, false);
             dial.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0, 0), new Vector2(220, 220));
             var arcBack = UIFactory.Image(dial.transform, new Color(0.35f, 0.2f, 0.1f, 0.9f), UIFactory.Ring, "ArcBack");
             arcBack.rectTransform.Fill(10, 10, 10, 10);
@@ -265,12 +284,57 @@ namespace Fishing.UI
         public void ShowLandingChance() => _landingFlashUntil = Time.time + 1.2f;
 
         /// <summary>물고기 위치에 데미지 숫자를 띄운다. 카운터는 크고 금색.</summary>
+        /// <summary>새 파이팅이 시작되면 HIT를 크게 찍었다가(0.12초) 줄어들며 사라진다.</summary>
+        void UpdateHit(FishFight f)
+        {
+            if (f != _hitShownFor)
+            {
+                _hitShownFor = f;
+                _hitAt = Time.unscaledTime;
+                _hitText.gameObject.SetActive(true);
+            }
+            if (!_hitText.gameObject.activeSelf) return;
+            float age = Time.unscaledTime - _hitAt;
+            if (age > 1.1f) { _hitText.gameObject.SetActive(false); return; }
+            float slam = age < 0.12f ? Mathf.Lerp(2.6f, 1f, age / 0.12f) : 1f + Mathf.Max(0f, 0.25f - age) * 0.3f;
+            _hitText.rectTransform.localScale = Vector3.one * slam;
+            _hitText.alpha = age < 0.75f ? 1f : Mathf.Clamp01((1.1f - age) / 0.35f);
+        }
+
         public void PopDamage(Vector3 world, float amount, bool big)
         {
-            var t = UIFactory.Text(_root, Mathf.Max(1, Mathf.RoundToInt(amount)).ToString(), big ? 54 : 34,
-                big ? new Color(1f, 0.8f, 0.35f) : new Color(1f, 0.9f, 0.7f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            // 원작: 금색 숫자가 툭 튀어나왔다가 떠오른다
+            var t = UIFactory.Text(_root, Mathf.Max(1, Mathf.RoundToInt(amount)).ToString(), big ? 58 : 38,
+                big ? new Color(1f, 0.78f, 0.3f) : new Color(1f, 0.86f, 0.5f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            UIFactory.Outline(t, new Color(0.3f, 0.15f, 0.02f, 0.85f), 1.5f);
             t.rectTransform.At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(200, 70));
             _pops.Add((t, world + new Vector3(Random.Range(-0.6f, 0.6f), 0.3f, 0f), Time.time, big));
+        }
+
+        // ---------------- 파이팅 기록 (결과 화면 차트) ----------------
+
+        /// <summary>마지막 파이팅의 장력(%)·물고기 HP(%)를 일정 간격으로 남긴 기록. 결과 화면이 꺾은선으로 그린다.</summary>
+        public static readonly List<float> TensionLog = new List<float>();
+        public static readonly List<float> HpLog = new List<float>();
+        public static float LogInterval = 0.25f;
+        public static float LastFightSeconds;
+        FishFight _logged;
+        float _nextLog;
+
+        void RecordLog(FishFight f)
+        {
+            if (f != _logged)
+            {
+                _logged = f;
+                TensionLog.Clear();
+                HpLog.Clear();
+                _nextLog = 0f;
+            }
+            LastFightSeconds = f.Elapsed;
+            if (f.Elapsed < _nextLog) return;
+            _nextLog = f.Elapsed + LogInterval;
+            TensionLog.Add(Mathf.Clamp(f.Tension * 100f, 0f, 120f));
+            HpLog.Add(Mathf.Clamp01(f.HP / f.MaxHP) * 100f);
         }
 
         // ---------------- 갱신 ----------------
@@ -297,6 +361,8 @@ namespace Fishing.UI
                 ClearPops();
                 return;
             }
+            RecordLog(f);
+            UpdateHit(f);
 
             bool tips = Game.Profile.Data.showTips;
 
@@ -399,12 +465,14 @@ namespace Fishing.UI
                 float blink = 0.6f + 0.4f * Mathf.Abs(Mathf.Sin(Time.time * 8f));
                 _slackHintText.text = f.FishSide < 0 ? "◀◀  물고기 쪽으로 끌어 늦추기" : "물고기 쪽으로 끌어 늦추기  ▶▶";
                 _slackHintText.color = new Color(1f, 0.85f, 0.4f, blink);
-                _slackHint.anchoredPosition = new Vector2(f.FishSide * (60f + Mathf.Repeat(Time.time * 1.5f, 1f) * 40f), 205f);
+                _slackHint.anchoredPosition = new Vector2(f.FishSide * (60f + Mathf.Repeat(Time.time * 1.5f, 1f) * 40f), 220f);
             }
 
             if (f.IsDanger) _warnText.text = "줄이 끊어지려 한다! 물고기 쪽으로 끌거나 오른쪽 버튼으로 풀어주세요";
             else if (f.Hook < 30f) _warnText.text = "바늘이 빠지려 한다! 줄을 감아 팽팽하게";
             else _warnText.text = "";
+            _warnPill.gameObject.SetActive(_warnText.text.Length > 0);
+            if (_warnText.text.Length > 0) _warnPill.sizeDelta = new Vector2(_warnText.preferredWidth + 56f, 42f);
 
             // 랜딩 다이얼
             _landingRoot.gameObject.SetActive(f.Landing);
@@ -456,7 +524,7 @@ namespace Fishing.UI
                 var c = text.color;
                 c.a = Mathf.Clamp01((1.1f - age) / 0.4f);
                 text.color = c;
-                text.rectTransform.localScale = Vector3.one * (big ? 1f + Mathf.Max(0f, 0.25f - age) * 2f : 1f);
+                text.rectTransform.localScale = Vector3.one * (1f + Mathf.Max(0f, 0.15f - age) * (big ? 5f : 3.5f));
             }
         }
 

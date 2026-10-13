@@ -4,6 +4,7 @@ using Fishing.Characters;
 using Fishing.Core;
 using Fishing.Data;
 using Fishing.World;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,7 +20,7 @@ namespace Fishing.UI
     {
         public NpcAngler Npc { get; private set; }
 
-        Text _speaker, _line;
+        TMP_Text _speaker, _line;
         RectTransform _options;
 
         public DialogPanel(Transform canvas)
@@ -28,10 +29,10 @@ namespace Fishing.UI
             Frame.anchoredPosition = new Vector2(0, -250);
             Title.gameObject.SetActive(false);
             _speaker = UIFactory.Text(Frame, "", 24, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
-            _speaker.rectTransform.At(new Vector2(0, 1), new Vector2(24, -16), new Vector2(700, 34));
+            _speaker.rectTransform.At(new Vector2(0, 1), new Vector2(42, -18), new Vector2(700, 40));
             _line = UIFactory.Text(Body, "", 21, UIFactory.TextMain, TextAnchor.UpperLeft);
             _line.rectTransform.At(new Vector2(0, 1), new Vector2(0, 0), new Vector2(560, 220), new Vector2(0, 1));
-            _line.lineSpacing = 1.2f;
+            _line.lineSpacing = 20f;
             _options = UIFactory.Node("Options", Body).At(new Vector2(1, 1), Vector2.zero, new Vector2(340, 230), new Vector2(1, 1));
         }
 
@@ -68,7 +69,8 @@ namespace Fishing.UI
             for (int i = 0; i < options.Length; i++)
             {
                 var (label, action) = options[i];
-                var b = UIFactory.Button(_options, label, () => action(), i == options.Length - 1 ? new Color(0.25f, 0.27f, 0.3f) : UIFactory.ButtonBg, 19);
+                var b = UIFactory.Button(_options, label, () => action(), i == options.Length - 1 ? UIFactory.BtnGhost : (i == 0 ? UIFactory.BtnPrimary : UIFactory.BtnNeutral), 19);
+                UIFactory.SetRadius(b.targetGraphic, UIFactory.Pill);
                 ((RectTransform)b.transform).At(new Vector2(0, 1), new Vector2(0, -i * 46f), new Vector2(340, 42), new Vector2(0, 1));
             }
         }

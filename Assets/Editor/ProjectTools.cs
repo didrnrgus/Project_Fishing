@@ -68,6 +68,7 @@ namespace Fishing.EditorTools
         {
             if (!File.Exists(ScenePath)) Setup();
             else AlwaysIncludeShaders();
+            FontSetup.Ensure();
             var options = new BuildPlayerOptions
             {
                 scenes = new[] { ScenePath },

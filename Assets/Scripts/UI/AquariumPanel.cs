@@ -40,7 +40,7 @@ namespace Fishing.UI
             UIFactory.ClearChildren(Body);
             var rows = new RowCursor(Body);
 
-            Cell(rows.Next(26), "수조 속 물고기", 4, 300, 19, UIFactory.Accent, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UIFactory.SectionTitle(rows.Next(26), "수조 속 물고기", 4, 19);
             if (d.aquarium.Count == 0) Cell(rows.Next(26), "비어 있습니다. 아래 살림망 물고기를 넣어 보세요.", 14, 680, 16, UIFactory.TextDim);
             int hungry = 0;
             for (int i = 0; i < d.aquarium.Count; i++)
@@ -50,18 +50,18 @@ namespace Fishing.UI
                 float h = Aquarium.Hunger(f);
                 if (h >= 60f) hungry++;
                 var row = rows.Next(34, 3);
-                UIFactory.Image(row, new Color(1, 1, 1, 0.04f), null, "Bg").rectTransform.Fill();
+                UIFactory.RowBg(row);
                 Cell(row, $"{s?.Name}  <size=14>{f.length:0.0}cm</size>", 10, 250, 17);
                 Cell(row, h >= 60f ? $"<color=#ff9070>배고픔 {h:0}%</color>" : $"<color=#70e070>배부름</color> <size=13>{h:0}%</size>", 260, 160, 15);
                 int index = i;
-                RowButton(row, "먹이", () => Feed(index), 430, 110, new Color(0.2f, 0.4f, 0.3f), h >= 10f, 15);
-                RowButton(row, "놓아주기", () => Release(index), 550, 120, new Color(0.3f, 0.25f, 0.25f), true, 15);
+                RowButton(row, "먹이", () => Feed(index), 430, 110, UIFactory.BtnGood, h >= 10f, 15);
+                RowButton(row, "놓아주기", () => Release(index), 550, 120, UIFactory.BtnNeutral, true, 15);
             }
             if (hungry > 1)
-                RowButton(rows.Next(38, 4), $"배고픈 {hungry}마리 모두 먹이 주기 (미끼 {hungry}개)", FeedAll, 10, 420, new Color(0.2f, 0.45f, 0.3f), true, 16);
+                RowButton(rows.Next(38, 4), $"배고픈 {hungry}마리 모두 먹이 주기 (미끼 {hungry}개)", FeedAll, 10, 420, UIFactory.BtnGood, true, 16);
 
             rows.Next(6);
-            Cell(rows.Next(26), "살림망에서 옮기기", 4, 300, 19, UIFactory.Accent, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UIFactory.SectionTitle(rows.Next(26), "살림망에서 옮기기", 4, 19);
             int shownNet = 0;
             for (int i = 0; i < d.keepNet.Count && shownNet < 6; i++)
             {
@@ -72,18 +72,18 @@ namespace Fishing.UI
                 var row = rows.Next(30, 2);
                 Cell(row, $"{s.Name}  <size=14>{f.length:0.0}cm</size>", 10, 300, 16);
                 int index = i;
-                RowButton(row, "수족관에 넣기", () => Add(index), 430, 240, new Color(0.18f, 0.38f, 0.5f), d.aquarium.Count < Aquarium.Capacity, 15);
+                RowButton(row, "수족관에 넣기", () => Add(index), 430, 240, UIFactory.BtnBlue, d.aquarium.Count < Aquarium.Capacity, 15);
             }
             if (shownNet == 0) Cell(rows.Next(26), "살림망에 물고기가 없습니다.", 14, 680, 16, UIFactory.TextDim);
 
             rows.Next(6);
-            Cell(rows.Next(26), "장식 사기", 4, 300, 19, UIFactory.Accent, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UIFactory.SectionTitle(rows.Next(26), "장식 사기", 4, 19);
             foreach (var e in Aquarium.DecorShop)
             {
                 var row = rows.Next(30, 2);
                 Cell(row, e.name, 10, 300, 16);
                 var entry = e;
-                RowButton(row, $"{e.price:N0}골드", () => BuyDecor(entry.id, entry.name, entry.price), 430, 240, new Color(0.45f, 0.35f, 0.12f),
+                RowButton(row, $"{e.price:N0}골드", () => BuyDecor(entry.id, entry.name, entry.price), 430, 240, UIFactory.BtnGold,
                     d.gold >= e.price && d.aquariumDecor.Count < Aquarium.MaxDecor, 15);
             }
         }
