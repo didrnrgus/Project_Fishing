@@ -151,7 +151,7 @@ namespace Fishing.World
             AddSign(shop, "낚시점", new Vector3(0f, 3.9f, 2.3f), new Color(1f, 0.9f, 0.4f));
         }
 
-        static void AddSign(Transform parent, string text, Vector3 localPos, Color color)
+        public static void AddSign(Transform parent, string text, Vector3 localPos, Color color)
         {
             var go = new GameObject("Sign");
             go.transform.SetParent(parent, false);

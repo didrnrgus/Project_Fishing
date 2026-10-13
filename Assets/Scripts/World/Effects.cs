@@ -50,7 +50,7 @@ namespace Fishing.World
         public static void Ripple(Vector3 pos, float size = 1.5f, float duration = 1.4f)
         {
             var go = Mats.Prim(PrimitiveType.Cylinder, "Ripple", null,
-                new Vector3(pos.x, HanRiverMap.WaterY + 0.02f, pos.z), new Vector3(0.2f, 0.002f, 0.2f),
+                new Vector3(pos.x, FieldMap.WaterY + 0.02f, pos.z), new Vector3(0.2f, 0.002f, 0.2f),
                 Mats.NewRipple(), collider: false);
             go.AddComponent<RippleFx>().Init(size, duration);
         }

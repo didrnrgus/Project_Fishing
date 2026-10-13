@@ -41,7 +41,7 @@ namespace Fishing.Angling
         {
             gameObject.SetActive(true);
             _from = from;
-            _to = new Vector3(to.x, HanRiverMap.WaterY, to.z);
+            _to = new Vector3(to.x, FieldMap.WaterY, to.z);
             float dist = Vector3.Distance(from, _to);
             _duration = Mathf.Lerp(0.45f, 1.1f, dist / 32f);
             _arc = dist * 0.2f + 1f;
@@ -111,7 +111,7 @@ namespace Fishing.Angling
                     }
                     _dip = Mathf.Lerp(_dip, _dipTarget, Time.deltaTime * (_sunk ? 14f : 18f));
                     float bob = Mathf.Sin(Time.time * 2.1f) * 0.012f;
-                    transform.position = new Vector3(_to.x, HanRiverMap.WaterY + bob - _dip, _to.z);
+                    transform.position = new Vector3(_to.x, FieldMap.WaterY + bob - _dip, _to.z);
                     transform.rotation = Quaternion.Euler(Mathf.Sin(Time.time * 1.3f) * 4f, 0f, Mathf.Cos(Time.time * 1.1f) * 4f);
                     break;
             }

@@ -58,7 +58,7 @@ namespace Fishing.UI
             var d = Game.Profile.Data;
             _info.text = $"<b>Lv. {d.level}    강태공</b>  <size=14><color=#80c8ff>초보 조사</color></size>\n" +
                          $"<color=#ffd060>{d.gold:N0} G</color>   ·   총 {d.totalCatches}마리   ·   도감 {d.dex.Count}종\n" +
-                         $"<size=14><color=#a0b0c0>살림망 {d.keepNet.Count}/{PlayerProfile.KeepNetCapacity}</color></size>";
+                         $"<size=14><color=#a0b0c0>살림망 {d.keepNet.Count}/{Game.Profile.KeepNetSize}</color></size>";
             var c = Game.Clock;
             _clock.text = $"{c.Day}일차  {c.TimeText}  ·  {Fishing.Data.Names.Of(Game.Weather.Current)}";
         }

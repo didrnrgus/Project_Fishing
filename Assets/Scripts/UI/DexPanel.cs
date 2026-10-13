@@ -14,17 +14,41 @@ namespace Fishing.UI
         public const int BaitUnlock = 3;
         public const int HabitatUnlock = 5;
 
+        string _tab;
+
         public DexPanel(Transform canvas)
         {
             BuildFrame(canvas, "DexPanel", "어류 도감", new Vector2(1320, 820));
         }
 
+        public override void Open()
+        {
+            _tab = Fishing.World.FieldMap.Id;
+            base.Open();
+        }
+
         public override void Refresh()
         {
             var p = Game.Profile;
-            var species = FishDatabase.DexSpecies.ToList();
-            Title.text = $"어류 도감 · 한강  ({p.Data.dex.Count}/{species.Count})";
+            _tab ??= Fishing.World.FieldMap.Id;
+            foreach (Transform child in Frame)
+                if (child.name == "DexTab") Object.Destroy(child.gameObject);
+            var species = FishDatabase.DexOf(_tab).ToList();
+            int known = species.Count(s => p.Dex(s.Id) != null);
+            Title.text = $"어류 도감 · {Fishing.World.Maps.Get(_tab).ShortName}  ({known}/{species.Count})";
             UIFactory.ClearChildren(Body);
+
+            // 낚시터 탭
+            var tabs = new[] { Fishing.World.Maps.HanRiver, Fishing.World.Maps.Honghyeon };
+            for (int t = 0; t < tabs.Length; t++)
+            {
+                var map = tabs[t];
+                bool sel = map.Id == _tab;
+                var b = UIFactory.Button(Frame, map.ShortName, () => { _tab = map.Id; Refresh(); },
+                    sel ? new Color(0.15f, 0.45f, 0.42f) : new Color(0.15f, 0.18f, 0.22f), 17);
+                ((RectTransform)b.transform).At(new Vector2(1, 1), new Vector2(-70 - (tabs.Length - 1 - t) * 150, -16), new Vector2(140, 36));
+                b.gameObject.name = "DexTab";
+            }
 
             const int cols = 5;
             const float w = 246f, h = 236f, gap = 8f;

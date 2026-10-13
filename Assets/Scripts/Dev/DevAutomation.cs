@@ -200,7 +200,7 @@ namespace Fishing.Dev
             Game.UI.Help.Close();
 
             // NPC 대화 (낚시점 김사장), 낚싯대 강화 창
-            Game.Player.Teleport(Fishing.World.HanRiverMap.ShopPos + new Vector3(1.2f, 0.1f, 4.5f), 180f);
+            Game.Player.Teleport(Fishing.World.FieldMap.ShopPos + new Vector3(1.2f, 0.1f, 4.5f), 180f);
             Game.CameraRig.Yaw = 200f;
             Game.CameraRig.Distance = 5f;
             yield return new WaitForSeconds(0.6f);
@@ -257,6 +257,65 @@ namespace Fishing.Dev
             Game.Weather.Force(Weather.Rain);
             yield return new WaitForSeconds(5f);
             yield return Shot("15_night_rain");
+
+            // ================= 홍현 앞바다 =================
+            p.Data.level = Mathf.Max(p.Data.level, 10);
+            Game.Weather.Force(Weather.Clear);
+            Game.Clock.Set(2, 15 * 60);
+            Game.UI.EnterField(Fishing.Data.FishingAreas.Korea.Find(a => a.Id == "honghyeon"), 2);
+            Game.UI.Help.Close();
+            var bw = Fishing.World.HonghyeonDef.Breakwater;
+            Game.Player.Teleport(new Vector3(bw.center.x, 1.1f, bw.yMin + 6f), 0f);
+            Game.CameraRig.Yaw = -15f;
+            Game.CameraRig.Pitch = 12f;
+            Game.CameraRig.Distance = 9f;
+            yield return new WaitForSeconds(3f);
+            yield return Shot("22_honghyeon_day");
+
+            Game.Clock.Set(2, 18 * 60 + 20);
+            Game.Player.Teleport(new Vector3(bw.center.x, 1.1f, bw.yMax - 6f), 330f);
+            Game.CameraRig.Yaw = 150f;
+            Game.CameraRig.Pitch = 8f;
+            Game.CameraRig.Distance = 11f;
+            yield return new WaitForSeconds(3f);
+            yield return Shot("23_honghyeon_sunset");
+
+            Game.UI.OpenExclusive(Game.UI.AreaMap);
+            yield return new WaitForSeconds(0.4f);
+            yield return Shot("24_honghyeon_map");
+            Game.UI.AreaMap.Close();
+
+            // 서쪽 갯바위 섬 근처를 배로
+            Game.Clock.Set(2, 10 * 60);
+            Game.Player.Teleport(new Vector3(bw.center.x - 6f, 1.1f, -42f), 0f);
+            yield return new WaitForSeconds(0.5f);
+            Game.Boat.Toggle();
+            Game.Boat.DebugThrottle = 1f;
+            Game.Boat.DebugSteer = -0.35f;
+            Game.CameraRig.Yaw = 0f;
+            Game.CameraRig.Distance = 10f;
+            yield return new WaitForSeconds(4f);
+            yield return Shot("25_honghyeon_boat");
+            Game.Boat.DebugThrottle = float.NaN;
+            Game.Boat.StowToLand();
+
+            // 방파제 끝에서 감성돔 파이팅
+            Game.Clock.Set(2, 17 * 60 + 30);
+            Game.Weather.Force(Weather.Cloudy);
+            Game.Player.Teleport(new Vector3(bw.center.x, 1.1f, bw.yMax - 3f), 0f);
+            yield return new WaitForSeconds(1f);
+            Game.Fishing.Autoplay = true;
+            Game.Fishing.DebugStartFight("blackseabream", 55f, 16f);
+            yield return new WaitForSeconds(2.5f);
+            yield return Shot("26_sea_fight");
+            var seaFight = Game.Fishing.Fight;
+            float seaTimeout = Time.time + 60f;
+            while (Game.Fishing.State == FishingState.Fighting && Time.time < seaTimeout) yield return null;
+            if (seaFight != null) Debug.Log($"[Dev] 바다 파이팅 종료: {seaFight.Species.Name} {seaFight.Length:0.0}cm, 결과={seaFight.Outcome}");
+            yield return new WaitForSeconds(1.3f);
+            yield return Shot("27_sea_result");
+            if (Game.UI.Result.IsOpen) Game.UI.Result.ChooseByKey(true);
+            Game.Fishing.Autoplay = false;
 
             Debug.Log("[Dev] 자동 스크린샷 완료");
             Application.Quit();

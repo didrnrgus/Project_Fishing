@@ -20,8 +20,9 @@ namespace Fishing.Angling
 
         public static int ModelIndex(FishSpecies s) => s.Id switch
         {
-            "mandarin" or "bass" or "bluegill" or "nuchi" => 1,
-            "zacco" or "kkeuri" or "skygager" or "mullet" or "eel" or "bagrid" => 2,
+            "mandarin" or "bass" or "bluegill" or "nuchi" or "greenling" or "filefish" or "opaleye" => 1,
+            "zacco" or "kkeuri" or "skygager" or "mullet" or "eel" or "bagrid"
+                or "mackerel" or "horsemackerel" or "halfbeak" or "seabass" or "conger" => 2,
             _ => 0
         };
 
@@ -38,6 +39,24 @@ namespace Fishing.Angling
             "bluegill" => new Color(0.4f, 0.5f, 0.55f),
             "nuchi" => new Color(0.7f, 0.68f, 0.6f),
             "bagrid" => new Color(0.75f, 0.6f, 0.3f),
+            "mackerel" => new Color(0.25f, 0.5f, 0.45f),
+            "horsemackerel" => new Color(0.55f, 0.62f, 0.6f),
+            "halfbeak" => new Color(0.6f, 0.75f, 0.8f),
+            "rockfish" => new Color(0.45f, 0.38f, 0.3f),
+            "filefish" => new Color(0.6f, 0.55f, 0.42f),
+            "marbledflounder" => new Color(0.5f, 0.45f, 0.35f),
+            "scorpionfish" => new Color(0.65f, 0.35f, 0.25f),
+            "jacopever" => new Color(0.35f, 0.33f, 0.3f),
+            "greenling" => new Color(0.55f, 0.45f, 0.3f),
+            "flounder" => new Color(0.42f, 0.38f, 0.3f),
+            "conger" => new Color(0.45f, 0.42f, 0.35f),
+            "blackseabream" => new Color(0.32f, 0.33f, 0.35f),
+            "opaleye" => new Color(0.25f, 0.28f, 0.27f),
+            "seabass" => new Color(0.7f, 0.74f, 0.78f),
+            "redseabream" => new Color(0.9f, 0.45f, 0.45f),
+            "beakfish" => new Color(0.55f, 0.55f, 0.5f),
+            "giantgrouper" => new Color(0.4f, 0.32f, 0.25f),
+            "robotfish" => new Color(0.75f, 0.78f, 0.82f),
             _ => new Color(0.75f, 0.78f, 0.82f)
         };
 

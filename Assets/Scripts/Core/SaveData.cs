@@ -55,6 +55,9 @@ namespace Fishing.Core
         public string lineId = "line_nylon";
         public string baitId = "bait_worm";
         public float rodDurability = 100f;
+        public string mapId = "hangang";
+        public int keepNetBonus;         // 퀘스트로 늘어난 살림망 칸
+        public List<string> visitedMaps = new List<string>(); // 마지막으로 있던 낚시터
         public string boatId = "";      // 장착한 배 (없으면 빈 문자열)
         public float boatFuel;          // 남은 연료 L
         public List<ItemStack> rodLevels = new List<ItemStack>(); // 낚싯대 강화 단계 (id, count = +N)

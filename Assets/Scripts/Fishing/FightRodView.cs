@@ -173,7 +173,7 @@ namespace Fishing.Angling
         {
             var right = Vector3.Cross(Vector3.up, _forward);
             var p = _origin + _forward * f.Distance + right * (f.FishX * f.Distance * 0.45f);
-            p.y = HanRiverMap.WaterY;
+            p.y = FieldMap.WaterY;
             return p;
         }
 

@@ -73,7 +73,7 @@ namespace Fishing.PlayerSystems
                 float yaw = faceYaw + (k % 2 == 0 ? 1 : -1) * ((k + 1) / 2) * 15f;
                 var dir = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
                 var c = origin + dir * r;
-                c.y = HanRiverMap.WaterY;
+                c.y = FieldMap.WaterY;
                 if (!HullClear(c, yaw)) continue;
                 Launch(c, yaw, origin);
                 return;
@@ -119,7 +119,7 @@ namespace Fishing.PlayerSystems
             for (int a = 0; a < 24; a++)
             {
                 var q = _pos + Quaternion.Euler(0f, a * 15f, 0f) * Vector3.forward * (r + _halfWidth);
-                if (!HanRiverMap.IsWalkable(q)) continue;
+                if (!FieldMap.IsWalkable(q)) continue;
                 float d = (q - _pos).sqrMagnitude;
                 if (d < bestDist) { bestDist = d; best = q; }
             }
@@ -128,7 +128,7 @@ namespace Fishing.PlayerSystems
                 Game.Toast("물가(둔치나 낚시 데크)에 가까이 대야 내릴 수 있습니다.", ToastKind.Warn);
                 return;
             }
-            best.y = HanRiverMap.LandY + 0.1f;
+            best.y = FieldMap.LandY + 0.1f;
             var face = _pos - best;
             face.y = 0f;
             Stow(best, Quaternion.LookRotation(face.sqrMagnitude > 0.01f ? face : Vector3.forward).eulerAngles.y);
@@ -244,7 +244,7 @@ namespace Fishing.PlayerSystems
             if (_boat == null) return;
             float t = Time.time;
             float s01 = Mathf.Clamp01(Mathf.Abs(Speed) / Mathf.Max(1f, Def.BoatSpeed));
-            float y = HanRiverMap.WaterY + Mathf.Sin(t * 1.6f) * 0.04f + s01 * 0.08f;
+            float y = FieldMap.WaterY + Mathf.Sin(t * 1.6f) * 0.04f + s01 * 0.08f;
             float pitch = -s01 * 7f + Mathf.Sin(t * 1.25f) * 1.2f + (s01 > 0.3f ? Mathf.Sin(t * 7f) * 0.6f * s01 : 0f);
             float roll = Mathf.Sin(t * 1.05f) * 1.8f - steer * s01 * 8f;
             _boat.SetPositionAndRotation(new Vector3(_pos.x, y, _pos.z), Quaternion.Euler(pitch, _yaw, roll));
@@ -254,7 +254,7 @@ namespace Fishing.PlayerSystems
         {
             float speed = Mathf.Abs(Speed);
             var stern = _pos - fwd * _halfLen;
-            stern.y = HanRiverMap.WaterY + 0.03f;
+            stern.y = FieldMap.WaterY + 0.03f;
             if (_wake != null)
             {
                 _wake.transform.position = stern;
@@ -282,9 +282,9 @@ namespace Fishing.PlayerSystems
             for (int j = -1; j <= 1; j += 2)
             {
                 var p = c + rot * new Vector3(j * _halfWidth, 0f, i * _halfLen);
-                if (!HanRiverMap.IsWater(p)) return false;
+                if (!FieldMap.IsWater(p)) return false;
             }
-            return HanRiverMap.IsWater(c + rot * new Vector3(0f, 0f, _halfLen + 0.3f));
+            return FieldMap.IsWater(c + rot * new Vector3(0f, 0f, _halfLen + 0.3f));
         }
 
         // ---------------- 모델 ----------------

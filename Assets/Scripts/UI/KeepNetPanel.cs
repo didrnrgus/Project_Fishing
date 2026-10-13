@@ -16,7 +16,7 @@ namespace Fishing.UI
         {
             var p = Game.Profile;
             var net = p.Data.keepNet;
-            Title.text = $"살림망  ({net.Count}/{PlayerProfile.KeepNetCapacity})";
+            Title.text = $"살림망  ({net.Count}/{Game.Profile.KeepNetSize})";
             UIFactory.ClearChildren(Body);
 
             var rows = new RowCursor(Body);

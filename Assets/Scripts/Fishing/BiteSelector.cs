@@ -12,6 +12,8 @@ namespace Fishing.Angling
         public TimeBand Band;
         public Weather Weather;
         public FishSchool School;
+        /// <summary>지금 낚시터 (null이면 모든 어종, 밸런스 시뮬레이션용).</summary>
+        public string MapId;
     }
 
     public struct BiteResult
@@ -28,8 +30,11 @@ namespace Fishing.Angling
 
         public static float Weight(FishSpecies s, BiteContext ctx)
         {
+            if (!s.LivesIn(ctx.MapId)) return 0f;
             float w = RarityWeight[Mathf.Clamp(s.Rarity, 0, RarityWeight.Length - 1)];
-            if (s.IsJunk) return w;
+            if (s.IsJunk) return w * s.JunkWeight;
+            // 대물 퀘스트 고기는 그 어군 안에서만 문다
+            if (s.SchoolOnly && (ctx.School == null || !ctx.School.Contains(s.Id))) return 0f;
             w *= Contains(s.Habitats, ctx.Habitat) ? 1f : 0.12f;
             w *= Contains(s.Baits, ctx.Bait) ? 1f : 0.15f;
             w *= Contains(s.Times, ctx.Band) ? 1f : 0.3f;
@@ -77,7 +82,7 @@ namespace Fishing.Angling
 
             bool anyMatch = false;
             foreach (var s in FishDatabase.All)
-                if (!s.IsJunk && Contains(s.Habitats, ctx.Habitat) && Contains(s.Baits, ctx.Bait) && Contains(s.Times, ctx.Band))
+                if (!s.IsJunk && s.LivesIn(ctx.MapId) && Contains(s.Habitats, ctx.Habitat) && Contains(s.Baits, ctx.Bait) && Contains(s.Times, ctx.Band))
                 {
                     anyMatch = true;
                     break;

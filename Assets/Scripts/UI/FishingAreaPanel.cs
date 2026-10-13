@@ -163,7 +163,7 @@ namespace Fishing.UI
 
         void Flip(int dir)
         {
-            var list = FishDatabase.DexSpecies.ToList();
+            var list = FishDatabase.DexOf(_selected?.MapId ?? "hangang").ToList();
             _fishIndex = (_fishIndex + dir + list.Count) % list.Count;
             Refresh();
         }
@@ -173,7 +173,12 @@ namespace Fishing.UI
             if (_selected == null) return;
             if (!_selected.Open)
             {
-                _status.text = $"{_selected.Name}은(는) 아직 준비 중입니다. 지금은 한강만 열려 있어요.";
+                _status.text = $"{_selected.Name}은(는) 아직 준비 중입니다. 지금은 한강과 홍현 앞바다가 열려 있어요.";
+                return;
+            }
+            if (Game.Profile.Data.level < _selected.Level)
+            {
+                _status.text = $"{_selected.Name}은(는) Lv.{_selected.Level}부터 입장할 수 있습니다.";
                 return;
             }
             Close();
@@ -200,7 +205,7 @@ namespace Fishing.UI
             _mapLabelText.text = _selected.Name;
 
             _mapName.text = _selected.Name;
-            var species = FishDatabase.DexSpecies.ToList();
+            var species = FishDatabase.DexOf(_selected?.MapId ?? "hangang").ToList();
             float rate = _selected.Open ? p.Data.dex.Count / (float)species.Count : 0f;
             _dexFill.fillAmount = rate;
             _dexRate.text = $"{rate * 100f:0} %";
@@ -214,7 +219,7 @@ namespace Fishing.UI
                 _fishLatin.text = known ? s.Latin : "아직 낚지 못한 어종";
                 _fishImage.color = known ? Fishing.Angling.FishModels.BodyColor(s) * 1.25f : new Color(0.1f, 0.12f, 0.15f);
                 _seasonRecord.text = known ? $"PERSONAL RECORD\n{entry.maxLength:0.00}cm  강태공" : "PERSONAL RECORD\n-";
-                _records.text = $"[한강 최대] {s.MaxLen:0.00}cm\n[대물 기준] {s.TrophyLen:0.00}cm {s.TrophyName}";
+                _records.text = $"[{_selected.Name} 최대] {s.MaxLen:0.00}cm\n[대물 기준] {s.TrophyLen:0.00}cm {s.TrophyName}";
             }
             else
             {
