@@ -640,7 +640,7 @@ namespace Fishing.World
             light.shadows = LightShadows.None;
             var owner = NpcAngler.Spawn(shop, new Vector3(1.2f, 0f, 2.75f), 0f, new CharacterLook
             {
-                Name = "서천 낚시점 박사장", Title = "서천 낚시점", TopModel = "Top_Long", Hair = "Hair_Buzzed", HairColor = new Color(0.3f, 0.3f, 0.3f),
+                Name = "서천 낚시점 박사장", Title = "서천 낚시점", TopModel = "Top_Shirt", Hair = "Hair_Buzzed", HairColor = new Color(0.3f, 0.3f, 0.3f),
                 Shirt = new Color(0.35f, 0.5f, 0.65f), VestColor = new Color(0.7f, 0.6f, 0.4f), Pants = new Color(0.25f, 0.25f, 0.28f), Hat = true, HatStyle = 1,
                 HatColor = new Color(0.85f, 0.3f, 0.2f)
             }, NpcAngler.Role.Talker);

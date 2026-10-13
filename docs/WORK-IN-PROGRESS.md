@@ -33,7 +33,11 @@
    - 솔로판: 서천 앞바다 대신 지금 맵에서, AI 낚시꾼 7명 점수 시뮬레이션, 대회 시간 HUD 순위표, 엠블럼(브론즈~다이아), 거거 낚시대(Lv.10 rod)·나팔고둥 릴(Lv.10 reel)을 보상 전용 장비로 GearDatabase에 추가
 8. [x] 밸런스 (5차 조정, 04-balance.md): `sh tools/balance.sh -simSummary`로 바다 어종·그루퍼 확인, 강화 +15·의상 데미지 반영 후 docs/04-balance.md 갱신
 9. [ ] 문서 갱신: README(특징·조작 F/I/C/M/B·스크린샷), 02-game-design(맵 2개·해체·강화·의상·퀘스트·수족관·대회), 03-architecture(FieldMap, MapLoader, 새 패널·데이터 파일), 05-dev-guide(자동 스크린샷 13b~29), 06-roadmap
-10. [ ] 그 밖에 보이는 것: 1인칭 팔·손 모델 다듬기, 밤 강물 다리 불빛 반사, 결과 화면 3D 물고기, 다른 한국 낚시터(서천 앞바다 = 대회 장소, 헌화로, 거문도 …)
+10. [ ] 그 밖에 보이는 것:
+    - [x] 1인칭 팔·손 다듬기 (상의 색 소매 + 아래팔, 검정 반장갑 주먹·손가락·주황 손목띠, `FightRodView`)
+    - [x] 밤 강물 반짝임·다리 불빛 반사 (`WaterGlints`), 결과 화면 3D 물고기 (`ResultFishStage`)
+    - [x] 서천 앞바다 (서해, 대회 장소 중 하나)
+    - [ ] 헌화로·거문도 같은 다른 한국 낚시터 (선택, 큰 맵 작업)
 
 ## 참고
 - 빌드: `sh tools/build.sh`, 확인: `sh tools/autoshot.sh` (Screenshots/ 33장, 홍현·수족관·의상·퀘스트 포함)

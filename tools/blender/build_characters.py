@@ -1,7 +1,7 @@
 """
 낚시꾼 캐릭터 FBX를 만든다: Quaternius Superhero 몸 → 보통 체형 + 진짜 옷 메쉬.
 
-  python -I tools/blender/build_characters.py [--preview] [--only male|female] [--pose Idle_Loop]
+  python -I tools/blender/build_characters.py [--preview [--closeup]] [--only male|female] [--pose Idle_Loop]
 
   - bpy(PyPI의 headless Blender, `pip install bpy`)로 실행한다. Blender 실행 파일은 필요 없다.
   - 결과: Assets/Resources/Characters/Angler_Male.fbx, Angler_Female.fbx
@@ -88,15 +88,17 @@ def build(gender):
     made['Top_Tee'] = G.top(b, 'Top_Tee', 'short', under=belts)
     made['Top_Long'] = G.top(b, 'Top_Long', 'long', loose=0.8, base=0.011, under=belts)
     made['Top_Rash'] = G.top(b, 'Top_Rash', 'long', tight=True, base=0.005, hem_drop=0.05, neck_front=0.045, under=belts)
-    tops = ['Top_Tee', 'Top_Long', 'Top_Rash']
+    made['Top_Shirt'] = G.shirt(b, 'Top_Shirt', under=belts)
+    tops = ['Top_Tee', 'Top_Long', 'Top_Rash', 'Top_Shirt']
     made['Pants_Wader'] = G.pants(b, 'Pants_Wader', 'wader', under=tops)
     made['Vest_Fishing'] = G.vest(b, 'Vest_Fishing', 'fishing', under=tops + ['Pants_Wader'])
     made['Vest_Life'] = G.vest(b, 'Vest_Life', 'life', under=tops + ['Pants_Wader'])
     made['Shoes_Sneaker'] = G.shoes(b, 'Shoes_Sneaker', 'sneaker')
     made['Shoes_Boots'] = G.shoes(b, 'Shoes_Boots', 'boots')
     # 몸 가림: R 상의(셋 다), G 하의(셋 다), B 신발(둘 다), A 긴소매(둘 다)
-    G.bake_cover(b, [['Top_Tee', 'Top_Long', 'Top_Rash'], ['Pants_Cargo', 'Pants_Jeans', 'Pants_Wader'],
-                     ['Shoes_Sneaker', 'Shoes_Boots'], ['Top_Long', 'Top_Rash']])
+    G.bake_cover(b, [['Top_Tee', 'Top_Long', 'Top_Rash', 'Top_Shirt'], ['Pants_Cargo', 'Pants_Jeans', 'Pants_Wader'],
+                     ['Shoes_Sneaker', 'Shoes_Boots'], ['Top_Long', 'Top_Rash', 'Top_Shirt']])
+    made['Gloves'] = G.gloves(b, 'Gloves')
     made['Hat_Bucket'] = G.hat(b, 'Hat_Bucket', 'bucket')
     made['Hat_Cap'] = G.hat(b, 'Hat_Cap', 'cap')
     made['Hat_Straw'] = G.hat(b, 'Hat_Straw', 'straw')
@@ -192,11 +194,11 @@ def cloth_mat(name, color, trim, pattern=None, rough=0.85, clip_below=None):
 
 OUTFITS = [
     # (이름, 켤 메쉬, 색)
-    ('basic', ['Top_Tee', 'Vest_Fishing', 'Pants_Cargo', 'Shoes_Sneaker', 'Hat_Bucket'],
+    ('basic', ['Top_Tee', 'Vest_Fishing', 'Pants_Cargo', 'Shoes_Sneaker', 'Hat_Bucket', 'Gloves'],
      {'Top_Tee': (0.9, 0.9, 0.92, 1), 'Vest_Fishing': (0.25, 0.4, 0.3, 1), 'Pants_Cargo': (0.32, 0.36, 0.3, 1),
-      'Shoes_Sneaker': (0.2, 0.2, 0.22, 1), 'Hat_Bucket': (0.9, 0.84, 0.62, 1)}),
-    ('pro', ['Top_Long', 'Vest_Fishing', 'Pants_Jeans', 'Shoes_Boots', 'Hat_Cap', 'Glasses'],
-     {'Top_Long': (0.65, 0.25, 0.22, 1), 'Vest_Fishing': (0.55, 0.52, 0.38, 1), 'Pants_Jeans': (0.22, 0.3, 0.5, 1),
+      'Shoes_Sneaker': (0.2, 0.2, 0.22, 1), 'Hat_Bucket': (0.9, 0.84, 0.62, 1), 'Gloves': (0.1, 0.1, 0.12, 1)}),
+    ('pro', ['Top_Shirt', 'Vest_Fishing', 'Pants_Jeans', 'Shoes_Boots', 'Hat_Cap', 'Glasses'],
+     {'Top_Shirt': (0.65, 0.25, 0.22, 1), 'Vest_Fishing': (0.55, 0.52, 0.38, 1), 'Pants_Jeans': (0.22, 0.3, 0.5, 1),
       'Shoes_Boots': (0.15, 0.25, 0.2, 1), 'Hat_Cap': (0.15, 0.25, 0.5, 1), 'Glasses': (0.05, 0.05, 0.06, 1)}),
     ('sea', ['Top_Rash', 'Vest_Life', 'Pants_Wader', 'Shoes_Boots', 'Hat_Straw'],
      {'Top_Rash': (0.12, 0.14, 0.2, 1), 'Vest_Life': (0.95, 0.45, 0.1, 1), 'Pants_Wader': (0.2, 0.28, 0.22, 1),
@@ -205,7 +207,7 @@ OUTFITS = [
 
 BOOT_CLIP = 0.2  # 장화를 신으면 휴식 자세 높이 0.4m 아래의 바지는 숨긴다 (장화 윗단 ≈ 무릎 - 0.1m)
 
-TRIM = {'Top_Tee': 0.85, 'Top_Long': 0.8, 'Top_Rash': 1.4, 'Vest_Fishing': 0.6, 'Vest_Life': 0.15, 'Pants_Cargo': 0.75,
+TRIM = {'Top_Tee': 0.85, 'Top_Long': 0.8, 'Top_Shirt': 0.8, 'Gloves': None, 'Top_Rash': 1.4, 'Vest_Fishing': 0.6, 'Vest_Life': 0.15, 'Pants_Cargo': 0.75,
         'Pants_Jeans': 0.6, 'Pants_Wader': 0.6, 'Shoes_Sneaker': None, 'Shoes_Boots': 0.7, 'Hat_Bucket': 0.6, 'Hat_Cap': 0.8,
         'Hat_Straw': None, 'Glasses': None}
 
@@ -228,7 +230,7 @@ def preview(gender, pose_name, out_prefix):
     for k, (oname, on, colors) in enumerate(OUTFITS):
         arm, body, made, objs = build(gender)
         body.data.materials.clear()
-        body.data.materials.append(skin_long if ('Top_Long' in on or 'Top_Rash' in on) else skin_short)
+        body.data.materials.append(skin_long if ('Top_Long' in on or 'Top_Rash' in on or 'Top_Shirt' in on) else skin_short)
         for o in objs:
             if o.type == 'MESH' and o is not body:
                 o.data.materials.clear()
@@ -245,9 +247,13 @@ def preview(gender, pose_name, out_prefix):
                 trim = (0.7, 0.12, 0.1, 1)
             elif name == 'Glasses':
                 trim = (0.03, 0.03, 0.03, 1)
+            elif name == 'Gloves':
+                trim = (0.95, 0.55, 0.15, 1)
             else:
                 trim = tuple(min(1, x * t) for x in c[:3]) + (1,)
             pat = tuple(x * 0.55 for x in c[:3]) + (1,) if name == 'Vest_Fishing' else None
+            if name == 'Shoes_Sneaker':
+                pat = (0.9, 0.9, 0.88, 1)  # 끈
             if name == 'Hat_Straw':
                 pat = c
             obj.data.materials.clear()
@@ -277,6 +283,11 @@ def preview(gender, pose_name, out_prefix):
         e.location.x = (k - 1) * -0.95
     cam = R.setup_scene(res=(1500, 1000), samples=32)
     cam.data.lens = 60
+    if '--closeup' in ARGS:
+        # 발(운동화·장화)과 상체(깃·장갑·조끼) 근접
+        R.shoot(cam, f'{out_prefix}_feet.png', 160, dist=2.8, look_h=0.12)
+        R.shoot(cam, f'{out_prefix}_chest.png', 170, dist=3.2, look_h=1.2)
+        return
     for yaw in (180, 145, 0):
         R.shoot(cam, f'{out_prefix}_{yaw}.png', yaw, dist=7.0)
 

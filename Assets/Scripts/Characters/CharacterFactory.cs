@@ -21,6 +21,8 @@ namespace Fishing.Characters
         /// <summary>모자 모양: 0 벙거지, 1 야구모자, 2 밀짚모자.</summary>
         public int HatStyle;
         public bool Glasses;
+        /// <summary>손가락 없는 반장갑 (검정 + 주황 손목띠, 원작 1인칭처럼). 내 캐릭터만 낀다.</summary>
+        public bool Gloves;
         public Color GlassesColor = new Color(0.08f, 0.08f, 0.1f);
         public bool Vest = true;
         public Color VestColor = new Color(0.25f, 0.4f, 0.3f);
@@ -34,14 +36,14 @@ namespace Fishing.Characters
         public string Name;
         public string Title;
 
-        public static CharacterLook Player => new CharacterLook { Name = "강태공", Title = "초보 조사" };
+        public static CharacterLook Player => new CharacterLook { Name = "강태공", Title = "초보 조사", Gloves = true };
     }
 
     /// <summary>
     /// 낚시꾼 캐릭터를 만든다. 모델은 tools/blender/build_characters.py가 Quaternius Universal Base Characters(CC0)로 만든
     /// Resources/Characters/Angler_Male·Angler_Female.fbx:
     ///  - 근육질 Superhero 몸을 보통 체형으로 다듬은 Body
-    ///  - 같은 뼈에 스키닝된 옷 메쉬(반팔·긴팔·래시가드, 낚시조끼·구명조끼, 카고·청바지·웨이더, 운동화·장화, 모자 3종, 선글라스)
+    ///  - 같은 뼈에 스키닝된 옷 메쉬(반팔·긴팔·남방(깃·단추)·래시가드, 낚시조끼·구명조끼, 카고·청바지·웨이더, 운동화·장화, 모자 3종, 선글라스, 반장갑)
     /// 고른 옷만 남기고 나머지는 지운다. 몸(Fishing/Skin)은 입은 옷 속 피부를 잘라내 살이 옷을 뚫지 않는다.
     /// </summary>
     public static class CharacterFactory
@@ -50,8 +52,8 @@ namespace Fishing.Characters
 
         public static readonly string[] Garments =
         {
-            "Top_Tee", "Top_Long", "Top_Rash", "Vest_Fishing", "Vest_Life", "Pants_Cargo", "Pants_Jeans", "Pants_Wader",
-            "Shoes_Sneaker", "Shoes_Boots", "Hat_Bucket", "Hat_Cap", "Hat_Straw", "Glasses",
+            "Top_Tee", "Top_Long", "Top_Shirt", "Top_Rash", "Vest_Fishing", "Vest_Life", "Pants_Cargo", "Pants_Jeans", "Pants_Wader",
+            "Shoes_Sneaker", "Shoes_Boots", "Hat_Bucket", "Hat_Cap", "Hat_Straw", "Glasses", "Gloves",
         };
 
         static readonly string[] HatModels = { "Hat_Bucket", "Hat_Cap", "Hat_Straw" };
@@ -82,8 +84,9 @@ namespace Fishing.Characters
             if (look.Vest) wear.Add(look.VestModel);
             if (look.Hat) wear.Add(HatModels[Mathf.Clamp(look.HatStyle, 0, HatModels.Length - 1)]);
             if (look.Glasses) wear.Add("Glasses");
+            if (look.Gloves) wear.Add("Gloves");
             bool boots = look.ShoeModel == "Shoes_Boots";
-            bool longSleeve = look.TopModel == "Top_Long" || look.TopModel == "Top_Rash";
+            bool longSleeve = look.TopModel == "Top_Long" || look.TopModel == "Top_Shirt" || look.TopModel == "Top_Rash";
 
             foreach (var smr in go.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
@@ -137,6 +140,7 @@ namespace Fishing.Characters
             {
                 case "Top_Tee":
                 case "Top_Long":
+                case "Top_Shirt":
                     main = look.Shirt; trim = main * 0.82f; pattern = Color.Lerp(main * 0.45f, Color.white, look.TopPattern == 3 ? 0.9f : 0f);
                     mode = look.TopPattern;
                     break;
@@ -157,7 +161,7 @@ namespace Fishing.Characters
                     main = look.Pants; trim = main * 0.75f; pattern = main * 0.6f; mode = look.BottomPattern;
                     break;
                 case "Shoes_Sneaker":
-                    main = look.Shoes; trim = new Color(0.92f, 0.92f, 0.9f); pattern = main; gloss = 0.25f;
+                    main = look.Shoes; trim = new Color(0.92f, 0.92f, 0.9f); pattern = new Color(0.9f, 0.9f, 0.88f); gloss = 0.25f; // 보조 원단 = 끈
                     break;
                 case "Shoes_Boots":
                     main = look.Shoes; trim = main * 0.7f; pattern = main; gloss = 0.45f;
@@ -168,6 +172,9 @@ namespace Fishing.Characters
                 case "Hat_Bucket":
                 case "Hat_Cap":
                     main = look.HatColor; trim = main * (model == "Hat_Cap" ? 0.8f : 0.6f); pattern = main;
+                    break;
+                case "Gloves":
+                    main = new Color(0.1f, 0.1f, 0.12f); trim = new Color(0.95f, 0.55f, 0.15f); pattern = main; gloss = 0.3f;
                     break;
                 case "Glasses":
                     main = look.GlassesColor; trim = new Color(0.04f, 0.04f, 0.05f); pattern = main; gloss = 0.9f;

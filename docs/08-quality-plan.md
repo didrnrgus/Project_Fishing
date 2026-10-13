@@ -13,11 +13,12 @@
 지금 캐릭터는 Quaternius 무료판에 들어 있는 **Superhero(보디빌더) 몸**에 셔츠·바지를 셰이더로 "칠한" 것이라 쫄쫄이 차림의 근육맨으로 보인다.
 원작 「청풍명월」의 '청'·'명'은 보통 체형의 젊은 남녀가 **진짜 옷**(낚시조끼, 모자, 바지, 장화)을 입고 의상 아이템으로 꾸미는 3D 캐릭터였다.
 
-| 지금 (docs/images/00_character.png) | 이 브랜치의 시제품 (Blender 렌더) |
+| 게임 안 (docs/images/00_character.png) | Blender 미리보기 (`build_characters.py --preview`) |
 |---|---|
-| ![before](images/00_character.png) | ![after](images/30_angler_outfits_preview.png) |
+| ![game](images/00_character.png) | ![preview](images/30_angler_outfits_preview.png) |
 
-시제품 렌더(위→아래): 남자 앞, 남자 뒤, 여자 앞. 각 줄은 기본(반팔·낚시조끼·카고·운동화·벙거지) / 프로(체크 긴팔·조끼·청바지·장화·야구모자·선글라스) / 바다(래시가드·구명조끼·웨이더·장화·밀짚모자).
+미리보기(위→아래): 남자, 여자. 각 줄은 기본(반팔·낚시조끼·카고·운동화·벙거지·반장갑) / 프로(체크 남방(깃·단추)·조끼·청바지·장화·야구모자·선글라스) / 바다(래시가드·구명조끼·웨이더·장화·밀짚모자).
+(처음엔 근육질 Superhero 몸에 옷을 셰이더로 칠한 쫄쫄이 차림이었다 — 지금은 위처럼 보통 체형 + 진짜 옷 메쉬.)
 
 ---
 
@@ -98,6 +99,7 @@ bpyenv/Scripts/pip install bpy pillow numpy      # Windows. Linux/macOS는 bpyen
 bpyenv/Scripts/python -I tools/blender/build_characters.py              # FBX 2개 생성
 bpyenv/Scripts/python -I tools/blender/build_characters.py --preview --only male --out Screenshots/pv   # 렌더로 확인
 ```
+- 옵션 `--closeup`(미리보기와 함께): 발(운동화·장화)과 상체(남방 깃·장갑·조끼)를 가까이 렌더해 `<out>_male_feet.png`, `_chest.png`로
 - 옵션: `--only male|female`, `--pose Idle_Loop`(UAL 클립 이름, 미리보기 자세)
 - 함정: 스크립트를 `inspect.py`처럼 표준 모듈 이름으로 만들면 bpy가 두 번 임포트되며 죽는다. 스크립트 끝에서 `os._exit(0)`(bpy 종료 시 충돌 회피), 명령줄 인자는 `import bpy` 전에 `sys.argv`에서 빼 둔다(이미 그렇게 되어 있음).
 - 옷 하나를 고치려면 `garments.py`의 `top/vest/pants/shoes/hat` 인자(오프셋 `base`, 드레이프 `up_window`·`strength`, 단 높이)를 바꾸고 `--preview`로 본 다음 내보낸다.
@@ -108,13 +110,13 @@ bpyenv/Scripts/python -I tools/blender/build_characters.py --preview --only male
 
 1. **자연스러운 대기 자세** — 지금 `Idle_Loop`(UAL)은 주먹 쥔 슈퍼히어로 자세다. 무료 **Human Basic Motions FREE**(Kevin Iglesias, Asset Store)의 idle/walk/run/turn(남·녀 버전)을 넣고 `CharacterAnimator`가 클립을 두 라이브러리에서 찾게 한다(휴머노이드 리타깃이라 그대로 붙는다). 옛 "Basic Motions FREE"는 단종이니 이름 주의.
 2. ~~**음영(AO) 굽기**~~ — 완료: `garments.bake_ao`가 휴식 자세에서 법선 반구로 광선 14개를 쏴 옷 버텍스 컬러 G에 곱한다(세기 0.6, 거리 12cm). 주머니·버클처럼 각진 면은 제외. 더 진하게/연하게는 `strength`.
-3. **장갑** — 원작 1인칭에서 검정·주황 장갑을 꼈다. 손 영역 껍데기(오프셋 3mm, 손가락 끝 없는 반장갑)를 `garments.py`에 추가하고 1인칭 팔에도 적용.
-4. **운동화 모양** — 아직 발 모양 껍데기라 슬리퍼처럼 각져 보인다. 앞코를 둥근 박스로 다시 만들고(발 축 기준 단면을 타원으로 맞추기), 끈·로고 트림 추가.
-5. **체크 남방 깃** — `Top_Long`에 셔츠 깃(목둘레 띠 + 접힌 깃 두 장) 메쉬를 붙인 `Top_Shirt`를 따로 만들기.
-6. **여자 캐릭터 조끼** — 가슴 위쪽이 남자보다 덜 덮인다(V넥 깊이가 절대값). V넥 깊이를 `chest_z` 기준 비율로.
+3. ~~**장갑**~~ — 완료: `garments.gloves` = 손 껍데기 3.5mm, 손가락 둘째 마디부터 없는 반장갑, 손목띠(아래팔 뼈 축으로 1.2~6cm)는 트림 = 주황. Unity `CharacterLook.Gloves`(내 캐릭터만 true). 1인칭(`FightRodView`)도 검정 주먹 + 낚싯대를 감은 손가락 4개·엄지(끝마디 살색) + 주황 손목띠, 팔은 입은 상의 색 소매(반팔이면 팔꿈치 위까지, 긴팔이면 손목까지) + 아래팔.
+4. ~~**운동화 모양**~~ — 완료: 발 부분은 몸 메쉬를 부풀리지 않고 `shoe_loft`로 새로 만든다(발 축을 따라 초타원 단면 41개, 앞코 둥글고 뒤꿈치는 조금 각지게, 밑은 평평한 밑창). 발목·종아리만 기존 껍데기. 몸 메쉬를 부풀리던 방식은 발가락 사이 점이 접혀 구겨졌다(투영+스무딩 반복도 소용없었음). 운동화는 끈(B → 셰이더 보조 원단 = 흰 끈)·옆면 줄무늬(R)·1.3cm 밑창. 장화도 같은 골.
+5. ~~**체크 남방 깃**~~ — 완료: `garments.shirt` → `Top_Shirt` = 긴팔 + 깃(목둘레 띠 2.4cm + 접힌 깃, 앞이 벌어지고 깃 끝이 뾰족) + 앞단추 4개. 깃은 `strip_object`(격자 띠, 줄마다 가장 가까운 몸 버텍스의 뼈 가중치) + `join`. 의상 체크 남방·한강 블루 셔츠와 낚시점 주인 NPC가 입는다.
+6. ~~**여자 캐릭터 조끼**~~ — 완료: V넥 깊이 = (목 − 가슴 높이) × 0.92(구명조끼 0.55), 너비 = 가슴 반폭 비율, 옆은 덜 파는 V(`neck_hole(v=0.55)`). 여자 윗가슴이 덮인다.
 7. **얼굴** — UBC 얼굴은 실사 쪽이다. 원작 느낌(한국 MMO풍)을 더 원하면 아래 5장 VRoid 경로.
-8. **피부 텍스처** — Superhero 텍스처에 복근 음영이 그려져 있다(옷에 가려 대부분 안 보임). 반팔일 때 팔 근육 그림이 보이면 텍스처의 팔 부분을 흐리게.
-9. **머리카락 + 모자** — 긴 머리(Hair_Long) + 밀짚모자에서 머리카락이 챙을 뚫는지 확인. 뚫으면 모자 쓸 때 머리카락 정수리 버텍스를 셰이더로 잘라내는 마스크를 굽는다.
+8. **피부 텍스처** — Superhero 텍스처에 복근 음영이 그려져 있다(옷에 가려 대부분 안 보임). 2026-10-14 확인: 반팔 팔뚝 근육 그림은 게임 카메라 거리(00_character)에서 눈에 띄지 않아 그대로 둔다. 가까이 보는 화면이 생기면 텍스처의 팔 UV를 흐리게.
+9. ~~**머리카락 + 모자**~~ — 확인 완료: 긴 머리(Hair_Long) + 밀짚모자·야구모자 미리보기에서 머리카락이 챙을 뚫지 않는다(마스크 불필요).
 
 ---
 
@@ -147,10 +149,10 @@ bpyenv/Scripts/python -I tools/blender/build_characters.py --preview --only male
 ## 6. 데스크톱 작업 순서 (체크리스트)
 
 - [x] 2장 확인 목록 통과 → Angler FBX의 `.meta` 포함해 커밋 (2026-10-14: 빌드·autoshot에서 서 있음·정면·옷 확인)
-- [ ] 문제 있으면 2장 표대로 고치거나 `garments.py` 수정 후 3장으로 재생성
+- [x] 문제 있으면 2장 표대로 고치거나 `garments.py` 수정 후 3장으로 재생성 (`--preview --closeup`: 발·상체 근접 렌더)
 - [x] Post Processing 패키지 + 코드로 볼륨/레이어 (블룸, Neutral 톤매핑, AO, SMAA, 시간대별 그레이딩) → `Core/PostFx.cs`. ACES는 노을·밤 하늘을 검게 눌러서 Neutral로 바꿨다
 - [ ] Human Basic Motions FREE 임포트 → `CharacterAnimator`에 두 번째 클립 라이브러리, Idle/Walk/Run 교체
-- [ ] 4장 3(장갑)·4(운동화) → 재생성 (AO는 완료)
+- [x] 4장 3(장갑)·4(운동화)·5(남방 깃)·6(여자 조끼) → 재생성, 9(머리카락+모자) 확인 (AO는 완료)
 - [x] 데크·둔치·길·방파제 텍스처 (Poly Haven CC0: 풀·나무 데크·콘크리트·아스팔트, `Mats.TexturedBox`). 나무 교체(Hand Painted Nature Pack)는 에셋 스토어 로그인이 필요해 보류
 - [ ] 흐림/비 하늘 큐브맵 섞기, 반사 프로브
 - [ ] (선택) VRoid 시험 모델 하나 만들어 비교
