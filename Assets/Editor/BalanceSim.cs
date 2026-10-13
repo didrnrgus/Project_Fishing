@@ -20,12 +20,16 @@ namespace Fishing.EditorTools
         const float ReactionTime = 0.25f; // 사람의 반응 지연: 감기/풀기 판단을 이 간격으로만 갱신한다
         const float CounterChance = 0.5f;  // 끝에 몰렸을 때 판단마다 카운터를 시도할 확률
 
-        static readonly (string name, string rod, string reel, string line)[] Tiers =
+        /// <summary>장비 단계. plus = 낚싯대·릴 강화 단계, dmg/counter = 의상 데미지·카운터 보너스.</summary>
+        static readonly (string name, string rod, string reel, string line, int plus, float dmg, float counter)[] Tiers =
         {
-            ("입문", "rod_basic", "reel_basic", "line_nylon"),
-            ("중급", "rod_carbon", "reel_power", "line_carbon"),
-            ("상급", "rod_bamboo", "reel_power", "line_pe"),
-            ("대물", "rod_heavy", "reel_hispeed", "line_pe"),
+            ("입문", "rod_basic", "reel_basic", "line_nylon", 0, 0f, 0f),
+            ("중급", "rod_carbon", "reel_power", "line_carbon", 0, 0f, 0f),
+            ("상급", "rod_bamboo", "reel_power", "line_pe", 0, 0f, 0f),
+            ("대물", "rod_heavy", "reel_hispeed", "line_pe", 0, 0f, 0f),
+            ("대회", "rod_gege", "reel_napal", "line_pe", 0, 0f, 0f),
+            ("대물+10·의상", "rod_heavy", "reel_hispeed", "line_pe", 10, 0.12f, 0.13f),
+            ("대물+15·의상", "rod_heavy", "reel_hispeed", "line_pe", 15, 0.12f, 0.13f),
         };
 
         public static bool Summary;
@@ -61,14 +65,16 @@ namespace Fishing.EditorTools
         }
 
         static (int win, float avgTime, int broken, int hookOut, int runOut, int timeout) Simulate(
-            FishSpecies s, float len, (string name, string rod, string reel, string line) tier)
+            FishSpecies s, float len, (string name, string rod, string reel, string line, int plus, float dmg, float counter) tier)
         {
             int win = 0, broken = 0, hookOut = 0, runOut = 0, timeout = 0;
             var times = new List<float>();
             for (int i = 0; i < Trials; i++)
             {
                 var fight = new FishFight(s, len, 18f, 0.8f,
-                    GearDatabase.GetGear(tier.rod), GearDatabase.GetGear(tier.reel), GearDatabase.GetGear(tier.line));
+                    RodUpgrade.Apply(GearDatabase.GetGear(tier.rod), tier.plus), RodUpgrade.Apply(GearDatabase.GetGear(tier.reel), tier.plus),
+                    GearDatabase.GetGear(tier.line));
+                fight.CounterBonus = 1f + tier.counter;
                 // 감기/풀기 판단은 ReactionTime마다만 바뀌고(반응 지연), 낚싯대 조준은 매 프레임 따라간다.
                 var held = default(FightInput);
                 float nextDecision = 0f;
@@ -84,7 +90,7 @@ namespace Fishing.EditorTools
                     }
                     frame.Reeling = held.Reeling;
                     frame.Releasing = held.Releasing;
-                    fight.Tick(Dt, frame);
+                    fight.Tick(Dt, frame, 1f, 1f + tier.dmg);
                     if (fight.LandingChance) fight.StartLanding();
                     if (fight.Landing && fight.Elapsed >= nextTap)
                     {

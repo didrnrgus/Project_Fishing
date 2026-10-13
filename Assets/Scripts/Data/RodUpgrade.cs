@@ -9,7 +9,7 @@ namespace Fishing.Data
     ///  - 낚싯대와 릴을 강화한다. 재료는 낚시로 얻고(해체해서 나온 "반짝이는 비늘"), 낚시점 주인에게 맡긴다
     ///  - 최대 15강. 실패해도 장비는 깨지지 않고, 아주 낮은 확률로만 한 단계 떨어진다 (+7 이상에서 10%)
     ///  - 별모래를 쓰면 성공 확률이 오른다 (원작에선 캐시 아이템)
-    /// 단계별 성능: 낚싯대 힘 +5%·비거리 +0.4m, 릴 감기 속도 +4%·권사량 +5m.
+    /// 단계별 성능: 낚싯대 힘 +3%·비거리 +0.4m, 릴 감기 속도 +2.5%·권사량 +5m (+15면 힘 +45%).
     /// </summary>
     public static class RodUpgrade
     {
@@ -54,12 +54,12 @@ namespace Fishing.Data
             };
             if (gear.Slot == GearSlot.Rod)
             {
-                g.Power = gear.Power * (1f + 0.05f * level);
+                g.Power = gear.Power * (1f + 0.03f * level);
                 g.CastRange = gear.CastRange + 0.4f * level;
             }
             else if (gear.Slot == GearSlot.Reel)
             {
-                g.ReelSpeed = gear.ReelSpeed * (1f + 0.04f * level);
+                g.ReelSpeed = gear.ReelSpeed * (1f + 0.025f * level);
                 g.Capacity = gear.Capacity + 5f * level;
             }
             return g;
