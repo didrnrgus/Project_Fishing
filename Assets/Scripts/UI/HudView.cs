@@ -453,7 +453,9 @@ namespace Fishing.UI
 
             var quest = Game.Quests.Current;
             _questTitle.text = quest != null ? $"① {quest.Title}" : "모든 조합 퀘스트 완료";
-            _questGoal.text = quest != null ? $"{quest.GoalText}  {Mathf.Min(Game.Quests.Progress, quest.Count)} / {quest.Count}" : "자유롭게 대물을 노려보세요!";
+            _questGoal.text = quest == null ? "자유롭게 대물을 노려보세요!"
+                : Game.Quests.Ready ? "<color=#70e070>목표 달성! 박주임(데크 입구)에게 보고</color>"
+                : $"{quest.GoalText}  {Mathf.Min(Game.Quests.Progress, quest.Count)} / {quest.Count}";
 
             for (int i = 0; i < _baitSlots.Count; i++)
             {
@@ -620,8 +622,11 @@ namespace Fishing.UI
                 _ => ""
             };
 
+            var npc = Game.UI.NearbyNpc;
             bool nearShop = Vector3.Distance(playerPos, HanRiverMap.ShopPos) < HanRiverMap.ShopRadius;
-            _prompt.text = nearShop && f.State == FishingState.Idle ? "반포 낚시점  [F12] 상점 이용" : "";
+            if (Game.UI.BlockingPanelOpen) { _prompt.text = ""; return; }
+            _prompt.text = npc != null ? $"<color=#ffd060>[F]</color> {npc.Look.Name}{GameUI.Josa(npc.Look.Name, "과", "와")} 대화" + (npc.NpcId == "union" && Game.Quests.Ready ? "  <color=#70e070>· 퀘스트 보고</color>" : "")
+                : nearShop && f.State == FishingState.Idle ? "반포 낚시점  [F12] 상점 이용" : "";
             if (Game.Profile.Data.stamina < 30f && f.State == FishingState.Idle)
                 _prompt.text = "지쳤습니다... 살림망(Z)에서 요리하거나 김밥을 드세요";
             if (f.State == FishingState.Bite && f.BigBite)

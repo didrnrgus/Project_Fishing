@@ -193,6 +193,9 @@ namespace Fishing.PlayerSystems
 
         public void FaceYaw(float yaw) => Model.rotation = Quaternion.Euler(0f, yaw, 0f);
 
+        /// <summary>이름표 표시 여부 (NPC와 대화할 때 숨긴다).</summary>
+        public bool NameTagVisible = true;
+
         public void SetVisible(bool visible)
         {
             foreach (var r in Model.GetComponentsInChildren<Renderer>()) r.enabled = visible;
@@ -212,7 +215,8 @@ namespace Fishing.PlayerSystems
                 _speedNow = 0f;
                 _airTime = 0f;
                 if (_anim != null) UpdateAnimation();
-                if (_nameTag != null && Game.CameraRig != null)
+                if (_nameTag != null) _nameTag.gameObject.SetActive(NameTagVisible);
+                if (_nameTag != null && NameTagVisible && Game.CameraRig != null)
                     _nameTag.rotation = Quaternion.LookRotation(_nameTag.position - Game.CameraRig.transform.position);
                 return;
             }
@@ -271,7 +275,8 @@ namespace Fishing.PlayerSystems
             }
             else UpdateAnimation();
 
-            if (_nameTag != null && Game.CameraRig != null)
+            if (_nameTag != null) _nameTag.gameObject.SetActive(NameTagVisible);
+                if (_nameTag != null && NameTagVisible && Game.CameraRig != null)
                 _nameTag.rotation = Quaternion.LookRotation(_nameTag.position - Game.CameraRig.transform.position);
         }
 

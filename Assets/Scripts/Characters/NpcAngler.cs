@@ -23,6 +23,14 @@ namespace Fishing.Characters
         /// <summary>true면 다시 던지지 않고 낚싯대만 들고 서 있다 (대기실).</summary>
         public bool Idle;
 
+        /// <summary>말을 걸 수 있는 NPC 목록 (이름표가 있는 NPC).</summary>
+        public static readonly System.Collections.Generic.List<NpcAngler> Talkable = new System.Collections.Generic.List<NpcAngler>();
+        /// <summary>대화 종류: shop(낚시점), union(조합 연락관), angler(낚시꾼).</summary>
+        public string NpcId = "angler";
+        public CharacterLook Look { get; private set; }
+        Transform _faceTarget;
+        Quaternion _homeRot;
+
         public static NpcAngler Spawn(Transform parent, Vector3 localPos, float yaw, CharacterLook look, Role role, bool showNameTag = true)
         {
             var root = new GameObject("NPC_" + look.Name).transform;
@@ -30,7 +38,10 @@ namespace Fishing.Characters
             root.localPosition = localPos;
             root.localRotation = Quaternion.Euler(0f, yaw, 0f);
             var npc = root.gameObject.AddComponent<NpcAngler>();
+            npc.Look = look;
+            npc._homeRot = root.localRotation;
             npc.Build(look, role, showNameTag);
+            if (showNameTag) Talkable.Add(npc);
             return npc;
         }
 
@@ -88,7 +99,8 @@ namespace Fishing.Characters
             if (_nameTag != null && Game.CameraRig != null)
             {
                 var cam = Game.CameraRig.transform.position;
-                bool near = (cam - _nameTag.position).sqrMagnitude < 45f * 45f;
+                // 대화 중에는 이름표를 숨긴다 (대화창에 이름이 나온다)
+                bool near = (cam - _nameTag.position).sqrMagnitude < 45f * 45f && _faceTarget == null;
                 _nameTag.gameObject.SetActive(near);
                 if (near) _nameTag.rotation = Quaternion.LookRotation(_nameTag.position - cam);
             }
@@ -100,8 +112,23 @@ namespace Fishing.Characters
             if (_rodModel != null) _rodModel.SetExtension(0f);
         }
 
+        void OnDestroy() => Talkable.Remove(this);
+
+        /// <summary>대화할 때 상대를 돌아본다. null이면 원래 방향으로.</summary>
+        public void FaceTarget(Transform target) => _faceTarget = target;
+
         void LateUpdate()
         {
+            var want = _homeRot;
+            if (_faceTarget != null)
+            {
+                var d = _faceTarget.position - transform.position;
+                d.y = 0f;
+                if (d.sqrMagnitude > 0.01f)
+                    want = Quaternion.Inverse(transform.parent != null ? transform.parent.rotation : Quaternion.identity) * Quaternion.LookRotation(d);
+            }
+            transform.localRotation = Quaternion.Slerp(transform.localRotation, want, Time.deltaTime * 6f);
+
             if (_rod != null && _hand != null) _rod.position = _hand.position;
             // 줄 무게로 초릿대가 살짝 숙여지고, 바람에 조금 흔들린다
             if (_rodModel != null)

@@ -36,6 +36,7 @@ namespace Fishing.Core
         public int index;
         public int progress;
         public List<string> distinct = new List<string>();
+        public bool ready; // 목표 달성, 보고 대기
     }
 
     [Serializable]
@@ -56,6 +57,7 @@ namespace Fishing.Core
         public float rodDurability = 100f;
         public string boatId = "";      // 장착한 배 (없으면 빈 문자열)
         public float boatFuel;          // 남은 연료 L
+        public List<ItemStack> rodLevels = new List<ItemStack>(); // 낚싯대 강화 단계 (id, count = +N)
         public List<string> ownedGear = new List<string> { "rod_basic", "reel_basic", "line_nylon" };
         public List<ItemStack> items = new List<ItemStack>
         {
