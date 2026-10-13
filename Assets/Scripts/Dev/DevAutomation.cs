@@ -233,7 +233,8 @@ namespace Fishing.Dev
             yield return Shot("16_help");
             Game.UI.Help.Close();
 
-            // 낚시 대회: 참가해서 몇 마리 낚은 상태 (HUD 순위표 + 퀘스트 창 대회 탭)
+            // 낚시 대회: 참가해서 몇 마리 낚은 상태 (HUD 순위표 + 퀘스트 창 대회 탭). 끝나면 시각을 되돌린다
+            float clockBefore = Game.Clock.Minutes;
             Game.Clock.Set(1, 12 * 60);
             Game.Tournament.DebugJoin(4, 63.5f, "잉어", 151.2f);
             yield return new WaitForSeconds(0.6f);
@@ -245,6 +246,7 @@ namespace Fishing.Dev
             Game.UI.Quest.Close();
             Game.UI.Quest.ShowTab(0);
             p.Data.tournament.day = -1;
+            Game.Clock.Set(1, clockBefore);
 
             // NPC 대화 (낚시점 김사장), 낚싯대 강화 창
             Game.Player.Teleport(Fishing.World.FieldMap.ShopPos + new Vector3(1.2f, 0.1f, 4.5f), 180f);

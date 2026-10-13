@@ -142,6 +142,7 @@ namespace Fishing.Core
 
             Fishing.World.KenneyProps.SetNightGlow(1f - day);
             bool wantLamps = day < 0.45f || _weatherDim < 0.45f;
+            Fishing.World.WaterGlints.SetNight(Mathf.Clamp01((0.55f - day) / 0.35f));
             if (wantLamps != _lampsOn) SetLamps(wantLamps);
         }
 

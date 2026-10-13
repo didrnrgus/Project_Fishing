@@ -16,7 +16,11 @@ namespace Fishing.Core
             FieldMap.Set(map);
             var lamps = new List<Light>();
             var bulbs = new List<Renderer>();
+            WaterGlints.Clear();
             Game.World = map.BuildWorld(lamps, bulbs);
+            // 가로등은 모두 물에 비친다 (다리·도시 불빛은 맵이 따로 넣는다)
+            foreach (var l in lamps) if (l != null) WaterGlints.Add(l.transform.position, l.color, 1f);
+            WaterGlints.Upload();
             Game.DayNight?.SetLampSet(lamps, bulbs);
             Game.Schools?.Reset(map.CreateSchools());
             if (Game.Profile != null) Game.Profile.Data.mapId = map.Id;

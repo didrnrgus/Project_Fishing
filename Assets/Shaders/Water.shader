@@ -2,6 +2,8 @@
 //  - 버텍스: 방향이 다른 사인파 3개로 잔물결 (원작 영상의 일렁이는 수면)
 //  - 픽셀: 절차적 노멀맵 2장을 서로 다른 방향으로 흘려서 잔물결 반짝임
 //  - 반사: Standard BRDF + 하늘만 찍는 실시간 반사 프로브 (DayNightCycle)
+//  - 밤 불빛 기둥: WaterGlints가 넘긴 광원(가로등·다리 조명·도시 불빛)마다, 잔물결로 흔들린 반사 방향과 광원 방향의 차이를
+//    가로(좌우)는 좁게 세로(보는 쪽)는 넓게 받아 물 위에 세로로 길게 늘어진 빛을 그린다
 Shader "Fishing/Water"
 {
     Properties
@@ -31,6 +33,9 @@ Shader "Fishing/Water"
         fixed4 _DeepColor, _ShallowColor;
         half _NormalScale, _Tiling1, _Tiling2, _WaveAmp, _WaveLen, _Smoothness;
         float4 _Speed1, _Speed2;
+        float4 _GlintPos[48];
+        float4 _GlintCol[48];
+        float _GlintCount, _GlintNight;
 
         struct Input
         {
@@ -66,6 +71,29 @@ Shader "Fishing/Water"
             o.Metallic = 0;
             o.Smoothness = _Smoothness;
             o.Alpha = 1;
+
+            // 밤 불빛 기둥
+            if (_GlintNight > 0.01)
+            {
+                float3 V = normalize(_WorldSpaceCameraPos - IN.worldPos);
+                float3 Nw = normalize(float3(n.x, n.z, n.y));          // 평평한 수면의 탄젠트 공간 → 월드 (T=+x, B=+z, N=+y)
+                float3 R = reflect(-V, Nw);
+                float3 right = normalize(cross(float3(0, 1, 0), V));
+                float3 glow = 0;
+                int count = (int)_GlintCount;
+                for (int i = 0; i < 48; i++)
+                {
+                    if (i >= count) break;
+                    float3 toL = _GlintPos[i].xyz - IN.worldPos;
+                    float dist = length(toL);
+                    float3 d = R - toL / dist;
+                    float dx = dot(d, right);
+                    float dy = d.y;
+                    float g = exp(-(dx * dx * 5000.0 + dy * dy * 70.0));
+                    glow += _GlintCol[i].rgb * (_GlintCol[i].a * g / (1.0 + dist * 0.004));
+                }
+                o.Emission = glow * _GlintNight * 0.9;
+            }
         }
         ENDCG
     }
