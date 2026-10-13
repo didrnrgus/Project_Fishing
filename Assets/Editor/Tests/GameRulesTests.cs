@@ -276,6 +276,44 @@ namespace Fishing.EditorTools.Tests
         }
     }
 
+    public class SeasonTests
+    {
+        [Test]
+        public void CalendarAndSeasons()
+        {
+            Assert.AreEqual(4, Seasons.MonthOf(1));
+            Assert.AreEqual(Season.Spring, Seasons.SeasonOf(1));
+            Assert.AreEqual(5, Seasons.MonthOf(8));
+            Assert.AreEqual(Season.Summer, Seasons.SeasonOf(Seasons.FirstDayOf(Season.Summer)));
+            int winter = Seasons.FirstDayOf(Season.Winter);
+            Assert.AreEqual(12, Seasons.MonthOf(winter));
+            Assert.AreEqual(Season.Autumn, Seasons.SeasonOf(winter - 1));
+            Assert.AreEqual(Season.Spring, Seasons.SeasonOf(Seasons.FirstDayOf(Season.Spring, winter)), "겨울 다음은 다시 봄");
+        }
+
+        [Test]
+        public void SmeltOnlyThroughIceInWinter()
+        {
+            var smelt = FishDatabase.Get("smelt");
+            var ctx = new BiteContext { MapId = "hangang", Habitat = Habitat.Shallow, Bait = BaitKind.Worm, Band = TimeBand.Day, Weather = Weather.Clear,
+                UseSeason = true, Season = Season.Winter, IceFishing = true };
+            Assert.Greater(BiteSelector.Weight(smelt, ctx), 0f);
+            ctx.IceFishing = false;
+            Assert.AreEqual(0f, BiteSelector.Weight(smelt, ctx), "얼음 구멍이 아니면 빙어는 안 문다");
+            ctx.IceFishing = true;
+            ctx.Season = Season.Summer;
+            Assert.AreEqual(0f, BiteSelector.Weight(smelt, ctx), "여름엔 빙어가 없다");
+        }
+
+        [Test]
+        public void InSeasonBitesMore()
+        {
+            var shad = FishDatabase.Get("shad");
+            Assert.Greater(Seasons.BiteFactor(shad, Season.Autumn), Seasons.BiteFactor(shad, Season.Spring), "전어는 가을");
+            Assert.AreEqual(1f, Seasons.BiteFactor(FishDatabase.Get("bluegill"), Season.Winter), "제철이 없는 어종은 그대로");
+        }
+    }
+
     public class SettingsTests
     {
         [Test]

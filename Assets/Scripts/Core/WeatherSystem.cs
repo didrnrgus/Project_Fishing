@@ -57,7 +57,28 @@ namespace Fishing.Core
         {
             if (_rain == null) return;
             var emission = _rain.emission;
-            emission.rateOverTime = Current == Weather.Rain && Game.Mode == GameMode.Field ? 1800f : 0f;
+            bool snow = Seasons.IsWinter;
+            if (snow != _snowMode) SetSnow(snow);
+            emission.rateOverTime = Current == Weather.Rain && Game.Mode == GameMode.Field ? (snow ? 900f : 1800f) : 0f;
+        }
+
+        bool _snowMode;
+
+        /// <summary>겨울이면 빗줄기 대신 천천히 날리는 눈송이.</summary>
+        void SetSnow(bool snow)
+        {
+            _snowMode = snow;
+            var main = _rain.main;
+            main.startLifetime = snow ? 7f : 1.1f;
+            main.startSpeed = snow ? 2.2f : 20f;
+            main.startSize = snow ? 0.07f : 0.018f;
+            main.startColor = snow ? new Color(1f, 1f, 1f, 0.85f) : new Color(0.75f, 0.82f, 0.9f, 0.55f);
+            var r = _rain.GetComponent<ParticleSystemRenderer>();
+            r.renderMode = snow ? ParticleSystemRenderMode.Billboard : ParticleSystemRenderMode.Stretch;
+            var noise = _rain.noise;
+            noise.enabled = snow;
+            noise.strength = 0.6f;
+            noise.frequency = 0.3f;
         }
 
         void BuildRain()

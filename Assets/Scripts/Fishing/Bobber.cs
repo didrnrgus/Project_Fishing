@@ -60,6 +60,8 @@ namespace Fishing.Angling
         }
 
         GameObject _lure;
+        /// <summary>수면보다 얼마나 위에 뜨는지 (얼음 구멍 낚시는 얼음판 위로 보이게).</summary>
+        public float FloatOffset;
         bool _lureLook;
 
         /// <summary>
@@ -146,7 +148,7 @@ namespace Fishing.Angling
                     }
                     _dip = Mathf.Lerp(_dip, _dipTarget, Time.deltaTime * (_sunk ? 14f : 18f));
                     float bob = Mathf.Sin(Time.time * 2.1f) * 0.012f;
-                    transform.position = new Vector3(_to.x, FieldMap.WaterY + bob - _dip - (_lureLook ? 0.05f : 0f), _to.z);
+                    transform.position = new Vector3(_to.x, FieldMap.WaterY + FloatOffset + bob - _dip - (_lureLook ? 0.05f : 0f), _to.z);
                     transform.rotation = Quaternion.Euler(Mathf.Sin(Time.time * 1.3f) * 4f, 0f, Mathf.Cos(Time.time * 1.1f) * 4f);
                     break;
             }

@@ -291,6 +291,12 @@ SPECIES = {
                       colors=P('#2e3424', '#6a6c4a', '#d8d6c0', silver=0.0, fin_up=('#3a3e2c', '#4a4e38', 0.9), fin_low=('#4a4e38', '#5a5e48', 0.9),
                                patterns=[('blotchrows', dict(color='#16180e', a=0.8)), ('eyeline', dict(color='#16180e', w=0.025, n=2))]),
                       eye=dict(s=0.07, z=0.4, r=0.012, iris='#c0a050')),
+    'smelt': dict(type='B', name='빙어', depth=0.15, width=0.09, tmax=0.45, snout=0.85, mouth=0.25, scales=60,
+                  fins=[_fin('dorsal', (0.45, 0.53), 0.6), _fin('adipose', (0.74, 0.78), 0.2), _fin('anal', (0.62, 0.78), 0.45),
+                        _fin('caudal', h=0.22, shape='fork'), _fin('pectoral', s=(0.2, 0.2), h=0.1), _fin('pelvic', s=(0.45, 0.45), h=0.07)],
+                  colors=P('#7a9a98', '#d8e4e0', '#f6f8f4', silver=0.85, metallic=0.25, fin_up=('#c8d4d4', '#e4ecec', 0.45), fin_low=('#d8e0e0', '#eef2f2', 0.4),
+                           patterns=[('stripe', dict(v=0.55, w=0.035, color='#9ab0c8', a=0.7))]),
+                  eye=dict(r=0.026, iris='#d0d8d8'), anim=dict(amp=1.0, freq=1.4)),
     # ===== 서천 앞바다 (서해) =====
     'goby': dict(type='C', name='망둥어', depth=0.16, width=0.14, head_w=1.25, tmax=0.28, ped=0.55, snout=0.5, mouth=0.1, xsec=2.1, scales=50,
                  fins=[_fin('dorsal', (0.3, 0.42), 0.45, prof=[(0, 0.6), (0.3, 1.0), (1, 0.5)], spiny=True), _fin('dorsal', (0.48, 0.76), 0.5),

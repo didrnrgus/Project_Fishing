@@ -515,6 +515,30 @@ namespace Fishing.Dev
             yield return CloseResult();
             Game.Fishing.Autoplay = false;
 
+            // ================= 겨울: 한강 얼음낚시 =================
+            int winterDay = Seasons.FirstDayOf(Season.Winter, Game.Clock.Day) + 3;
+            Game.Clock.Set(winterDay, 13 * 60);
+            Game.Weather.Force(Weather.Rain); // 겨울엔 눈
+            Game.UI.EnterField(Fishing.Data.FishingAreas.Korea.Find(a => a.Id == "hangang"), 1);
+            Game.UI.Help.Close();
+            yield return new WaitForSeconds(1.5f);
+            Game.Player.Teleport(new Vector3(-30f, 0.5f, -48f), 0f);
+            Game.CameraRig.Yaw = 20f;
+            Game.CameraRig.Pitch = 18f;
+            Game.CameraRig.Distance = 7f;
+            yield return new WaitForSeconds(1.5f);
+            Game.Fishing.DebugIceFish();
+            yield return new WaitForSeconds(2f);
+            yield return Shot("41_winter_ice");
+            Game.Fishing.DebugForceBite("smelt", 13.5f);
+            Game.Fishing.Autoplay = true;
+            float iceTimeout = Time.time + 40f;
+            while (Game.Fishing.State != FishingState.Result && Game.Fishing.State != FishingState.Idle && Time.time < iceTimeout) yield return null;
+            yield return WaitResult();
+            yield return Shot("42_winter_smelt");
+            yield return CloseResult();
+            Game.Fishing.Autoplay = false;
+
             Debug.Log("[Dev] 자동 스크린샷 완료");
             Application.Quit();
         }

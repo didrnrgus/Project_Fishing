@@ -70,7 +70,7 @@ namespace Fishing.UI
                          $"<color=#ffd060>{d.gold:N0} G</color>   ·   총 {d.totalCatches}마리   ·   도감 {d.dex.Count}종\n" +
                          $"<size=14><color=#a0b0c0>살림망 {d.keepNet.Count}/{Game.Profile.KeepNetSize}</color></size>";
             var c = Game.Clock;
-            _clock.text = $"{c.Day}일차  {c.TimeText}  ·  {Fishing.Data.Names.Of(Game.Weather.Current)}";
+            _clock.text = $"{c.Day}일차  {Fishing.Data.Seasons.MonthOf(c.Day)}월 {Fishing.Data.Seasons.Name(Fishing.Data.Seasons.Current)}  {c.TimeText}  ·  {Fishing.Data.Seasons.WeatherName(Game.Weather.Current)}";
         }
     }
 }

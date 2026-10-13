@@ -52,7 +52,7 @@ namespace Fishing.World
             return p.x > Pier.xMin + margin && p.x < Pier.xMax - margin && p.z > Pier.yMin && p.z < Pier.yMax - margin;
         }
 
-        static bool OnBridgePier(Vector3 p)
+        public static bool OnBridgePier(Vector3 p)
         {
             if (Mathf.Abs(p.x - BridgeX) > 3f) return false;
             foreach (var z in BridgePierZ)

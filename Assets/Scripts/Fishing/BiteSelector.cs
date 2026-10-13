@@ -18,6 +18,11 @@ namespace Fishing.Angling
         public float BaitPotency;
         /// <summary>의상 대물 확률 (0.05 = 5%).</summary>
         public float BigFishBonus;
+        /// <summary>겨울 얼음 구멍 낚시 (빙어가 주인공, 다른 고기는 드물다).</summary>
+        public bool IceFishing;
+        /// <summary>계절 (기본값 봄). 밸런스 시뮬레이션은 계절 영향을 끈다.</summary>
+        public Season Season;
+        public bool UseSeason;
     }
 
     public struct BiteResult
@@ -44,6 +49,10 @@ namespace Fishing.Angling
             w *= Contains(s.Times, ctx.Band) ? 1f : 0.3f;
             w *= Contains(s.Weathers, ctx.Weather) ? 1.3f : 1f;
             if (ctx.School != null && ctx.School.Contains(s.Id)) w *= ctx.School.BiteBoost;
+            if (ctx.UseSeason) w *= Seasons.BiteFactor(s, ctx.Season);
+            // 빙어는 얼음 구멍에서만, 얼음 구멍에서는 빙어가 주인공
+            if (s.Id == "smelt") w *= ctx.IceFishing ? 8f : 0f;
+            else if (ctx.IceFishing) w *= 0.2f;
             return w;
         }
 

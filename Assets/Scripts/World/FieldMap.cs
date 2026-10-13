@@ -181,8 +181,9 @@ namespace Fishing.World
             Mark(MapMark.Shape.Circle, ShopPos.x, ShopPos.z, 8f, 8f, new Color(1f, 0.82f, 0.35f), "낚시점");
         }
 
-        public override bool IsWater(Vector3 p) => HanRiverMap.IsWater(p);
-        public override bool IsWalkable(Vector3 p) => HanRiverMap.IsWalkable(p);
+        // 겨울: 남쪽 둔치 앞 강물이 얼어 걸을 수 있고, 배·찌는 못 간다 (SeasonFx)
+        public override bool IsWater(Vector3 p) => HanRiverMap.IsWater(p) && !SeasonFx.OnIce(p);
+        public override bool IsWalkable(Vector3 p) => HanRiverMap.IsWalkable(p) || SeasonFx.OnIce(p);
         public override string AreaName(Vector3 p) => HanRiverMap.AreaName(p);
 
         public override List<FishSchool> CreateSchools() => new List<FishSchool>
