@@ -139,6 +139,7 @@ namespace Fishing.Core
         public static void Apply()
         {
             Version++;
+            if (!Application.isPlaying) return; // 에디터 테스트에서는 프로젝트 품질 설정을 건드리지 않는다
             AudioListener.volume = Mathf.Clamp01(MasterVolume);
             QualitySettings.shadows = Shadows == 0 ? ShadowQuality.Disable : ShadowQuality.All;
             QualitySettings.shadowDistance = Shadows switch { 0 => 0f, 1 => 40f, 2 => 90f, _ => 160f };

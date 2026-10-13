@@ -72,4 +72,4 @@
 - [x] 옵션 창(O): 마우스 감도, 음량, 해상도, 전체 화면, 후처리, 그림자 (`Settings`, `OptionsPanel`, PlayerPrefs)
 - [x] 게임패드 진동 (원작 후기 요청 사항): 입질·챔질·질주·카운터·줄 끊김·랜딩, 장력이 높으면 계속 떨림 (`Rumble`, 새 Input System의 Gamepad만 사용)
 - [x] 키 리바인딩 (옵션 창 키 설정 20개, 겹치면 맞바꿈). 조작은 예전 Input Manager 그대로 두고 Active Input Handling = Both (패드 진동용)
-- [ ] PlayMode 테스트 (FishFight·BiteSelector 단위 테스트)
+- [x] 단위 테스트 (EditMode 21개: FishFight·BiteSelector·대회·강화·프로필·키 설정, `sh tools/test.sh`)
