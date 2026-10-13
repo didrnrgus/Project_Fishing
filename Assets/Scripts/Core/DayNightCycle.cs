@@ -16,6 +16,7 @@ namespace Fishing.Core
         float _weatherDim = 1f;
         bool _lampsOn = true;
         ReflectionProbe _skyProbe;
+        Fishing.World.SkyDecor _decor;
         float _nextProbeAt;
 
         public void Init(List<Light> lamps, List<Renderer> bulbs)
@@ -38,6 +39,9 @@ namespace Fishing.Core
             RenderSettings.fogMode = FogMode.Exponential;
 
             SetLamps(false);
+
+            _decor = new GameObject("SkyDecor").AddComponent<Fishing.World.SkyDecor>();
+            _decor.transform.SetParent(transform, false);
 
             // 기본 반사는 시작할 때의 하늘로 고정되므로, 하늘만 찍는 실시간 프로브를 주기적으로 갱신한다
             var probeGo = new GameObject("SkyReflection");
@@ -84,7 +88,7 @@ namespace Fishing.Core
             float warm = 1f - Mathf.Clamp01(elevation * 3.5f);
 
             _sun.transform.rotation = Quaternion.Euler(sunAngle, -35f, 0f);
-            _sun.intensity = Mathf.Clamp01(elevation * 2.5f) * 1.2f * _weatherDim;
+            _sun.intensity = Mathf.Clamp01(elevation * 2.5f) * 1.0f * _weatherDim;
             _sun.color = Color.Lerp(new Color(1f, 0.96f, 0.88f), new Color(1f, 0.52f, 0.28f), warm);
             _sun.enabled = _sun.intensity > 0.01f;
 
@@ -93,7 +97,7 @@ namespace Fishing.Core
             _moon.enabled = _moon.intensity > 0.01f;
 
             var nightSky = new Color(0.04f, 0.06f, 0.13f);
-            var daySky = Color.Lerp(new Color(0.42f, 0.45f, 0.5f), new Color(0.55f, 0.66f, 0.82f), _weatherDim);
+            var daySky = Color.Lerp(new Color(0.36f, 0.38f, 0.42f), new Color(0.42f, 0.5f, 0.62f), _weatherDim);
             var sunsetSky = new Color(0.75f, 0.48f, 0.38f);
             var sky = Color.Lerp(nightSky, daySky, day);
             sky = Color.Lerp(sky, sunsetSky, warm * day * 0.45f * _weatherDim);
@@ -109,6 +113,16 @@ namespace Fishing.Core
             _sky.SetFloat("_AtmosphereThickness", Mathf.Lerp(0.9f, 1.6f, warm));
             _sky.SetColor("_SkyTint", Color.Lerp(new Color(0.55f, 0.55f, 0.55f), new Color(0.5f, 0.55f, 0.65f), _weatherDim));
             _sky.SetColor("_GroundColor", Color.Lerp(new Color(0.12f, 0.12f, 0.14f), new Color(0.37f, 0.35f, 0.34f), day));
+
+            // 구름·달·별
+            float coverage = Game.Weather.Current switch { Weather.Cloudy => 0.78f, Weather.Rain => 0.95f, _ => 0.4f };
+            var cloudDay = Color.Lerp(new Color(0.62f, 0.64f, 0.68f), Color.white, _weatherDim);
+            var cloudSunset = new Color(1f, 0.62f, 0.45f);
+            var cloudNight = new Color(0.12f, 0.14f, 0.2f);
+            var cloudColor = Color.Lerp(cloudNight, Color.Lerp(cloudDay, cloudSunset, warm * 0.8f), day);
+            cloudColor.a = Mathf.Lerp(0.55f, 0.95f, day);
+            if (Game.CameraRig != null)
+                _decor.Apply(Game.CameraRig.Cam, -_sun.transform.forward, 1f - day, cloudColor, coverage);
 
             if (Time.time >= _nextProbeAt)
             {

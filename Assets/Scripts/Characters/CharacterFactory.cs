@@ -40,6 +40,7 @@ namespace Fishing.Characters
             { "spine_01", "spine_02", "spine_03", "clavicle_l", "clavicle_r", "upperarm_l", "upperarm_r" };
         static readonly HashSet<string> PantsBones = new HashSet<string>
             { "pelvis", "thigh_l", "thigh_r", "calf_l", "calf_r" };
+        static readonly HashSet<string> VestBones = new HashSet<string> { "spine_01", "spine_02", "spine_03" };
         static readonly HashSet<string> ShoeBones = new HashSet<string>
             { "foot_l", "foot_r", "ball_l", "ball_r", "ball_leaf_l", "ball_leaf_r" };
 
@@ -53,6 +54,7 @@ namespace Fishing.Characters
             string model = look.Female ? "Superhero_Female_FullBody" : "Superhero_Male_FullBody";
             var prefab = Resources.Load<GameObject>("Characters/" + model);
             var go = Object.Instantiate(prefab, parent, false);
+            go.transform.localRotation = Quaternion.Euler(0f, 180f, 0f); // 모델이 -Z를 보고 있어서 게임 정면(+Z)으로 돌린다
             go.name = "Character_" + (look.Name ?? model);
 
             float rawHeight = look.Female ? 1.85f : 1.92f;
@@ -80,7 +82,6 @@ namespace Fishing.Characters
             {
                 if (look.Hat) AttachBucketHat(head, look.HatColor, go.transform.lossyScale.x);
             }
-            if (look.Vest && bones.TryGetValue("spine_03", out var chest)) AttachVest(chest, look.VestColor);
 
             var anim = go.GetComponent<Animator>();
             if (anim == null) anim = go.AddComponent<Animator>();
@@ -105,6 +106,8 @@ namespace Fishing.Characters
             m.SetColor("_ShirtColor", look.Shirt);
             m.SetColor("_PantsColor", look.Pants);
             m.SetColor("_ShoeColor", look.Shoes);
+            m.SetColor("_VestColor", look.VestColor);
+            m.SetFloat("_VestAmount", look.Vest ? 1f : 0f);
             return m;
         }
 
@@ -122,22 +125,23 @@ namespace Fishing.Characters
             for (int i = 0; i < colors.Length; i++)
             {
                 var w = weights[i];
-                float shirt = 0f, pants = 0f, shoes = 0f;
-                Accumulate(bones, w.boneIndex0, w.weight0, ref shirt, ref pants, ref shoes);
-                Accumulate(bones, w.boneIndex1, w.weight1, ref shirt, ref pants, ref shoes);
-                Accumulate(bones, w.boneIndex2, w.weight2, ref shirt, ref pants, ref shoes);
-                Accumulate(bones, w.boneIndex3, w.weight3, ref shirt, ref pants, ref shoes);
-                colors[i] = new Color(shirt, pants, shoes, 1f);
+                float shirt = 0f, pants = 0f, shoes = 0f, vest = 0f;
+                Accumulate(bones, w.boneIndex0, w.weight0, ref shirt, ref pants, ref shoes, ref vest);
+                Accumulate(bones, w.boneIndex1, w.weight1, ref shirt, ref pants, ref shoes, ref vest);
+                Accumulate(bones, w.boneIndex2, w.weight2, ref shirt, ref pants, ref shoes, ref vest);
+                Accumulate(bones, w.boneIndex3, w.weight3, ref shirt, ref pants, ref shoes, ref vest);
+                colors[i] = new Color(shirt, pants, shoes, vest);
             }
             mesh.colors = colors;
             ClothedMeshCache[key] = mesh;
             return mesh;
         }
 
-        static void Accumulate(Transform[] bones, int index, float weight, ref float shirt, ref float pants, ref float shoes)
+        static void Accumulate(Transform[] bones, int index, float weight, ref float shirt, ref float pants, ref float shoes, ref float vest)
         {
             if (weight <= 0f || index < 0 || index >= bones.Length || bones[index] == null) return;
             string n = bones[index].name;
+            if (VestBones.Contains(n)) vest += weight;
             if (ShirtBones.Contains(n)) shirt += weight;
             else if (PantsBones.Contains(n)) pants += weight;
             else if (ShoeBones.Contains(n)) shoes += weight;
@@ -176,21 +180,6 @@ namespace Fishing.Characters
             Mats.Prim(PrimitiveType.Cylinder, "Crown", hat, new Vector3(0f, 0.06f, 0.01f), new Vector3(0.22f, 0.06f, 0.22f), mat, false);
             Mats.Prim(PrimitiveType.Cylinder, "Band", hat, new Vector3(0f, 0.025f, 0.01f), new Vector3(0.225f, 0.012f, 0.225f), band, false);
             hat.SetParent(head, true);
-        }
-
-        /// <summary>낚시 조끼: 가슴 뼈에 붙는 얇은 상자 두 개와 주머니.</summary>
-        static void AttachVest(Transform chest, Color color)
-        {
-            var vest = new GameObject("Vest").transform;
-            vest.position = chest.position;
-            vest.rotation = Quaternion.identity;
-            var mat = Mats.Lit(color, 0.1f);
-            var pocket = Mats.Lit(color * 0.75f, 0.1f);
-            Mats.Prim(PrimitiveType.Cube, "Front", vest, new Vector3(0f, -0.08f, 0.115f), new Vector3(0.36f, 0.36f, 0.04f), mat, false);
-            Mats.Prim(PrimitiveType.Cube, "Back", vest, new Vector3(0f, -0.06f, -0.12f), new Vector3(0.38f, 0.4f, 0.04f), mat, false);
-            Mats.Prim(PrimitiveType.Cube, "PocketL", vest, new Vector3(-0.09f, -0.14f, 0.14f), new Vector3(0.1f, 0.08f, 0.02f), pocket, false);
-            Mats.Prim(PrimitiveType.Cube, "PocketR", vest, new Vector3(0.09f, -0.14f, 0.14f), new Vector3(0.1f, 0.08f, 0.02f), pocket, false);
-            vest.SetParent(chest, true);
         }
 
         /// <summary>머리 위 이름표(+칭호). 카메라를 향하게는 사용하는 쪽에서 돌린다.</summary>

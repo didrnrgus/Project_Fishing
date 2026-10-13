@@ -77,10 +77,6 @@ namespace Fishing.Angling
             _line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
             _fish = new GameObject("FightFish");
-            _fishBody = Mats.Prim(PrimitiveType.Capsule, "Body", _fish.transform, Vector3.zero, Vector3.one,
-                Mats.Lit(new Color(0.55f, 0.5f, 0.35f), 0.7f, 0.2f), false, Quaternion.Euler(0f, 0f, 90f)).transform;
-            Mats.Prim(PrimitiveType.Cube, "Tail", _fishBody, new Vector3(0f, -0.62f, 0f), new Vector3(0.9f, 0.2f, 0.12f),
-                Mats.Lit(new Color(0.5f, 0.45f, 0.3f)), false);
             _fish.SetActive(false);
         }
 
@@ -89,8 +85,8 @@ namespace Fishing.Angling
             _fight = fight;
             _origin = origin;
             _forward = new Vector3(forward.x, 0f, forward.z).normalized;
-            float s = Mathf.Clamp(fight.Length / 100f, 0.12f, 1.1f);
-            _fishBody.localScale = new Vector3(s * 0.32f, s * 0.5f, s * 0.22f);
+            if (_fishBody != null) Destroy(_fishBody.gameObject);
+            _fishBody = FishModels.Create(fight.Species, fight.Length, _fish.transform).transform;
             gameObject.SetActive(true);
             _line.gameObject.SetActive(true);
         }
@@ -155,7 +151,7 @@ namespace Fishing.Angling
                 var look = (_origin - fishPos);
                 look.y = 0f;
                 float wiggle = Mathf.Sin(Time.time * (f.HpLow ? 6f : 14f)) * (f.HpLow ? 10f : 25f);
-                _fish.transform.rotation = Quaternion.LookRotation(look.normalized) * Quaternion.Euler(0f, 90f + wiggle, 0f);
+                _fish.transform.rotation = Quaternion.LookRotation(look.normalized) * Quaternion.Euler(0f, 90f + wiggle * 0.4f, 0f);
             }
         }
     }

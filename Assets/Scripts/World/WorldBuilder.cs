@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Fishing.Characters;
 using Fishing.Core;
 using Fishing.UI;
 using UnityEngine;
@@ -14,7 +15,7 @@ namespace Fishing.World
         Transform _root;
         System.Random _rng;
 
-        static readonly Color Grass = new Color(0.36f, 0.52f, 0.28f);
+        static readonly Color Grass = new Color(0.27f, 0.42f, 0.2f);
         static readonly Color GrassDark = new Color(0.27f, 0.42f, 0.22f);
         static readonly Color Path = new Color(0.78f, 0.72f, 0.6f);
         static readonly Color BikeRoad = new Color(0.32f, 0.33f, 0.36f);
@@ -40,14 +41,16 @@ namespace Fishing.World
             BuildLamps();
             BuildCity();
             BuildProps();
+            BuildBankAnglers();
             return _root;
         }
 
         void BuildWater()
         {
-            var water = Mats.Lit(new Color(0.13f, 0.3f, 0.38f), 0.93f);
-            Mats.Prim(PrimitiveType.Cube, "River", _root, new Vector3(0f, HanRiverMap.WaterY - 0.5f, 0f),
-                new Vector3(600f, 1f, 130f), water);
+            // 잔물결 수면 (버텍스 파도 + 흐르는 노멀맵). 강바닥 대신 아래에 어두운 판을 깐다
+            WaterSurface.Create(_root, new Vector3(0f, HanRiverMap.WaterY, 0f), new Vector2(600f, 132f), 2f);
+            Mats.Prim(PrimitiveType.Cube, "RiverBed", _root, new Vector3(0f, HanRiverMap.WaterY - 3f, 0f),
+                new Vector3(600f, 1f, 132f), Mats.Lit(new Color(0.05f, 0.08f, 0.08f)), false);
         }
 
         void BuildBanks()
@@ -128,8 +131,12 @@ namespace Fishing.World
             Mats.Prim(PrimitiveType.Cube, "Counter", shop, new Vector3(0f, 0.6f, 2.6f), new Vector3(5f, 1.2f, 0.6f), Mats.Lit(Wood));
 
             // 주인 NPC
-            Mats.Prim(PrimitiveType.Capsule, "Owner", shop, new Vector3(1.2f, 1f, 1.6f), new Vector3(0.7f, 0.85f, 0.7f), Mats.Lit(new Color(0.3f, 0.5f, 0.35f)), false);
-            Mats.Prim(PrimitiveType.Sphere, "OwnerHead", shop, new Vector3(1.2f, 2.05f, 1.6f), Vector3.one * 0.45f, Mats.Lit(new Color(0.96f, 0.8f, 0.66f)), false);
+            // 낚시점 주인
+            NpcAngler.Spawn(shop, new Vector3(1.2f, 0f, 1.7f), 0f, new CharacterLook
+            {
+                Name = "낚시점 김사장", Title = "반포 낚시점", Hair = "Hair_Buzzed", Beard = true, HairColor = new Color(0.3f, 0.3f, 0.3f),
+                Shirt = new Color(0.85f, 0.85f, 0.8f), VestColor = new Color(0.55f, 0.35f, 0.2f), Pants = new Color(0.3f, 0.28f, 0.25f), Hat = false
+            }, NpcAngler.Role.Talker);
 
             AddSign(shop, "낚시점", new Vector3(0f, 3.9f, 2.3f), new Color(1f, 0.9f, 0.4f));
         }
@@ -281,15 +288,17 @@ namespace Fishing.World
                 Mats.Prim(PrimitiveType.Cylinder, "Barrel", raft, new Vector3(-2.4f + bx * 1.6f, 0.2f, -0.8f + bz * 1.6f),
                     new Vector3(1.1f, 0.75f, 1.1f), barrel, false, Quaternion.Euler(90f, 0f, 0f));
             Mats.Prim(PrimitiveType.Cube, "Deck", raft, new Vector3(0f, 0.75f, 0f), new Vector3(6.4f, 0.12f, 3.4f), Mats.Lit(Wood), false);
-            var shirts = new[] { new Color(0.85f, 0.3f, 0.4f), new Color(0.3f, 0.45f, 0.8f) };
-            for (int i = 0; i < 2; i++)
+            // 뗏목 위의 다른 낚시꾼들 (원작 영상의 "월척대소녀", "낚자마자회친다" 같은 유저들 느낌)
+            NpcAngler.Spawn(raft, new Vector3(-1.4f, 0.81f, 0.6f), 0f, new CharacterLook
             {
-                var npc = new Vector3(-1.4f + i * 2.6f, 0.81f, 0.6f);
-                Mats.Prim(PrimitiveType.Capsule, "Angler", raft, npc + Vector3.up * 0.8f, new Vector3(0.55f, 0.8f, 0.5f), Mats.Lit(shirts[i]), false);
-                Mats.Prim(PrimitiveType.Sphere, "Head", raft, npc + Vector3.up * 1.75f, Vector3.one * 0.4f, Mats.Lit(new Color(0.98f, 0.82f, 0.7f)), false);
-                Mats.Prim(PrimitiveType.Cylinder, "Rod", raft, npc + new Vector3(0.3f, 1.6f, 1.2f), new Vector3(0.03f, 1.4f, 0.03f),
-                    Mats.Lit(new Color(0.75f, 0.15f, 0.2f)), false, Quaternion.Euler(55f, 0f, 0f));
-            }
+                Female = true, Name = "월척대소녀", Title = "붕어 사냥꾼", Hair = "Hair_Long", HairColor = new Color(0.35f, 0.22f, 0.15f),
+                Shirt = new Color(0.9f, 0.35f, 0.45f), Pants = new Color(0.9f, 0.9f, 0.88f), Vest = false, HatColor = new Color(0.95f, 0.95f, 0.95f)
+            }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(raft, new Vector3(1.2f, 0.81f, 0.6f), 15f, new CharacterLook
+            {
+                Name = "낚자마자회친다", Title = "한강 터줏대감", Hair = "Hair_SimpleParted", Shirt = new Color(0.3f, 0.45f, 0.8f),
+                VestColor = new Color(0.85f, 0.6f, 0.15f), Pants = new Color(0.2f, 0.22f, 0.26f), HatColor = new Color(0.2f, 0.3f, 0.25f)
+            }, NpcAngler.Role.Angler);
 
             // 요트
             var hull = Mats.Lit(new Color(0.92f, 0.92f, 0.94f), 0.6f);
@@ -312,6 +321,29 @@ namespace Fishing.World
                 Mats.Prim(PrimitiveType.Sphere, "BridgeLight", props, new Vector3(HanRiverMap.BridgeX - 8.8f, 13.9f, z), Vector3.one * 0.5f, bridgeLight, false);
                 Mats.Prim(PrimitiveType.Sphere, "BridgeLight", props, new Vector3(HanRiverMap.BridgeX + 8.8f, 13.9f, z), Vector3.one * 0.5f, bridgeLight, false);
             }
+        }
+
+        /// <summary>둔치에서 낚시하는 NPC들. 플레이어가 혼자가 아닌 느낌을 준다.</summary>
+        void BuildBankAnglers()
+        {
+            var parent = new GameObject("BankAnglers").transform;
+            parent.SetParent(_root, false);
+            float z = HanRiverMap.RiverMinZ - 1.6f;
+            NpcAngler.Spawn(parent, new Vector3(-46f, HanRiverMap.LandY, z), 0f, new CharacterLook
+            {
+                Name = "한강도사", Title = "대물 전문", Hair = "Hair_Buzzed", Beard = true, HairColor = new Color(0.15f, 0.12f, 0.1f),
+                Shirt = new Color(0.2f, 0.2f, 0.22f), VestColor = new Color(0.6f, 0.55f, 0.4f), Pants = new Color(0.35f, 0.33f, 0.28f)
+            }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(parent, new Vector3(72f, HanRiverMap.LandY, z), -10f, new CharacterLook
+            {
+                Female = true, DarkSkin = true, Name = "수초요정", Title = "가물치 킬러", Hair = "Hair_Buns", HairColor = new Color(0.1f, 0.08f, 0.07f),
+                Shirt = new Color(0.95f, 0.85f, 0.3f), Vest = false, Pants = new Color(0.25f, 0.3f, 0.45f), Hat = false
+            }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(parent, new Vector3(110f, HanRiverMap.LandY, z), 5f, new CharacterLook
+            {
+                Name = "새벽조사", Title = "월척 3회", DarkSkin = true, Hair = "Hair_SimpleParted", Shirt = new Color(0.4f, 0.6f, 0.4f),
+                VestColor = new Color(0.2f, 0.25f, 0.35f), Pants = new Color(0.2f, 0.2f, 0.2f), HatColor = new Color(0.85f, 0.85f, 0.8f)
+            }, NpcAngler.Role.Angler);
         }
 
         void BuildCity()

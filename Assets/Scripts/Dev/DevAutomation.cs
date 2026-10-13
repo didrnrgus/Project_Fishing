@@ -53,6 +53,17 @@ namespace Fishing.Dev
             yield return new WaitForSeconds(3f);
             yield return Shot("01_field_morning");
 
+            // 캐릭터 정면 클로즈업 (한낮)
+            Game.Weather.Force(Weather.Clear);
+            Game.Clock.Set(1, 12 * 60);
+            Game.CameraRig.Yaw = Game.Player.Yaw + 180f;
+            Game.CameraRig.Pitch = 8f;
+            Game.CameraRig.Distance = 3.2f;
+            yield return new WaitForSeconds(2f);
+            yield return Shot("00_character");
+            Game.CameraRig.Yaw = Game.Player.Yaw;
+            Game.CameraRig.Distance = 7f;
+
             // 원작 영상처럼 밤의 낚시 데크에서
             Game.Weather.Force(Weather.Clear);
             Game.Clock.Set(1, 21 * 60);

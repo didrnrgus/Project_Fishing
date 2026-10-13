@@ -1,0 +1,66 @@
+// 하늘 장식(달, 별, 구름) 공용 셰이더. 안개를 받지 않고 깊이를 쓰지 않는다.
+//  _Mode 0: 텍스처 × 색 × 버텍스 컬러 (달, 별)
+//  _Mode 1: 구름 — 텍스처 알파를 흘리고, 버텍스 컬러 알파(지평선 근처 페이드)를 곱한다
+Shader "Fishing/Sky"
+{
+    Properties
+    {
+        _MainTex ("Texture", 2D) = "white" {}
+        _Color ("Tint", Color) = (1,1,1,1)
+        _Mode ("Mode", Float) = 0
+        _Scroll ("Scroll (xy)", Vector) = (0.003, 0.001, 0, 0)
+        _Coverage ("Cloud Coverage", Range(0,1)) = 0.4
+    }
+    SubShader
+    {
+        Tags { "Queue"="Transparent-200" "RenderType"="Transparent" "IgnoreProjector"="True" }
+        Blend SrcAlpha OneMinusSrcAlpha
+        ZWrite Off
+        Cull Off
+
+        Pass
+        {
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #include "UnityCG.cginc"
+
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
+            fixed4 _Color;
+            float _Mode, _Coverage;
+            float4 _Scroll;
+
+            struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; fixed4 color : COLOR; };
+            struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; fixed4 color : COLOR; };
+
+            v2f vert(appdata v)
+            {
+                v2f o;
+                o.pos = UnityObjectToClipPos(v.vertex);
+                o.uv = v.uv;
+                o.color = v.color;
+                return o;
+            }
+
+            fixed4 frag(v2f i) : SV_Target
+            {
+                if (_Mode < 0.5)
+                    return tex2D(_MainTex, i.uv) * _Color * i.color;
+
+                // 구름: 두 겹을 다른 속도로 흘려서 뭉게구름 느낌
+                float a1 = tex2D(_MainTex, i.uv * 3.0 + _Time.y * _Scroll.xy).a;
+                float a2 = tex2D(_MainTex, i.uv * 5.3 - _Time.y * _Scroll.xy * 0.7).a;
+                float d = (a1 * 0.65 + a2 * 0.35);
+                // 노이즈 값은 0.3~0.7에 몰려 있어서 임계값도 그 안에서 움직인다
+                float threshold = 0.66 - _Coverage * 0.3;
+                float cloud = smoothstep(threshold, threshold + 0.12, d);
+                fixed4 c = _Color;
+                c.rgb *= lerp(1.0, 0.82, saturate((d - 0.5) * 2.0)); // 두꺼운 곳은 살짝 어둡게
+                c.a *= cloud * i.color.a;
+                return c;
+            }
+            ENDCG
+        }
+    }
+}
