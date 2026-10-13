@@ -39,6 +39,16 @@ namespace Fishing.PlayerSystems
             }
         }
         public bool Seated { get; private set; }
+        /// <summary>배 꼬리 (트롤링 줄이 나가는 곳).</summary>
+        public Vector3 SternPosition => _pos - Forward * _halfLen;
+        public Vector3 Forward => Quaternion.Euler(0f, _yaw, 0f) * Vector3.forward;
+
+        /// <summary>입질이 오면 배를 세운다 (트롤링).</summary>
+        public void ForceStop()
+        {
+            Speed = 0f;
+            Throttle = 0f;
+        }
 
         /// <summary>자동 연출용 입력 (NaN이면 키보드).</summary>
         public float DebugThrottle = float.NaN;
@@ -178,7 +188,8 @@ namespace Fishing.PlayerSystems
             if (Game.Mode != GameMode.Field) { StowToLand(); return; }
             float dt = Time.deltaTime;
 
-            bool canDrive = Game.Fishing.State == FishingState.Idle && !(Game.UI != null && Game.UI.BlockingPanelOpen);
+            // 트롤링: 루어·생미끼를 던져 둔 채로 천천히 몰 수 있다
+            bool canDrive = (Game.Fishing.State == FishingState.Idle || Game.Fishing.CanTroll) && !(Game.UI != null && Game.UI.BlockingPanelOpen);
             float throttleIn = 0f, steer = 0f;
             if (canDrive)
             {

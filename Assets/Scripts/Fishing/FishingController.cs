@@ -96,6 +96,22 @@ namespace Fishing.Angling
         bool _cheering;
         float _swayYaw;
         Coroutine _hitStop;
+        // 루어 낚시 (스푼 루어·에기·플라이): 감으면서 액션을 줘야 문다. 배 위에서는 트롤링
+        bool _lureMode;
+        float _lastTwitchAt = -10f;
+        bool _trollWarned;
+        /// <summary>마지막 액션(저킹) 시각 — HUD가 "액션!"을 띄운다.</summary>
+        public float LastTwitchAt => _lastTwitchAt;
+        /// <summary>지금 미끼가 루어 계열인지 (대기 방식이 다르다).</summary>
+        public bool LureMode => State == FishingState.Waiting && _lureMode;
+        /// <summary>배를 몰면서 줄을 끌 수 있는 상태 (루어나 생미끼를 던져 둔 채).</summary>
+        public bool CanTroll => State == FishingState.Waiting && Game.Boat != null && Game.Boat.Riding
+                                && (_lureMode || Game.Profile.Bait.Kind == BaitKind.Minnow);
+        /// <summary>지금 트롤링 중인지 (배가 움직이는 중).</summary>
+        public bool Trolling => CanTroll && Mathf.Abs(Game.Boat.Speed) > 0.6f;
+
+        public static bool IsLureBait(BaitKind k) => k == BaitKind.Lure || k == BaitKind.Egi || k == BaitKind.Fly;
+
         // 대기 중 릴 감기
         int _waitCol, _waitRow;
         bool _waitInSpot;
@@ -380,6 +396,13 @@ namespace Fishing.Angling
 
             _waitTimer = BiteSelector.WaitSeconds(_ctx) * slowdown * (_waitInSpot ? 0.7f : 1f) * Tide.WaitFactor; // 서해: 들물이면 빨리
             _nibblesLeft = PendingBite.Species.Aggression > 0.75f ? Random.Range(0, 2) : Random.Range(0, 4);
+            _lureMode = IsLureBait(Game.Profile.Bait.Kind);
+            _bobber.SetLureLook(_lureMode, Game.Profile.Bait.Kind);
+            if (_lureMode)
+            {
+                _nibblesLeft = 0;          // 포식어는 깔짝이지 않고 덥석 문다
+                _waitTimer *= 0.8f;
+            }
             _nextNibbleAt = _waitTimer * Random.Range(0.3f, 0.7f);
             _nibbleActive = false;
             _shake = 0f;
@@ -402,7 +425,8 @@ namespace Fishing.Angling
             }
         }
 
-        bool WantsRetrieve => Settings.Down(KeyAction.Retrieve) || Game.Player.MovedThisFrame;
+        // 배 위에서 트롤링할 수 있으면 WASD는 배 운전이라 찌 회수로 치지 않는다
+        bool WantsRetrieve => Settings.Down(KeyAction.Retrieve) || (Game.Player.MovedThisFrame && !CanTroll);
 
         /// <summary>챔질 준비: 버튼을 누른 채 마우스를 흔들면 낚싯대가 그대로 좌우로 흔들린다 (원작 0:30).</summary>
         void SwayRod(bool bite)
@@ -436,6 +460,7 @@ namespace Fishing.Angling
         void UpdateWaiting()
         {
             if (WantsRetrieve) { Retrieve("찌를 회수했습니다."); return; }
+            if (_lureMode || Trolling) { UpdateLureWait(); return; }
             if (Time.time >= _castShotUntil) SwayRod(false);
             if (UpdateReel()) { if (State == FishingState.Waiting && DetectShake()) FalseHook(); return; }
 
@@ -467,6 +492,88 @@ namespace Fishing.Angling
             }
 
             if (DetectShake()) FalseHook();
+        }
+
+        /// <summary>
+        /// 루어 낚시 대기: 가만히 두면 거의 안 문다 (플라이는 흘려도 조금 문다). 좌클릭으로 감는 동안 입질 시계가 가고,
+        /// 감으면서 마우스를 위로 툭 치면(저킹) "액션!" — 입질이 확 당겨진다. 발밑까지 감으면 다시 던진다.
+        /// 배를 천천히(14km/h 이하) 몰면 줄이 배 뒤로 끌려가며 트롤링이 된다 (생미끼도 된다).
+        /// </summary>
+        void UpdateLureWait()
+        {
+            if (Time.time >= _castShotUntil) SwayRod(false);
+            var kind = Game.Profile.Bait.Kind;
+            float rate;
+            if (Trolling)
+            {
+                var boat = Game.Boat;
+                float dist = Mathf.Clamp(CastDistance, 10f, 25f);
+                var target = boat.SternPosition - boat.Forward * dist;
+                if (FieldMap.IsWater(target)) _bobber.DragTo(target);
+                float sp = Mathf.Abs(boat.Speed);
+                rate = sp < 4f ? 1.6f : 0f;
+                if (sp >= 4f && !_trollWarned)
+                {
+                    _trollWarned = true;
+                    Game.Toast("트롤링은 천천히! 14km/h보다 빠르면 루어가 물 위로 튀어 고기가 안 문다.", ToastKind.Warn);
+                }
+                if (sp < 3f) _trollWarned = false;
+            }
+            else
+            {
+                bool hold = Input.GetMouseButton(0) && !UiBlocking;
+                if (hold)
+                {
+                    var player = Game.Player.transform.position;
+                    var flat = player - _bobber.Position;
+                    flat.y = 0f;
+                    float step = Game.Profile.Reel.ReelSpeed * 0.75f * Time.deltaTime;
+                    var next = _bobber.Position + flat.normalized * Mathf.Min(step, flat.magnitude);
+                    if (flat.magnitude - step <= 3f || !FieldMap.IsWater(next))
+                    {
+                        Retrieve("루어를 다 감았습니다. 다시 던지세요.");
+                        return;
+                    }
+                    _bobber.DragTo(next);
+                    Game.Player.RodPitch = 42f;
+                    if (Time.time >= _reelFxAt)
+                    {
+                        _reelFxAt = Time.time + 0.14f;
+                        Game.Sound.ReelClick(0.25f);
+                    }
+                    rate = 1f;
+                    // 저킹: 감으면서 마우스를 위로 툭
+                    float my = Input.GetAxis("Mouse Y") * Settings.FightSensitivity;
+                    if (my > 5f && Time.time - _lastTwitchAt > 0.45f)
+                    {
+                        _lastTwitchAt = Time.time;
+                        _waitTimer -= kind == BaitKind.Egi ? 1.6f : 1.2f;
+                        Game.Player.Rod.Kick(120f);
+                        Game.Player.RodPitch = 70f;
+                        Effects.Splash(_bobber.Position, 5, 0.4f);
+                        Effects.Ripple(_bobber.Position, 0.9f, 0.8f);
+                        Game.Sound.ReelClick(0.7f);
+                    }
+                }
+                else rate = kind == BaitKind.Fly ? 0.55f : 0.12f;
+            }
+            if (kind == BaitKind.Fly && Game.Profile.Data.rodId == "rod_fly") rate *= 1.3f;
+            _waitTimer -= Time.deltaTime * rate;
+
+            if (_waitTimer <= 0f)
+            {
+                State = FishingState.Bite;
+                _biteTimer = 0f;
+                if (Game.Boat != null && Game.Boat.Riding) Game.Boat.ForceStop();
+                Game.Player.Rod.Kick(200f); // 루어는 확 낚아챈다
+                BigBite = PendingBite.IsTrophy || PendingBite.Species.Rarity >= 4;
+                Game.Sound.Plop();
+                if (BigBite) Game.Sound.Heartbeat();
+                Rumble.Pulse(0.5f, 0.45f, 0.2f);
+                Game.CameraRig.Shake(0.45f);
+                _shakeSpent = false;
+                _shake = 0f;
+            }
         }
 
         /// <summary>입질 전에 챔질하면 헛챔질. 예신(깔짝)에 속은 경우도 여기.</summary>
@@ -708,6 +815,14 @@ namespace Fishing.Angling
         }
 
         public void DebugResume() => enabled = true;
+
+        /// <summary>개발/테스트용: 루어 저킹 연출 ("액션!").</summary>
+        public void DebugTwitch()
+        {
+            _lastTwitchAt = Time.time;
+            Game.Player.Rod.Kick(120f);
+            Effects.Splash(_bobber.Position, 5, 0.4f);
+        }
 
         /// <summary>개발/테스트용: 대기 중이면 바로 본신이 오게 한다. 어종을 지정할 수 있다.</summary>
         public void DebugForceBite(string speciesId = null, float length = 0f)

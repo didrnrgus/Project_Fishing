@@ -211,6 +211,7 @@ ROD_STYLE = {  # TelescopicRod.StyleFor 와 같은 색
     'rod_bamboo': ('#c7a35c', '#59381f', '#8c6133', 5, 'bamboo'),
     'rod_heavy': ('#1a265c', '#d1d6e0', '#1f1f1f', 4, 'heavy'),
     'rod_gege': ('#e6e0d1', '#ebb84d', '#52331f', 5, 'pearl'),
+    'rod_fly': ('#3e4a2c', '#bf9e4d', '#b88f5c', 3, 'fly'),
 }
 
 
@@ -592,6 +593,31 @@ def model_egi(iid):
     return [o], 'item'
 
 
+def model_fly(iid):
+    """플라이 (드라이 플라이): 바늘 + 털 몸통 + 목털(해클) 고리 + 꼬리털 + 날개."""
+    objs = []
+    hook = mat('#30302e', 0.25, metal=0.9)
+    pts = [V((0, -0.12, 0.02)), V((0, 0.06, 0.02)), V((0, 0.11, -0.01)), V((0, 0.11, -0.06)), V((0, 0.07, -0.08)), V((0, 0.04, -0.05))]
+    objs.append(tube(pts, 0.004, hook, r_end=0.002, sides=6))
+    objs.append(torus(0.012, 0.003, hook, loc=(0, -0.13, 0.02), rot=(0, math.pi / 2, 0), seg=16, mseg=6))
+    objs.append(tube([V((0, -0.06, 0.02)), V((0, 0.05, 0.02))], 0.012, mat('#c8a060', 0.8), r_end=0.008, sides=10))
+    hackle = mat('#7a5030', 0.7)
+    for k in range(18):
+        a = k * 2 * math.pi / 18
+        d = V((math.cos(a), 0, math.sin(a)))
+        base = V((0, -0.07, 0.02))
+        objs.append(tube([base, base + d * 0.05 + V((0, 0.01, 0))], 0.0015, hackle, sides=4))
+    for k in range(5):
+        a = (k - 2) * 0.12
+        objs.append(tube([V((0, 0.05, 0.02)), V((math.sin(a) * 0.03, 0.13, 0.03))], 0.0012, mat('#a08060', 0.6), sides=4))
+    wing = mat('#e8e4d8', 0.5, alpha=0.9)
+    for s in (-1, 1):
+        objs.append(sphere(0.03, wing, loc=(s * 0.015, -0.08, 0.07), scale=(0.25, 0.6, 1.0), rot=(0, s * 0.3, 0)))
+    o = join(objs, 'Fly')
+    o.rotation_euler = (0, 0, math.radians(-40))
+    return [o], 'item'
+
+
 CUT_COL = ['#c8a070', '#b87860', '#9a4a3a', '#e8c8b0', '#a83a3a']
 
 
@@ -826,13 +852,13 @@ def model_robotfish(iid):
 
 
 ITEMS = {
-    'rod_basic': model_rod, 'rod_carbon': model_rod, 'rod_bamboo': model_rod, 'rod_heavy': model_rod, 'rod_gege': model_rod,
+    'rod_basic': model_rod, 'rod_carbon': model_rod, 'rod_bamboo': model_rod, 'rod_heavy': model_rod, 'rod_gege': model_rod, 'rod_fly': model_rod,
     'reel_basic': model_reel, 'reel_power': model_reel, 'reel_hispeed': model_reel, 'reel_napal': model_reel,
     'line_nylon': model_line, 'line_carbon': model_line, 'line_pe': model_line,
     'boat_rubber': model_boat, 'boat_speed': model_boat, 'boat_sail': model_boat, 'boat_cruiser': model_boat,
     'bait_worm': model_worm, 'bait_paste': model_paste, 'bait_corn': model_corn, 'bait_krill': model_krill,
     'bait_seaworm': model_seaworm, 'bait_squid': model_squid, 'bait_shrimp': model_shrimp, 'bait_minnow': model_minnow,
-    'bait_lure': model_lure, 'bait_egi': model_egi,
+    'bait_lure': model_lure, 'bait_egi': model_egi, 'bait_fly': model_fly,
     'bait_cut1': model_cutbait, 'bait_cut2': model_cutbait, 'bait_cut3': model_cutbait, 'bait_cut4': model_cutbait, 'bait_cut5': model_cutbait,
     'food_kimbap': model_kimbap,
     'mat_scale': model_scale, 'mat_starsand': model_starsand, 'mat_conch': model_conch,

@@ -9,7 +9,7 @@ namespace Fishing.Data
     public enum Weather { Clear, Cloudy, Rain }
 
     /// <summary>미끼 종류. Krill~CutBait는 바다 미끼(CutBait = 잡은 고기를 해체해 만든 살점·내장류).</summary>
-    public enum BaitKind { Worm, Paste, Corn, Shrimp, Minnow, Lure, Krill, SeaWorm, Squid, CutBait, Egi }
+    public enum BaitKind { Worm, Paste, Corn, Shrimp, Minnow, Lure, Krill, SeaWorm, Squid, CutBait, Egi, Fly }
 
     public static class Names
     {
@@ -63,6 +63,7 @@ namespace Fishing.Data
             BaitKind.Squid => "오징어살",
             BaitKind.CutBait => "해체 미끼",
             BaitKind.Egi => "에기",
+            BaitKind.Fly => "플라이",
             _ => b.ToString()
         };
     }

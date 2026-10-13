@@ -82,6 +82,8 @@ namespace Fishing.Data
                 Power = 1.4f, Flex = 0.3f, CastRange = 22f, Desc = "빳빳해서 힘을 그대로 전달하지만 장력이 튄다." },
             new GearDef { Id = "rod_bamboo", Name = "명품 대나무 연질대", Slot = GearSlot.Rod, Price = 12000, Level = 8,
                 Power = 1.5f, Flex = 0.75f, CastRange = 20f, Desc = "손맛의 정점. 대물의 돌진도 부드럽게 받아낸다." },
+            new GearDef { Id = "rod_fly", Name = "플라이 낚싯대", Slot = GearSlot.Rod, Price = 9000, Level = 6,
+                Power = 0.9f, Flex = 0.95f, CastRange = 16f, Desc = "가볍고 낭창한 플라이대. 플라이(털바늘)를 흘리면 입질이 1.3배 빠르다." },
             new GearDef { Id = "rod_heavy", Name = "헤비 원투대", Slot = GearSlot.Rod, Price = 25000, Level = 12,
                 Power = 2.0f, Flex = 0.35f, CastRange = 32f, Desc = "멀리, 강하게. 대물 전용." },
             // 원작 대회 1~3위 보상 「거거 낚시대」 (상점에서 팔지 않음)
@@ -131,6 +133,8 @@ namespace Fishing.Data
             new BaitDef { Id = "bait_lure", Name = "스푼 루어", Kind = BaitKind.Lure, PackSize = 10, Price = 1500 },
             // 서천 앞바다: 주꾸미·갑오징어용 새우 모양 가짜 미끼 (원작풍)
             new BaitDef { Id = "bait_egi", Name = "에기", Kind = BaitKind.Egi, PackSize = 5, Price = 1800, Maps = FishSpecies.WestOnly },
+            // 한강: 수면에 띄워 흘리는 제물낚시 털바늘. 피라미·끄리·강준치·블루길
+            new BaitDef { Id = "bait_fly", Name = "플라이", Kind = BaitKind.Fly, PackSize = 10, Price = 1200, Maps = FishSpecies.HanOnly, Level = 4 },
 
             // 해체 미끼 (원작풍 이름: 원작에도 "촉촉한이리" 같은 형용사+부위 미끼가 있었다). 살림망에서 고기를 해체해 얻는다
             new BaitDef { Id = "bait_cut1", Name = "어분덩이", Kind = BaitKind.CutBait, NotSold = true, Level = 1, Potency = 1.0f },
