@@ -579,7 +579,15 @@ namespace Fishing.UI
                 kind == ToastKind.Great ? FontStyle.Bold : FontStyle.Normal);
             t.rectTransform.Fill();
             t.textWrappingMode = TextWrappingModes.NoWrap;
-            root.sizeDelta = new Vector2(Mathf.Min(1100f, t.preferredWidth + 48f), root.sizeDelta.y);
+            const float maxW = 980f;
+            if (t.preferredWidth + 48f <= maxW) root.sizeDelta = new Vector2(t.preferredWidth + 48f, root.sizeDelta.y);
+            else
+            {
+                // 긴 알림은 두 줄 이상으로 감싼다 (한 줄로 두면 화면 밖으로 넘친다)
+                t.textWrappingMode = TextWrappingModes.Normal;
+                float h = t.GetPreferredValues(message, maxW - 48f, 0f).y;
+                root.sizeDelta = new Vector2(maxW, Mathf.Max(root.sizeDelta.y, h + 14f));
+            }
             var group = root.gameObject.AddComponent<CanvasGroup>();
             group.blocksRaycasts = false;
             _toasts.Add((root, group, Time.time + (kind == ToastKind.Great ? 5f : 3.2f)));
@@ -896,11 +904,14 @@ namespace Fishing.UI
                 : fight ? new Vector2(-30, -200)
                 : Game.UI.BlockingPanelOpen ? new Vector2(0, -16)
                 : new Vector2(0, -262);
-            for (int i = 0; i < _toasts.Count; i++)
+            // 최근 것이 맨 위, 아래로 쌓는다 (두 줄 알림은 그만큼 더 내려간다)
+            float y = 0f;
+            for (int i = _toasts.Count - 1; i >= 0; i--)
             {
                 var rt = _toasts[i].root;
                 rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(ax, 1f);
-                rt.anchoredPosition = new Vector2(0, -(_toasts.Count - 1 - i) * 44f);
+                rt.anchoredPosition = new Vector2(0, -y);
+                y += rt.sizeDelta.y + 8f;
             }
         }
     }
