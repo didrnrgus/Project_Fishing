@@ -101,7 +101,7 @@ Assets/
     Sky.shader                   Mode 0 달·별, Mode 1 구름(덮임 정도·노을색, 흐림·비 층구름)
   Resources/
     Characters/                  Angler_Male·Female.fbx (tools/blender/build_characters.py), 머리카락, 텍스처
-    Animations/                  Quaternius UAL1_Standard
+    Animations/                  Quaternius UAL1_Standard, Mixamo/(낚시 동작 FBX 3개, AssetImportRules가 쪼갬 → 10 문서)
     Fish/Species, Fish/Textures  어종별 물고기 FBX·텍스처 (tools/blender/build_fish.py)
     Icons/Fish, Icons/Items, Icons/Junk, Junk/   아이콘·잡동사니 모델 (build_fish.py, build_icons.py)
     Terrain/                     Poly Haven CC0 바닥 텍스처 (SOURCES.md)
@@ -194,7 +194,7 @@ GameBootstrap.Start → GameUI.EnterLobby (Mode=Lobby, 카메라 고정)
 
 ### 아트 교체
 - 캐릭터: `CharacterFactory.Create(look, parent)`가 Angler FBX(몸 `Body` + 옷 메쉬, `tools/blender/build_characters.py`)를 만든다. 옷을 고치거나 더하려면 `garments.py`에 함수를 추가하고 `build()`에 등록 → `CharacterFactory.Garments`·`GarmentMaterial`에 이름을 넣는다(08 문서 3장). 몸은 `Fishing/Skin`, 옷은 `Fishing/Garment` 셰이더.
-- 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/HoldRod/Cast/Hook…)가 클립 이름이다. 다른 라이브러리를 쓰면 이름만 바꾼다.
+- 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/HoldRod/Windup/Cast/Hook/Reel/Cheer…)가 클립 이름이다. 클립은 `Resources/Animations/UAL1_Standard`와 `Resources/Animations/Mixamo`에서 찾는다. Mixamo FBX는 `AssetImportRules.MixamoClips` 표(파일·이름·프레임)대로 쪼갠다(10 문서). 낚시 중 자세는 `PlayerController.FishingPose()`가 상태(Charging → Windup, 감는 중 → Reel, 그 밖 → HoldRod)로 고른다.
 - 물고기: `tools/blender/fish_species.py`에 어종(체형 템플릿 A~H·두족류 O/Q, 색·무늬·지느러미)을 넣고 `build_fish.py --only <id>` → `Resources/Fish/Species/<id>.fbx`·텍스처·아이콘. `FishModels.CreateSpecies`가 길이(cm/100)로 키운다(09 문서).
 - 물: `WaterSurface` + `Fishing/Water` 셰이더 (`_WaveAmp`, `_WaveLen`, 노멀 타일·속도). 하늘 반사는 `DayNightCycle`의 리얼타임 반사 프로브(하늘만, 2초마다).
 - 낚싯대·릴: `TelescopicRod.StyleFor`(낚싯대 색·길이·마디 수)와 `BuildReel`(릴 모양)에서 장비 id별로 고른다. 좌표 규약은 +Y가 낚싯대 방향, 원점이 릴 시트, +Z가 릴 쪽. 휨은 `Drive(목표각, 줄 방향, 떨림, dt)`, 펼치기는 `SetExtension(0~1)`, 릴은 `SpinReel(감기 바퀴/s, 줄 풀림 m/s, dt)`.

@@ -95,6 +95,7 @@ sh tools/test.sh       # 단위 테스트 25개
 | [07-original-data.md](docs/07-original-data.md) | 원작 데이터 검증 (확인된 것 / 근거 없는 것) |
 | [08-quality-plan.md](docs/08-quality-plan.md) | 캐릭터 퀄리티: 보통 체형 + 진짜 옷 메쉬, 다시 만들기, 남은 개선점, 무료 에셋 계획 |
 | [09-art-plan.md](docs/09-art-plan.md) | 어종별 물고기 모델·도감 그림·아이템 아이콘 (검색 → 설계 → Blender → 적용) |
+| [10-animation.md](docs/10-animation.md) | 캐릭터 애니메이션: UAL + Mixamo 낚시 동작, Fishing Cast 구간 나누기, 임포트 함정(180°) |
 | [WORK-IN-PROGRESS.md](docs/WORK-IN-PROGRESS.md) | 지금 상태, **사용자가 해야 할 일**(에셋 스토어 로그인이 필요한 것), 다음 후보 |
 
 ## 구조 한눈에
@@ -116,12 +117,13 @@ Assets/Editor  셋업·빌드 도구, 임포트 규칙, 밸런스 시뮬레이�
 tools/        build·autoshot·test·balance 스크립트, blender/(캐릭터 옷·물고기·아이콘 생성)
 ```
 
-씬에는 `GameBootstrap` 하나만 있고, 나머지는 모두 코드로 만듭니다. 사람·물고기·아이콘은 `tools/blender`로 만든 모델, 건물·가로등·나무·배는 Kenney CC0 모델, 땅·물·다리·하늘은 프리미티브와 절차적 텍스처·셰이더(일부 바닥·지형은 Poly Haven CC0 텍스처)입니다. 낚시 소리는 절차적으로 만들고 UI·발소리만 Kenney CC0 녹음을 씁니다. 유니티 에셋 스토어 에셋은 공개 저장소에 올릴 수 없어서 쓰지 않습니다. 실물 사진·다른 게임 그림은 참고만 하고 저장소에 넣지 않습니다.
+씬에는 `GameBootstrap` 하나만 있고, 나머지는 모두 코드로 만듭니다. 사람·물고기·아이콘은 `tools/blender`로 만든 모델, 건물·가로등·나무·배는 Kenney CC0 모델, 땅·물·다리·하늘은 프리미티브와 절차적 텍스처·셰이더(일부 바닥·지형은 Poly Haven CC0 텍스처)입니다. 낚시 소리는 절차적으로 만들고 UI·발소리만 Kenney CC0 녹음을 씁니다. 낚시 동작(들기·던지기·챔질·릴 감기·환호)은 Mixamo 동작을 쪼개 씁니다([10 문서](docs/10-animation.md)). 에셋 스토어 패키지 몇 개는 받아 두었지만 아직 게임에 연결하지 않았습니다. 실물 사진·다른 게임 그림은 참고만 하고 저장소에 넣지 않습니다.
 
 ## 크레딧
 
 - 원작: 「청풍명월」 개발 저스트나인, 서비스 네오위즈게임즈(피망). 이 프로젝트는 원작과 관련이 없는 개인 팬 프로젝트입니다.
 - 3D 모델: [Quaternius](https://quaternius.com) — Universal Base Characters(몸·머리카락), Universal Animation Library, Animated Fish Pack(어종 모델이 없을 때 대체) (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Quaternius/`.
+- 낚시 동작: [Mixamo](https://www.mixamo.com) (Adobe) — Fishing Idle, Fishing Cast, Cheering.
 - 배경·배 모델: [Kenney](https://kenney.nl) — City Kit Commercial, City Kit Roads, Nature Kit, Watercraft Kit (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Kenney/`.
 - 텍스처: [Poly Haven](https://polyhaven.com) (CC0) — 모래·풀·바위·해안·나무 데크·콘크리트·아스팔트 → `Assets/Resources/Terrain/SOURCES.md`
 - 소리: [Kenney](https://kenney.nl) Interface Sounds · Impact Sounds (CC0, UI 클릭·경고·발소리) → `Assets/Resources/Audio/Kenney/SOURCES.md`

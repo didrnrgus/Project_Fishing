@@ -7,6 +7,8 @@
 - 패키지: `com.unity.ugui 2.0.0`, `com.unity.burst`, `com.unity.collections`(Translucent Image가 씀), `com.unity.postprocessing 3.4.0`(후처리), `com.unity.inputsystem 1.14.2`(패드 진동만), `com.unity.test-framework 1.5.1` + 기본 모듈
 - 외부 에셋
   - Quaternius CC0 모델 (`Assets/Resources/Characters` 원본 몸·머리카락, `Animations`). 임포트 설정은 `Assets/Editor/AssetImportRules.cs`가 자동으로 맞춘다.
+  - **Mixamo** 낚시 동작 (`Assets/MixamoAnimation` 원본, 쓰는 3개만 `Resources/Animations/Mixamo`): Fishing Cast를 들기·던지기·챔질·릴 감기 클립으로 쪼갠다 → [10 문서](10-animation.md).
+  - 에셋 스토어 패키지(2026-10-14 커밋, 아직 게임에 연결 안 함): `Kevin Iglesias`(Human Basic Motions FREE), `AllSkyFree`, `Fantasy Skybox FREE`, `NatureStarterKit2`, `BigRookGames`.
   - Kenney CC0 모델(`Resources/Kenney`)·소리(`Resources/Audio/Kenney`), Poly Haven CC0 텍스처(`Resources/Terrain`). 출처는 각 폴더의 SOURCES.md·라이선스 사본.
   - 캐릭터 옷·물고기·아이콘은 직접 만든 것: `tools/blender`(아래 "Blender 파이프라인").
   - **Translucent Image 7.0.3 + Paraform 1.5.0** (`Assets/Le Tai's Asset`): 유리 UI. 스크립팅 심볼 `LETAI_PARAFORM`이 있어야 둥근 도형이 나온다(ProjectSettings에 등록됨, 에디터가 열릴 때도 자동 추가).
@@ -75,6 +77,7 @@ bpyenv/Scripts/pip install bpy pillow numpy
 | `... build_fish.py [--only carp,dotdom]` | `Resources/Fish/Species/*.fbx`, `Fish/Textures`, `Icons/Fish` (09 문서) |
 | `... build_fish.py --preview --only carp --out Screenshots/fish` | 물고기 미리보기 |
 | `... build_icons.py` | `Resources/Icons/Items`, `Icons/Junk`, `Resources/Junk` |
+| `... mixamo_probe.py <fbx> --out <폴더> [--loop A-B:MIN-MAX]` | Mixamo FBX 막대 인형 시트·움직임 곡선·루프 후보 (구간 나누기, 10 문서) |
 
 - 스크립트 끝은 `sys.stdout.flush(); os._exit(0)` (bpy 종료 시 충돌 회피). `bpyenv/`는 .gitignore.
 - 물고기를 전부 다시 만들면 바뀌지 않은 어종도 FBX·PNG가 바이트 단위로 달라진다 → 새로 만든 것만 커밋하고 나머지는 `git checkout --`.
@@ -136,7 +139,9 @@ UI나 연출을 바꾼 뒤 `build.sh` → `autoshot.sh`로 실제 화면을 확�
 
 - `.gitignore`는 Unity 표준에 `Builds/`, `Screenshots/`, `Logs/`, `UserSettings/`, `bpyenv/`를 더 뺀다.
 - 문서용 스크린샷은 `docs/images/`에 복사해서 커밋한다.
-- 원격: `https://github.com/didrnrgus/Project_Fishing.git` (공개 저장소 → 에셋 스토어·Mixamo 에셋은 커밋하지 않는다)
+- 원격: `https://github.com/didrnrgus/Project_Fishing.git`
+- 바이너리(이미지·모델·소리·글꼴)는 Git LFS(`.gitattributes`). 처음 받을 때 `git lfs install` 후 clone/pull.
+- 에셋 스토어·Mixamo 원본은 공개 저장소 재배포가 허용되지 않는다(08 문서 5장). 2026-10-14에 사용자가 커밋하기로 했다 — 저장소 공개 여부는 그에 맞춰 정한다(10 문서 6장).
 
 ## 코딩 컨벤션
 
