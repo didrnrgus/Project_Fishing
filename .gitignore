@@ -47,3 +47,7 @@ __pycache__/
 
 # Blender 파이썬 가상환경 (tools/blender)
 /bpyenv/
+
+# 에셋 스토어·Mixamo 에셋 (재배포 금지, 각자 받아서 넣기)
+/[Aa]ssets/[Aa]sset[Ss]tore/
+/[Aa]ssets/[Aa]sset[Ss]tore.meta
