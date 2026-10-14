@@ -34,7 +34,7 @@ namespace Fishing.World
         /// <summary>
         /// 모델을 만든다. height > 0이면 높이를, length > 0이면 가장 긴 수평 길이를 그 값에 맞춘다.
         /// </summary>
-        public static GameObject Spawn(string path, Transform parent, Vector3 localPos, float yaw, float height = 0f, float length = 0f)
+        public static GameObject Spawn(string path, Transform parent, Vector3 localPos, float yaw, float height = 0f, float length = 0f, bool solid = true)
         {
             var prefab = Resources.Load<GameObject>(path);
             if (prefab == null) return null;
@@ -64,7 +64,38 @@ namespace Fishing.World
                 r.sharedMaterials = mats;
                 r.shadowCastingMode = city ? UnityEngine.Rendering.ShadowCastingMode.Off : UnityEngine.Rendering.ShadowCastingMode.On;
             }
+            if (solid) AddCollider(go, path);
             return go;
+        }
+
+        /// <summary>
+        /// 부딪히는 몸: 건물·바위·배는 상자, 나무는 줄기, 가로등은 기둥 (풀·덤불·꽃·부표는 없음).
+        /// 사람이 건물·나무를 뚫고 지나가거나 찌가 뚫고 날아가지 않게 한다.
+        /// </summary>
+        static void AddCollider(GameObject go, string path)
+        {
+            string n = path.Substring(path.LastIndexOf('/') + 1);
+            var b = LocalBounds(go);
+            if (path.Contains("/City/") || n.StartsWith("rock_") || (path.Contains("/Watercraft/") && !n.StartsWith("buoy")))
+            {
+                var box = go.AddComponent<BoxCollider>();
+                box.center = b.center;
+                box.size = b.size;
+            }
+            else if (n.StartsWith("tree_"))
+            {
+                var cap = go.AddComponent<CapsuleCollider>();
+                cap.radius = b.size.y * 0.04f;
+                cap.height = b.size.y * 0.6f;
+                cap.center = new Vector3(0f, b.min.y + cap.height * 0.5f, 0f);
+            }
+            else if (path.Contains("/Roads/light"))
+            {
+                var cap = go.AddComponent<CapsuleCollider>();
+                cap.radius = b.size.y * 0.025f;
+                cap.height = b.size.y;
+                cap.center = new Vector3(0f, b.center.y, 0f);
+            }
         }
 
         /// <summary>스케일 1 기준 렌더러 경계 (부모 기준 좌표).</summary>

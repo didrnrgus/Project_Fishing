@@ -48,6 +48,23 @@ namespace Fishing.Core
             }
         }
 
+        bool _warned;
+
+        /// <summary>pos에서 남쪽(해안)으로 내려가며 처음 걸을 수 있는 땅. 못 찾으면 낚시점 앞.</summary>
+        static Vector3 SafeShore(FieldMapDef map, Vector3 pos)
+        {
+            for (float z = pos.z; z > pos.z - 260f; z -= 2f)
+            {
+                var p = new Vector3(pos.x, pos.y, z);
+                if (map.IsWalkable(p) && !map.IsWater(p))
+                {
+                    float y = map is CoastMapDef c ? c.HeightAt(p.x, p.z) : map.LandY;
+                    if (y >= map.LandY - 0.15f) return new Vector3(p.x, y + 0.1f, p.z - 1f);
+                }
+            }
+            return map.Spawn;
+        }
+
         void Update()
         {
             var map = FieldMap.Current;
@@ -67,11 +84,19 @@ namespace Fishing.Core
             {
                 _floodCheckAt = Time.time + 0.5f;
                 var pos = Game.Player.transform.position;
-                if (!map.IsWalkable(pos) && map.IsWater(pos))
+                bool onFlats = map.IsWalkable(pos) && pos.y < map.LandY - 0.15f; // 갯벌·모래톱 위 (땅보다 낮다)
+                if (!map.IsWalkable(pos) && map.IsWater(pos) || !map.IsWalkable(pos) && pos.y < map.LandY - 0.15f)
                 {
-                    Game.Player.Teleport(new Vector3(pos.x, map.LandY + 0.1f, map.GridMinZ - 3f), Game.Player.Yaw);
-                    Game.Toast("물이 들어와서 둔치로 피했습니다. 서해는 물때를 꼭 보세요!", ToastKind.Warn);
+                    Game.Player.Teleport(SafeShore(map, pos), Game.Player.Yaw);
+                    Game.Toast("물이 들어와서 해안으로 피했습니다. 서해는 물때를 꼭 보세요!", ToastKind.Warn);
                 }
+                // 간조가 지나 물이 들기 시작하면 갯벌·모래톱 위에 있는 사람에게 한 번 알린다
+                if (onFlats && Rising && Level > -0.75f && !_warned)
+                {
+                    _warned = true;
+                    Game.Toast("물이 들어오기 시작합니다! 갯벌·모래톱에서 나오세요.", ToastKind.Warn);
+                }
+                if (!Rising) _warned = false;
             }
         }
     }

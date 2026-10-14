@@ -65,14 +65,14 @@ namespace Fishing.World
             Mats.Prim(PrimitiveType.Cube, "NorthBank", _root, new Vector3(0f, centerY, northZ), new Vector3(600f, landH, depth), Mats.TexturedBox("grass", new Color(0.62f, 0.75f, 0.58f), new Vector2(600f, depth), 7f, 0.1f));
 
             // 둔치 산책로, 자전거도로, 호안 석축
-            Mats.Prim(PrimitiveType.Cube, "Walkway", _root, new Vector3(0f, HanRiverMap.LandY + 0.01f, -66f), new Vector3(600f, 0.02f, 4f), Mats.TexturedBox("concrete", new Color(0.95f, 0.92f, 0.86f), new Vector2(600f, 4f), 4f, 0.2f), false);
-            Mats.Prim(PrimitiveType.Cube, "BikeRoad", _root, new Vector3(0f, HanRiverMap.LandY + 0.01f, -84f), new Vector3(600f, 0.02f, 6f), Mats.TexturedBox("asphalt", new Color(0.75f, 0.62f, 0.6f), new Vector2(600f, 6f), 6f, 0.15f), false);
-            Mats.Prim(PrimitiveType.Cube, "BikeLine", _root, new Vector3(0f, HanRiverMap.LandY + 0.025f, -84f), new Vector3(600f, 0.02f, 0.15f), Mats.Lit(new Color(0.95f, 0.8f, 0.2f)), false);
+            Mats.Prim(PrimitiveType.Cube, "Walkway", _root, new Vector3(0f, HanRiverMap.LandY + 0.02f, -66f), new Vector3(600f, 0.08f, 4f), Mats.TexturedBox("concrete", new Color(0.95f, 0.92f, 0.86f), new Vector2(600f, 4f), 4f, 0.2f), false);
+            Mats.Prim(PrimitiveType.Cube, "BikeRoad", _root, new Vector3(0f, HanRiverMap.LandY + 0.02f, -84f), new Vector3(600f, 0.08f, 6f), Mats.TexturedBox("asphalt", new Color(0.75f, 0.62f, 0.6f), new Vector2(600f, 6f), 6f, 0.15f), false);
+            Mats.Prim(PrimitiveType.Cube, "BikeLine", _root, new Vector3(0f, HanRiverMap.LandY + 0.07f, -84f), new Vector3(600f, 0.02f, 0.15f), Mats.Lit(new Color(0.95f, 0.8f, 0.2f)), false);
             Mats.Prim(PrimitiveType.Cube, "SouthEdge", _root, new Vector3(0f, HanRiverMap.LandY - 0.4f, HanRiverMap.RiverMinZ - 0.3f), new Vector3(600f, 1.2f, 0.8f), Mats.TexturedBox("concrete", new Color(0.8f, 0.8f, 0.78f), new Vector2(600f, 1.2f), 2f, 0.2f));
             Mats.Prim(PrimitiveType.Cube, "NorthEdge", _root, new Vector3(0f, HanRiverMap.LandY - 0.4f, HanRiverMap.RiverMaxZ + 0.3f), new Vector3(600f, 1.2f, 0.8f), Mats.TexturedBox("concrete", new Color(0.8f, 0.8f, 0.78f), new Vector2(600f, 1.2f), 2f, 0.2f));
 
             // 북쪽 강변북로
-            Mats.Prim(PrimitiveType.Cube, "Expressway", _root, new Vector3(0f, HanRiverMap.LandY + 0.02f, 74f), new Vector3(600f, 0.04f, 10f), Mats.TexturedBox("asphalt", Color.white, new Vector2(600f, 10f), 6f, 0.15f), false);
+            Mats.Prim(PrimitiveType.Cube, "Expressway", _root, new Vector3(0f, HanRiverMap.LandY + 0.02f, 74f), new Vector3(600f, 0.08f, 10f), Mats.TexturedBox("asphalt", Color.white, new Vector2(600f, 10f), 6f, 0.15f), false);
         }
 
         void BuildBridge()
@@ -155,6 +155,16 @@ namespace Fishing.World
         {
             var t = UIFactory.WorldText(parent, text, localPos, color, 5f, "Sign");
             t.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            UIFactory.OneSided(t);
+        }
+
+        /// <summary>앞뒤 어느 쪽에서 봐도 읽히는 표지 (길가처럼 양쪽에서 지나다니는 곳).</summary>
+        public static void AddSignBothSides(Transform parent, string text, Vector3 localPos, Color color)
+        {
+            AddSign(parent, text, localPos, color);
+            var back = UIFactory.WorldText(parent, text, localPos, color, 5f, "SignBack");
+            back.transform.localRotation = Quaternion.identity;
+            UIFactory.OneSided(back);
         }
 
         void BuildWeeds()
@@ -166,7 +176,8 @@ namespace Fishing.World
             weeds.SetParent(_root, false);
             for (int i = 0; i < 140; i++)
             {
-                var pos = new Vector3(R(55f, 150f), HanRiverMap.WaterY + 0.01f, R(-59f, -38f));
+                // 잎끼리 겹쳐도 깜빡이지 않게 높이를 조금씩 다르게
+                var pos = new Vector3(R(55f, 150f), HanRiverMap.WaterY + 0.02f + (i % 6) * 0.012f, R(-59f, -38f));
                 float s = R(0.6f, 1.6f);
                 Mats.Prim(PrimitiveType.Cylinder, "Pad", weeds, pos, new Vector3(s, 0.01f, s), pad, false);
             }

@@ -102,6 +102,9 @@ namespace Fishing.World
         public override bool IsWater(Vector3 p) =>
             p.x > MinX && p.x < MaxX && p.z > ShoreZ && p.z < 260f && !OnBreakwater(p) && SeocheonTerrain.HeightAt(p.x, p.z) < WaterY - 0.12f;
 
+        public override float SeabedAt(float x, float z) => OnBreakwater(new Vector3(x, 0f, z)) ? LandY : SeocheonTerrain.HeightAt(x, z);
+        public override Rect SeabedArea => new Rect(-205f, -70f, 410f, 330f);
+
         public override bool IsWalkable(Vector3 p)
         {
             if (p.x < MinX + 2f || p.x > MaxX - 2f) return false;
@@ -261,8 +264,7 @@ namespace Fishing.World
         readonly SeocheonDef _map;
         Transform _root;
         System.Random _rng;
-        List<Light> _lamps;
-        List<Renderer> _bulbs;
+        CoastProps _props;
 
         public SeocheonWorldBuilder(SeocheonDef map) { _map = map; }
 
@@ -272,8 +274,7 @@ namespace Fishing.World
         {
             _root = new GameObject("World_Seocheon").transform;
             _rng = new System.Random(20120921);
-            _lamps = lamps;
-            _bulbs = bulbs;
+            _props = new CoastProps(_root, _rng, lamps, bulbs);
 
             WaterSurface.Create(_root, new Vector3(0f, _map.WaterY, 180f), new Vector2(900f, 460f), 4f);
             SeocheonTerrain.Build(_root, _map.BaseWaterY);
@@ -293,12 +294,12 @@ namespace Fishing.World
 
         void BuildShore()
         {
-            Mats.Prim(PrimitiveType.Cube, "CoastRoad", _root, new Vector3(0f, _map.LandY + 0.02f, -62f), new Vector3(420f, 0.04f, 7f),
+            Mats.Prim(PrimitiveType.Cube, "CoastRoad", _root, new Vector3(0f, _map.LandY + 0.03f, -62f), new Vector3(420f, 0.14f, 7f),
                 Mats.TexturedBox("asphalt", Color.white, new Vector2(420f, 7f), 6f, 0.15f), false);
             // 홍원항 호안: 포구 앞 콘크리트 벽 (갯벌 쪽은 모래 해변)
             Mats.Prim(PrimitiveType.Cube, "Quay", _root, new Vector3(45f, _map.LandY - 2.2f, SeocheonDef.ShoreZ - 0.4f), new Vector3(150f, 6.4f, 1f),
                 Mats.TexturedBox("concrete", new Color(0.85f, 0.85f, 0.82f), new Vector2(150f, 6.4f), 3f, 0.2f));
-            Mats.Prim(PrimitiveType.Cube, "QuayApron", _root, new Vector3(45f, _map.LandY + 0.03f, -46f), new Vector3(150f, 0.06f, 12f),
+            Mats.Prim(PrimitiveType.Cube, "QuayApron", _root, new Vector3(45f, _map.LandY + 0.03f, -46f), new Vector3(150f, 0.14f, 12f),
                 Mats.TexturedBox("concrete", new Color(0.8f, 0.8f, 0.78f), new Vector2(150f, 12f), 4f, 0.2f), false);
             // 춘장대 해변의 작은 소나무 숲 (해송)
             if (KenneyProps.Available)
@@ -343,57 +344,12 @@ namespace Fishing.World
 
             // 테트라포드: 큰 방파제 바깥(동쪽)과 꺾인 팔 바깥(북쪽)
             for (float z = SeocheonDef.RedStem.yMin + 6f; z < SeocheonDef.RedStem.yMax + 3f; z += R(2.3f, 3f))
-                Tetrapod(new Vector3(SeocheonDef.RedStem.xMax + R(1f, 3.5f), _map.BaseWaterY + R(-0.6f, 0.4f), z + R(-0.8f, 0.8f)), tetra);
+                _props.Tetrapod(new Vector3(SeocheonDef.RedStem.xMax + R(1f, 3.5f), _map.BaseWaterY + R(-0.6f, 0.4f), z + R(-0.8f, 0.8f)), tetra);
             for (float x = SeocheonDef.RedArm.xMin; x < SeocheonDef.RedArm.xMax; x += R(2.3f, 3f))
-                Tetrapod(new Vector3(x + R(-0.8f, 0.8f), _map.BaseWaterY + R(-0.6f, 0.4f), SeocheonDef.RedArm.yMax + R(1f, 3.5f)), tetra);
+                _props.Tetrapod(new Vector3(x + R(-0.8f, 0.8f), _map.BaseWaterY + R(-0.6f, 0.4f), SeocheonDef.RedArm.yMax + R(1f, 3.5f)), tetra);
 
-            Lighthouse(new Vector3(SeocheonDef.RedArm.xMin + 3f, _map.LandY, SeocheonDef.RedArm.center.y), new Color(0.85f, 0.15f, 0.12f), new Color(1f, 0.45f, 0.4f));
-            Lighthouse(new Vector3(SeocheonDef.WhiteBw.center.x, _map.LandY, SeocheonDef.WhiteBw.yMax - 3f), new Color(0.95f, 0.95f, 0.93f), new Color(0.6f, 1f, 0.6f));
-        }
-
-        void Tetrapod(Vector3 p, Material mat)
-        {
-            var t = new GameObject("Tetrapod").transform;
-            t.SetParent(_root, false);
-            t.localPosition = p;
-            t.localRotation = Quaternion.Euler(R(0f, 360f), R(0f, 360f), R(0f, 360f));
-            for (int leg = 0; leg < 4; leg++)
-            {
-                var dir = leg == 0 ? Vector3.up : Quaternion.Euler(109.5f, leg * 120f, 0f) * Vector3.up;
-                Mats.Prim(PrimitiveType.Capsule, "Leg", t, dir * 0.55f, new Vector3(0.6f, 0.6f, 0.6f), mat, false, Quaternion.FromToRotation(Vector3.up, dir));
-            }
-        }
-
-        /// <summary>등대: 몸통 색, 밤 불빛 색 (항구 입구 오른쪽 빨강·왼쪽 흰색 — 실제 항로 표지 규칙).</summary>
-        void Lighthouse(Vector3 at, Color body, Color lightColor)
-        {
-            var lh = new GameObject("Lighthouse").transform;
-            lh.SetParent(_root, false);
-            lh.localPosition = at;
-            var bodyMat = Mats.Lit(body, 0.5f);
-            var white = Mats.Lit(new Color(0.95f, 0.95f, 0.93f), 0.5f);
-            var dark = Mats.Lit(new Color(0.2f, 0.22f, 0.25f), 0.4f, 0.4f);
-            Mats.Prim(PrimitiveType.Cylinder, "Base", lh, new Vector3(0f, 0.4f, 0f), new Vector3(2.6f, 0.4f, 2.6f), white);
-            Mats.Prim(PrimitiveType.Cylinder, "Tower", lh, new Vector3(0f, 4.2f, 0f), new Vector3(1.6f, 3.4f, 1.6f), bodyMat);
-            Mats.Prim(PrimitiveType.Cylinder, "Band", lh, new Vector3(0f, 5.6f, 0f), new Vector3(1.65f, 0.3f, 1.65f), body.r > 0.9f && body.g > 0.9f ? dark : white, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Balcony", lh, new Vector3(0f, 7.7f, 0f), new Vector3(2.2f, 0.12f, 2.2f), dark, false);
-            var lamp = Mats.Prim(PrimitiveType.Sphere, "Lamp", lh, new Vector3(0f, 8.4f, 0f), Vector3.one * 1.05f, white, false);
-            _bulbs.Add(lamp.GetComponent<Renderer>());
-            Mats.Prim(PrimitiveType.Cylinder, "Cap", lh, new Vector3(0f, 9.1f, 0f), new Vector3(1.3f, 0.3f, 1.3f), bodyMat, false);
-            AddLamp(lh.position + Vector3.up * 8.4f, lightColor, 24f, 2f);
-        }
-
-        void AddLamp(Vector3 pos, Color color, float range, float intensity)
-        {
-            var go = new GameObject("Lamp");
-            go.transform.SetParent(_root, false);
-            go.transform.position = pos;
-            var l = go.AddComponent<Light>();
-            l.type = LightType.Point;
-            l.color = color;
-            l.range = range;
-            l.intensity = intensity;
-            _lamps.Add(l);
+            _props.Lighthouse(new Vector3(SeocheonDef.RedArm.xMin + 3f, _map.LandY, SeocheonDef.RedArm.center.y), new Color(0.85f, 0.15f, 0.12f), new Color(1f, 0.45f, 0.4f));
+            _props.Lighthouse(new Vector3(SeocheonDef.WhiteBw.center.x, _map.LandY, SeocheonDef.WhiteBw.yMax - 3f), new Color(0.95f, 0.95f, 0.93f), new Color(0.6f, 1f, 0.6f));
         }
 
         // ---------------- 동백정 ----------------
@@ -403,7 +359,7 @@ namespace Fishing.World
             // 정자: 곶 꼭대기 근처, 바다(북쪽)를 보고 선다
             var top = new Vector2(SeocheonDef.CapeBase.x, -8f);
             float y = SeocheonTerrain.HeightAt(top.x, top.y);
-            Pavilion(new Vector3(top.x, y, top.y), 0f);
+            _props.Pavilion(new Vector3(top.x, y, top.y), 0f);
             WorldBuilder.AddSign(_root, "동백정", new Vector3(top.x, y + 6.4f, top.y - 3.6f), new Color(1f, 0.85f, 0.6f));
 
             // 동백나무숲: 윤기 나는 짙은 잎 + 붉은 꽃
@@ -455,88 +411,6 @@ namespace Fishing.World
             }
         }
 
-        /// <summary>팔작지붕 정자: 돌 기단, 붉은 기둥 8개, 단청 보, 처마 끝이 들린 기와지붕.</summary>
-        void Pavilion(Vector3 at, float yaw)
-        {
-            var p = new GameObject("Pavilion").transform;
-            p.SetParent(_root, false);
-            p.localPosition = at;
-            p.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            var stone = Mats.Textured("concrete", new Color(0.75f, 0.73f, 0.68f), 1f, 0.15f);
-            var wood = Mats.Textured("deck", new Color(0.85f, 0.72f, 0.58f), 2f, 0.3f);
-            var pillar = Mats.Lit(new Color(0.55f, 0.16f, 0.12f), 0.35f);
-            var beam = Mats.Lit(new Color(0.18f, 0.48f, 0.42f), 0.3f);
-            var beamRed = Mats.Lit(new Color(0.7f, 0.2f, 0.15f), 0.3f);
-            Mats.Prim(PrimitiveType.Cube, "Base", p, new Vector3(0f, 0.25f, 0f), new Vector3(7f, 1.1f, 7f), stone);
-            Mats.Prim(PrimitiveType.Cube, "Floor", p, new Vector3(0f, 0.95f, 0f), new Vector3(6f, 0.3f, 6f), wood);
-            for (int i = 0; i < 8; i++)
-            {
-                float a = i * Mathf.PI / 4f;
-                var pos = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * 2.7f;
-                if (i % 2 == 1) pos *= 1.41f * 0.98f; // 모서리
-                pos = new Vector3(Mathf.Clamp(pos.x, -2.7f, 2.7f), 2.4f, Mathf.Clamp(pos.z, -2.7f, 2.7f));
-                Mats.Prim(PrimitiveType.Cylinder, "Pillar", p, pos, new Vector3(0.32f, 1.35f, 0.32f), pillar);
-            }
-            // 보 (단청: 초록 + 붉은 띠)
-            foreach (var (pos, size) in new[] { (new Vector3(0f, 3.75f, 2.7f), new Vector3(5.8f, 0.35f, 0.35f)), (new Vector3(0f, 3.75f, -2.7f), new Vector3(5.8f, 0.35f, 0.35f)),
-                         (new Vector3(2.7f, 3.75f, 0f), new Vector3(0.35f, 0.35f, 5.8f)), (new Vector3(-2.7f, 3.75f, 0f), new Vector3(0.35f, 0.35f, 5.8f)) })
-            {
-                Mats.Prim(PrimitiveType.Cube, "Beam", p, pos, size, beam, false);
-                Mats.Prim(PrimitiveType.Cube, "BeamBand", p, pos + Vector3.up * 0.22f, Vector3.Scale(size, new Vector3(1f, 0.25f, 1f)) + new Vector3(0.02f, 0f, 0.02f), beamRed, false);
-            }
-            // 난간
-            var rail = Mats.Lit(new Color(0.5f, 0.2f, 0.15f), 0.3f);
-            foreach (var (pos, size) in new[] { (new Vector3(0f, 1.6f, 2.85f), new Vector3(5.6f, 0.1f, 0.1f)), (new Vector3(0f, 1.6f, -2.85f), new Vector3(5.6f, 0.1f, 0.1f)),
-                         (new Vector3(2.85f, 1.6f, 0f), new Vector3(0.1f, 0.1f, 5.6f)), (new Vector3(-2.85f, 1.6f, 0f), new Vector3(0.1f, 0.1f, 5.6f)) })
-                Mats.Prim(PrimitiveType.Cube, "Rail", p, pos, size, rail, false);
-
-            var roof = new GameObject("Roof");
-            roof.transform.SetParent(p, false);
-            roof.transform.localPosition = new Vector3(0f, 3.95f, 0f);
-            roof.AddComponent<MeshFilter>().sharedMesh = CurvedRoof(4.6f, 2.3f, 0.75f);
-            var mr = roof.AddComponent<MeshRenderer>();
-            mr.sharedMaterials = new[] { Mats.Lit(new Color(0.22f, 0.24f, 0.28f), 0.35f), Mats.Lit(new Color(0.55f, 0.22f, 0.16f), 0.3f) };
-            Mats.Prim(PrimitiveType.Sphere, "Finial", p, new Vector3(0f, 6.3f, 0f), new Vector3(0.5f, 0.6f, 0.5f), Mats.Lit(new Color(0.25f, 0.27f, 0.3f), 0.3f), false);
-        }
-
-        /// <summary>
-        /// 기와지붕 메쉬: 정사각형 바닥(반폭 hw)에서 꼭대기까지 오르고, 처마 쪽은 오목하게, 네 귀퉁이 끝은 위로 들린다.
-        /// 서브메쉬 0 = 윗면(기와), 1 = 아랫면(서까래, 붉은색).
-        /// </summary>
-        static Mesh CurvedRoof(float hw, float rise, float cornerLift)
-        {
-            const int n = 24;
-            var verts = new List<Vector3>();
-            var up = new List<int>();
-            var down = new List<int>();
-            for (int iz = 0; iz <= n; iz++)
-            for (int ix = 0; ix <= n; ix++)
-            {
-                float u = ix / (float)n * 2f - 1f, v = iz / (float)n * 2f - 1f;
-                float m = Mathf.Max(Mathf.Abs(u), Mathf.Abs(v));
-                float y = rise * (1f - Mathf.Pow(m, 0.75f));               // 오목한 경사 (가운데가 높다)
-                y += cornerLift * Mathf.Pow(Mathf.Abs(u * v), 3f);           // 귀퉁이 들림
-                verts.Add(new Vector3(u * hw, y, v * hw));
-            }
-            int count = verts.Count;
-            for (int i = 0; i < count; i++) verts.Add(verts[i] - new Vector3(0f, 0.12f, 0f));
-            for (int iz = 0; iz < n; iz++)
-            for (int ix = 0; ix < n; ix++)
-            {
-                int a = iz * (n + 1) + ix, b = a + 1, c = a + n + 1, d = c + 1;
-                up.AddRange(new[] { a, c, b, b, c, d });
-                down.AddRange(new[] { a + count, b + count, c + count, b + count, d + count, c + count });
-            }
-            var mesh = new Mesh { name = "PavilionRoof" };
-            mesh.SetVertices(verts);
-            mesh.subMeshCount = 2;
-            mesh.SetTriangles(up, 0);
-            mesh.SetTriangles(down, 1);
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            return mesh;
-        }
-
         void BuildIslet()
         {
             var rock = Mats.Textured("rock", new Color(0.78f, 0.76f, 0.72f), 1.2f, 0.3f);
@@ -565,30 +439,10 @@ namespace Fishing.World
                     KenneyProps.Spawn("Kenney/Watercraft/buoy-flag", _root, new Vector3(-80f + i * 45f, _map.BaseWaterY - 0.6f, 50f + (i % 2) * 35f), 0f, 1.8f);
             }
             // 포구 가로등 (호안을 따라, 방파제 위)
-            for (float x = -30f; x <= 100f; x += 26f) Streetlight(new Vector3(x, _map.LandY, -45.5f));
-            for (float z = -28f; z <= 18f; z += 22f) Streetlight(new Vector3(SeocheonDef.RedStem.xMax - 0.8f, _map.LandY, z));
-            for (float x = -170f; x <= -70f; x += 33f) Streetlight(new Vector3(x, _map.LandY, -58.5f));
+            for (float x = -30f; x <= 100f; x += 26f) _props.Streetlight(new Vector3(x, _map.LandY, -45.5f));
+            for (float z = -28f; z <= 18f; z += 22f) _props.Streetlight(new Vector3(SeocheonDef.RedStem.xMax - 0.8f, _map.LandY, z));
+            for (float x = -170f; x <= -70f; x += 33f) _props.Streetlight(new Vector3(x, _map.LandY, -58.5f));
             WorldBuilder.AddSign(_root, "홍원항", new Vector3(30f, _map.LandY + 5.5f, -49f), new Color(0.6f, 0.85f, 1f));
-        }
-
-        void Streetlight(Vector3 basePos)
-        {
-            Vector3 head;
-            if (KenneyProps.Available)
-            {
-                const float lampH = 5.5f;
-                KenneyProps.Spawn("Kenney/Roads/light-curved", _root, basePos, 180f, lampH);
-                float s = lampH / 0.67f;
-                head = basePos + new Vector3(0f, 0.62f * s, 0.19f * s);
-            }
-            else
-            {
-                Mats.Prim(PrimitiveType.Cylinder, "Pole", _root, basePos + Vector3.up * 2f, new Vector3(0.12f, 2f, 0.12f), Mats.Lit(new Color(0.2f, 0.22f, 0.25f)), false);
-                head = basePos + Vector3.up * 4.1f;
-            }
-            var bulb = Mats.Prim(PrimitiveType.Sphere, "Bulb", _root, head, new Vector3(0.45f, 0.18f, 0.45f), Mats.Lit(new Color(0.2f, 0.22f, 0.25f)), false);
-            _bulbs.Add(bulb.GetComponent<Renderer>());
-            AddLamp(head - Vector3.up * 0.2f, new Color(1f, 0.82f, 0.55f), 14f, 1.6f);
         }
 
         void BuildVillage()
@@ -617,35 +471,12 @@ namespace Fishing.World
 
         void BuildShop()
         {
-            var p = _map.ShopPos;
-            var shop = new GameObject("TackleShop").transform;
-            shop.SetParent(_root, false);
-            shop.localPosition = p;
-            Mats.Prim(PrimitiveType.Cube, "Body", shop, new Vector3(0f, 1.5f, 0f), new Vector3(7f, 3f, 4.5f), Mats.Lit(new Color(0.93f, 0.9f, 0.84f)));
-            Mats.Prim(PrimitiveType.Cube, "Roof", shop, new Vector3(0f, 3.2f, 0f), new Vector3(7.6f, 0.4f, 5.2f), Mats.Lit(new Color(0.2f, 0.45f, 0.35f)));
-            for (int i = 0; i < 6; i++)
-            {
-                var c = i % 2 == 0 ? new Color(0.85f, 0.25f, 0.2f) : new Color(0.97f, 0.97f, 0.95f);
-                Mats.Prim(PrimitiveType.Cube, "Awning", shop, new Vector3(-3f + i * 1.2f, 2.6f, 2.75f), new Vector3(1.2f, 0.12f, 1.4f),
-                    Mats.Lit(c), false, Quaternion.Euler(-18f, 0f, 0f));
-            }
-            Mats.Prim(PrimitiveType.Cube, "Counter", shop, new Vector3(0f, 0.55f, 3.5f), new Vector3(5f, 1.1f, 0.6f), Mats.Lit(new Color(0.55f, 0.4f, 0.26f)));
-            var light = new GameObject("ShopLight").AddComponent<Light>();
-            light.transform.SetParent(shop, false);
-            light.transform.localPosition = new Vector3(0f, 2.4f, 3.4f);
-            light.type = LightType.Point;
-            light.range = 7f;
-            light.intensity = 1.3f;
-            light.color = new Color(1f, 0.85f, 0.6f);
-            light.shadows = LightShadows.None;
-            var owner = NpcAngler.Spawn(shop, new Vector3(1.2f, 0f, 2.75f), 0f, new CharacterLook
+            _props.TackleShop(_map.ShopPos, 0f, "서천 낚시점", new CharacterLook
             {
                 Name = "서천 낚시점 박사장", Title = "서천 낚시점", TopModel = "Top_Shirt", Hair = "Hair_Buzzed", HairColor = new Color(0.3f, 0.3f, 0.3f),
                 Shirt = new Color(0.35f, 0.5f, 0.65f), VestColor = new Color(0.7f, 0.6f, 0.4f), Pants = new Color(0.25f, 0.25f, 0.28f), Hat = true, HatStyle = 1,
                 HatColor = new Color(0.85f, 0.3f, 0.2f)
-            }, NpcAngler.Role.Talker);
-            owner.NpcId = "shop";
-            WorldBuilder.AddSign(shop, "서천 낚시점", new Vector3(0f, 3.9f, 2.3f), new Color(0.6f, 0.85f, 1f));
+            }, new Color(0.2f, 0.45f, 0.35f));
         }
 
         void BuildFarIslands()

@@ -4,6 +4,9 @@
 //  - 반사: Standard BRDF + 하늘만 찍는 실시간 반사 프로브 (DayNightCycle)
 //  - 밤 불빛 기둥: WaterGlints가 넘긴 광원(가로등·다리 조명·도시 불빛)마다, 잔물결로 흔들린 반사 방향과 광원 방향의 차이를
 //    가로(좌우)는 좁게 세로(보는 쪽)는 넓게 받아 물 위에 세로로 길게 늘어진 빛을 그린다
+//  - 물가 거품: 맵이 구워 둔 해저 높이 텍스처(_SeabedTex, WaterSurface.SetSeabed)로 수심과 해저 경사를 구해
+//    물가까지의 수평 거리를 어림하고, 그 안쪽 몇 m에 파도 따라 밀려오는 흰 거품 띠와 바닥이 비치는 밝은 얕은 물을 그린다.
+//    수면 높이는 버텍스 파도를 포함하므로 거품 경계가 파도에 맞춰 들락날락한다 (물때가 오르내리면 거품도 따라간다)
 Shader "Fishing/Water"
 {
     Properties
@@ -19,6 +22,12 @@ Shader "Fishing/Water"
         _WaveAmp ("Wave Amplitude", Float) = 0.05
         _WaveLen ("Wave Length", Float) = 9
         _Smoothness ("Smoothness", Range(0,1)) = 0.93
+        _SeabedTex ("Seabed Height (R, world y)", 2D) = "black" {}
+        _SeabedRect ("Seabed Rect (xmin, zmin, 1/w, 1/h)", Vector) = (0,0,0,0)
+        _SeabedStep ("Seabed texel (u, v, meters x, meters z)", Vector) = (0,0,1,1)
+        _HasSeabed ("Has Seabed", Float) = 0
+        _FoamWidth ("Foam Width (m from waterline)", Float) = 4.5
+        _FoamColor ("Foam Color", Color) = (0.92,0.95,0.96,1)
     }
     SubShader
     {
@@ -36,6 +45,9 @@ Shader "Fishing/Water"
         float4 _GlintPos[48];
         float4 _GlintCol[48];
         float _GlintCount, _GlintNight;
+        sampler2D _SeabedTex;
+        float4 _SeabedRect, _SeabedStep, _FoamColor;
+        float _HasSeabed, _FoamWidth;
 
         struct Input
         {
@@ -71,6 +83,40 @@ Shader "Fishing/Water"
             o.Metallic = 0;
             o.Smoothness = _Smoothness;
             o.Alpha = 1;
+
+            // 얕은 물과 물가 거품
+            if (_HasSeabed > 0.5)
+            {
+                float2 uv = (p - _SeabedRect.xy) * _SeabedRect.zw;
+                if (uv.x > 0 && uv.x < 1 && uv.y > 0 && uv.y < 1)
+                {
+                    float bed = tex2D(_SeabedTex, uv).r;
+                    float depth = IN.worldPos.y - bed;
+                    // 해저 경사 (m/m) → 물가까지 수평 거리 어림. 벽(호안·방파제)은 경사가 커서 띠가 얇다
+                    float bx = (tex2D(_SeabedTex, uv + float2(_SeabedStep.x, 0)).r - tex2D(_SeabedTex, uv - float2(_SeabedStep.x, 0)).r) / (2 * _SeabedStep.z);
+                    float bz = (tex2D(_SeabedTex, uv + float2(0, _SeabedStep.y)).r - tex2D(_SeabedTex, uv - float2(0, _SeabedStep.y)).r) / (2 * _SeabedStep.w);
+                    float slope = max(length(float2(bx, bz)), 0.03);
+                    float dist = max(depth, 0) / slope;
+
+                    // 바닥이 비치는 얕은 물: 수심 2.5m보다 얕으면 밝고 맑게
+                    float shallow = 1 - saturate(depth / 2.5);
+                    o.Albedo = lerp(o.Albedo, o.Albedo * 1.3 + float3(0.07, 0.08, 0.06), shallow * shallow * 0.75);
+
+                    // 거품: 물가 쪽으로 밀려오는 띠 + 노이즈로 끊긴 가장자리
+                    float t = _Time.y;
+                    float n1 = tex2D(_NormalTex, p * 0.21 + t * float2(0.021, 0.013)).r;
+                    float n2 = tex2D(_NormalTex, p * 0.57 - t * float2(0.017, 0.024)).g;
+                    float noise = saturate(n1 * 0.6 + n2 * 0.4);
+                    float edge = saturate(1 - dist / _FoamWidth);
+                    float lap = sin(dist * 2.1 + t * 1.7 + noise * 7.0) * 0.5 + 0.5;
+                    float foam = saturate(edge * edge * 1.5 + edge * lap * 0.75);
+                    foam *= smoothstep(0.32, 0.62, noise + edge * 0.45);
+                    foam = saturate(foam + step(depth, 0.05) * 0.9);   // 물이 땅에 닿는 선은 늘 하얗게
+                    o.Albedo = lerp(o.Albedo, _FoamColor.rgb, foam);
+                    o.Smoothness = lerp(o.Smoothness, 0.35, foam);
+                    o.Normal = normalize(lerp(n, float3(0, 0, 1), foam * 0.8));
+                }
+            }
 
             // 밤 불빛 기둥
             if (_GlintNight > 0.01)

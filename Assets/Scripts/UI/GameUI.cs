@@ -121,7 +121,7 @@ namespace Fishing.UI
             if (Dex.IsOpen) Dex.Tick();
             NearbyNpc = FindNearbyNpc();
             // 대화 중이거나 카메라가 캐릭터에 바짝 붙는 연출(캐스팅·챔질·환호) 중에는 내 이름표를 숨긴다
-            Game.Player.NameTagVisible = !Dialog.IsOpen && Game.CameraRig.Shot == Fishing.PlayerSystems.CameraRig.ShotKind.Follow;
+            Game.Player.NameTagVisible = !Dialog.IsOpen && NearbyNpc == null && Game.CameraRig.Shot == Fishing.PlayerSystems.CameraRig.ShotKind.Follow;
             Result.Animate();
             HandleKeys();
         }
@@ -169,9 +169,9 @@ namespace Fishing.UI
                     // 처음 온 바다: 어촌계 환영 선물로 바다 미끼
                     Game.Profile.AddItem("bait_krill", 20);
                     Game.Profile.AddItem("bait_seaworm", 20);
-                    bool west = FieldMap.Id == "seocheon";
-                    if (west) Game.Profile.AddItem("bait_egi", 5);
-                    Game.Toast($"{FieldMap.ShortName}에 처음 오셨군요! 어촌계 환영 선물: 크릴 20, 청갯지렁이 20" + (west ? ", 에기 5" : ""), ToastKind.Great);
+                    bool egi = System.Array.IndexOf(Fishing.Data.FishSpecies.EgiMaps, FieldMap.Id) >= 0;
+                    if (egi) Game.Profile.AddItem("bait_egi", 5);
+                    Game.Toast($"{FieldMap.ShortName}에 처음 오셨군요! 어촌계 환영 선물: 크릴 20, 청갯지렁이 20" + (egi ? ", 에기 5" : ""), ToastKind.Great);
                 }
             }
             // 이 낚시터에서 쓰지 않는 미끼를 들고 있으면 맞는 미끼로 바꾼다
@@ -260,7 +260,7 @@ namespace Fishing.UI
             if (Settings.Down(KeyAction.Save)) SaveNow();
 
             if (idle && !BlockingPanelOpen)
-                for (int i = 0; i < 6; i++)
+                for (int i = 0; i < HudView.MaxBaitSlots; i++)
                     if (Input.GetKeyDown(KeyCode.Alpha1 + i)) Hud.SelectBait(i);
         }
 

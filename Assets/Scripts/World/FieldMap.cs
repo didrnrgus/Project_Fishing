@@ -37,6 +37,10 @@ namespace Fishing.World
         public float BaseWaterY = 0.2f;
         /// <summary>물 색 (깊은 곳, 얕은 곳). a가 0이면 셰이더 기본값 (한강·남해의 청록).</summary>
         public Color WaterDeep, WaterShallow;
+        /// <summary>안개를 더 짙게 (흐림·비·새벽에 크게). 영흥도처럼 해무가 잦은 곳.</summary>
+        public float FogBoost;
+        /// <summary>땅이 늘 눈으로 덮여 있다 (발소리 = 눈).</summary>
+        public bool SnowGround;
 
         // 격자 (row 0이 시작 둔치/해안에 가장 가깝다)
         public float GridMinX, GridMinZ, CellW, CellH;
@@ -57,6 +61,15 @@ namespace Fishing.World
         public readonly List<MapMark> Marks = new List<MapMark>();
 
         public abstract bool IsWater(Vector3 p);
+
+        /// <summary>
+        /// 물가 거품용 해저(물 밑 땅) 높이. 물이 아닌 곳(둔치·방파제)은 땅 높이. 기본: 물이면 수심 3m.
+        /// 지형이 있는 맵은 지형 높이를 돌려준다.
+        /// </summary>
+        public virtual float SeabedAt(float x, float z) => IsWater(new Vector3(x, WaterY, z)) ? BaseWaterY - 3f : LandY;
+
+        /// <summary>해저 높이를 구울 범위 (월드 x, z, 너비, 높이).</summary>
+        public virtual Rect SeabedArea => new Rect(MinX, GridMinZ - 40f, MaxX - MinX, GridMaxZ - GridMinZ + 80f);
         public abstract bool IsWalkable(Vector3 p);
         public abstract string AreaName(Vector3 p);
 
@@ -130,9 +143,18 @@ namespace Fishing.World
         public static readonly FieldMapDef HanRiver = new HanRiverDef();
         public static readonly FieldMapDef Honghyeon = new HonghyeonDef();
         public static readonly FieldMapDef Seocheon = new SeocheonDef();
+        // 해안 맵 틀 (CoastMapDef + KoreaCoasts 사양)
+        public static readonly FieldMapDef Yeongheung = new CoastMapDef(KoreaCoasts.Yeongheung());
+        public static readonly FieldMapDef Taean = new CoastMapDef(KoreaCoasts.Taean());
+        public static readonly FieldMapDef Samcheok = new CoastMapDef(KoreaCoasts.Samcheok());
+        public static readonly FieldMapDef Deungdae = new CoastMapDef(KoreaCoasts.Deungdae());
+        public static readonly FieldMapDef Heonhwa = new CoastMapDef(KoreaCoasts.Heonhwa());
+        public static readonly FieldMapDef Yokji = new CoastMapDef(KoreaCoasts.Yokji());
+        public static readonly FieldMapDef Cheongjin = new CoastMapDef(KoreaCoasts.Cheongjin());
+        public static readonly FieldMapDef Geomun = new CoastMapDef(KoreaCoasts.Geomun());
 
-        /// <summary>열린 낚시터 (도감 탭·대물 도전 순서).</summary>
-        public static readonly FieldMapDef[] All = { HanRiver, Honghyeon, Seocheon };
+        /// <summary>열린 낚시터 (입장 레벨 순, 도감 탭·대물 도전 순서).</summary>
+        public static readonly FieldMapDef[] All = { HanRiver, Honghyeon, Seocheon, Yeongheung, Taean, Samcheok, Deungdae, Heonhwa, Yokji, Cheongjin, Geomun };
 
         public static FieldMapDef Get(string id)
         {

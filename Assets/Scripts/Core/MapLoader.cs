@@ -20,6 +20,7 @@ namespace Fishing.Core
             map.WaterY = map.BaseWaterY;
             Game.World = map.BuildWorld(lamps, bulbs);
             WaterSurface.SetColors(map.WaterDeep, map.WaterShallow);
+            WaterSurface.SetSeabed(map);
             // 가로등은 모두 물에 비친다 (다리·도시 불빛은 맵이 따로 넣는다)
             foreach (var l in lamps) if (l != null) WaterGlints.Add(l.transform.position, l.color, 1f);
             WaterGlints.Upload();

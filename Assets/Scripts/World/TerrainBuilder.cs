@@ -84,7 +84,7 @@ namespace Fishing.World
             var terrain = go.GetComponent<Terrain>();
             var shader = Shader.Find("Nature/Terrain/Standard");
             if (shader != null) terrain.materialTemplate = new Material(shader);
-            terrain.heightmapPixelError = 4f;
+            terrain.heightmapPixelError = 2f; // 4면 멀리서 지형이 길·앞마당 위로 솟아 깜빡인다
             terrain.basemapDistance = 250f;
             terrain.drawTreesAndFoliage = false;
             terrain.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;

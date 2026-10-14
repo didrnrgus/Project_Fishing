@@ -262,6 +262,12 @@ namespace Fishing.Angling
                     ToIdle();
                     return;
                 }
+                if (CastBlocked(Game.Player.RodTip.position, _castTarget, out string blocker))
+                {
+                    Game.Toast($"{blocker}에 걸려서 던질 수 없습니다. 앞이 트인 쪽으로 던지세요.", ToastKind.Warn);
+                    ToIdle();
+                    return;
+                }
                 Game.Player.RodPitch = 2f;
                 Game.Player.RodPitchSpeed = 40f;   // 채찍처럼 앞으로 휙
                 Game.Player.BodyLean = -16f;
@@ -319,7 +325,7 @@ namespace Fishing.Angling
             var origin = Game.Player.transform.position;
             var target = origin + _castDir * distance;
             target.y = FieldMap.WaterY + 0.03f;
-            CastTargetIsWater = FieldMap.IsWater(target);
+            CastTargetIsWater = FieldMap.IsWater(target) && !CastBlocked(Game.Player.RodTip.position, target, out _);
 
             _marker.transform.position = target;
             _markerRenderer.material.color = CastTargetIsWater ? new Color(0.3f, 1f, 0.9f, 0.45f) : new Color(1f, 0.3f, 0.3f, 0.45f);
@@ -335,6 +341,67 @@ namespace Fishing.Angling
                 p.y = Mathf.Lerp(start.y, target.y, t);
                 _aimArc.SetPosition(i, p);
             }
+        }
+
+        /// <summary>
+        /// 찌가 날아갈 궤적(Bobber.Launch와 같은 포물선)에 막는 것이 있는지. 등대·NPC·건물·나무·언덕 등.
+        /// 내 캐릭터, 타고 있는 배, 찌는 빼고, 출발점 1.5m 안(낚싯대 바로 앞)도 뺀다.
+        /// </summary>
+        public static bool CastBlocked(Vector3 from, Vector3 to, out string what)
+        {
+            what = null;
+            to.y = FieldMap.WaterY;
+            float dist = Vector3.Distance(from, to);
+            float arc = dist * 0.2f + 1f;
+            const int steps = 14;
+            var prev = from;
+            for (int i = 1; i <= steps; i++)
+            {
+                float t = i / (float)steps;
+                var p = Vector3.Lerp(from, to, t);
+                p.y += Mathf.Sin(t * Mathf.PI) * arc;
+                if (i == steps) p.y = FieldMap.WaterY + 0.3f; // 수면에 닿기 직전까지만
+                var seg = p - prev;
+                foreach (var hit in Physics.RaycastAll(prev, seg.normalized, seg.magnitude, ~0, QueryTriggerInteraction.Ignore))
+                {
+                    if (Ignore(hit.collider) || Vector3.Distance(hit.point, from) < 1.5f) continue;
+                    what = Describe(hit.collider);
+                    return true;
+                }
+                prev = p;
+            }
+            return false;
+        }
+
+        static bool Ignore(Collider c)
+        {
+            var t = c.transform;
+            if (Game.Player != null && t.IsChildOf(Game.Player.transform)) return true;
+            if (Game.Boat != null && Game.Boat.Hull != null && t.IsChildOf(Game.Boat.Hull)) return true;
+            return c.name == "Water" || c.name.StartsWith("Bobber");
+        }
+
+        /// <summary>막은 물체의 이름 (안내 문구용, 받침 조사가 맞게 '…에 걸려서').</summary>
+        static string Describe(Collider c)
+        {
+            if (c is TerrainCollider) return "언덕";
+            var npc = c.GetComponentInParent<Fishing.Characters.NpcAngler>();
+            if (npc != null) return npc.Look?.Name ?? "사람";
+            for (var t = c.transform; t != null; t = t.parent)
+            {
+                string n = t.name;
+                if (n.Contains("Lighthouse")) return "등대";
+                if (n.Contains("Pavilion")) return "정자";
+                if (n.Contains("TackleShop")) return "낚시점";
+                if (n.StartsWith("tree_") || n.Contains("Camellia") || n.Contains("Tree")) return "나무";
+                if (n.StartsWith("building")) return "건물";
+                if (n.StartsWith("light-") || n.Contains("Pole") || n.Contains("Lamp")) return "가로등";
+                if (n.StartsWith("boat") || n.Contains("Boat")) return "배";
+                if (n.Contains("Stack") || n.Contains("Rock") || n.Contains("Boulder")) return "바위";
+                if (n.Contains("Bridge") || n.Contains("Pier") || n.Contains("Pylon")) return "다리";
+                if (n.Contains("Crane") || n.Contains("Warehouse")) return "항구 시설";
+            }
+            return "장애물";
         }
 
         void HideAim()

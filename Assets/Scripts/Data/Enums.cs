@@ -26,7 +26,7 @@ namespace Fishing.Data
         public static string Of(Habitat h, bool sea) => !sea ? Of(h) : h switch
         {
             Habitat.Shallow => "모래 여울",
-            Habitat.Deep => "먼바다",
+            Habitat.Deep => "깊은 바다",
             Habitat.Rocky => "갯바위·암초",
             Habitat.Weed => "해초밭",
             _ => h.ToString()

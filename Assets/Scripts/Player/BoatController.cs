@@ -57,6 +57,8 @@ namespace Fishing.PlayerSystems
         const float PaddleSpeed = 1.2f;
 
         Transform _boat, _seat, _bow, _stern;
+        /// <summary>떠 있는 배 몸체 (없으면 null). 캐스팅 장애물 검사에서 뺀다.</summary>
+        public Transform Hull => _boat;
         float _halfLen, _halfWidth;
         float _yaw;
         Vector3 _pos;
@@ -331,7 +333,15 @@ namespace Fishing.PlayerSystems
                 var p = c + rot * new Vector3(j * _halfWidth, 0f, i * _halfLen);
                 if (!FieldMap.IsWater(p)) return false;
             }
-            return FieldMap.IsWater(c + rot * new Vector3(0f, 0f, _halfLen + 0.3f));
+            if (!FieldMap.IsWater(c + rot * new Vector3(0f, 0f, _halfLen + 0.3f))) return false;
+            // 물 위에 있는 것(정박한 배·가두리·잔교·바위기둥 …)을 뚫고 지나가지 않게
+            foreach (var col in Physics.OverlapBox(new Vector3(c.x, FieldMap.WaterY + 0.7f, c.z), new Vector3(_halfWidth, 0.5f, _halfLen), rot, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (col is TerrainCollider || (_boat != null && col.transform.IsChildOf(_boat))) continue;
+                if (Game.Player != null && col.transform.IsChildOf(Game.Player.transform)) continue;
+                return false;
+            }
+            return true;
         }
 
         // ---------------- 모델 ----------------
@@ -438,7 +448,7 @@ namespace Fishing.PlayerSystems
         void BuildCruiser()
         {
             if (KenneyProps.Available)
-                KenneyProps.Spawn("Kenney/Watercraft/boat-fishing-small", _boat, new Vector3(0f, -0.55f, 0f), 0f, 0f, 9f);
+                KenneyProps.Spawn("Kenney/Watercraft/boat-fishing-small", _boat, new Vector3(0f, -0.55f, 0f), 0f, 0f, 9f, solid: false);
             else
                 Mats.Prim(PrimitiveType.Cube, "Hull", _boat, new Vector3(0f, 0.3f, 0f), new Vector3(3f, 1.2f, 8.6f), Mats.Lit(new Color(0.9f, 0.9f, 0.92f), 0.5f), false);
             Fishing.Characters.NpcAngler.Spawn(_boat, new Vector3(0.4f, 0.75f, -1.8f), 0f, new Fishing.Characters.CharacterLook
@@ -463,7 +473,7 @@ namespace Fishing.PlayerSystems
             {
                 // Kenney Watercraft Kit 모터보트 (CC0). 길이 5.2m, 바닥이 물에 0.4m 잠긴다
                 // 뒤쪽에 수상스키 견인 아치가 있는 모터보트. 뱃머리가 +Z
-                KenneyProps.Spawn("Kenney/Watercraft/boat-speed-a", _boat, new Vector3(0f, -0.4f, 0f), 0f, 0f, 5.2f);
+                KenneyProps.Spawn("Kenney/Watercraft/boat-speed-a", _boat, new Vector3(0f, -0.4f, 0f), 0f, 0f, 5.2f, solid: false);
                 _seat = Point("Seat", new Vector3(0f, 0.62f, -0.2f));
                 _bow = Point("Bow", new Vector3(0f, 0.72f, 1.6f));
                 _stern = Point("Stern", new Vector3(0f, 0f, -2.6f));

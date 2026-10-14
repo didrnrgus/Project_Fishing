@@ -259,8 +259,15 @@ namespace Fishing.PlayerSystems
             foreach (var r in Model.GetComponentsInChildren<Renderer>()) r.enabled = visible;
         }
 
+        float _titleCheckAt;
+
         void Update()
         {
+            if (Time.time >= _titleCheckAt && Game.Profile != null && CharacterFactory.Available)
+            {
+                _titleCheckAt = Time.time + 1f;
+                if (Game.Profile.CurrentTitle != _tagTitle) SetNameTag(Game.Profile.BuildLook());
+            }
             MovedThisFrame = false;
             if (Game.Mode == GameMode.Lobby) return;
             var input = Vector2.zero;

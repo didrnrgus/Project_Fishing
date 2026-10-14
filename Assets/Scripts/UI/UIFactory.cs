@@ -318,7 +318,18 @@ namespace Fishing.UI
             return t;
         }
 
-        static Material _worldMat;
+        static Material _worldMat, _worldMatOneSided;
+
+        /// <summary>뒤에서는 안 보이는 글자로 바꾼다 (간판·표지판). 이름표처럼 늘 카메라를 보는 글자에는 필요 없다.</summary>
+        public static void OneSided(TextMeshPro t)
+        {
+            if (_worldMatOneSided == null)
+            {
+                _worldMatOneSided = new Material(WorldMaterial(t.fontSharedMaterial)) { name = "World Text (One Sided)" };
+                _worldMatOneSided.SetFloat(ShaderUtilities.ShaderTag_CullMode, (float)UnityEngine.Rendering.CullMode.Back);
+            }
+            t.fontSharedMaterial = _worldMatOneSided;
+        }
 
         /// <summary>
         /// 월드 글자용 머티리얼: 기본 그림자는 글자 크기에 비례해서 가까이서 보면 두껍게 번지므로, 짧고 또렷한 그림자로 바꾼다.

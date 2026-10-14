@@ -201,7 +201,7 @@ namespace Fishing.Audio
         public void UiClick() { if (_uiClick != null) Play(_uiClick, 0.45f, Random.Range(0.96f, 1.04f)); }
         public void UiError() { if (_uiError != null) Play(_uiError, 0.5f); }
 
-        /// <summary>발소리. 겨울 한강은 눈, 나무 데크·잔교·배는 나무, 길·방파제는 콘크리트, 나머지(풀·모래·흙)는 풀.</summary>
+        /// <summary>발소리. 겨울 한강·청진포구 땅은 눈, 나무 데크·잔교·배는 나무, 길·방파제는 콘크리트, 나머지(풀·모래·흙)는 풀.</summary>
         public void Footstep(Vector3 feet, bool running)
         {
             if (!_steps.TryGetValue(Surface(feet), out var clips) || clips[0] == null) return;
@@ -212,8 +212,9 @@ namespace Fishing.Audio
         static string Surface(Vector3 feet)
         {
             if (World.FieldMap.Id == "hangang" && Fishing.Data.Seasons.IsWinter) return "snow";
-            if (!Physics.Raycast(feet + Vector3.up * 0.5f, Vector3.down, out var hit, 1.5f, ~0, QueryTriggerInteraction.Ignore)) return "grass";
-            if (hit.collider is TerrainCollider) return "grass";
+            bool snow = World.FieldMap.Current.SnowGround;
+            if (!Physics.Raycast(feet + Vector3.up * 0.5f, Vector3.down, out var hit, 1.5f, ~0, QueryTriggerInteraction.Ignore)) return snow ? "snow" : "grass";
+            if (hit.collider is TerrainCollider) return snow ? "snow" : "grass";
             string n = hit.collider.name.ToLowerInvariant();
             if (n.Contains("deck") || n.Contains("pier") || n.Contains("plank") || n.Contains("boat") || n.Contains("wood") || n.Contains("bridge") || n.Contains("pavilion"))
                 return "wood";

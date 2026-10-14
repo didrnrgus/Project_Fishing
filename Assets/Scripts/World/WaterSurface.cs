@@ -21,6 +21,37 @@ namespace Fishing.World
             Material.SetColor("_ShallowColor", shallow.a > 0f ? shallow : _defaultShallow.Value);
         }
 
+        static Texture2D _seabed;
+
+        /// <summary>
+        /// 물가 거품용 해저 높이 텍스처를 맵에서 굽는다 (1m 간격, 최대 512칸). 물 셰이더가 수심·경사로 물가 거품을 그린다.
+        /// MapLoader가 월드를 지은 뒤 부른다 (지형 높이 함수가 준비된 뒤).
+        /// </summary>
+        public static void SetSeabed(FieldMapDef map)
+        {
+            if (Material == null) return;
+            var area = map.SeabedArea;
+            int w = Mathf.Clamp(Mathf.CeilToInt(area.width), 16, 512), h = Mathf.Clamp(Mathf.CeilToInt(area.height), 16, 512);
+            if (_seabed == null || _seabed.width != w || _seabed.height != h)
+            {
+                if (_seabed != null) Object.Destroy(_seabed);
+                _seabed = new Texture2D(w, h, TextureFormat.RFloat, false, true) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, name = "Seabed" };
+            }
+            var px = new float[w * h];
+            for (int z = 0; z < h; z++)
+            {
+                float wz = area.yMin + (z + 0.5f) / h * area.height;
+                for (int x = 0; x < w; x++)
+                    px[z * w + x] = map.SeabedAt(area.xMin + (x + 0.5f) / w * area.width, wz);
+            }
+            _seabed.SetPixelData(px, 0);
+            _seabed.Apply(false, false);
+            Material.SetTexture("_SeabedTex", _seabed);
+            Material.SetVector("_SeabedRect", new Vector4(area.xMin, area.yMin, 1f / area.width, 1f / area.height));
+            Material.SetVector("_SeabedStep", new Vector4(1f / w, 1f / h, area.width / w, area.height / h));
+            Material.SetFloat("_HasSeabed", 1f);
+        }
+
         public static GameObject Create(Transform parent, Vector3 center, Vector2 size, float cell)
         {
             int nx = Mathf.Max(2, Mathf.CeilToInt(size.x / cell)) + 1;

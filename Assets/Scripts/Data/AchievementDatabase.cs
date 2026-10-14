@@ -34,6 +34,14 @@ namespace Fishing.Data
         static bool Dex(Core.PlayerProfile p, string id, float minLen) => p.Dex(id) is { } d && d.maxLength >= minLen;
         static int DexCount(Core.PlayerProfile p, string map) => FishDatabase.DexOf(map).Count(s => p.Dex(s.Id) != null);
         static int DexTotal(string map) => FishDatabase.DexOf(map).Count();
+        /// <summary>여러 맵에 걸친 어종 (겹치면 하나로).</summary>
+        static IEnumerable<FishSpecies> DexOfMaps(IEnumerable<string> maps) => maps.SelectMany(FishDatabase.DexOf).Distinct();
+        static (int, int) DexProgress(Core.PlayerProfile p, IEnumerable<string> maps)
+        {
+            var list = DexOfMaps(maps).ToList();
+            return (list.Count(s => p.Dex(s.Id) != null), list.Count);
+        }
+        static IEnumerable<string> AllMapIds => FishingAreas.Korea.Where(a => a.Open).Select(a => a.MapId);
 
         public static readonly List<AchievementDef> All = new List<AchievementDef>
         {
@@ -65,7 +73,7 @@ namespace Fishing.Data
                 Done = p => (p.Dex("octopus")?.count ?? 0) >= 10, Progress = p => (p.Dex("octopus")?.count ?? 0, 10) },
             new AchievementDef { Id = "smelt", Name = "얼음 위의 겨울", Desc = "겨울 한강 얼음 구멍에서 빙어 낚기", Conch = 2,
                 Done = p => p.Dex("smelt") != null },
-            new AchievementDef { Id = "deeplegend", Name = "전설의 심해어", Desc = "홍현 먼바다에서 다금바리나 돗돔 낚기", Title = "심해 사냥꾼", Conch = 5,
+            new AchievementDef { Id = "deeplegend", Name = "전설의 심해어", Desc = "남해 먼바다(홍현·거문도)에서 다금바리나 돗돔 낚기", Title = "심해 사냥꾼", Conch = 5,
                 Done = p => p.Dex("dageumbari") != null || p.Dex("dotdom") != null },
             new AchievementDef { Id = "combo5", Name = "카운터 장인", Desc = "한 번의 파이팅에서 카운터 콤보 5", Title = "카운터 장인", Conch = 3,
                 Done = p => p.Data.bestCombo >= 5, Progress = p => (p.Data.bestCombo, 5) },
@@ -89,6 +97,25 @@ namespace Fishing.Data
                 Done = p => p.Data.tournament.points >= 80, Progress = p => (p.Data.tournament.points, 80) },
             new AchievementDef { Id = "level25", Name = "만렙", Desc = "레벨 25 달성", Conch = 10,
                 Done = p => p.Data.level >= 25, Progress = p => (p.Data.level, 25) },
+
+            // ---- 전국 낚시터 (영흥도·태안·삼척·등대섬·헌화로·욕지도·청진포구·거문도) ----
+            new AchievementDef { Id = "allmaps", Name = "전국 일주", Desc = "국내 낚시터 11곳에 모두 가 보기", Title = "전국구 조사", Conch = 10,
+                Done = p => AllMapIds.All(id => p.Data.visitedMaps.Contains(id)),
+                Progress = p => (AllMapIds.Count(id => p.Data.visitedMaps.Contains(id)), AllMapIds.Count()) },
+            new AchievementDef { Id = "dexeast", Name = "동해 박사", Desc = "동해(헌화로·삼척·등대섬·청진포구)의 모든 어종을 도감에 기록", Title = "동해 박사", Conch = 10,
+                Done = p => DexProgress(p, FishSpecies.EastSea) is var (a, b) && a >= b, Progress = p => DexProgress(p, FishSpecies.EastSea) },
+            new AchievementDef { Id = "dexkorea", Name = "국내 도감 완성", Desc = "국내 모든 낚시터의 어종을 도감에 기록", Title = "어류 박사", Conch = 20,
+                Done = p => DexProgress(p, AllMapIds) is var (a, b) && a >= b, Progress = p => DexProgress(p, AllMapIds) },
+            new AchievementDef { Id = "pollock", Name = "명태의 고향", Desc = "청진포구 명태 어군에서 명태 낚기", Title = "명태잡이", Conch = 10,
+                Done = p => p.Dex("pollock") != null },
+            new AchievementDef { Id = "amberjack", Name = "미터급 부시리", Desc = "110cm가 넘는 부시리 낚기 (거문도·욕지도)", Title = "부시리 헌터", Conch = 8,
+                Done = p => Dex(p, "amberjack", 110f) },
+            new AchievementDef { Id = "giantoctopus", Name = "동해의 거인", Desc = "대문어 낚기", Conch = 5,
+                Done = p => p.Dex("giantoctopus") != null },
+            new AchievementDef { Id = "squid20", Name = "집어등 아래에서", Desc = "오징어 20마리 낚기", Conch = 3,
+                Done = p => (p.Dex("squid")?.count ?? 0) >= 20, Progress = p => (p.Dex("squid")?.count ?? 0, 20) },
+            new AchievementDef { Id = "hairtail", Name = "5지 갈치", Desc = "110cm가 넘는 갈치 낚기", Conch = 5,
+                Done = p => Dex(p, "hairtail", 110f) },
         };
 
         public static AchievementDef Get(string id) => All.FirstOrDefault(a => a.Id == id);

@@ -43,10 +43,19 @@ namespace Fishing.Data
         public static readonly string[] Both = { "hangang", "honghyeon" };
         /// <summary>서천 앞바다(서해)에만.</summary>
         public static readonly string[] WestOnly = { "seocheon" };
+
+        // 바다 지역 (낚시터 id)
+        public static readonly string[] SouthSea = { "honghyeon", "yokji", "geomun" };
+        public static readonly string[] WestSea = { "seocheon", "yeongheung", "taean" };
+        public static readonly string[] EastSea = { "heonhwa", "samcheok", "deungdae", "cheongjin" };
+        /// <summary>모든 바다 낚시터 (바다 미끼를 판다).</summary>
+        public static readonly string[] AllSeas = { "honghyeon", "yokji", "geomun", "seocheon", "yeongheung", "taean", "heonhwa", "samcheok", "deungdae", "cheongjin" };
         /// <summary>남해·서해 모두.</summary>
-        public static readonly string[] Seas = { "honghyeon", "seocheon" };
+        public static readonly string[] Seas = { "honghyeon", "yokji", "geomun", "seocheon", "yeongheung", "taean" };
         /// <summary>바다 미끼를 파는 낚시터.</summary>
-        public static readonly string[] SeaMaps = Seas;
+        public static readonly string[] SeaMaps = AllSeas;
+        /// <summary>에기(가짜 새우 미끼)를 파는 곳: 서해(주꾸미·갑오징어)와 동해(오징어·대문어).</summary>
+        public static readonly string[] EgiMaps = { "seocheon", "yeongheung", "taean", "heonhwa", "samcheok", "deungdae", "cheongjin" };
 
         public float WeightGrams(float len) => WeightCoef * len * len * len;
         public bool IsTrophy(float len) => !IsJunk && len >= TrophyLen;
@@ -63,6 +72,11 @@ namespace Fishing.Data
         static readonly string[] Sea = FishSpecies.SeaOnly;
         static readonly string[] Seas = FishSpecies.Seas;
         static readonly string[] West = FishSpecies.WestOnly;
+        static readonly string[] South = FishSpecies.SouthSea;
+        static readonly string[] WestSea = FishSpecies.WestSea;
+        static readonly string[] East = FishSpecies.EastSea;
+        static readonly string[] AllSeas = FishSpecies.AllSeas;
+        static string[] M(params string[] ids) => ids;
 
         public static readonly List<FishSpecies> All = new List<FishSpecies>
         {
@@ -158,47 +172,47 @@ namespace Fishing.Data
 
             // ================= 홍현 앞바다 (남해) =================
             // 원작: 홍현 앞바다 인기 어종은 감성돔. 대물 퀘스트 "자이언트 그루퍼"는 저녁 C4 / 아침 E3 어군에서만.
-            new FishSpecies { Id = "mackerel", Name = "고등어", Latin = "Scomber japonicus", Temper = "떼로 몰려다니며 미끼를 순식간에 채 간다", Maps = Sea,
+            new FishSpecies { Id = "mackerel", Name = "고등어", Latin = "Scomber japonicus", Temper = "떼로 몰려다니며 미끼를 순식간에 채 간다", Maps = M("honghyeon", "yokji", "geomun", "heonhwa", "samcheok", "deungdae"),
                 MinLen = 20, MaxLen = 45, TrophyLen = 40, TrophyName = "대고등어", WeightCoef = 0.012f, Rarity = 1,
                 Seasons = new[] { Season.Autumn }, Habitats = new[] { Habitat.Deep, Habitat.Shallow }, Baits = new[] { BaitKind.Krill, BaitKind.Squid, BaitKind.CutBait , BaitKind.Lure },
                 Times = new[] { TimeBand.Morning, TimeBand.Evening }, Weathers = AnyWeather,
                 Power = 0.45f, Speed = 1.5f, Stamina = 0.8f, Aggression = 0.85f, Exp = 10, Price = 250 },
-            new FishSpecies { Id = "horsemackerel", Name = "전갱이", Latin = "Trachurus japonicus", Temper = "해 질 녘 방파제로 몰려든다", Maps = Sea,
+            new FishSpecies { Id = "horsemackerel", Name = "전갱이", Latin = "Trachurus japonicus", Temper = "해 질 녘 방파제로 몰려든다", Maps = M("honghyeon", "yokji", "geomun", "deungdae"),
                 MinLen = 15, MaxLen = 40, TrophyLen = 35, TrophyName = "대전갱이", WeightCoef = 0.011f, Rarity = 1,
                 Habitats = new[] { Habitat.Deep, Habitat.Shallow }, Baits = new[] { BaitKind.Krill, BaitKind.CutBait },
                 Times = new[] { TimeBand.Evening, TimeBand.Night }, Weathers = AnyWeather,
                 Power = 0.35f, Speed = 1.3f, Stamina = 0.7f, Aggression = 0.7f, Exp = 8, Price = 200 },
-            new FishSpecies { Id = "halfbeak", Name = "학꽁치", Latin = "Hyporhamphus sajori", Temper = "가느다란 부리로 수면을 스친다", Maps = Sea,
+            new FishSpecies { Id = "halfbeak", Name = "학꽁치", Latin = "Hyporhamphus sajori", Temper = "가느다란 부리로 수면을 스친다", Maps = M("honghyeon", "yokji", "heonhwa", "samcheok"),
                 MinLen = 20, MaxLen = 40, TrophyLen = 35, TrophyName = "대학꽁치", WeightCoef = 0.004f, Rarity = 1,
                 Seasons = new[] { Season.Winter, Season.Spring }, Habitats = new[] { Habitat.Shallow }, Baits = new[] { BaitKind.Krill },
                 Times = new[] { TimeBand.Morning, TimeBand.Day }, Weathers = new[] { Weather.Clear },
                 Power = 0.2f, Speed = 1.4f, Stamina = 0.5f, Aggression = 0.6f, Exp = 6, Price = 150 },
-            new FishSpecies { Id = "rockfish", Name = "볼락", Latin = "Sebastes inermis", Temper = "큰 눈으로 밤바다를 살핀다", Maps = Sea,
+            new FishSpecies { Id = "rockfish", Name = "볼락", Latin = "Sebastes inermis", Temper = "큰 눈으로 밤바다를 살핀다", Maps = M("honghyeon", "yokji", "geomun", "heonhwa", "deungdae"),
                 MinLen = 12, MaxLen = 32, TrophyLen = 27, TrophyName = "왕볼락", WeightCoef = 0.02f, Rarity = 1,
                 Habitats = new[] { Habitat.Rocky, Habitat.Weed }, Baits = new[] { BaitKind.SeaWorm, BaitKind.Krill },
                 Times = new[] { TimeBand.Evening, TimeBand.Night, TimeBand.Dawn }, Weathers = AnyWeather,
                 Power = 0.35f, Speed = 0.8f, Stamina = 0.7f, Aggression = 0.5f, Exp = 9, Price = 400 },
-            new FishSpecies { Id = "filefish", Name = "쥐치", Latin = "Stephanolepis cirrhifer", Temper = "작은 입으로 미끼만 쏙 따먹는 얌체", Maps = Sea,
+            new FishSpecies { Id = "filefish", Name = "쥐치", Latin = "Stephanolepis cirrhifer", Temper = "작은 입으로 미끼만 쏙 따먹는 얌체", Maps = M("honghyeon", "yokji"),
                 MinLen = 15, MaxLen = 32, TrophyLen = 28, TrophyName = "대쥐치", WeightCoef = 0.03f, Rarity = 1,
                 Habitats = new[] { Habitat.Weed, Habitat.Rocky }, Baits = new[] { BaitKind.Krill, BaitKind.Shrimp },
                 Times = new[] { TimeBand.Day }, Weathers = AnyWeather,
                 Power = 0.35f, Speed = 0.7f, Stamina = 0.7f, Aggression = 0.5f, Exp = 9, Price = 500 },
-            new FishSpecies { Id = "marbledflounder", Name = "문치가자미", Latin = "Pseudopleuronectes yokohamae", Temper = "모래 바닥에 납작 엎드려 있다", Maps = Seas,
+            new FishSpecies { Id = "marbledflounder", Name = "문치가자미", Latin = "Pseudopleuronectes yokohamae", Temper = "모래 바닥에 납작 엎드려 있다", Maps = M("honghyeon", "yokji", "seocheon", "yeongheung", "taean"),
                 MinLen = 15, MaxLen = 42, TrophyLen = 35, TrophyName = "대가자미", WeightCoef = 0.015f, Rarity = 1,
                 Habitats = new[] { Habitat.Shallow }, Baits = new[] { BaitKind.SeaWorm },
                 Times = new[] { TimeBand.Morning, TimeBand.Day }, Weathers = AnyWeather,
                 Power = 0.4f, Speed = 0.5f, Stamina = 0.8f, Aggression = 0.3f, Exp = 10, Price = 600 },
-            new FishSpecies { Id = "scorpionfish", Name = "쏨뱅이", Latin = "Sebastiscus marmoratus", Temper = "가시가 억센 암초 지킴이", Maps = Sea,
+            new FishSpecies { Id = "scorpionfish", Name = "쏨뱅이", Latin = "Sebastiscus marmoratus", Temper = "가시가 억센 암초 지킴이", Maps = M("honghyeon", "yokji", "geomun"),
                 MinLen = 15, MaxLen = 32, TrophyLen = 28, TrophyName = "대쏨뱅이", WeightCoef = 0.025f, Rarity = 2,
                 Habitats = new[] { Habitat.Rocky }, Baits = new[] { BaitKind.SeaWorm, BaitKind.CutBait },
                 Times = new[] { TimeBand.Evening, TimeBand.Night }, Weathers = AnyWeather,
                 Power = 0.45f, Speed = 0.6f, Stamina = 0.8f, Aggression = 0.4f, Exp = 14, Price = 800 },
-            new FishSpecies { Id = "jacopever", Name = "우럭", Latin = "Sebastes schlegelii", Temper = "바위 틈에 박혀 버티는 남해의 단골", Maps = Seas,
+            new FishSpecies { Id = "jacopever", Name = "우럭", Latin = "Sebastes schlegelii", Temper = "바위 틈에 박혀 버티는 남해의 단골", Maps = AllSeas,
                 MinLen = 20, MaxLen = 60, TrophyLen = 50, TrophyName = "대우럭", WeightCoef = 0.022f, Rarity = 2,
                 Habitats = new[] { Habitat.Rocky, Habitat.Deep }, Baits = new[] { BaitKind.SeaWorm, BaitKind.Squid, BaitKind.Minnow },
                 Times = AnyTime, Weathers = AnyWeather,
                 Power = 0.7f, Speed = 0.6f, Stamina = 1.1f, Aggression = 0.45f, Exp = 20, Price = 900 },
-            new FishSpecies { Id = "greenling", Name = "쥐노래미", Latin = "Hexagrammos otakii", Temper = "해초밭을 누비는 얼룩무늬", Maps = Seas,
+            new FishSpecies { Id = "greenling", Name = "쥐노래미", Latin = "Hexagrammos otakii", Temper = "해초밭을 누비는 얼룩무늬", Maps = AllSeas,
                 MinLen = 20, MaxLen = 55, TrophyLen = 45, TrophyName = "대노래미", WeightCoef = 0.015f, Rarity = 2,
                 Habitats = new[] { Habitat.Rocky, Habitat.Weed }, Baits = new[] { BaitKind.SeaWorm, BaitKind.Krill },
                 Times = new[] { TimeBand.Morning, TimeBand.Day }, Weathers = AnyWeather,
@@ -213,27 +227,27 @@ namespace Fishing.Data
                 Habitats = new[] { Habitat.Deep, Habitat.Rocky }, Baits = new[] { BaitKind.Squid, BaitKind.CutBait },
                 Times = new[] { TimeBand.Night }, Weathers = AnyWeather,
                 Power = 0.8f, Speed = 0.9f, Stamina = 1.3f, Aggression = 0.6f, Exp = 30, Price = 1500 },
-            new FishSpecies { Id = "blackseabream", Name = "감성돔", Latin = "Acanthopagrus schlegelii", Temper = "갯바위 꾼들의 로망, 홍현 앞바다의 인기 어종", Maps = Seas,
+            new FishSpecies { Id = "blackseabream", Name = "감성돔", Latin = "Acanthopagrus schlegelii", Temper = "갯바위 꾼들의 로망, 홍현 앞바다의 인기 어종", Maps = M("honghyeon", "yokji", "geomun", "seocheon", "yeongheung", "taean", "heonhwa", "samcheok", "deungdae"),
                 MinLen = 20, MaxLen = 65, TrophyLen = 50, TrophyName = "5짜 감성돔", WeightCoef = 0.025f, Rarity = 3,
                 Seasons = new[] { Season.Autumn, Season.Winter }, Habitats = new[] { Habitat.Rocky, Habitat.Shallow }, Baits = new[] { BaitKind.Krill, BaitKind.SeaWorm, BaitKind.CutBait },
                 Times = new[] { TimeBand.Dawn, TimeBand.Evening }, Weathers = new[] { Weather.Cloudy, Weather.Rain },
                 Power = 0.95f, Speed = 1.0f, Stamina = 1.4f, Aggression = 0.65f, Exp = 45, Price = 3500 },
-            new FishSpecies { Id = "opaleye", Name = "벵에돔", Latin = "Girella punctata", Temper = "물살 센 갯바위에서 찌를 확 끌고 들어간다", Maps = Sea,
+            new FishSpecies { Id = "opaleye", Name = "벵에돔", Latin = "Girella punctata", Temper = "물살 센 갯바위에서 찌를 확 끌고 들어간다", Maps = South,
                 MinLen = 20, MaxLen = 50, TrophyLen = 40, TrophyName = "4짜 벵에돔", WeightCoef = 0.024f, Rarity = 3,
                 Habitats = new[] { Habitat.Rocky, Habitat.Weed }, Baits = new[] { BaitKind.Krill },
                 Times = new[] { TimeBand.Morning, TimeBand.Day }, Weathers = AnyWeather,
                 Power = 0.85f, Speed = 1.2f, Stamina = 1.2f, Aggression = 0.7f, Exp = 40, Price = 3000 },
-            new FishSpecies { Id = "seabass", Name = "농어", Latin = "Lateolabrax japonicus", Temper = "파도치는 밤, 수면 위로 바늘털이를 한다", Maps = Seas,
+            new FishSpecies { Id = "seabass", Name = "농어", Latin = "Lateolabrax japonicus", Temper = "파도치는 밤, 수면 위로 바늘털이를 한다", Maps = M("honghyeon", "yokji", "geomun", "seocheon", "yeongheung", "taean", "heonhwa"),
                 MinLen = 40, MaxLen = 105, TrophyLen = 80, TrophyName = "대농어", WeightCoef = 0.011f, Rarity = 3,
                 Seasons = new[] { Season.Summer, Season.Autumn }, Habitats = new[] { Habitat.Shallow, Habitat.Rocky }, Baits = new[] { BaitKind.Minnow, BaitKind.Lure },
                 Times = new[] { TimeBand.Evening, TimeBand.Night, TimeBand.Dawn }, Weathers = new[] { Weather.Rain, Weather.Cloudy },
                 Power = 1.0f, Speed = 1.3f, Stamina = 1.3f, Aggression = 0.8f, Exp = 55, Price = 4000 },
-            new FishSpecies { Id = "redseabream", Name = "참돔", Latin = "Pagrus major", Temper = "먼바다 깊은 곳의 붉은 여왕", Maps = Seas,
+            new FishSpecies { Id = "redseabream", Name = "참돔", Latin = "Pagrus major", Temper = "먼바다 깊은 곳의 붉은 여왕", Maps = M("honghyeon", "yokji", "geomun", "seocheon", "taean"),
                 MinLen = 30, MaxLen = 95, TrophyLen = 70, TrophyName = "대물 참돔", WeightCoef = 0.018f, Rarity = 3,
                 Seasons = new[] { Season.Spring, Season.Autumn }, Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.Krill, BaitKind.Squid, BaitKind.SeaWorm , BaitKind.Lure },
                 Times = new[] { TimeBand.Morning, TimeBand.Day }, Weathers = AnyWeather,
                 Power = 1.0f, Speed = 1.1f, Stamina = 1.4f, Aggression = 0.6f, Exp = 60, Price = 5000 },
-            new FishSpecies { Id = "beakfish", Name = "돌돔", Latin = "Oplegnathus fasciatus", Temper = "단단한 이빨로 성게도 부순다, 갯바위의 제왕", Maps = Sea,
+            new FishSpecies { Id = "beakfish", Name = "돌돔", Latin = "Oplegnathus fasciatus", Temper = "단단한 이빨로 성게도 부순다, 갯바위의 제왕", Maps = South,
                 MinLen = 25, MaxLen = 65, TrophyLen = 50, TrophyName = "돌돔 5짜", WeightCoef = 0.028f, Rarity = 4,
                 Habitats = new[] { Habitat.Rocky }, Baits = new[] { BaitKind.SeaWorm, BaitKind.Shrimp },
                 Times = new[] { TimeBand.Day }, Weathers = new[] { Weather.Clear },
@@ -246,13 +260,13 @@ namespace Fishing.Data
 
             // 남해 깊은 바다의 전설 (먼바다 포인트에서만). 언론 보도: 다금바리는 제주·남해 수심 100~200m, 15~20kg이면 대형.
             // 돗돔은 400~500m 심해 암초에 살다 5~7월 산란하러 100m 안팎으로 올라올 때만 낚인다. 국내 기록 191cm, 한 해 30마리 안팎.
-            new FishSpecies { Id = "dageumbari", Name = "다금바리", Latin = "Niphon spinosus", Temper = "제주·남해 깊은 암초의 최고급 어종. 먼바다 포인트에서 밤·저녁에 아주 드물게 문다", Maps = Sea,
+            new FishSpecies { Id = "dageumbari", Name = "다금바리", Latin = "Niphon spinosus", Temper = "제주·남해 깊은 암초의 최고급 어종. 먼바다 포인트에서 밤·저녁에 아주 드물게 문다", Maps = M("honghyeon", "geomun"),
                 MinLen = 45, MaxLen = 120, TrophyLen = 100, TrophyName = "전설의 다금바리", WeightCoef = 0.02f, Rarity = 5, FarSeaOnly = true,
                 Habitats = new[] { Habitat.Rocky, Habitat.Deep }, Baits = new[] { BaitKind.Squid, BaitKind.CutBait, BaitKind.Minnow },
                 Times = new[] { TimeBand.Evening, TimeBand.Night }, Weathers = AnyWeather,
                 Power = 1.5f, Speed = 0.8f, Stamina = 2.0f, Aggression = 0.55f, Exp = 300, Price = 36000 },
             new FishSpecies { Id = "dotdom", Name = "돗돔", Latin = "Stereolepis doederleini", Temper = "심해의 거인. 봄·여름 산란철에만 먼바다 포인트로 올라온다. 사람 키만 한 괴력",
-                Maps = Sea, Seasons = new[] { Season.Spring, Season.Summer },
+                Maps = M("honghyeon", "geomun"), Seasons = new[] { Season.Spring, Season.Summer },
                 MinLen = 90, MaxLen = 190, TrophyLen = 165, TrophyName = "전설의 돗돔", WeightCoef = 0.02f, Rarity = 5, FarSeaOnly = true,
                 Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.Squid, BaitKind.CutBait },
                 Times = AnyTime, Weathers = AnyWeather,
@@ -266,27 +280,27 @@ namespace Fishing.Data
                 Power = 0.15f, Speed = 0.9f, Stamina = 0.4f, Aggression = 0.7f, Exp = 5, Price = 200 },
 
             // ---------- 서천 앞바다 (서해): 홍원항·마량포구 갯벌과 방파제 ----------
-            new FishSpecies { Id = "goby", Name = "망둥어", Latin = "Acanthogobius flavimanus", Temper = "갯벌의 먹보. 뭐든 덥석 무는 서해 아이들의 첫 고기", Maps = West,
+            new FishSpecies { Id = "goby", Name = "망둥어", Latin = "Acanthogobius flavimanus", Temper = "갯벌의 먹보. 뭐든 덥석 무는 서해 아이들의 첫 고기", Maps = WestSea,
                 MinLen = 8, MaxLen = 30, TrophyLen = 25, TrophyName = "대망둥어", WeightCoef = 0.012f, Rarity = 1,
                 Habitats = new[] { Habitat.Shallow, Habitat.Weed }, Baits = new[] { BaitKind.SeaWorm, BaitKind.Shrimp, BaitKind.CutBait },
                 Times = new[] { TimeBand.Morning, TimeBand.Day, TimeBand.Evening }, Weathers = AnyWeather,
                 Power = 0.3f, Speed = 0.6f, Stamina = 0.7f, Aggression = 0.4f, Exp = 6, Price = 150 },
-            new FishSpecies { Id = "shad", Name = "전어", Latin = "Konosirus punctatus", Temper = "가을 전어 굽는 냄새에 집 나간 며느리도 돌아온다는 은빛 떼고기", Maps = West,
+            new FishSpecies { Id = "shad", Name = "전어", Latin = "Konosirus punctatus", Temper = "가을 전어 굽는 냄새에 집 나간 며느리도 돌아온다는 은빛 떼고기", Maps = WestSea,
                 MinLen = 15, MaxLen = 30, TrophyLen = 26, TrophyName = "대전어", WeightCoef = 0.011f, Rarity = 1,
                 Seasons = new[] { Season.Autumn }, Habitats = new[] { Habitat.Shallow, Habitat.Deep }, Baits = new[] { BaitKind.Krill, BaitKind.SeaWorm },
                 Times = new[] { TimeBand.Morning, TimeBand.Evening }, Weathers = AnyWeather,
                 Power = 0.3f, Speed = 1.2f, Stamina = 0.6f, Aggression = 0.7f, Exp = 7, Price = 300 },
-            new FishSpecies { Id = "whitecroaker", Name = "백조기", Latin = "Pennahia argentata", Temper = "부레로 '구구' 우는 서해의 은빛 조기 (보구치)", Maps = West,
+            new FishSpecies { Id = "whitecroaker", Name = "백조기", Latin = "Pennahia argentata", Temper = "부레로 '구구' 우는 서해의 은빛 조기 (보구치)", Maps = WestSea,
                 MinLen = 20, MaxLen = 40, TrophyLen = 33, TrophyName = "대백조기", WeightCoef = 0.014f, Rarity = 2,
                 Habitats = new[] { Habitat.Deep, Habitat.Shallow }, Baits = new[] { BaitKind.SeaWorm, BaitKind.Shrimp },
                 Times = new[] { TimeBand.Evening, TimeBand.Night }, Weathers = AnyWeather,
                 Power = 0.5f, Speed = 0.8f, Stamina = 0.9f, Aggression = 0.5f, Exp = 16, Price = 900 },
-            new FishSpecies { Id = "octopus", Name = "주꾸미", Latin = "Amphioctopus fangsiao", Temper = "에기를 끌어안고 놓지 않는 서천의 봄 명물. 묵직하게 버틴다", Maps = West,
+            new FishSpecies { Id = "octopus", Name = "주꾸미", Latin = "Amphioctopus fangsiao", Temper = "에기를 끌어안고 놓지 않는 서천의 봄 명물. 묵직하게 버틴다", Maps = M("seocheon", "taean"),
                 MinLen = 10, MaxLen = 32, TrophyLen = 26, TrophyName = "왕주꾸미", WeightCoef = 0.012f, Rarity = 2,
                 Seasons = new[] { Season.Spring }, Habitats = new[] { Habitat.Shallow, Habitat.Rocky }, Baits = new[] { BaitKind.Egi, BaitKind.Shrimp },
                 Times = new[] { TimeBand.Morning, TimeBand.Day }, Weathers = AnyWeather,
                 Power = 0.45f, Speed = 0.3f, Stamina = 0.9f, Aggression = 0.2f, Exp = 15, Price = 1200 },
-            new FishSpecies { Id = "cuttlefish", Name = "갑오징어", Latin = "Sepia esculenta", Temper = "먹물을 뿜으며 뒤로 내빼는 봄 바다 별미", Maps = West,
+            new FishSpecies { Id = "cuttlefish", Name = "갑오징어", Latin = "Sepia esculenta", Temper = "먹물을 뿜으며 뒤로 내빼는 봄 바다 별미", Maps = WestSea,
                 MinLen = 18, MaxLen = 45, TrophyLen = 35, TrophyName = "대갑", WeightCoef = 0.014f, Rarity = 3,
                 Seasons = new[] { Season.Spring }, Habitats = new[] { Habitat.Rocky, Habitat.Deep }, Baits = new[] { BaitKind.Egi },
                 Times = new[] { TimeBand.Evening, TimeBand.Night, TimeBand.Morning }, Weathers = AnyWeather,
@@ -296,6 +310,77 @@ namespace Fishing.Data
                 Seasons = new[] { Season.Summer }, Habitats = new[] { Habitat.Deep, Habitat.Rocky }, Baits = new[] { BaitKind.Shrimp, BaitKind.SeaWorm, BaitKind.CutBait },
                 Times = new[] { TimeBand.Evening, TimeBand.Night }, Weathers = AnyWeather,
                 Power = 1.5f, Speed = 0.8f, Stamina = 2.1f, Aggression = 0.55f, Exp = 320, Price = 45000 },
+
+            // ---------- 동해 (헌화로·삼척 앞바다·동해 등대섬·청진포구): 차고 맑은 바다 ----------
+            new FishSpecies { Id = "atkamackerel", Name = "임연수어", Latin = "Pleurogrammus azonus", Temper = "누런 몸에 검은 띠. '임연수 껍질 쌈밥에 천석꾼 망한다'는 동해 겨울 별미", Maps = M("samcheok", "deungdae", "cheongjin"),
+                MinLen = 25, MaxLen = 50, TrophyLen = 42, TrophyName = "대임연수", WeightCoef = 0.009f, Rarity = 1,
+                Seasons = new[] { Season.Winter, Season.Spring }, Habitats = new[] { Habitat.Rocky, Habitat.Deep }, Baits = new[] { BaitKind.SeaWorm, BaitKind.Krill, BaitKind.Lure },
+                Times = new[] { TimeBand.Dawn, TimeBand.Morning, TimeBand.Day }, Weathers = AnyWeather,
+                Power = 0.5f, Speed = 1.1f, Stamina = 0.9f, Aggression = 0.6f, Exp = 18, Price = 600 },
+            new FishSpecies { Id = "sandfish", Name = "도루묵", Latin = "Arctoscopus japonicus", Temper = "'말짱 도루묵'의 그 고기. 초겨울 알을 낳으러 방파제 해초밭으로 몰려든다", Maps = M("samcheok", "cheongjin"),
+                MinLen = 12, MaxLen = 26, TrophyLen = 22, TrophyName = "왕도루묵", WeightCoef = 0.009f, Rarity = 1,
+                Seasons = new[] { Season.Winter }, Habitats = new[] { Habitat.Weed, Habitat.Shallow }, Baits = new[] { BaitKind.SeaWorm, BaitKind.Krill },
+                Times = new[] { TimeBand.Evening, TimeBand.Night }, Weathers = AnyWeather,
+                Power = 0.25f, Speed = 0.7f, Stamina = 0.5f, Aggression = 0.5f, Exp = 9, Price = 350 },
+            new FishSpecies { Id = "flatfish", Name = "참가자미", Latin = "Pseudopleuronectes herzensteini", Temper = "동해 모래밭의 노란 테두리 가자미. 바닥을 톡톡 건드리면 문다", Maps = East,
+                MinLen = 15, MaxLen = 40, TrophyLen = 33, TrophyName = "대가자미", WeightCoef = 0.016f, Rarity = 1,
+                Habitats = new[] { Habitat.Shallow, Habitat.Deep }, Baits = new[] { BaitKind.SeaWorm },
+                Times = new[] { TimeBand.Morning, TimeBand.Day }, Weathers = AnyWeather,
+                Power = 0.4f, Speed = 0.5f, Stamina = 0.8f, Aggression = 0.3f, Exp = 12, Price = 700 },
+            new FishSpecies { Id = "squid", Name = "오징어", Latin = "Todarodes pacificus", Temper = "밤바다 집어등 불빛으로 모여드는 동해의 명물. 에기를 덮치고 먹물을 쏜다", Maps = M("heonhwa", "samcheok", "deungdae"),
+                MinLen = 18, MaxLen = 40, TrophyLen = 33, TrophyName = "대오징어", WeightCoef = 0.01f, Rarity = 2,
+                Seasons = new[] { Season.Summer, Season.Autumn }, Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.Egi, BaitKind.Lure },
+                Times = new[] { TimeBand.Evening, TimeBand.Night }, Weathers = AnyWeather,
+                Power = 0.55f, Speed = 1.0f, Stamina = 0.9f, Aggression = 0.6f, Exp = 22, Price = 1400 },
+            new FishSpecies { Id = "giantoctopus", Name = "대문어", Latin = "Enteroctopus dofleini", Temper = "동해 바위굴의 거인. 바닥에 달라붙어 낚싯대를 활처럼 휘게 만든다", Maps = M("heonhwa", "samcheok", "cheongjin"),
+                MinLen = 50, MaxLen = 200, TrophyLen = 150, TrophyName = "왕문어", WeightCoef = 0.0016f, Rarity = 4,
+                Habitats = new[] { Habitat.Rocky }, Baits = new[] { BaitKind.Egi, BaitKind.Squid, BaitKind.CutBait },
+                Times = new[] { TimeBand.Dawn, TimeBand.Evening, TimeBand.Night }, Weathers = AnyWeather,
+                Power = 1.4f, Speed = 0.3f, Stamina = 1.55f, Aggression = 0.25f, Exp = 110, Price = 12000 },
+            new FishSpecies { Id = "cod", Name = "대구", Latin = "Gadus macrocephalus", Temper = "입이 커서 대구(大口). 한겨울 깊은 바다에서 묵직하게 올라온다", Maps = M("samcheok", "cheongjin"),
+                MinLen = 40, MaxLen = 100, TrophyLen = 80, TrophyName = "대물 대구", WeightCoef = 0.009f, Rarity = 3,
+                Seasons = new[] { Season.Winter }, Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.Squid, BaitKind.CutBait, BaitKind.Lure },
+                Times = new[] { TimeBand.Dawn, TimeBand.Morning, TimeBand.Day }, Weathers = AnyWeather,
+                Power = 1.0f, Speed = 0.7f, Stamina = 1.5f, Aggression = 0.45f, Exp = 60, Price = 4500 },
+            new FishSpecies { Id = "pollock", Name = "명태", Latin = "Gadus chalcogrammus", Temper = "국민 생선의 고향 청진. 남쪽 바다에선 사라진 지 오래, 새벽 B5·밤 F6 어군에서만 나타난다", Maps = M("cheongjin"),
+                MinLen = 35, MaxLen = 90, TrophyLen = 70, TrophyName = "왕명태", WeightCoef = 0.007f, Rarity = 5, SchoolOnly = true,
+                Seasons = new[] { Season.Winter, Season.Spring }, Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.Squid, BaitKind.CutBait, BaitKind.Lure },
+                Times = new[] { TimeBand.Dawn, TimeBand.Night }, Weathers = AnyWeather,
+                Power = 1.25f, Speed = 1.1f, Stamina = 1.9f, Aggression = 0.7f, Exp = 300, Price = 30000 },
+            new FishSpecies { Id = "redrockfish", Name = "불볼락", Latin = "Sebastes thompsoni", Temper = "꾼들이 '열기'라 부르는 붉은 볼락. 줄줄이 달려 올라온다", Maps = M("heonhwa", "deungdae", "geomun"),
+                MinLen = 15, MaxLen = 35, TrophyLen = 29, TrophyName = "왕열기", WeightCoef = 0.019f, Rarity = 2,
+                Habitats = new[] { Habitat.Rocky, Habitat.Deep }, Baits = new[] { BaitKind.Krill, BaitKind.SeaWorm, BaitKind.Squid },
+                Times = new[] { TimeBand.Morning, TimeBand.Day, TimeBand.Evening }, Weathers = AnyWeather,
+                Power = 0.45f, Speed = 0.8f, Stamina = 0.8f, Aggression = 0.55f, Exp = 16, Price = 900 },
+
+            // ---------- 남해 섬 (욕지도·거문도): 따뜻한 물, 회유어 ----------
+            new FishSpecies { Id = "yellowtail", Name = "방어", Latin = "Seriola quinqueradiata", Temper = "겨울 방어는 기름이 꽉 찬다. 떼로 몰려와 릴을 비명 지르게 한다", Maps = M("yokji", "geomun", "deungdae"),
+                MinLen = 40, MaxLen = 100, TrophyLen = 80, TrophyName = "대방어", WeightCoef = 0.012f, Rarity = 3,
+                Seasons = new[] { Season.Autumn, Season.Winter }, Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.Minnow, BaitKind.Lure, BaitKind.Squid },
+                Times = new[] { TimeBand.Dawn, TimeBand.Morning, TimeBand.Evening }, Weathers = AnyWeather,
+                Power = 1.15f, Speed = 1.5f, Stamina = 1.5f, Aggression = 0.85f, Exp = 70, Price = 5500 },
+            new FishSpecies { Id = "amberjack", Name = "부시리", Latin = "Seriola lalandi", Temper = "갯바위 꾼의 팔을 저리게 하는 은빛 어뢰. 거문도 여름 바다의 주인공", Maps = M("yokji", "geomun"),
+                MinLen = 50, MaxLen = 140, TrophyLen = 110, TrophyName = "미터급 부시리", WeightCoef = 0.011f, Rarity = 4,
+                Seasons = new[] { Season.Summer, Season.Autumn }, Habitats = new[] { Habitat.Deep, Habitat.Rocky }, Baits = new[] { BaitKind.Minnow, BaitKind.Lure },
+                Times = new[] { TimeBand.Morning, TimeBand.Day }, Weathers = AnyWeather,
+                Power = 1.45f, Speed = 1.7f, Stamina = 1.8f, Aggression = 0.9f, Exp = 140, Price = 14000 },
+            new FishSpecies { Id = "hairtail", Name = "갈치", Latin = "Trichiurus lepturus", Temper = "칼처럼 번쩍이는 은빛 몸. 밤이면 몸을 세운 채 수면 가까이 올라온다", Maps = M("yokji", "geomun"),
+                MinLen = 50, MaxLen = 140, TrophyLen = 110, TrophyName = "5지 갈치", WeightCoef = 0.0007f, Rarity = 2,
+                Seasons = new[] { Season.Summer, Season.Autumn }, Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.CutBait, BaitKind.Squid, BaitKind.Minnow },
+                Times = new[] { TimeBand.Evening, TimeBand.Night }, Weathers = AnyWeather,
+                Power = 0.6f, Speed = 0.9f, Stamina = 1.0f, Aggression = 0.5f, Exp = 26, Price = 2200 },
+            new FishSpecies { Id = "spanishmackerel", Name = "삼치", Latin = "Scomberomorus niphonius", Temper = "날카로운 이빨로 루어를 덮치는 가을 남해의 사냥꾼", Maps = M("yokji", "geomun"),
+                MinLen = 40, MaxLen = 100, TrophyLen = 80, TrophyName = "대삼치", WeightCoef = 0.006f, Rarity = 2,
+                Seasons = new[] { Season.Autumn }, Habitats = new[] { Habitat.Deep, Habitat.Shallow }, Baits = new[] { BaitKind.Lure, BaitKind.Minnow },
+                Times = new[] { TimeBand.Dawn, TimeBand.Morning }, Weathers = AnyWeather,
+                Power = 0.8f, Speed = 1.6f, Stamina = 1.1f, Aggression = 0.85f, Exp = 34, Price = 2600 },
+
+            // ---------- 서해 섬 (영흥도·태안) ----------
+            new FishSpecies { Id = "spottedseabass", Name = "점농어", Latin = "Lateolabrax maculatus", Temper = "몸에 검은 점이 박힌 서해 농어. 물골과 갯바위 사이를 오가며 먹이를 덮친다", Maps = WestSea,
+                MinLen = 35, MaxLen = 95, TrophyLen = 75, TrophyName = "대점농어", WeightCoef = 0.011f, Rarity = 3,
+                Seasons = new[] { Season.Summer, Season.Autumn }, Habitats = new[] { Habitat.Shallow, Habitat.Rocky }, Baits = new[] { BaitKind.Minnow, BaitKind.Lure, BaitKind.Shrimp },
+                Times = new[] { TimeBand.Dawn, TimeBand.Evening, TimeBand.Night }, Weathers = new[] { Weather.Cloudy, Weather.Rain, Weather.Clear },
+                Power = 0.95f, Speed = 1.25f, Stamina = 1.25f, Aggression = 0.75f, Exp = 50, Price = 3800 },
 
             // 잡동사니: 도감에는 기록되지 않는다
             new FishSpecies { Id = "can", Name = "빈 깡통", Latin = "-", Temper = "누가 버렸을까", Maps = null,
