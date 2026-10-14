@@ -77,6 +77,22 @@ namespace Fishing.Dev
             yield return Shot("00c_rod_extend");
             yield return new WaitForSeconds(1.5f);
             yield return Shot("00_character");
+
+            // 걷기·달리기 (Human Basic Motions): 옆에서
+            Game.Player.Teleport(new Vector3(-75f, 1.1f, -64f), 90f);
+            Game.CameraRig.Yaw = 0f;
+            Game.CameraRig.Pitch = 6f;
+            Game.CameraRig.Distance = 4.5f;
+            Game.Player.DebugMove = new Vector2(1f, 0f);
+            yield return new WaitForSeconds(1.2f);
+            yield return Shot("00d_walk");
+            Game.Player.DebugRun = true;
+            yield return new WaitForSeconds(1.2f);
+            yield return Shot("00e_run");
+            Game.Player.DebugMove = Vector2.zero;
+            Game.Player.DebugRun = false;
+            yield return new WaitForSeconds(1.2f);
+            yield return Shot("00f_idle");
             Game.CameraRig.Yaw = Game.Player.Yaw;
             Game.CameraRig.Distance = 7f;
 

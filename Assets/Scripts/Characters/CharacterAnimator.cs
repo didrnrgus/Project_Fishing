@@ -7,16 +7,21 @@ namespace Fishing.Characters
 {
     /// <summary>
     /// AnimatorController 에셋 없이 Playables로 클립을 섞어 재생한다.
-    /// 클립은 Universal Animation Library(Resources/Animations/UAL1_Standard)와
-    /// Mixamo 낚시 동작(Resources/Animations/Mixamo, AssetImportRules.MixamoClips가 쪼갬)에서 이름으로 찾는다.
+    /// 클립은 Universal Animation Library(Resources/Animations/UAL1_Standard),
+    /// Mixamo 낚시 동작(Resources/Animations/Mixamo, AssetImportRules.MixamoClips가 쪼갬),
+    /// Human Basic Motions(Resources/Animations/KevinIglesias, 남·녀 따로)에서 이름으로 찾는다.
+    /// "이름_M"/"이름_F" 클립이 있으면 Female에 맞는 쪽을 먼저 쓴다.
     /// </summary>
     [RequireComponent(typeof(Animator))]
     public class CharacterAnimator : MonoBehaviour
     {
-        public const string Idle = "Idle_Loop";
-        public const string Walk = "Walk_Loop";
-        public const string Jog = "Jog_Fwd_Loop";
-        public const string Sprint = "Sprint_Loop";
+        public const string Idle = "Basic_Idle_Loop";
+        public const string Walk = "Basic_Walk_Loop";
+        public const string Jog = "Basic_Run_Loop";
+        public const string Sprint = "Basic_Sprint_Loop";
+
+        /// <summary>클립 원래 이동 속도(m/s). 게임 이동 속도 ÷ 이 값 = 재생 배속 (발 미끄러짐 최소)</summary>
+        public const float WalkClipSpeed = 2f, JogClipSpeed = 4f, SprintClipSpeed = 6f;
         public const string HoldRod = "Fishing_Idle_Loop";
         public const string Windup = "Fishing_Windup";
         public const string Cast = "Fishing_Cast";
@@ -43,6 +48,9 @@ namespace Fishing.Characters
         string _loopState = Idle;
         float _oneShotUntil;
 
+        /// <summary>여자 캐릭터면 "_F" 클립을 쓴다. CharacterFactory가 AddComponent 직후 정한다(첫 재생은 Start).</summary>
+        public bool Female;
+
         public string Current => _target >= 0 ? _names[_target] : "";
 
         static Dictionary<string, AnimationClip> Clips
@@ -51,7 +59,7 @@ namespace Fishing.Characters
             {
                 if (_clips != null) return _clips;
                 _clips = new Dictionary<string, AnimationClip>();
-                foreach (var folder in new[] { "Animations/UAL1_Standard", "Animations/Mixamo" })
+                foreach (var folder in new[] { "Animations/UAL1_Standard", "Animations/Mixamo", "Animations/KevinIglesias" })
                     foreach (var c in Resources.LoadAll<AnimationClip>(folder))
                     {
                         var name = c.name.Contains("|") ? c.name.Substring(c.name.LastIndexOf('|') + 1) : c.name;
@@ -72,7 +80,11 @@ namespace Fishing.Characters
             var output = AnimationPlayableOutput.Create(_graph, "Output", animator);
             output.SetSourcePlayable(_mixer);
             _graph.Play();
-            Play(Idle, 0f);
+        }
+
+        void Start()
+        {
+            if (_target < 0) Play(_loopState, 0f);
         }
 
         void OnDestroy()
@@ -80,11 +92,14 @@ namespace Fishing.Characters
             if (_graph.IsValid()) _graph.Destroy();
         }
 
+        bool TryGetClip(string clipName, out AnimationClip clip) =>
+            Clips.TryGetValue(clipName + (Female ? "_F" : "_M"), out clip) || Clips.TryGetValue(clipName, out clip);
+
         int IndexOf(string clipName)
         {
             int i = _names.IndexOf(clipName);
             if (i >= 0) return i;
-            if (!Clips.TryGetValue(clipName, out var clip)) return -1;
+            if (!TryGetClip(clipName, out var clip)) return -1;
             var p = AnimationClipPlayable.Create(_graph, clip);
             if (!clip.isLooping) p.SetDuration(clip.length);
             _mixer.SetInputCount(_names.Count + 1);
@@ -109,7 +124,7 @@ namespace Fishing.Characters
         /// <summary>캐스팅·챔질 같은 한 번짜리 동작. 끝나면 반복 상태로 돌아간다.</summary>
         public void PlayOnce(string clipName, float speed = 1f, float cutAt = 1f)
         {
-            if (!Clips.TryGetValue(clipName, out var clip)) return;
+            if (!TryGetClip(clipName, out var clip)) return;
             Play(clipName, 0.08f, speed, restart: true);
             _oneShotUntil = Time.time + clip.length * cutAt / Mathf.Max(0.01f, speed);
         }

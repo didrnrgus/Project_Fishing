@@ -107,7 +107,7 @@ namespace Fishing.Characters
 
             var anim = go.GetComponent<Animator>();
             if (anim == null) anim = go.AddComponent<Animator>();
-            go.AddComponent<CharacterAnimator>();
+            go.AddComponent<CharacterAnimator>().Female = look.Female;
             return go;
         }
 
