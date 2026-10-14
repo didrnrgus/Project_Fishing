@@ -1,9 +1,9 @@
 """
-두족류(주꾸미·갑오징어) 모델. build_fish.py가 type 'O'(문어형)·'Q'(갑오징어형)일 때 부른다.
+두족류(주꾸미·대문어·갑오징어·오징어) 모델. build_fish.py가 type 'O'(문어형)·'Q'(갑오징어형)·'S'(오징어형)일 때 부른다.
 
 좌표는 물고기와 같다: 길이 1m, 다리 끝(앞) y = -0.5, 몸통(외투막) 끝 y = +0.5, 위 +Z.
   - Body: 외투막 + 머리 + 눈 + 다리 8개(+ 갑오징어 촉완 2개)
-  - Fins: 갑오징어 외투막 둘레의 지느러미 치마 (주꾸미는 없음 → 아주 작은 판 하나)
+  - Fins: 갑오징어 외투막 둘레의 지느러미 치마, 오징어 외투막 끝의 마름모 지느러미 (주꾸미는 없음 → 아주 작은 판 하나)
 UV는 물고기 몸과 같은 원통 투영(u = 길이, v = 배 0 ~ 등 1)이라 fish_tex의 몸 무늬가 그대로 입혀진다.
 다리마다 뼈 3개(Arm{i}_{0..2})를 따로 두고, 몸통 사슬(Head·Spine·Tail)과 함께 애니메이션한다.
 """
@@ -74,25 +74,27 @@ def arm_paths(d):
     """다리 경로: (점 리스트, 굵기 시작, 끝). 주꾸미는 길고 고르게, 갑오징어는 짧은 다리 8 + 긴 촉완 2."""
     out = []
     octo = d['type'] == 'O'
-    base_y = -0.06 if octo else -0.2
-    ring_r = 0.05 if octo else 0.04
+    squid = d['type'] == 'S'
+    base_y = -0.06 if octo else -0.12 if squid else -0.2
+    ring_r = 0.05 if octo else 0.035 if squid else 0.04
     for i in range(8):
         a = (i + 0.5) * 2 * math.pi / 8
         radial = V((math.cos(a), 0, math.sin(a)))
         base = V((0, base_y, 0.01)) + radial * ring_r
-        L = 0.43 if octo else 0.2 + 0.03 * (i % 2)
+        L = 0.43 if octo else 0.17 + 0.03 * (i % 2) if squid else 0.2 + 0.03 * (i % 2)
         pts = []
         for k in range(17):
             t = k / 16
             curl = 0.035 * math.sin(t * math.pi * 1.5 + i)
             p = base + V((0, -L * t, 0)) + radial * (0.07 * t + 0.03 * math.sin(t * math.pi)) + V((0, 0, curl))
             pts.append(p)
-        out.append((pts, 0.03 if octo else 0.022, 0.004 if octo else 0.006))
+        out.append((pts, 0.03 if octo else 0.016 if squid else 0.022, 0.004 if octo else 0.005 if squid else 0.006))
     if not octo:
         # 촉완 2개: 가늘고 길게, 끝이 넓적
         for s in (-1, 1):
             base = V((s * 0.02, base_y, -0.01))
-            pts = [base + V((s * 0.03 * t, -0.29 * t, -0.03 * math.sin(t * math.pi))) for t in [k / 16 for k in range(17)]]
+            reach = 0.25 if squid else 0.29
+            pts = [base + V((s * 0.03 * t, -reach * t, -0.03 * math.sin(t * math.pi))) for t in [k / 16 for k in range(17)]]
             out.append((pts, 0.008, 0.012))
     return out
 
@@ -100,9 +102,14 @@ def arm_paths(d):
 def build(d):
     """Body, Fins 오브젝트와 다리 경로(뼈용)를 만든다."""
     octo = d['type'] == 'O'
+    squid = d['type'] == 'S'
     bm = bmesh.new()
     uvl = bm.loops.layers.uv.new('UV')
-    if octo:
+    if squid:
+        ellipsoid(bm, uvl, (0, 0.17, 0.0), (0.065, 0.33, 0.06), seg=32)  # 길쭉한 원통 외투막 (끝이 뾰족)
+        ellipsoid(bm, uvl, (0, -0.12, 0.0), (0.06, 0.06, 0.055))         # 머리
+        eye_c, eye_r = (0.05, -0.12, 0.022), 0.026
+    elif octo:
         ellipsoid(bm, uvl, (0, 0.27, 0.035), (0.12, 0.23, 0.13))     # 외투막 (머리 뒤로 늘어진 주머니)
         ellipsoid(bm, uvl, (0, 0.0, 0.0), (0.1, 0.1, 0.09))          # 머리
         eye_c, eye_r = (0.082, -0.01, 0.045), 0.03
@@ -146,6 +153,12 @@ def build(d):
                 if octo:
                     y = 0.47 + 0.03 * t
                     p = V((side * 0.005 * j, y, 0.03))
+                elif squid:
+                    # 외투막 끝의 마름모(화살촉) 지느러미: y 0.27~0.5, 가운데가 가장 넓다
+                    y = 0.27 + 0.23 * t
+                    ex = 0.065 * math.sqrt(max(0.0, 1 - ((y - 0.17) / 0.33) ** 2))
+                    w = 0.085 * (t / 0.55 if t < 0.55 else (1 - t) / 0.45) + 0.003
+                    p = V((side * (ex - 0.003 + w * j / nv), y, 0.0))
                 else:
                     y = -0.08 + 0.57 * t
                     # 외투막 가장자리 x (타원)
