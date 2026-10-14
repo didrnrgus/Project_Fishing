@@ -1,4 +1,4 @@
-# 10. 캐릭터 애니메이션 (UAL + Mixamo 낚시 동작)
+# 10. 캐릭터 애니메이션 (UAL + Mixamo 낚시 동작 + Human Basic Motions)
 
 캐릭터 동작은 AnimatorController 없이 `CharacterAnimator`(Playables 믹서)가 클립 이름으로 재생한다. 클립은 두 곳에서 찾는다.
 
@@ -6,6 +6,7 @@
 |---|---|---|
 | Quaternius Universal Animation Library (CC0) | `Resources/Animations/UAL1_Standard.fbx` | 대기·걷기·뛰기·점프·말하기·앉기·운전·춤 |
 | **Mixamo** (Adobe) | `Resources/Animations/Mixamo/*.fbx` | 낚싯대 들고 대기, 들어 올리기, 던지기, 챔질, 릴 감기, 환호, NPC 낚시 한 벌 |
+| **Human Basic Motions FREE** (Kevin Iglesias, Asset Store) | `Resources/Animations/KevinIglesias/*.fbx` | 맨손 대기, 걷기, 뛰기, 질주 (남·녀 따로, 7장) |
 
 두 FBX 모두 휴머노이드로 임포트해서(`AssetImportRules`) 어떤 캐릭터(Angler_Male·Female, NPC)에도 그대로 붙는다.
 
@@ -87,3 +88,29 @@
 ## 6. 라이선스
 
 Mixamo 동작은 Adobe 계정으로 받아 게임에 넣어 배포할 수 있지만, **원본 FBX를 그대로 재배포하는 것은 허용되지 않는다.** 이 저장소는 공개라 원래 계획(08 문서 5장)은 `.gitignore`된 폴더에 두는 것이었는데, 2026-10-14에 에셋 스토어 패키지와 함께 `Assets/MixamoAnimation/`을 커밋했다(사용자 결정). 저장소를 비공개로 돌리거나 이 파일들을 LFS 기록에서 빼는 것은 사용자가 정한다.
+
+## 7. 대기·걷기·뛰기 (Human Basic Motions FREE)
+
+UAL의 `Idle_Loop`는 주먹 쥔 슈퍼히어로 자세라서, 에셋 스토어 무료 패키지 **Human Basic Motions FREE**(Kevin Iglesias, `Assets/Kevin Iglesias`)에서 4동작 × 남·녀 8개 FBX를 `Resources/Animations/KevinIglesias/`로 옮겨 이름을 바꿨다(`.meta` GUID 유지 → 패키지 데모 씬도 그대로 동작).
+
+| 파일 | 원본 | 클립 (`AssetImportRules.KevinClips`) | 원래 이동 속도 |
+|---|---|---|---|
+| `Idle_M/F.fbx` | HumanM/F@Idle01 | `Basic_Idle_Loop_M/_F` | — |
+| `Walk_M/F.fbx` | Walk01_Forward | `Basic_Walk_Loop_M/_F` | 2.0 m/s (0.8초에 두 걸음) |
+| `Run_M/F.fbx` | Run01_Forward | `Basic_Run_Loop_M/_F` | 4.0 m/s (0.6초) |
+| `Sprint_M/F.fbx` | Sprint01_Forward | `Basic_Sprint_Loop_M/_F` | 6.0 m/s (0.52초) |
+
+- 원래 속도는 같은 패키지의 루트 모션(`[RM]`) 판을 Blender로 열어 엉덩이가 한 바퀴에 간 거리로 쟀다.
+- **임포트**: 휴머노이드, 아바타는 패키지 그대로 **Copy From Other**(HumanM/F_Model) — 우리 규칙이 `CreateFromThisModel`로 덮지 않게 경로를 따로 처리한다. 루트는 포즈에 굽고, Mixamo처럼 +Z를 보므로 `rotationOffset = 180`.
+- **성별**: `CharacterFactory`가 `CharacterAnimator.Female`을 정하면, 클립을 찾을 때 `이름_F`/`이름_M`을 먼저 찾고 없으면 `이름`을 쓴다. 첫 재생은 `Start`(성별이 정해진 뒤).
+- **속도에 맞춘 클립·배속** (`PlayerController.UpdateAnimation`): 게임 걷기 키는 4.5 m/s, 달리기 7.5 m/s라서
+  - 달리기 → `Sprint` × (속도 / 6) ≈ 1.25배
+  - 2.6 m/s 넘게 걷기 → `Run`(뛰는 걸음) × (속도 / 4) ≈ 1.1배
+  - 더 느릴 때(벽에 미끄러지며 등) → `Walk` × (속도 / 2)
+  발이 땅에서 거의 미끄러지지 않는다. 발소리도 클립 한 걸음 길이(뛰기 1.2m, 질주 1.56m)마다 낸다.
+- 확인: autoshot `00d_walk`(걷기 키), `00e_run`(달리기), `00f_idle`.
+
+| 걷기 키 (Run 클립) | 달리기 (Sprint 클립) |
+|---|---|
+| ![걷기](images/00d_walk.png) | ![달리기](images/00e_run.png) |
+

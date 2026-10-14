@@ -40,7 +40,7 @@
 
 ```bash
 sh tools/build.sh                 # 윈도우 빌드
-sh tools/autoshot.sh              # 빌드 실행 → Screenshots/ 에 61장 자동 촬영 후 종료 (약 3분)
+sh tools/autoshot.sh              # 빌드 실행 → Screenshots/ 에 81장 자동 촬영 후 종료 (약 5분)
 sh tools/balance.sh               # 밸런스 리포트 (전체)
 sh tools/balance.sh -simSummary   # 밸런스 리포트 (대물급만)
 sh tools/test.sh                  # 게임 규칙 단위 테스트 (EditMode, Logs/test-results.xml)
@@ -57,11 +57,13 @@ sh tools/test.sh                  # 게임 규칙 단위 테스트 (EditMode, Lo
 | `TournamentRulesTests` | 세 미션 점수·동점, AI 시뮬레이션은 날짜마다 같다, 실력 차이, 시간대·엠블럼·대회 맵 |
 | `RodUpgradeTests` | 강화 성능(+10 = 힘 1.3배), 확률은 내려가고 비용은 오른다, +7부터 하락 |
 | `PlayerProfileTests` | 레벨업, 아이템, 판매가, 도감 최고 기록 |
-| `SettingsTests` | 키를 겹치게 바꾸면 맞바꾼다, 바꿀 수 없는 키 |
-
+| `SettingsTests` | 키를 겹치게 바꾸면 맞바꾼다, 바꿀 수 없는 키(Esc·숫자 1~8·마우스) |
 | `SeasonTests` | 달력·계절, 빙어는 겨울 얼음 구멍에서만, 제철 배율, 다금바리·돗돔은 먼바다에서만 |
+| `CoastMapTests` | 해안 맵마다 물때(간조·평균·만조) 어느 때나 시작점·낚시점·조합 연락관 자리를 걷는다, 사양이 다 찼다(8×8 격자·연락관·어군·바다 칸), **모든 어종이 사는 낚시터에서 낚인다**(격자에 서식지·어군 전용은 어군, 그곳에서 파는 미끼), 가두리 통로/그물 칸, 목섬 모래톱은 간조에만 |
 
-에디터에서는 Window > General > Test Runner > EditMode. 지금 25개 통과.
+에디터에서는 Window > General > Test Runner > EditMode. 지금 30개 통과.
+
+어종 표: `python tools/fish_table.py --write`가 `FishDatabase.cs`를 읽어 02 문서 11장 표와 맵별 어종 수를 다시 쓴다.
 
 ## Blender 파이프라인 (`tools/blender`, Blender 설치 불필요)
 

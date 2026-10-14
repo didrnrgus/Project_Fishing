@@ -108,7 +108,7 @@ bpyenv/Scripts/python -I tools/blender/build_characters.py --preview --only male
 
 ## 4. 캐릭터 남은 개선점 (우선순위 순)
 
-1. **자연스러운 대기 자세** — 지금 `Idle_Loop`(UAL)은 주먹 쥔 슈퍼히어로 자세다. 무료 **Human Basic Motions FREE**(Kevin Iglesias, Asset Store)의 idle/walk/run/turn(남·녀 버전)을 넣고 `CharacterAnimator`가 클립을 두 라이브러리에서 찾게 한다(휴머노이드 리타깃이라 그대로 붙는다). 옛 "Basic Motions FREE"는 단종이니 이름 주의.
+1. ~~**자연스러운 대기 자세**~~ — 완료(2026-10-15): **Human Basic Motions FREE**(Kevin Iglesias)의 Idle01·Walk01·Run01·Sprint01(남·녀)을 `Resources/Animations/KevinIglesias`로 옮겨 대기·걷기·뛰기·질주에 쓴다. 성별에 맞는 클립을 고르고 이동 속도에 맞춰 재생 배속을 정한다(10 문서 7장).
 2. ~~**음영(AO) 굽기**~~ — 완료: `garments.bake_ao`가 휴식 자세에서 법선 반구로 광선 14개를 쏴 옷 버텍스 컬러 G에 곱한다(세기 0.6, 거리 12cm). 주머니·버클처럼 각진 면은 제외. 더 진하게/연하게는 `strength`.
 3. ~~**장갑**~~ — 완료: `garments.gloves` = 손 껍데기 3.5mm, 손가락 둘째 마디부터 없는 반장갑, 손목띠(아래팔 뼈 축으로 1.2~6cm)는 트림 = 주황. Unity `CharacterLook.Gloves`(내 캐릭터만 true). 1인칭(`FightRodView`)도 검정 주먹 + 낚싯대를 감은 손가락 4개·엄지(끝마디 살색) + 주황 손목띠, 팔은 입은 상의 색 소매(반팔이면 팔꿈치 위까지, 긴팔이면 손목까지) + 아래팔.
 4. ~~**운동화 모양**~~ — 완료: 발 부분은 몸 메쉬를 부풀리지 않고 `shoe_loft`로 새로 만든다(발 축을 따라 초타원 단면 41개, 앞코 둥글고 뒤꿈치는 조금 각지게, 밑은 평평한 밑창). 발목·종아리만 기존 껍데기. 몸 메쉬를 부풀리던 방식은 발가락 사이 점이 접혀 구겨졌다(투영+스무딩 반복도 소용없었음). 운동화는 끈(B → 셰이더 보조 원단 = 흰 끈)·옆면 줄무늬(R)·1.3cm 밑창. 장화도 같은 골.
@@ -152,7 +152,7 @@ bpyenv/Scripts/python -I tools/blender/build_characters.py --preview --only male
 - [x] 문제 있으면 2장 표대로 고치거나 `garments.py` 수정 후 3장으로 재생성 (`--preview --closeup`: 발·상체 근접 렌더)
 - [x] Post Processing 패키지 + 코드로 볼륨/레이어 (블룸, Neutral 톤매핑, AO, SMAA, 시간대별 그레이딩) → `Core/PostFx.cs`. ACES는 노을·밤 하늘을 검게 눌러서 Neutral로 바꿨다
 - [x] Mixamo 낚시 동작: Fishing Idle(낚싯대 들고 대기)·Fishing Cast(들기·던지기·챔질·릴 감기로 쪼갬)·Cheering(환호) → `Resources/Animations/Mixamo`, `CharacterAnimator`가 두 번째 라이브러리로 찾는다 (2026-10-14, [10 문서](10-animation.md))
-- [ ] Human Basic Motions FREE → Idle/Walk/Run 교체 — 패키지는 `Assets/Kevin Iglesias`에 커밋됨(2026-10-14). 남은 일: 클립을 런타임에서 찾게 하기(Resources로 옮기거나 클립 목록 에셋) + `CharacterAnimator.Idle/Walk/Jog` 교체
+- [x] Human Basic Motions FREE → Idle/Walk/Run/Sprint 교체 (2026-10-15, 10 문서 7장)
 - [x] 4장 3(장갑)·4(운동화)·5(남방 깃)·6(여자 조끼) → 재생성, 9(머리카락+모자) 확인 (AO는 완료)
 - [x] 데크·둔치·길·방파제 텍스처 (Poly Haven CC0: 풀·나무 데크·콘크리트·아스팔트, `Mats.TexturedBox`). 나무 교체(Hand Painted Nature Pack)는 에셋 스토어 로그인이 필요해 보류
 - [x] 흐림/비 하늘, 반사 프로브: 큐브맵(AllSky)은 에셋 스토어 로그인이 필요해서 대신 `Sky.shader` 구름에 층구름(흐림·비에서 하늘을 덮는 회색 층)을 절차적으로 섞었다(`15b_cloudy_day`). 반사 프로브는 `DayNightCycle`의 하늘 실시간 프로브(시간대마다 갱신)

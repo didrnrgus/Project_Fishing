@@ -24,7 +24,7 @@ Assets/
       DayNightCycle.cs           해/달, 스카이박스, 주변광, 안개, 가로등, 하늘 반사 프로브, SkyDecor(구름 양) 제어
       PostFx.cs, PostFxConfig.cs 후처리 (Post Processing Stack v2: 블룸, Neutral 톤매핑, AO, SMAA, 시간대별 그레이딩)
       MapLoader.cs               낚시터 바꾸기 (월드·가로등·어군 다시 만들기, 시작 위치)
-      Tide.cs                    물때 (서해처럼 TideAmplitude가 있는 맵에서 수면 높이가 오르내림)
+      Tide.cs                    물때 (서해처럼 TideAmplitude가 있는 맵에서 수면 높이가 오르내림), 물이 들면 갯벌·모래톱에서 해안으로 구조
       TournamentSystem.cs        조합 낚시 대회 진행 (참가·집계·AI 낚시꾼·시상)
       PlayerProfile.cs           레벨/경험치/골드/체력/아이템/장비/의상/도감 규칙 + SaveSystem
       SaveData.cs                JsonUtility 직렬화용 데이터 (수족관·대회·일일 의뢰 포함)
@@ -34,32 +34,35 @@ Assets/
       Mats.cs                    런타임 머티리얼 캐시, 프리미티브·텍스처 상자 헬퍼, 절차적 텍스처
     Data/                        정적 데이터 테이블 (순수 C#)
       Enums.cs                   Habitat, TimeBand, Weather, BaitKind + 한글 이름
-      FishDatabase.cs            어종 41종 + 잡동사니 6종 (맵·제철·어군 전용·먼바다 전용)
+      FishDatabase.cs            어종 54종 + 잡동사니 6종 (맵·제철·어군 전용·먼바다 전용). 바다 지역 묶음 SouthSea·WestSea·EastSea·AllSeas
       GearDatabase.cs            낚싯대/릴/줄/배, 미끼(해체 미끼 5등급 포함), 김밥
       ItemDatabase.cs            가방 아이템 이름·설명
       CostumeDatabase.cs         의상 6부위 25벌 + 능력치
-      AchievementDatabase.cs     업적 26개, 레벨 칭호
+      AchievementDatabase.cs     업적 34개, 레벨 칭호
       QuestDatabase.cs           이야기 퀘스트 18개 (한강·홍현·서천)
       RodUpgrade.cs              장비 강화 규칙 (+1~+15, 확률·비용·재료·성능)
       Seasons.cs                 계절 (한 달 = 게임 7일, 1일째 = 4월), 제철 입질 배율
       TournamentRules.cs         대회 규칙 (미션 점수, 엠블럼, 대회 맵 순서)
-      FishingAreas.cs            낚시터 목록 (경위도, 열림 여부)
+      FishingAreas.cs            낚시터 목록 11곳 (경위도, 입장 레벨, 맵 id)
     Characters/
       CharacterFactory.cs        Angler FBX(몸 + 옷 메쉬)에서 입은 옷만 남기고 색 입히기, 머리카락·이름표 (CharacterLook)
-      CharacterAnimator.cs       Playables 믹서로 클립 재생 (AnimatorController 없이 SetLoop/PlayOnce)
+      CharacterAnimator.cs       Playables 믹서로 클립 재생 (AnimatorController 없이 SetLoop/PlayOnce). "이름_M/_F" 클립은 성별로 고른다
       NpcAngler.cs               NPC (Angler/Talker/Sitter). NpcId로 대화 종류, 대화 상대 바라보기
     World/
       FieldMap.cs                FieldMapDef(맵 정의: 격자·서식지·물/땅 판정·물때·먼바다·수면 색) + 정적 FieldMap(현재 맵) + Maps.All
       HanRiverMap.cs             한강 반포지구 정의 (A~F × 1~4)
       HonghyeonMap.cs            홍현 앞바다 정의·월드 (A~H × 1~8, 방파제·등대·갯바위 섬·다랭이 마을)
       SeocheonMap.cs             서천 앞바다 정의·지형·월드 (갯벌·홍원항 등대·동백정 정자)
+      CoastMap.cs                해안 맵 틀: CoastSpec(사양) → CoastMapDef(지형 높이·판정) + CoastWorldBuilder(월드)
+      KoreaCoasts.cs             해안 낚시터 8곳 사양 (영흥도·태안·삼척·등대섬·헌화로·욕지도·청진포구·거문도)
+      CoastProps.cs              바닷가 공용 소품 (등대·큰 등대·테트라포드·정자·가로등·낚시점·바위)
       WorldBuilder.cs            한강 월드 (다리, 데크, 낚시점, 나무, 도시, NPC)
       TerrainBuilder.cs          높이 함수 + 칠하기 함수 → Unity Terrain (SeaTerrain = 홍현, SeocheonTerrain = 서천)
       SeaTerrain.cs              홍현 지형 (해변 비탈, 다랭이논 계단, 갯바위 섬)
       SeasonFx.cs                계절이 보이는 것 (겨울 한강 얼음판·얼음 구멍, 눈 덮인 둔치)
       LobbyRoom.cs               대기실(한국 낚시 조합) 실내, 박제 물고기, 고정 카메라 구도
       Aquarium.cs                대기실 수족관 (헤엄치는 물고기, 장식, 배고픔)
-      WaterSurface.cs            격자 수면 메쉬 + Fishing/Water 머티리얼 (맵마다 색)
+      WaterSurface.cs            격자 수면 메쉬 + Fishing/Water 머티리얼 (맵마다 색), 해저 높이 텍스처 굽기(SetSeabed → 물가 거품)
       WaterGlints.cs             밤 물 위에 길게 비치는 불빛 (가로등·다리·도시)
       SkyDecor.cs                달·별·구름 돔 (카메라를 따라다님)
       KenneyProps.cs             Kenney CC0 모델 배치 헬퍼
@@ -97,11 +100,11 @@ Assets/
     Skin.shader                  몸: 입은 옷 속 피부를 버텍스 컬러 마스크(R 상의, G 하의, B 신발, A 긴소매)로 잘라냄
     Garment.shader               옷: 트림(R)·음영(G)·보조 원단(B), 무늬(체크·데님·줄무늬·밀짚 엮음), 장화 속 바지 자르기
     Fish.shader                  물고기 (알파 컷 지느러미: clip(), 렌더 텍스처에서도 알파 유지)
-    Water.shader                 버텍스 파도 + 흐르는 노멀맵, 하늘 반사, 밤 불빛 반짝임(WaterGlints)
+    Water.shader                 버텍스 파도 + 흐르는 노멀맵, 하늘 반사, 밤 불빛 반짝임(WaterGlints), 물가 거품·얕은 물 (해저 높이 텍스처)
     Sky.shader                   Mode 0 달·별, Mode 1 구름(덮임 정도·노을색, 흐림·비 층구름)
   Resources/
     Characters/                  Angler_Male·Female.fbx (tools/blender/build_characters.py), 머리카락, 텍스처
-    Animations/                  Quaternius UAL1_Standard, Mixamo/(낚시 동작 FBX 3개, AssetImportRules가 쪼갬 → 10 문서)
+    Animations/                  Quaternius UAL1_Standard, Mixamo/(낚시 동작 FBX 3개, AssetImportRules가 쪼갬), KevinIglesias/(대기·걷기·뛰기·질주 남·녀) → 10 문서
     Fish/Species, Fish/Textures  어종별 물고기 FBX·텍스처 (tools/blender/build_fish.py)
     Icons/Fish, Icons/Items, Icons/Junk, Junk/   아이콘·잡동사니 모델 (build_fish.py, build_icons.py)
     Terrain/                     Poly Haven CC0 바닥 텍스처 (SOURCES.md)
@@ -119,8 +122,10 @@ Assets/
     FontSetup.cs                 Jalnan2 TMP 폰트 에셋 생성
     BalanceSim.cs                파이팅 밸런스 시뮬레이션 → docs/balance-report.md
     Tests/GameRulesTests.cs      EditMode 단위 테스트 25개 (sh tools/test.sh)
+    Tests/CoastMapTests.cs       낚시터 정의 검사 5개 (물때마다 걸을 수 있는 곳, 어종이 사는 곳에서 낚이는지, 가두리 통로, 모래톱)
 tools/
   build.sh, autoshot.sh, test.sh, balance.sh    배치모드 빌드 / 자동 스크린샷 / 테스트 / 밸런스
+  fish_table.py                  FishDatabase.cs → 02 문서 11장 어종 표 (--write)
   blender/                       headless Blender(bpy) 파이프라인: 캐릭터 옷(garments.py), 물고기(build_fish.py), 아이콘(build_icons.py)
 ```
 
@@ -130,7 +135,7 @@ tools/
 GameBootstrap.Awake
  ├─ SaveSystem.Load → PlayerProfile, QuestSystem
  ├─ GameClock, WeatherSystem, Tide, SeasonFx, TournamentSystem, Settings.Load, PostFx
- ├─ MapLoader → (한강) WorldBuilder.Build / (홍현·서천) 맵 월드 빌더 → DayNightCycle.Init(가로등)
+ ├─ MapLoader → (한강) WorldBuilder.Build / (홍현·서천) 맵 월드 빌더 / (해안 8곳) CoastWorldBuilder → DayNightCycle.Init(가로등)
  ├─ FishSchoolManager
  ├─ PlayerController (+ 모델), CameraRig (+ AudioListener, SoundFx)
  ├─ FishingController (Start에서 찌, 1인칭 낚싯대, 낚싯줄, 착지 링 생성)
@@ -179,22 +184,45 @@ GameBootstrap.Start → GameUI.EnterLobby (Mode=Lobby, 카메라 고정)
 ## 확장 방법
 
 ### 어종 추가
-`FishDatabase.All`에 `FishSpecies`를 추가한다. 도감, 입질, 퀘스트 텍스트에 자동으로 반영된다. 추가한 뒤 `tools/balance.sh`로 난이도를 확인한다.
+`FishDatabase.All`에 `FishSpecies`를 추가한다(`Maps`에 사는 낚시터 id, 바다 지역은 `SouthSea`·`WestSea`·`EastSea`·`AllSeas` 또는 `M("id", …)`). 도감, 입질, 퀘스트 텍스트에 자동으로 반영된다. 모델은 `tools/blender/fish_species.py`에 넣고 `build_fish.py --only <id>`. 추가한 뒤 `tools/balance.sh`로 난이도, `tools/test.sh`(CoastMapTests: 사는 곳 격자에 서식지가 있고 그곳에서 파는 미끼로 무는지), `python tools/fish_table.py --write`로 02 문서 표를 갱신한다.
 
 ### 장비 추가
 `GearDatabase.Gear`에 `GearDef`를 추가한다. 상점(F12) 장비 목록은 `Slot` 순서대로 자동 정렬된다.
 
 ### 새 맵 추가
-맵은 `FieldMapDef`(World/FieldMap.cs) 하나다. 서천 앞바다(`SeocheonMap.cs`)가 가장 최근 예시.
-1. `FieldMapDef`를 상속해 격자(열·행·칸 크기), `HabitatAt`, `IsWater`/`IsWalkable`, 시작·상점 위치, 수면 색, (바다면) `IsSea`·`TideAmplitude`를 정한다.
-2. 월드 빌더(지형은 `TerrainBuilder`에 높이·칠하기 함수만 넘기면 된다)와 NPC를 만든다.
-3. `Maps.All`에 등록하고 `FishingAreas`에서 낚시터 목록에 연다(레벨 조건).
-4. 어종은 `FishSpecies.Maps`에 맵 id를 넣는다. 도감·일일 의뢰·업적(맵 도감 완성)은 자동.
+맵은 `FieldMapDef`(World/FieldMap.cs) 하나다.
+
+**바닷가 낚시터는 해안 맵 틀로 만든다** (코드 없이 사양만): `KoreaCoasts.cs`에 `CoastSpec`을 돌려주는 함수를 하나 더하고 `Maps`에 `new CoastMapDef(KoreaCoasts.X())`로 등록한다. 사양에 넣는 것:
+
+| 항목 | 내용 |
+|---|---|
+| 이름 | `Id`(낚시터 id), `MapName`, `ShortName`, `ShopName`, `UnionContact`(퀘스트 보고 안내), `LandName`·`SeaName`(기본 지역 이름) |
+| 물 | `WaterDeep/Shallow` 색, `Tide`(물때 폭, 서해), `FogBoost`(해무), `Snow`(늘 눈) |
+| 해안선 | `ShoreZ`(-40), `ShoreBumps`(x, 폭, z 이동: 곶·만), `LandHalfWidth`(섬: 양옆이 바다), `Shores`(x 구간별 `Beach`/`Rock`/`Quay`/`Mud`) |
+| 지형 | `NearDepth`·`DepthSlope`(수심), `FlatWidth`(해안 평지), `CliffHeight`·`CliffWidth`(뒤 언덕·절벽), `RoadOffset`(해안도로) |
+| 구조물 | `Breakwaters`(몸통 Rect + 꺾인 팔 + 등대 색), `Capes`(등뼈·폭·높이·숲·`Landmark`), `Islets`(반지름·높이·걷기·`SandBar`), `Stacks`(바위기둥), `Platforms`(`FishFarm` 가두리 / `Boardwalk` 데크길 / `Pier` 잔교) |
+| 풍경 | `Features` 플래그: `SquidBoats`(집어등), `DryingRacks`(덕장), `SeaBridge`(대교), `Cranes`(큰 항구), `FarRocks`(먼 바위섬), `SuspensionBridge`(출렁다리), `Dunes`(+`DuneArea`), `Mountains`, `Azaleas`, `IceFloes`. `FarIslands`, `VillageDensity`, `NorthPort` |
+| 낚시 | `Grid`(8×8 서식지, 0행 = 해안), `Schools`(어군, 대물 어군은 `Special` + 시간대별 칸) |
+| 사람 | `Spawn`, `ShopPos`, `ShopOwner`, `Npcs`(Id "union" 하나 필수 = 조합 연락관), `Signs`, `Areas`(이름 붙은 자리) |
+
+- 높이는 `CoastMapDef.HeightAt(x, z)` 하나(해안 모양을 x로 섞고 곶·섬·바위기둥·모래톱을 max로 합친다). 걸을 수 있는 곳 = 구조물 위이거나 땅 높이 > 평균 수면 + 0.3 (썰물에 드러난 갯벌·모래톱은 물때 수면 기준). 물 = 높이 < 수면 - 0.12이고 구조물·바위기둥이 아닌 곳.
+- 해안도로·가로등·건물은 지형을 따라 놓고, 언덕(곶)이나 비탈은 건너뛴다.
+- 그 밖에: `FishingAreas`에 `Open = true, MapId`를 넣고, 어종 `Maps`에 id를 더하고, `DevAutomation.CoastTour`에 장면을 추가, `sh tools/test.sh`(CoastMapTests가 물때마다 시작점·낚시점·연락관 자리, 어군 수, 바다 칸을 검사한다).
+
+**모양이 아주 다른 맵**(강·호수 등)은 `FieldMapDef`를 직접 상속한다 (한강 `HanRiverMap`, 홍현 `HonghyeonMap`, 서천 `SeocheonMap`):
+1. 격자(열·행·칸 크기), `HabitatAt`, `IsWater`/`IsWalkable`, 시작·상점 위치, 수면 색, (바다면) `IsSea`·`TideAmplitude`를 정한다.
+2. 월드 빌더(지형은 `TerrainBuilder`에 높이·칠하기 함수만 넘기면 된다, 소품은 `CoastProps`)와 NPC를 만든다.
+3. `Maps.All`에 등록하고 `FishingAreas`에서 낚시터 목록에 연다(레벨 조건, 레벨 업 알림은 자동).
+4. 어종은 `FishSpecies.Maps`에 맵 id를 넣는다. 도감·일일 의뢰(그 맵 격자에 있는 서식지만)·업적(맵 도감 완성)은 자동.
 5. 자동 스크린샷(`DevAutomation`)에 장면을 추가하고 문서 02(맵 절)·06을 갱신한다.
 
 ### 아트 교체
 - 캐릭터: `CharacterFactory.Create(look, parent)`가 Angler FBX(몸 `Body` + 옷 메쉬, `tools/blender/build_characters.py`)를 만든다. 옷을 고치거나 더하려면 `garments.py`에 함수를 추가하고 `build()`에 등록 → `CharacterFactory.Garments`·`GarmentMaterial`에 이름을 넣는다(08 문서 3장). 몸은 `Fishing/Skin`, 옷은 `Fishing/Garment` 셰이더.
-- 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/HoldRod/Windup/Cast/Hook/Reel/Cheer…)가 클립 이름이다. 클립은 `Resources/Animations/UAL1_Standard`와 `Resources/Animations/Mixamo`에서 찾는다. Mixamo FBX는 `AssetImportRules.MixamoClips` 표(파일·이름·프레임)대로 쪼갠다(10 문서). 낚시 중 자세는 `PlayerController.FishingPose()`가 상태(Charging → Windup, 감는 중 → Reel, 그 밖 → HoldRod)로 고른다.
-- 물고기: `tools/blender/fish_species.py`에 어종(체형 템플릿 A~H·두족류 O/Q, 색·무늬·지느러미)을 넣고 `build_fish.py --only <id>` → `Resources/Fish/Species/<id>.fbx`·텍스처·아이콘. `FishModels.CreateSpecies`가 길이(cm/100)로 키운다(09 문서).
+- 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/Jog/Sprint/HoldRod/Windup/Cast/Hook/Reel/Cheer…)가 클립 이름이다. 클립은 `Resources/Animations/UAL1_Standard`, `Mixamo`, `KevinIglesias`에서 찾고, `이름_M`/`이름_F`가 있으면 캐릭터 성별(`CharacterAnimator.Female`)로 고른다. Mixamo FBX는 `AssetImportRules.MixamoClips`, Kevin Iglesias는 `KevinClips` 표대로 임포트한다(10 문서). 낚시 중 자세는 `PlayerController.FishingPose()`가 상태(Charging → Windup, 감는 중 → Reel, 그 밖 → HoldRod)로, 이동 중 클립과 배속은 `UpdateAnimation()`이 속도로 고른다.
+- 물고기: `tools/blender/fish_species.py`에 어종(체형 템플릿 A~H·두족류 O 문어/Q 갑오징어/S 오징어, 색·무늬·지느러미)을 넣고 `build_fish.py --only <id>` → `Resources/Fish/Species/<id>.fbx`·텍스처·아이콘. `FishModels.CreateSpecies`가 길이(cm/100)로 키운다(09 문서).
 - 물: `WaterSurface` + `Fishing/Water` 셰이더 (`_WaveAmp`, `_WaveLen`, 노멀 타일·속도). 하늘 반사는 `DayNightCycle`의 리얼타임 반사 프로브(하늘만, 2초마다).
+  - **물가 거품**: 맵을 불러올 때 `FieldMapDef.SeabedAt(x, z)`(물 밑 땅 높이, 방파제는 땅 높이)를 `SeabedArea`에 1m 간격(최대 512칸) RFloat 텍스처로 굽는다(`WaterSurface.SetSeabed`). 셰이더는 `수심 = 수면 높이(파도 포함) − 해저`, 이웃 텍셀로 해저 경사를 구해 `물가까지 거리 ≈ 수심 / 경사`를 어림하고, 그 거리 4.5m 안에 노이즈로 끊긴 흰 띠가 밀려오게 그린다. 수심 2.5m보다 얕으면 바닥이 비치게 밝힌다. 깊이 텍스처를 쓰지 않아 그림자·AO와 부딪치지 않는다. 새 맵은 `SeabedAt`만 지형 높이 함수로 바꿔 주면 된다(기본값은 물이면 수심 3m).
+- **z-fighting 막기**: 카메라 near는 평소 0.2m(1인칭 파이팅만 0.05m — 눈앞 낚싯대), 지형 `heightmapPixelError` 2, 땅 위에 까는 판(길·산책로·앞마당)은 5cm 넘게 띄우고, 같은 높이로 겹치는 토막(해안도로 이음매·가두리 통로 교차·수련잎)은 높이를 엇갈린다.
+- **월드 글자**: 간판은 `UIFactory.OneSided`로 단면(뒤에서 거울 글씨가 안 보이게), 길가 간판은 `WorldBuilder.AddSignBothSides`(앞뒤 두 장). 내 이름표는 NPC 곁에서 숨긴다(NPC 이름표와 겹친다).
+- **부딪히는 몸**: `KenneyProps.Spawn`이 건물·바위·배경 배는 상자, 나무는 줄기, 가로등은 기둥 콜라이더를 붙인다(`solid: false`면 안 붙임 — 내 배). NPC는 캡슐. 캐스팅 궤적 검사(`FishingController.CastBlocked`)와 배 이동(`BoatController.HullClear`)이 이 콜라이더를 본다. 자동 스크린샷은 낚시 장면마다 `CheckClear`로 앞이 막혔는지 로그(`[Dev] 캐스팅 막힘`)를 남긴다.
 - 낚싯대·릴: `TelescopicRod.StyleFor`(낚싯대 색·길이·마디 수)와 `BuildReel`(릴 모양)에서 장비 id별로 고른다. 좌표 규약은 +Y가 낚싯대 방향, 원점이 릴 시트, +Z가 릴 쪽. 휨은 `Drive(목표각, 줄 방향, 떨림, dt)`, 펼치기는 `SetExtension(0~1)`, 릴은 `SpinReel(감기 바퀴/s, 줄 풀림 m/s, dt)`.
