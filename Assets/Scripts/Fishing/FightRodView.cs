@@ -178,6 +178,7 @@ namespace Fishing.Angling
             if (p != null && (p.Rod.Id != _rodId || p.Reel.Id != _reelId)) BuildRod();
             ApplyLook();
             _fight = fight;
+            _lateralK = 1f;
             _origin = origin;
             _forward = new Vector3(forward.x, 0f, forward.z).normalized;
             if (_fishBody != null) Destroy(_fishBody.gameObject);
@@ -237,19 +238,34 @@ namespace Fishing.Angling
             }
         }
 
-        /// <summary>물고기의 월드 위치. 거리와 좌우 위치(FishX)로 계산한다.</summary>
-        public Vector3 FishWorldPos(FishFight f)
+        /// <summary>
+        /// 물고기의 월드 위치. 거리와 좌우 위치(FishX)로 계산한다.
+        /// 좌우로 내달린 자리가 땅·방파제면 물 위에 머물도록 좌우 폭을 줄인다(_lateralK, 부드럽게).
+        /// </summary>
+        public Vector3 FishWorldPos(FishFight f) => FishPos(f, _lateralK);
+
+        float _lateralK = 1f;
+
+        Vector3 FishPos(FishFight f, float k)
         {
             var right = Vector3.Cross(Vector3.up, _forward);
-            var p = _origin + _forward * f.Distance + right * (f.FishX * f.Distance * 0.45f);
+            var p = _origin + _forward * f.Distance + right * (f.FishX * f.Distance * 0.45f * k);
             p.y = FieldMap.WaterY;
             return p;
+        }
+
+        void KeepFishInWater(FishFight f)
+        {
+            float want = 1f;
+            for (int i = 0; i < 6 && f.Distance > 2.5f && !FieldMap.IsWater(FishPos(f, want)); i++) want *= 0.6f;
+            _lateralK = Mathf.MoveTowards(_lateralK, want, Time.deltaTime * (want < _lateralK ? 5f : 1f));
         }
 
         void LateUpdate()
         {
             if (_fight == null) return;
             var f = _fight;
+            KeepFishInWater(f);
 
             float t = Mathf.Clamp01(f.Tension);
             // 원작: 낚싯대가 물고기 쪽으로 크게 끌려가고, 감을 때는 들썩이며 펌핑한다

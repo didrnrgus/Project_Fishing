@@ -332,11 +332,11 @@ namespace Fishing.World
                 float h = _map.LandY - bottom;
                 Mats.Prim(PrimitiveType.Cube, name, _root, new Vector3(r.center.x, bottom + h * 0.5f, r.center.y), new Vector3(r.width, h, r.height), concrete);
                 if (r.height > r.width)
-                    Mats.Prim(PrimitiveType.Cube, name + "Parapet", _root, new Vector3(parapetWest ? r.xMin + 0.3f : r.xMax - 0.3f, _map.LandY + 0.6f, r.center.y),
-                        new Vector3(0.6f, 1.2f, r.height), parapet, false);
+                    Mats.Prim(PrimitiveType.Cube, name + "Parapet", _root, new Vector3(parapetWest ? r.xMin + 0.3f : r.xMax - 0.3f, _map.LandY + 0.4f, r.center.y),
+                        new Vector3(0.6f, 0.8f, r.height), parapet, false);
                 else
-                    Mats.Prim(PrimitiveType.Cube, name + "Parapet", _root, new Vector3(r.center.x, _map.LandY + 0.6f, r.yMax - 0.3f),
-                        new Vector3(r.width, 1.2f, 0.6f), parapet, false);
+                    Mats.Prim(PrimitiveType.Cube, name + "Parapet", _root, new Vector3(r.center.x, _map.LandY + 0.4f, r.yMax - 0.3f),
+                        new Vector3(r.width, 0.8f, 0.6f), parapet, false);
             }
             Body(SeocheonDef.RedStem, "RedBreakwater", false);
             Body(SeocheonDef.RedArm, "RedBreakwaterArm", false);

@@ -653,11 +653,11 @@ namespace Fishing.World
                     float h = _map.LandY - bottom;
                     Mats.Prim(PrimitiveType.Cube, "Breakwater", _root, new Vector3(r.center.x, bottom + h * 0.5f, r.center.y), new Vector3(r.width, h, r.height), concrete);
                     if (along)
-                        Mats.Prim(PrimitiveType.Cube, "BreakwaterParapet", _root, new Vector3(b.ParapetWest ? r.xMin + 0.3f : r.xMax - 0.3f, _map.LandY + 0.6f, r.center.y),
-                            new Vector3(0.6f, 1.2f, r.height), parapet, false);
+                        Mats.Prim(PrimitiveType.Cube, "BreakwaterParapet", _root, new Vector3(b.ParapetWest ? r.xMin + 0.3f : r.xMax - 0.3f, _map.LandY + 0.4f, r.center.y),
+                            new Vector3(0.6f, 0.8f, r.height), parapet, false);
                     else
-                        Mats.Prim(PrimitiveType.Cube, "BreakwaterParapet", _root, new Vector3(r.center.x, _map.LandY + 0.6f, r.yMax - 0.3f),
-                            new Vector3(r.width, 1.2f, 0.6f), parapet, false);
+                        Mats.Prim(PrimitiveType.Cube, "BreakwaterParapet", _root, new Vector3(r.center.x, _map.LandY + 0.4f, r.yMax - 0.3f),
+                            new Vector3(r.width, 0.8f, 0.6f), parapet, false);
                 }
                 Body(b.Stem, true);
                 if (b.Arm.width > 0f) Body(b.Arm, false);
