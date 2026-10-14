@@ -16,6 +16,10 @@ namespace Fishing.PlayerSystems
         /// <summary>낚시 중에는 이동을 막는다.</summary>
         public bool MovementLocked;
 
+        /// <summary>자동 스크린샷용 이동 입력 (카메라 기준, 0이면 키보드). DebugRun이면 달리기.</summary>
+        public Vector2 DebugMove;
+        public bool DebugRun;
+
         public Transform RodTip => Rod != null ? Rod.Tip : transform;
         /// <summary>머리 뼈 (초상화 카메라가 비춘다).</summary>
         public Transform Head { get; private set; }
@@ -81,7 +85,7 @@ namespace Fishing.PlayerSystems
                 // Quaternius 캐릭터 (CC0) + 코드로 입힌 옷
                 var look = Game.Profile != null ? Game.Profile.BuildLook() : CharacterLook.Player;
                 BuildCharacter(look);
-                _nameTag = CharacterFactory.AddNameTag(transform, look.Name, look.Title);
+                SetNameTag(look);
             }
             else
             {
@@ -138,8 +142,27 @@ namespace Fishing.PlayerSystems
             if (!CharacterFactory.Available || Game.Profile == null) return;
             var look = Game.Profile.BuildLook();
             BuildCharacter(look);
+            SetNameTag(look);
+        }
+
+        string _tagTitle;
+
+        void SetNameTag(CharacterLook look)
+        {
             if (_nameTag != null) Destroy(_nameTag.gameObject);
             _nameTag = CharacterFactory.AddNameTag(transform, look.Name, look.Title);
+            _tagTitle = look.Title;
+        }
+
+        void Start()
+        {
+            // 레벨 업·업적으로 칭호가 바뀌면 머리 위 이름표도 바꾼다 (HUD와 같은 칭호)
+            if (Game.Profile != null)
+                Game.Profile.Changed += () =>
+                {
+                    if (this == null || !CharacterFactory.Available || Game.Profile.CurrentTitle == _tagTitle) return;
+                    SetNameTag(Game.Profile.BuildLook());
+                };
         }
 
         // ---------------- 배 ----------------
@@ -262,6 +285,7 @@ namespace Fishing.PlayerSystems
                 if (Settings.Held(KeyAction.MoveRight)) input.x += 1f;
                 if (Settings.Held(KeyAction.MoveLeft)) input.x -= 1f;
             }
+            if (DebugMove != Vector2.zero) input = DebugMove;
             bool wantsMove = input.sqrMagnitude > 0.01f;
             MovedThisFrame = wantsMove;
 
@@ -271,7 +295,7 @@ namespace Fishing.PlayerSystems
                 float camYaw = Game.CameraRig != null ? Game.CameraRig.Yaw : 0f;
                 var rot = Quaternion.Euler(0f, camYaw, 0f);
                 var dir = rot * new Vector3(input.x, 0f, input.y).normalized;
-                float speed = Settings.Held(KeyAction.Run) ? RunSpeed : WalkSpeed;
+                float speed = Settings.Held(KeyAction.Run) || DebugRun ? RunSpeed : WalkSpeed;
                 motion = dir * speed;
                 Model.rotation = Quaternion.Slerp(Model.rotation, Quaternion.LookRotation(dir), Time.deltaTime * 12f);
 
@@ -302,12 +326,12 @@ namespace Fishing.PlayerSystems
             _cc.Move(motion * Time.deltaTime);
 
             _speedNow = new Vector2(motion.x, motion.z).magnitude;
-            // 발소리: 보폭(걷기 0.8m, 뛰기 1.1m)마다
+            // 발소리: 애니메이션 한 걸음마다 (뛰기 클립 0.3초 × 4m/s = 1.2m, 질주 0.26초 × 6m/s = 1.56m)
             if (_cc.isGrounded && _speedNow > 0.5f)
             {
                 bool running = _speedNow > WalkSpeed + 0.5f;
                 _stride += _speedNow * Time.deltaTime;
-                if (_stride >= (running ? 1.1f : 0.8f))
+                if (_stride >= (running ? 1.56f : 1.2f))
                 {
                     _stride = 0f;
                     if (Game.Sound != null) Game.Sound.Footstep(transform.position, running);
@@ -322,7 +346,7 @@ namespace Fishing.PlayerSystems
             else UpdateAnimation();
 
             if (_nameTag != null) _nameTag.gameObject.SetActive(NameTagVisible);
-                if (_nameTag != null && NameTagVisible && Game.CameraRig != null)
+            if (_nameTag != null && NameTagVisible && Game.CameraRig != null)
                 _nameTag.rotation = Quaternion.LookRotation(_nameTag.position - Game.CameraRig.transform.position);
         }
 
@@ -348,7 +372,10 @@ namespace Fishing.PlayerSystems
                 return;
             }
             bool running = _speedNow > WalkSpeed + 0.5f;
-            if (_speedNow > 0.5f) _anim.SetLoop(running ? CharacterAnimator.Jog : CharacterAnimator.Walk, running ? 1.1f : 1.25f);
+            // 속도에 맞는 클립 (Human Basic Motions 원래 속도: 걷기 2, 뛰기 4, 질주 6m/s). 걷기 키(4.5m/s)도 뛰는 걸음
+            if (running) _anim.SetLoop(CharacterAnimator.Sprint, _speedNow / CharacterAnimator.SprintClipSpeed);
+            else if (_speedNow > 2.6f) _anim.SetLoop(CharacterAnimator.Jog, _speedNow / CharacterAnimator.JogClipSpeed);
+            else if (_speedNow > 0.5f) _anim.SetLoop(CharacterAnimator.Walk, Mathf.Max(0.6f, _speedNow / CharacterAnimator.WalkClipSpeed));
             else if (fishing) _anim.SetLoop(FishingPose(), Game.Fishing.State == Angling.FishingState.Charging ? 1.5f : 1f);
             else _anim.SetLoop(CharacterAnimator.Idle);
         }

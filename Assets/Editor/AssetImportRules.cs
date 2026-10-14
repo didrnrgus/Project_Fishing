@@ -8,6 +8,7 @@ namespace Fishing.EditorTools
     ///  - Resources/Characters/Angler_*.fbx: tools/blender/build_characters.py가 만든 낚시꾼(몸 + 옷 메쉬)
     ///  - ThirdParty/Quaternius/Source: 그 원본 Superhero FBX. 런타임에는 안 쓰므로 가볍게(애니메이션·머티리얼 없음)
     ///  - Resources/Animations/Mixamo: Mixamo FBX를 MixamoClips 표대로 쪼갠다 (낚시 동작)
+    ///  - Resources/Animations/KevinIglesias: Human Basic Motions FREE의 대기·걷기·뛰기 (남·녀). 아바타는 패키지 모델(HumanM/F_Model)에서 복사
     ///  - 이름에 "Loop"가 들어간 클립은 반복 재생
     ///  - Resources/Fish: 레거시 애니메이션 (Animation 컴포넌트). Fish/Species는 build_fish.py가 만든 어종별 모델(클립 5개)
     ///  - Resources/Fish/Textures: *_n = 노멀 맵, *_m = 금속성·매끈함(선형), 나머지 = 알베도(알파 = 지느러미)
@@ -22,7 +23,15 @@ namespace Fishing.EditorTools
         void OnPreprocessModel()
         {
             var importer = (ModelImporter)assetImporter;
-            if (IsHumanoid(assetPath))
+            if (assetPath.Contains("Resources/Animations/KevinIglesias/"))
+            {
+                // 아바타 설정(Copy From Other → Kevin Iglesias/Human Animations/Models)은 패키지 그대로 둔다
+                importer.animationType = ModelImporterAnimationType.Human;
+                importer.isReadable = false;
+                importer.materialImportMode = ModelImporterMaterialImportMode.None;
+                importer.importAnimation = true;
+            }
+            else if (IsHumanoid(assetPath))
             {
                 importer.animationType = ModelImporterAnimationType.Human;
                 importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
@@ -126,6 +135,18 @@ namespace Fishing.EditorTools
             ("Cheering", "Cheer_ArmsUp", 0, 87),            // 랜딩 환호: 두 팔 들고 흔들기
         };
 
+        /// <summary>
+        /// Human Basic Motions FREE(Kevin Iglesias, Resources/Animations/KevinIglesias) 파일 → 클립 이름. 파일 끝 _M/_F가 남·녀.
+        /// CharacterAnimator가 "이름_M"/"이름_F"를 캐릭터 성별로 골라 쓴다.
+        /// </summary>
+        static readonly (string file, string clip)[] KevinClips =
+        {
+            ("Idle", "Basic_Idle_Loop"),     // HumanM/F@Idle01: 팔을 내린 자연스러운 대기
+            ("Walk", "Basic_Walk_Loop"),     // Walk01_Forward: 0.8초 한 걸음 쌍, 원래 2.0m/s
+            ("Run", "Basic_Run_Loop"),       // Run01_Forward: 0.6초, 원래 4.0m/s (게임 걷기 4.5m/s)
+            ("Sprint", "Basic_Sprint_Loop"), // Sprint01_Forward: 0.52초, 원래 6.0m/s (게임 달리기 7.5m/s)
+        };
+
         void OnPreprocessAnimation()
         {
             if (!assetPath.Contains("Resources/Animations/") && !assetPath.Contains("Resources/Fish/")) return;
@@ -133,6 +154,11 @@ namespace Fishing.EditorTools
             if (assetPath.Contains("Resources/Animations/Mixamo/"))
             {
                 PreprocessMixamo(importer);
+                return;
+            }
+            if (assetPath.Contains("Resources/Animations/KevinIglesias/"))
+            {
+                PreprocessKevin(importer);
                 return;
             }
             var clips = importer.defaultClipAnimations;
@@ -150,6 +176,33 @@ namespace Fishing.EditorTools
                 clip.keepOriginalPositionXZ = true;
             }
             importer.clipAnimations = clips;
+        }
+
+        static void PreprocessKevin(ModelImporter importer)
+        {
+            var defaults = importer.defaultClipAnimations;
+            if (defaults.Length == 0) return;
+            string file = System.IO.Path.GetFileNameWithoutExtension(importer.assetPath); // Walk_M
+            int us = file.LastIndexOf('_');
+            if (us < 0) return;
+            string kind = file.Substring(0, us), gender = file.Substring(us);
+            foreach (var (f, name) in KevinClips)
+            {
+                if (f != kind) continue;
+                var c = defaults[0];
+                c.name = name + gender;
+                c.loopTime = true;
+                c.loopPose = true;
+                c.lockRootRotation = true;
+                c.lockRootHeightY = true;
+                c.lockRootPositionXZ = true;
+                c.keepOriginalOrientation = true;
+                c.keepOriginalPositionY = true;
+                c.keepOriginalPositionXZ = true;
+                // Kevin Iglesias도 Mixamo처럼 +Z를 본다 → UAL(-Z)에 맞춘다
+                c.rotationOffset = 180f;
+                importer.clipAnimations = new[] { c };
+            }
         }
 
         static void PreprocessMixamo(ModelImporter importer)
