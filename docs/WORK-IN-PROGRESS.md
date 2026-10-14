@@ -30,9 +30,9 @@
 | **Human Basic Motions FREE** (Kevin Iglesias) | [Asset Store](https://assetstore.unity.com/packages/3d/animations/human-basic-motions-free-154271) | 지금 주먹 쥔 슈퍼히어로 대기 자세 → 자연스러운 대기·걷기·뛰기 | `CharacterAnimator`가 두 번째 클립 라이브러리에서 Idle/Walk/Run을 찾게 (08 4장 1) |
 | **AllSky Free** | [Asset Store](https://assetstore.unity.com/packages/p/allsky-free-10-sky-skybox-set-146014) | 흐린 날 하늘 큐브맵 (지금은 절차적 층구름으로 대신함) | 흐림·비일 때 `DayNightCycle`에서 큐브맵 섞기 |
 | **Stylized Hand Painted Nature Pack Free** | [Asset Store](https://assetstore.unity.com/packages/3d/vegetation/trees/stylized-hand-painted-nature-pack-free-177775) | 한강 둔치·홍현 나무·풀 (지금 Kenney 나무는 단순) | `KenneyProps`의 나무 배치를 교체 |
-| 국가유산청 전통 배 등 무료 에셋 | Asset Store | 서해·남해 배경 배 | 배경 소품 |
-| **Mixamo** 동작 (Adobe 계정) | mixamo.com | 던지기·당기기·앉아 있기 낚시 동작 | FBX for Unity, Without Skin → 휴머노이드 리타깃 |
-| (선택) **VRoid Studio** 시험 모델 | vroid.com | 원작 '청'·'명' 같은 한국 MMO풍 얼굴 | UniVRM으로 임포트해 지금 캐릭터와 비교 (08 5장) |
+| 국가유산청 전통 배 등 무료 에셋 | [국가유산청 에셋 예시(운현궁)](https://assetstore.unity.com/packages/3d/props/khs-unhyeongungcollect-273241) → 판매자 이름 눌러 무료 목록에서 배 찾기 | 서해·남해 배경 배 | 배경 소품 |
+| **Mixamo** 동작 (Adobe 계정) | [mixamo.com](https://www.mixamo.com/) | 던지기·당기기·앉아 있기 낚시 동작 | FBX for Unity, Without Skin → 휴머노이드 리타깃 |
+| (선택) **VRoid Studio** 시험 모델 | [VRoid Studio](https://vroid.com/en/studio), [UniVRM](https://github.com/vrm-c/UniVRM/releases) | 원작 '청'·'명' 같은 한국 MMO풍 얼굴 | UniVRM으로 임포트해 지금 캐릭터와 비교 (08 5장) |
 
 - 그 밖에: 예전 스크립트 실수로 생긴 빈 폴더 `C:\Screenshots\fish`는 지워도 된다(보안 규칙 때문에 Claude가 못 지움).
 
