@@ -209,14 +209,14 @@ namespace Fishing.PlayerSystems
             Mats.Prim(PrimitiveType.Cylinder, "HatTop", Model, new Vector3(0f, 1.9f, 0f), new Vector3(0.38f, 0.09f, 0.38f), hat, false);
         }
 
-        /// <summary>캐스팅 동작 (휘두르기).</summary>
-        public void PlayCast() => _anim?.PlayOnce(CharacterAnimator.Cast, 1.6f, 0.75f);
+        /// <summary>캐스팅 동작: 어깨 너머(Windup 끝 자세)에서 앞으로 던지고 팔을 뻗은 채 내린다.</summary>
+        public void PlayCast() => _anim?.PlayOnce(CharacterAnimator.Cast, 1.5f);
 
         /// <summary>챔질 동작 (낚싯대를 홱 들어 올리기).</summary>
-        public void PlayHook() => _anim?.PlayOnce(CharacterAnimator.Hook, 1.2f);
+        public void PlayHook() => _anim?.PlayOnce(CharacterAnimator.Hook, 2f);
 
-        /// <summary>낚아 올렸을 때.</summary>
-        public void PlayCheer() => _anim?.PlayOnce(CharacterAnimator.Interact, 1.2f);
+        /// <summary>낚아 올렸을 때 (두 팔 들고 환호).</summary>
+        public void PlayCheer() => _anim?.PlayOnce(CharacterAnimator.Cheer, 1.1f);
 
         public void Teleport(Vector3 pos, float yaw)
         {
@@ -326,12 +326,20 @@ namespace Fishing.PlayerSystems
                 _nameTag.rotation = Quaternion.LookRotation(_nameTag.position - Game.CameraRig.transform.position);
         }
 
+        /// <summary>낚시 중 반복 자세: 던지려고 당기는 중 = 어깨 너머로 들기, 찌·루어를 감는 중 = 릴 감기, 그 밖 = 낚싯대 들고 대기.</summary>
+        static string FishingPose()
+        {
+            var f = Game.Fishing;
+            if (f.State == Angling.FishingState.Charging) return CharacterAnimator.Windup;
+            return f.ReelingIn ? CharacterAnimator.Reel : CharacterAnimator.HoldRod;
+        }
+
         void UpdateAnimation()
         {
             bool fishing = Game.Fishing != null && Game.Fishing.State != Angling.FishingState.Idle;
             if (_mount != null)
             {
-                _anim.SetLoop(_mountSeated ? CharacterAnimator.Drive : fishing ? CharacterAnimator.HoldRod : CharacterAnimator.Idle);
+                _anim.SetLoop(_mountSeated ? CharacterAnimator.Drive : fishing ? FishingPose() : CharacterAnimator.Idle);
                 return;
             }
             if (_airTime > 0.15f)
@@ -341,7 +349,8 @@ namespace Fishing.PlayerSystems
             }
             bool running = _speedNow > WalkSpeed + 0.5f;
             if (_speedNow > 0.5f) _anim.SetLoop(running ? CharacterAnimator.Jog : CharacterAnimator.Walk, running ? 1.1f : 1.25f);
-            else _anim.SetLoop(fishing ? CharacterAnimator.HoldRod : CharacterAnimator.Idle);
+            else if (fishing) _anim.SetLoop(FishingPose(), Game.Fishing.State == Angling.FishingState.Charging ? 1.5f : 1f);
+            else _anim.SetLoop(CharacterAnimator.Idle);
         }
 
         void LateUpdate()
