@@ -83,6 +83,9 @@ namespace Fishing.World
         public override bool IsWater(Vector3 p) =>
             p.x > MinX && p.x < MaxX && p.z > ShoreZ && p.z < 260f && !OnBreakwater(p) && IslandAt(p) < 0;
 
+        public override float SeabedAt(float x, float z) => OnBreakwater(new Vector3(x, 0f, z)) ? LandY : SeaTerrain.HeightAt(x, z);
+        public override Rect SeabedArea => new Rect(-205f, -70f, 410f, 330f);
+
         public override bool IsWalkable(Vector3 p)
         {
             if (p.x < MinX + 2f || p.x > MaxX - 2f) return false;
@@ -168,11 +171,11 @@ namespace Fishing.World
         void BuildShore()
         {
             // 해안 땅은 지형(SeaTerrain). 마을 길과 포구 앞 호안(콘크리트 벽)만 따로
-            Mats.Prim(PrimitiveType.Cube, "CoastRoad", _root, new Vector3(0f, _map.LandY + 0.02f, -62f), new Vector3(420f, 0.04f, 7f),
+            Mats.Prim(PrimitiveType.Cube, "CoastRoad", _root, new Vector3(0f, _map.LandY + 0.03f, -62f), new Vector3(420f, 0.14f, 7f),
                 Mats.TexturedBox("asphalt", Color.white, new Vector2(420f, 7f), 6f, 0.15f), false);
             Mats.Prim(PrimitiveType.Cube, "Seawall", _root, new Vector3(30f, _map.LandY - 1.2f, HonghyeonDef.ShoreZ - 0.4f),
                 new Vector3(90f, 3.2f, 1f), Mats.TexturedBox("concrete", new Color(0.85f, 0.85f, 0.83f), new Vector2(90f, 3.2f), 3f, 0.2f));
-            Mats.Prim(PrimitiveType.Cube, "HarborApron", _root, new Vector3(30f, _map.LandY + 0.02f, -47f), new Vector3(70f, 0.04f, 13f),
+            Mats.Prim(PrimitiveType.Cube, "HarborApron", _root, new Vector3(30f, _map.LandY + 0.03f, -47f), new Vector3(70f, 0.14f, 13f),
                 Mats.TexturedBox("concrete", new Color(0.8f, 0.8f, 0.78f), new Vector2(70f, 13f), 4f, 0.2f), false);
 
             // 해안 갯바위: 물가를 따라 크고 작은 바위

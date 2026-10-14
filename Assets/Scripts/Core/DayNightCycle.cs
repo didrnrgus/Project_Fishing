@@ -116,8 +116,13 @@ namespace Fishing.Core
             RenderSettings.ambientEquatorColor = sky * 0.8f;
             RenderSettings.ambientGroundColor = sky * 0.45f;
             RenderSettings.fogColor = Color.Lerp(sky, new Color(0.6f, 0.62f, 0.65f) * day, 1f - _weatherDim);
+            // 해무가 잦은 곳(FogBoost)은 흐린 날·새벽에 훨씬 짙다
+            var map = Fishing.World.FieldMap.Current;
+            float seaFog = map != null && Game.Mode == GameMode.Field
+                ? map.FogBoost * (Game.Weather.Current != Weather.Clear ? 1f : Game.Clock.Band == TimeBand.Dawn ? 0.7f : 0.12f) : 0f;
             RenderSettings.fogDensity = Mathf.Lerp(0.011f, 0.0028f, _weatherDim)
-                                        + (Game.Clock.Band == TimeBand.Dawn ? 0.004f : 0f); // 새벽 물안개
+                                        + (Game.Clock.Band == TimeBand.Dawn ? 0.004f : 0f) // 새벽 물안개
+                                        + seaFog;
 
             _sky.SetFloat("_Exposure", Mathf.Lerp(0.12f, 1.25f, day) * Mathf.Lerp(0.55f, 1f, _weatherDim));
             _sky.SetFloat("_AtmosphereThickness", Mathf.Lerp(0.9f, 1.6f, warm));

@@ -85,9 +85,9 @@ namespace Fishing.Core
             Save();
         }
 
-        /// <summary>바꾸면 안 되는 키 (Esc는 창 닫기, 숫자 1~6은 미끼, 마우스는 낚시).</summary>
+        /// <summary>바꾸면 안 되는 키 (Esc는 창 닫기, 숫자 1~8은 미끼, 마우스는 낚시).</summary>
         public static bool Reserved(KeyCode k) =>
-            k == KeyCode.Escape || (k >= KeyCode.Alpha1 && k <= KeyCode.Alpha6) || (k >= KeyCode.Mouse0 && k <= KeyCode.Mouse6) || k == KeyCode.None;
+            k == KeyCode.Escape || (k >= KeyCode.Alpha1 && k <= KeyCode.Alpha8) || (k >= KeyCode.Mouse0 && k <= KeyCode.Mouse6) || k == KeyCode.None;
 
         public static void ResetKeys()
         {

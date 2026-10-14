@@ -91,10 +91,9 @@ namespace Fishing.Core
                     if (string.IsNullOrEmpty(Game.Profile.Data.boatId)) Game.Profile.Equip(GearDatabase.GetGear("boat_rubber"));
                     Game.Toast("한국 낚시 조합이 고무보트를 지급했습니다! 물가에서 B로 꺼내 타세요.", ToastKind.Great);
                 }
-                if (level == FishingAreas.EntryLevel("honghyeon"))
-                    Game.Toast("새 낚시터가 열렸습니다: 홍현 앞바다 (남해). 대기실 [낚시터 선택하기]에서 입장하세요.", ToastKind.Great);
-                if (level == FishingAreas.EntryLevel("seocheon"))
-                    Game.Toast("새 낚시터가 열렸습니다: 서천 앞바다 (서해, 대회 장소). 물때를 읽고 주꾸미를 노려 보세요!", ToastKind.Great);
+                foreach (var area in FishingAreas.Korea)
+                    if (area.Open && area.Level == level && area.Level > 1)
+                        Game.Toast($"새 낚시터가 열렸습니다: {area.Name}. 대기실 [낚시터 선택하기]에서 입장하세요.", ToastKind.Great);
             };
 
             if (devArgs.Enabled) gameObject.AddComponent<DevAutomation>().Init(devArgs);
@@ -104,7 +103,7 @@ namespace Fishing.Core
         {
             var q = Game.Quests.Current;
             Game.UI.EnterLobby();
-            Game.Toast("한국 낚시 조합에 오신 걸 환영합니다! [낚시터 선택하기]에서 한강에 입장하세요.", ToastKind.Great);
+            Game.Toast($"한국 낚시 조합에 오신 걸 환영합니다! [낚시터 선택하기]에서 {Fishing.World.FieldMap.ShortName}에 입장하세요.", ToastKind.Great);
             if (q != null) Game.Toast($"조합 퀘스트: {q.Title} - {q.GoalText}");
             _nextAutoSave = Time.time + AutoSaveInterval;
         }

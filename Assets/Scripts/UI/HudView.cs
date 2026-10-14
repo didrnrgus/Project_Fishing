@@ -386,11 +386,12 @@ namespace Fishing.UI
             FitPill(_boatHintPill, _boatHint, 40f, 900f);
         }
 
+        public const int MaxBaitSlots = 8;
         RectTransform _baitBar;
         readonly List<GameObject> _baitSlotObjects = new List<GameObject>();
         string _baitsBuiltFor;
 
-        /// <summary>지금 낚시터의 미끼 (최대 6개).</summary>
+        /// <summary>지금 낚시터의 미끼 (최대 8개, 숫자키 1~8).</summary>
         public static List<BaitDef> MapBaits()
         {
             // 쓸 수 있는 해체 미끼 중 가장 좋은 것 하나를 마지막 칸에
@@ -398,7 +399,7 @@ namespace Fishing.UI
             foreach (var b in GearDatabase.Baits)
                 if (b.NotSold && Game.Profile.Count(b.Id) > 0 && b.Level <= Game.Profile.Data.level && (cut == null || b.Potency > cut.Potency)) cut = b;
             var list = new List<BaitDef>();
-            int sold = cut != null ? 5 : 6;
+            int sold = cut != null ? MaxBaitSlots - 1 : MaxBaitSlots;
             foreach (var b in GearDatabase.Baits)
                 if (!b.NotSold && b.SoldIn(FieldMap.Id) && list.Count < sold) list.Add(b);
             if (cut != null) list.Add(cut);
@@ -419,12 +420,14 @@ namespace Fishing.UI
             _baitSlotObjects.Clear();
             _baitSlots.Clear();
             var baits = MapBaits();
+            // 칸이 7개 이상이면 조금 좁게 (왼쪽 메뉴 줄과 겹치지 않게)
+            float step = baits.Count > 6 ? 76f : 84f;
             for (int i = 0; i < baits.Count; i++)
             {
                 var bait = baits[i];
                 int index = i;
                 var btn = UIFactory.Button(_baitBar, "", () => SelectBait(index), UIFactory.BtnGhost, 13);
-                ((RectTransform)btn.transform).At(new Vector2(1, 0.5f), new Vector2(-122 - (baits.Count - 1 - i) * 84, 0), new Vector2(80, 46));
+                ((RectTransform)btn.transform).At(new Vector2(1, 0.5f), new Vector2(-122 - (baits.Count - 1 - i) * step, 0), new Vector2(step - 4f, 46));
                 var label = btn.GetComponentInChildren<TMP_Text>();
                 var icon = ItemIcons.Get(bait.Id);
                 if (icon != null)
@@ -443,7 +446,7 @@ namespace Fishing.UI
                 _baitSlotObjects.Add(btn.gameObject);
             }
             // 독 너비를 칸 수에 맞춘다 (미끼 칸 + 구분선 + 살림망)
-            _baitBar.sizeDelta = new Vector2(122 + baits.Count * 84 + 6, 58);
+            _baitBar.sizeDelta = new Vector2(122 + baits.Count * step + 6, 58);
             _baitDivider ??= UIFactory.Divider(_baitBar, "Sep").rectTransform.At(new Vector2(1, 0.5f), new Vector2(-116, 0), new Vector2(1, 34));
         }
 

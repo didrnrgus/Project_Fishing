@@ -174,7 +174,7 @@ namespace Fishing.UI
             if (_selected == null) return;
             if (!_selected.Open)
             {
-                _status.text = $"{_selected.Name}은(는) 아직 준비 중입니다. 지금은 한강과 홍현 앞바다가 열려 있어요.";
+                _status.text = $"{_selected.Name}은(는) 아직 준비 중입니다.";
                 return;
             }
             if (Game.Profile.Data.level < _selected.Level)
@@ -195,8 +195,10 @@ namespace Fishing.UI
             foreach (var (text, area) in _listItems)
             {
                 bool sel = area == _selected;
-                text.color = sel ? new Color(0.45f, 0.95f, 0.6f) : area.Open ? UIFactory.TextMain : UIFactory.TextDim;
-                text.text = area.Open ? area.Name : $"{area.Name} <size=12><color=#607080>준비 중</color></size>";
+                bool locked = p.Data.level < area.Level;
+                text.color = sel ? new Color(0.45f, 0.95f, 0.6f) : area.Open && !locked ? UIFactory.TextMain : UIFactory.TextDim;
+                text.text = !area.Open ? $"{area.Name} <size=12><color=#607080>준비 중</color></size>"
+                    : locked ? $"{area.Name} <size=12><color=#c08060>Lv.{area.Level}</color></size>" : area.Name;
             }
             foreach (var (btn, ring, area) in _markers)
                 ring.rectTransform.localScale = Vector3.one * (area == _selected ? 1.45f : 1f);
@@ -207,7 +209,8 @@ namespace Fishing.UI
 
             _mapName.text = _selected.Name;
             var species = FishDatabase.DexOf(_selected?.MapId ?? "hangang").ToList();
-            float rate = _selected.Open ? p.Data.dex.Count / (float)species.Count : 0f;
+            // 이 낚시터에 사는 어종 중 도감에 기록한 비율
+            float rate = _selected.Open && species.Count > 0 ? species.Count(s => p.Dex(s.Id) != null) / (float)species.Count : 0f;
             _dexFill.fillAmount = rate;
             _dexRate.text = $"{rate * 100f:0} %";
 
@@ -218,7 +221,12 @@ namespace Fishing.UI
                 bool known = entry != null;
                 _fishName.text = known ? s.Name : "???";
                 _fishLatin.text = known ? s.Latin : "아직 낚지 못한 어종";
-                _fishImage.color = known ? Fishing.Angling.FishModels.BodyColor(s) * 1.25f : new Color(0.1f, 0.12f, 0.15f);
+                // 어종 아이콘 (못 낚은 어종은 검은 실루엣). 아이콘이 없으면 몸 색 물고기 모양
+                var icon = Fishing.Angling.FishModels.Icon(s);
+                _fishImage.sprite = icon != null ? icon : UIFactory.Fish;
+                _fishImage.preserveAspect = true;
+                _fishImage.color = icon != null ? (known ? Color.white : new Color(0.05f, 0.07f, 0.09f, 0.95f))
+                    : known ? Fishing.Angling.FishModels.BodyColor(s) * 1.25f : new Color(0.1f, 0.12f, 0.15f);
                 _seasonRecord.text = known ? $"PERSONAL RECORD\n{entry.maxLength:0.00}cm  강태공" : "PERSONAL RECORD\n-";
                 _records.text = $"[{_selected.Name} 최대] {s.MaxLen:0.00}cm\n[대물 기준] {s.TrophyLen:0.00}cm {s.TrophyName}";
             }
@@ -226,6 +234,7 @@ namespace Fishing.UI
             {
                 _fishName.text = "준비 중";
                 _fishLatin.text = _selected.Desc;
+                _fishImage.sprite = UIFactory.Fish;
                 _fishImage.color = new Color(0.1f, 0.12f, 0.15f);
                 _seasonRecord.text = $"입장 레벨 Lv.{_selected.Level}";
                 _records.text = "다음 업데이트에서 열릴 예정입니다";

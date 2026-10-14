@@ -95,7 +95,7 @@ namespace Fishing.Data
         /// <summary>그날 대회가 열리는 맵: 한강 → 서천 앞바다(원작 대회 장소) → 홍현 앞바다 순서로 돈다.</summary>
         public static string MapOf(int day) => (day % 3) switch { 1 => "hangang", 2 => "seocheon", _ => "honghyeon" };
 
-        public static string MapShortName(string mapId) => mapId switch { "honghyeon" => "홍현 앞바다", "seocheon" => "서천 앞바다", _ => "한강" };
+        public static string MapShortName(string mapId) => Fishing.World.Maps.Get(mapId).ShortName;
 
         public static string Title(int day) => $"제{day}회 {MapShortName(MapOf(day))} 조합 낚시 대회";
 

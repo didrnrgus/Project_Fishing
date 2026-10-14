@@ -14,3 +14,4 @@ Poly Haven (https://polyhaven.com, CC0 1.0) 1K JPG, 디퓨즈(_diff) + OpenGL �
 
 지형(SeaTerrain)과 한강·홍현의 데크·길·콘크리트(Mats.Textured)에 쓴다.
 | mud_* | Coast Sand 01을 어둡고 회갈색으로 바꾼 갯벌 진흙 (내장 Terrain 셰이더는 층별 색 보정을 무시해서 텍스처로 만듦) | Rob Tuytel (원본) |
+| snow_* | Coast Sand 01을 밝고 푸르스름하게 바꾼 눈 (청진포구) | Rob Tuytel (원본) |

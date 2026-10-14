@@ -124,6 +124,7 @@ namespace Fishing.Dev
             yield return new WaitForSeconds(0.3f);
             yield return Shot("02_casting");
             Game.Fishing.DebugResume();
+            CheckClear("DebugCast");
             Game.Fishing.DebugCast(15.5f);
             yield return new WaitForSeconds(0.45f);
             yield return Shot("02b_cast_flight");
@@ -146,6 +147,7 @@ namespace Fishing.Dev
             if (fight == null)
             {
                 Debug.Log("[Dev] 입질이 파이팅으로 이어지지 않아 강제로 시작합니다.");
+                CheckClear("DebugStartFight");
                 Game.Fishing.DebugStartFight("carp", 82f, 18f);
                 fight = Game.Fishing.Fight;
             }
@@ -261,6 +263,7 @@ namespace Fishing.Dev
             Game.CameraRig.Pitch = 16f;
             Game.CameraRig.Distance = 6f;
             yield return new WaitForSeconds(0.5f);
+            CheckClear("DebugCast");
             Game.Fishing.DebugCast(16f);
             yield return new WaitForSeconds(2.2f);
             Game.Fishing.DebugTwitch();
@@ -448,9 +451,11 @@ namespace Fishing.Dev
             // 방파제 끝에서 감성돔 파이팅
             Game.Clock.Set(2, 17 * 60 + 30);
             Game.Weather.Force(Weather.Cloudy);
-            Game.Player.Teleport(new Vector3(bw.center.x, 1.1f, bw.yMax - 3f), 0f);
+            Game.Player.Teleport(new Vector3(bw.xMax - 1.3f, 1.1f, bw.yMax - 9f), 70f);
+            Game.CameraRig.Yaw = 70f;
             yield return new WaitForSeconds(1f);
             Game.Fishing.Autoplay = true;
+            CheckClear("DebugStartFight");
             Game.Fishing.DebugStartFight("blackseabream", 55f, 16f);
             yield return new WaitForSeconds(2.5f);
             yield return Shot("26_sea_fight");
@@ -527,6 +532,7 @@ namespace Fishing.Dev
             Game.Player.Teleport(new Vector3(arm.center.x, 1.1f, arm.yMax - 2f), 0f);
             yield return new WaitForSeconds(1f);
             Game.Fishing.Autoplay = true;
+            CheckClear("DebugStartFight");
             Game.Fishing.DebugStartFight("octopus", 26f, 12f);
             yield return new WaitForSeconds(2f);
             yield return Shot("37_seocheon_fight");
@@ -538,6 +544,9 @@ namespace Fishing.Dev
             yield return Shot("38_seocheon_result");
             yield return CloseResult();
             Game.Fishing.Autoplay = false;
+
+            // ================= 해안 맵 8곳 (CoastMapDef) =================
+            yield return CoastTour();
 
             // ================= 겨울: 한강 얼음낚시 =================
             int winterDay = Seasons.FirstDayOf(Season.Winter, Game.Clock.Day) + 3;
@@ -565,6 +574,96 @@ namespace Fishing.Dev
 
             Debug.Log("[Dev] 자동 스크린샷 완료");
             Application.Quit();
+        }
+
+        /// <summary>새 낚시터 8곳을 차례로 들어가 대표 장면을 찍는다 (위치, 카메라 yaw·pitch·거리, 시각).</summary>
+        IEnumerator CoastTour()
+        {
+            var p = Game.Profile;
+            p.Data.level = Mathf.Max(p.Data.level, 25);
+            Game.Weather.Force(Weather.Clear);
+            var shots = new (string map, string shot, Vector3 pos, float yaw, float camYaw, float pitch, float dist, int minute, Weather weather)[]
+            {
+                ("yeongheung", "43_yeongheung_harbor", new Vector3(62f, 1.1f, -47f), 0f, 20f, 14f, 14f, 10 * 60, Weather.Clear),
+                ("yeongheung", "43b_yeongheung_fog", new Vector3(-22f, 1.1f, -44f), 0f, -10f, 10f, 12f, 6 * 60 + 20, Weather.Cloudy),
+                ("taean", "44_taean_beach", new Vector3(-75f, 1.1f, -48f), 0f, -15f, 10f, 12f, 17 * 60 + 20, Weather.Clear),
+                ("taean", "44b_taean_noon", new Vector3(-110f, 1.1f, -60f), 0f, 20f, 18f, 18f, 12 * 60, Weather.Clear),
+                ("samcheok", "45_samcheok_chuam", new Vector3(110f, 1.1f, -44f), 60f, 60f, 8f, 20f, 9 * 60, Weather.Clear),
+                ("samcheok", "45b_samcheok_night", new Vector3(72f, 1.1f, 20f), 0f, 0f, 8f, 10f, 21 * 60, Weather.Clear),
+                ("deungdae", "46_deungdae_lighthouse", new Vector3(48f, 1.1f, -47f), 300f, 290f, 14f, 22f, 11 * 60, Weather.Clear),
+                ("heonhwa", "47_heonhwa_road", new Vector3(-40f, 1.1f, -47f), 90f, 140f, 12f, 16f, 13 * 60, Weather.Clear),
+                ("yokji", "48_yokji_farm", new Vector3(-126.5f, 1.4f, 0f), 0f, -20f, 22f, 20f, 15 * 60, Weather.Clear),
+                ("yokji", "48b_yokji_bridge", new Vector3(140f, 1.1f, -16f), 40f, 20f, 16f, 18f, 16 * 60, Weather.Clear),
+                ("cheongjin", "49_cheongjin_port", new Vector3(28f, 1.1f, -47f), 0f, 30f, 16f, 20f, 10 * 60, Weather.Clear),
+                ("cheongjin", "49b_cheongjin_racks", new Vector3(-60f, 1.1f, -68f), 0f, 200f, 12f, 14f, 14 * 60, Weather.Cloudy),
+                ("geomun", "50_geomun_lighthouse", new Vector3(-90f, 1.1f, -45f), 300f, 300f, 12f, 24f, 17 * 60 + 30, Weather.Clear),
+            };
+            string loaded = null;
+            foreach (var s in shots)
+            {
+                if (loaded != s.map)
+                {
+                    Game.UI.EnterField(Fishing.Data.FishingAreas.Korea.Find(a => a.Id == s.map), 1);
+                    Game.UI.Help.Close();
+                    loaded = s.map;
+                    yield return new WaitForSeconds(1f);
+                }
+                Game.Clock.Set(5, s.minute);
+                Game.Weather.Force(s.weather);
+                var pos = s.pos;
+                pos.y = Mathf.Max(pos.y, Fishing.World.FieldMap.Current is Fishing.World.CoastMapDef c ? c.HeightAt(pos.x, pos.z) + 0.1f : pos.y);
+                Game.Player.Teleport(pos, s.yaw);
+                Game.CameraRig.Yaw = s.camYaw;
+                Game.CameraRig.Pitch = s.pitch;
+                Game.CameraRig.Distance = s.dist;
+                yield return new WaitForSeconds(2.5f);
+                yield return Shot(s.shot);
+            }
+            // 새 어종 파이팅·결과 (등대섬 방파제에서 방어)
+            Game.Clock.Set(5, 8 * 60);
+            Game.Weather.Force(Weather.Clear);
+            Game.UI.EnterField(Fishing.Data.FishingAreas.Korea.Find(a => a.Id == "deungdae"), 1);
+            Game.UI.Help.Close();
+            Game.Player.Teleport(new Vector3(45f, 1.1f, -3f), 0f);
+            Game.CameraRig.Yaw = 0f;
+            yield return new WaitForSeconds(1f);
+            Game.Fishing.Autoplay = true;
+            CheckClear("DebugStartFight");
+            Game.Fishing.DebugStartFight("yellowtail", 86f, 18f);
+            yield return new WaitForSeconds(2.5f);
+            yield return Shot("51_coast_fight");
+            var fight = Game.Fishing.Fight;
+            float timeout = Time.time + 60f;
+            while (Game.Fishing.State == FishingState.Fighting && Time.time < timeout) yield return null;
+            if (fight != null) Debug.Log($"[Dev] 등대섬 파이팅 종료: {fight.Species.Name} {fight.Length:0.0}cm, 결과={fight.Outcome}");
+            yield return WaitResult();
+            yield return Shot("51b_coast_result");
+            yield return CloseResult();
+            Game.Fishing.Autoplay = false;
+            // 도감 (새 낚시터 탭)
+            foreach (var id in new[] { "atkamackerel", "redrockfish", "yellowtail", "squid", "flatfish" })
+            {
+                var sp = FishDatabase.Get(id);
+                p.RecordDex(sp, sp.TrophyLen * 0.9f, sp.WeightGrams(sp.TrophyLen * 0.9f), 5);
+            }
+            Game.UI.OpenExclusive(Game.UI.Dex);
+            Game.UI.Dex.ShowTab("deungdae");
+            yield return new WaitForSeconds(0.8f);
+            yield return Shot("52_dex_coast");
+            Game.UI.Dex.Close();
+            Game.UI.OpenExclusive(Game.UI.Areas);
+            yield return new WaitForSeconds(0.5f);
+            yield return Shot("53_area_list_all");
+            Game.UI.Areas.Close();
+        }
+
+        /// <summary>바라보는 쪽 16m로 던질 때 궤적에 막는 것이 있으면 로그로 알린다 (연출 장면이 어색하지 않은지 검사).</summary>
+        static void CheckClear(string what)
+        {
+            var from = Game.Player.RodTip.position;
+            var to = Game.Player.transform.position + Game.Player.Model.forward * 16f;
+            if (FishingController.CastBlocked(from, to, out string blocker))
+                Debug.LogWarning($"[Dev] 캐스팅 막힘 ({what}, {Fishing.World.FieldMap.Id} {Game.Player.transform.position}): {blocker}");
         }
 
         /// <summary>그날 from~to(분) 사이에서 물이 가장 높거나(high) 낮은 시각.</summary>

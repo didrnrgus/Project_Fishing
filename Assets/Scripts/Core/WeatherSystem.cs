@@ -49,6 +49,8 @@ namespace Fishing.Core
         public void Force(Weather weather)
         {
             Current = weather;
+            // 정해 준 날씨는 적어도 3시간은 간다 (시계를 앞으로 돌려도 바로 다시 굴리지 않게)
+            _nextChangeAt = Mathf.Max(_nextChangeAt, Game.Clock.TotalMinutes + 180f);
             Apply();
             Changed?.Invoke();
         }
@@ -57,7 +59,8 @@ namespace Fishing.Core
         {
             if (_rain == null) return;
             var emission = _rain.emission;
-            bool snow = Seasons.IsWinter;
+            // 겨울이거나 늘 눈 덮인 낚시터(청진포구)면 비 대신 눈
+            bool snow = Seasons.IsWinter || (Game.Mode == GameMode.Field && Fishing.World.FieldMap.Current.SnowGround);
             if (snow != _snowMode) SetSnow(snow);
             emission.rateOverTime = Current == Weather.Rain && Game.Mode == GameMode.Field ? (snow ? 900f : 1800f) : 0f;
         }

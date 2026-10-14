@@ -172,7 +172,19 @@ namespace Fishing.Core
                 var sp = pool[rng.Next(pool.Count)];
                 var dq = new DailyQuest { mapId = map, kind = i, speciesId = sp.Id };
                 if (i == 0) { dq.count = sp.Rarity <= 1 ? 3 : 2; }
-                else if (i == 1) { dq.habitat = (int)sp.Habitats[rng.Next(sp.Habitats.Length)]; dq.count = 3; dq.speciesId = null; }
+                else if (i == 1)
+                {
+                    // 그 낚시터 격자에 있는 서식지 중에서 고른다 (헌화로처럼 해초밭이 없는 맵에서 못 깨는 의뢰가 나오지 않게)
+                    var def = Fishing.World.Maps.Get(map);
+                    var present = new System.Collections.Generic.List<Habitat>();
+                    for (int r = 0; r < def.Rows; r++)
+                    for (int c = 0; c < def.Cols; c++)
+                        if (System.Array.IndexOf(sp.Habitats, def.HabitatAt(c, r)) >= 0 && !present.Contains(def.HabitatAt(c, r))) present.Add(def.HabitatAt(c, r));
+                    if (present.Count == 0) present.Add(def.HabitatAt(def.Cols / 2, 0));
+                    dq.habitat = (int)present[rng.Next(present.Count)];
+                    dq.count = 3;
+                    dq.speciesId = null;
+                }
                 else { dq.count = 1; dq.minLen = UnityEngine.Mathf.Round(UnityEngine.Mathf.Lerp(sp.MinLen, sp.MaxLen, 0.45f)); }
                 dq.gold = 1200 + sp.Rarity * 600 + i * 400;
                 dq.exp = 80 + sp.Rarity * 40 + i * 30;

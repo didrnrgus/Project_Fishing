@@ -98,6 +98,8 @@ namespace Fishing.PlayerSystems
 
         void LateUpdate()
         {
+            // near가 작을수록 먼 곳 깊이 정밀도가 떨어져 겹친 면이 깜빡인다 (z-fighting). 눈앞 낚싯대가 있는 1인칭만 가깝게
+            Cam.nearClipPlane = _fight ? 0.05f : 0.2f;
             if (Game.Player == null) return;
             if (_fixed)
             {

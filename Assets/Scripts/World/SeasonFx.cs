@@ -44,7 +44,7 @@ namespace Fishing.World
             _world = Game.World;
             Apply(season);
             if (changed)
-                Game.Toast($"계절이 바뀌었습니다: {Seasons.Name(season)}" + (season == Season.Winter ? " — 한강이 얼었습니다! 얼음 위에서 빙어낚시를 해 보세요." : ""), ToastKind.Great);
+                Game.Toast($"계절이 바뀌었습니다: {Seasons.Name(season)}" + (season == Season.Winter ? (FieldMap.Id == "hangang" ? " — 한강이 얼었습니다! 얼음 위에서 빙어낚시를 해 보세요." : " — 한강이 얼었습니다. 빙어낚시는 한강 얼음 위에서!") : ""), ToastKind.Great);
         }
 
         void Apply(Season season)

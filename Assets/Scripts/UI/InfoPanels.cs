@@ -127,10 +127,13 @@ namespace Fishing.UI
             var p = Game.Profile;
             Cell(rows.Next(30), $"대물 도전  <size=14><color=#8090a0>어종마다 대물 기준을 처음 넘기면 소라고동 3개 + 경험치 · 달성 {p.Data.trophyDone.Count}종</color></size>",
                 4, 900, 20, UIFactory.Accent);
+            // 여러 바다에 사는 어종은 처음 나오는 낚시터에만 적는다
+            var shown = new System.Collections.Generic.HashSet<string>();
             foreach (var map in Fishing.World.Maps.All)
             {
+                var list = FishDatabase.DexOf(map.Id).Where(s => shown.Add(s.Id)).ToList();
+                if (list.Count == 0) continue;
                 Cell(rows.Next(26), map.ShortName, 4, 300, 17, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
-                var list = FishDatabase.DexOf(map.Id).ToList();
                 for (int i = 0; i < list.Count; i += 3)
                 {
                     var row = rows.Next(24, 1);
@@ -151,7 +154,7 @@ namespace Fishing.UI
             var t = Game.Tournament;
             var s = Game.Profile.Data.tournament;
             int day = Game.Clock.Day;
-            Cell(rows.Next(30), $"조합 낚시 대회  <size=14><color=#8090a0>매일 {TournamentRules.TimeText} · 홀수 날 한강, 짝수 날 홍현 앞바다 · AI 낚시꾼 7명과 겨룬다</color></size>",
+            Cell(rows.Next(30), $"조합 낚시 대회  <size=14><color=#8090a0>매일 {TournamentRules.TimeText} · 한강 → 서천 앞바다 → 홍현 앞바다 차례로 · AI 낚시꾼 7명과 겨룬다</color></size>",
                 4, 920, 20, UIFactory.Accent);
 
             // 오늘 대회 상태

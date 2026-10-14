@@ -1,6 +1,7 @@
 using Fishing.Angling;
 using Fishing.Core;
 using Fishing.Data;
+using Fishing.World;
 using UnityEngine;
 
 namespace Fishing.Characters
@@ -17,6 +18,11 @@ namespace Fishing.Characters
         CharacterAnimator _anim;
         Transform _hand, _rod, _nameTag;
         TelescopicRod _rodModel;
+        // 낚싯줄과 물에 뜬 찌 (앞이 트인 물이 있을 때만)
+        LineRenderer _line;
+        Transform _float;
+        Vector3 _floatPos;
+        float _floatPhase;
         Role _role;
         float _nextCast;
 
@@ -38,6 +44,11 @@ namespace Fishing.Characters
             root.localPosition = localPos;
             root.localRotation = Quaternion.Euler(0f, yaw, 0f);
             var npc = root.gameObject.AddComponent<NpcAngler>();
+            // 사람 크기 몸: 플레이어가 뚫고 지나가지 않고, 찌가 사람을 뚫고 날아가지 않게
+            var body = root.gameObject.AddComponent<CapsuleCollider>();
+            body.center = new Vector3(0f, 0.9f, 0f);
+            body.height = 1.8f;
+            body.radius = 0.32f;
             npc.Look = look;
             npc._homeRot = root.localRotation;
             npc.Build(look, role, showNameTag);
@@ -77,6 +88,53 @@ namespace Fishing.Characters
             }
             if (showNameTag) _nameTag = CharacterFactory.AddNameTag(transform, look.Name, look.Title);
             _nextCast = Time.time + Random.Range(5f, 25f);
+        }
+
+        void Start()
+        {
+            if (_rodModel == null || _role != Role.Angler) return;
+            // 바라보는 쪽 물 위 4~13m에 찌를 띄운다. 물이 아니거나 무언가에 막히면 더 가깝게, 끝내 없으면 줄을 안 단다
+            for (float d = 13f; d >= 4f; d -= 1.5f)
+            {
+                var p = transform.position + transform.forward * d;
+                p.y = FieldMap.WaterY;
+                if (!FieldMap.IsWater(p) || Fishing.Angling.FishingController.CastBlocked(_rodModel.Tip.position, p, out _)) continue;
+                _floatPos = p;
+                _floatPhase = Random.Range(0f, 6f);
+                _float = new GameObject("NpcFloat").transform;
+                _float.SetParent(transform.parent, true);
+                Mats.Prim(PrimitiveType.Sphere, "FloatTop", _float, new Vector3(0f, 0.06f, 0f), new Vector3(0.07f, 0.09f, 0.07f), Mats.Lit(new Color(0.95f, 0.25f, 0.15f), 0.6f), false);
+                Mats.Prim(PrimitiveType.Sphere, "FloatBody", _float, Vector3.zero, new Vector3(0.09f, 0.06f, 0.09f), Mats.Lit(new Color(0.95f, 0.95f, 0.9f), 0.6f), false);
+                _line = new GameObject("NpcLine").AddComponent<LineRenderer>();
+                _line.transform.SetParent(transform, false);
+                _line.positionCount = 12;
+                _line.widthMultiplier = 0.008f;
+                _line.sharedMaterial = Mats.Unlit(new Color(0.85f, 0.88f, 0.9f, 1f));
+                _line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                _line.useWorldSpace = true;
+                break;
+            }
+        }
+
+        void UpdateLine()
+        {
+            if (_line == null) return;
+            // 찌: 수면(물때 포함) 위에서 잔물결 따라 까딱, 가끔 살짝 잠긴다(입질)
+            float bob = Mathf.Sin(Time.time * 1.7f + _floatPhase) * 0.025f - (Mathf.PerlinNoise(Time.time * 0.3f, _floatPhase) > 0.78f ? 0.05f : 0f);
+            _float.position = new Vector3(_floatPos.x, FieldMap.WaterY + 0.02f + bob, _floatPos.z);
+            var a = _rodModel.Tip.position;
+            var b = _float.position + Vector3.up * 0.1f;
+            float sag = Vector3.Distance(a, b) * 0.06f;
+            for (int i = 0; i < _line.positionCount; i++)
+            {
+                float t = i / (float)(_line.positionCount - 1);
+                _line.SetPosition(i, Vector3.Lerp(a, b, t) + Vector3.down * Mathf.Sin(t * Mathf.PI) * sag);
+            }
+        }
+
+        void OnDisable()
+        {
+            if (_float != null) Destroy(_float.gameObject);
         }
 
         void Update()
@@ -134,6 +192,7 @@ namespace Fishing.Characters
             // 줄 무게로 초릿대가 살짝 숙여지고, 바람에 조금 흔들린다
             if (_rodModel != null)
                 _rodModel.Drive(6f + Mathf.PerlinNoise(Time.time * 0.7f, transform.position.x) * 6f, transform.forward - Vector3.up, 0f, Time.deltaTime);
+            UpdateLine();
         }
     }
 }
