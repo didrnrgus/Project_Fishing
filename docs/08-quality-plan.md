@@ -128,7 +128,7 @@ bpyenv/Scripts/python -I tools/blender/build_characters.py --preview --only male
 |---|---|---|---|---|
 | ★★★ | **Post Processing** (`com.unity.postprocessing`, Post Processing Stack v2) | Package Manager → Unity Registry | 블룸(노을·가로등·다리 조명), 컬러 그레이딩(ACES), AO, SMAA, 비네트 | 가장 적은 노력으로 화면 전체가 좋아진다. 카메라에 `PostProcessLayer`, 전역 `PostProcessVolume`을 코드로 붙이고 시간대별로 그레이딩 값 보간(`Core`의 시계·조명 코드 옆). Unity 6에서 패키지가 보이는지 먼저 확인 |
 | ★★★ | **Human Basic Motions FREE** (Kevin Iglesias) | [Asset Store](https://assetstore.unity.com/packages/3d/animations/human-basic-motions-free-154271) | 대기·걷기·뛰기·돌기·말하기(남/녀 118개) | 4-1 참고 |
-| ★★ | **Mixamo** (Adobe 계정, 무료) | mixamo.com | 낚시 관련 동작(던지기·당기기·앉아 있기), 필요하면 캐릭터 | FBX for Unity, Without Skin으로 받으면 휴머노이드 리타깃. **라이선스: 프로젝트에 넣어 쓰는 건 되지만 원본 파일 재배포는 안 됨** → 저장소가 공개라면 git에 넣지 말고 `.gitignore`된 폴더에 |
+| ★★ | **Mixamo** (Adobe 계정, 무료) — **적용됨 (10 문서)** | mixamo.com | 낚시 관련 동작(던지기·당기기·앉아 있기), 필요하면 캐릭터 | FBX for Unity, Without Skin으로 받으면 휴머노이드 리타깃. **라이선스: 프로젝트에 넣어 쓰는 건 되지만 원본 파일 재배포는 안 됨** → 저장소가 공개라면 git에 넣지 말고 `.gitignore`된 폴더에 |
 | ★★ | **AllSky Free** / **Fantasy Skybox FREE** | [AllSky Free](https://assetstore.unity.com/packages/p/allsky-free-10-sky-skybox-set-146014), [Fantasy Skybox FREE](https://assetstore.unity.com/packages/slug/18353) | 흐림·비 날씨 하늘 | 지금 하늘은 낮밤이 도는 절차적 셰이더(`Sky.shader`)라 통째로 바꾸진 말고, 흐린 날 구름 큐브맵만 섞거나 반사 프로브용으로 |
 | ★★ | **Stylized Hand Painted Nature Pack Free** / **Nature Starter Kit 2** | [Hand Painted](https://assetstore.unity.com/packages/3d/vegetation/trees/stylized-hand-painted-nature-pack-free-177775), [NSK2](https://marketplace.unity.com/packages/3d/environments/nature-starter-kit-2-52977) | 한강 둔치·홍현 갯바위 주변 나무·풀·덤불 | 지금 Kenney 나무는 너무 단순. NSK2는 2016년 에셋이라 Unity 6 임포트 후 셰이더 확인 |
 | ★ | **Poly Haven** (CC0) | polyhaven.com | 나무 데크·콘크리트 둔치·자갈·바위 텍스처, HDRI | 이 컨테이너에서는 막혀 있었다. CC0라 저장소에 넣어도 된다 |
@@ -151,7 +151,8 @@ bpyenv/Scripts/python -I tools/blender/build_characters.py --preview --only male
 - [x] 2장 확인 목록 통과 → Angler FBX의 `.meta` 포함해 커밋 (2026-10-14: 빌드·autoshot에서 서 있음·정면·옷 확인)
 - [x] 문제 있으면 2장 표대로 고치거나 `garments.py` 수정 후 3장으로 재생성 (`--preview --closeup`: 발·상체 근접 렌더)
 - [x] Post Processing 패키지 + 코드로 볼륨/레이어 (블룸, Neutral 톤매핑, AO, SMAA, 시간대별 그레이딩) → `Core/PostFx.cs`. ACES는 노을·밤 하늘을 검게 눌러서 Neutral로 바꿨다
-- [ ] Human Basic Motions FREE 임포트 → `CharacterAnimator`에 두 번째 클립 라이브러리, Idle/Walk/Run 교체 — **보류: 에셋 스토어 로그인 필요** (WORK-IN-PROGRESS "사용자가 해야 할 일")
+- [x] Mixamo 낚시 동작: Fishing Idle(낚싯대 들고 대기)·Fishing Cast(들기·던지기·챔질·릴 감기로 쪼갬)·Cheering(환호) → `Resources/Animations/Mixamo`, `CharacterAnimator`가 두 번째 라이브러리로 찾는다 (2026-10-14, [10 문서](10-animation.md))
+- [ ] Human Basic Motions FREE → Idle/Walk/Run 교체 — 패키지는 `Assets/Kevin Iglesias`에 커밋됨(2026-10-14). 남은 일: 클립을 런타임에서 찾게 하기(Resources로 옮기거나 클립 목록 에셋) + `CharacterAnimator.Idle/Walk/Jog` 교체
 - [x] 4장 3(장갑)·4(운동화)·5(남방 깃)·6(여자 조끼) → 재생성, 9(머리카락+모자) 확인 (AO는 완료)
 - [x] 데크·둔치·길·방파제 텍스처 (Poly Haven CC0: 풀·나무 데크·콘크리트·아스팔트, `Mats.TexturedBox`). 나무 교체(Hand Painted Nature Pack)는 에셋 스토어 로그인이 필요해 보류
 - [x] 흐림/비 하늘, 반사 프로브: 큐브맵(AllSky)은 에셋 스토어 로그인이 필요해서 대신 `Sky.shader` 구름에 층구름(흐림·비에서 하늘을 덮는 회색 층)을 절차적으로 섞었다(`15b_cloudy_day`). 반사 프로브는 `DayNightCycle`의 하늘 실시간 프로브(시간대마다 갱신)
