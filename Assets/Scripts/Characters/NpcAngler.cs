@@ -92,7 +92,8 @@ namespace Fishing.Characters
                 if (_role == Role.Angler && !Idle && Time.time > _nextCast)
                 {
                     _nextCast = Time.time + Random.Range(20f, 45f);
-                    _anim.PlayOnce(CharacterAnimator.Cast, 1.6f, 0.75f);
+                    // 들기 → 던지기 → 기다리기 → 릴 감기 → 처음 자세 (Mixamo 한 벌, 약 8.8초)
+                    _anim.PlayOnce(CharacterAnimator.FishingSequence);
                 }
             }
 

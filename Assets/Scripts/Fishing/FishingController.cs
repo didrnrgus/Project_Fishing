@@ -48,6 +48,8 @@ namespace Fishing.Angling
         public bool Hooking => _hookAt > 0f;
         /// <summary>랜딩 직후 결과 화면 전 환호 컷.</summary>
         public bool Cheering => _cheering;
+        /// <summary>대기 중 좌클릭으로 찌·루어를 감고 있다 (캐릭터 릴 감기 동작).</summary>
+        public bool ReelingIn => State == FishingState.Waiting && (_reeling || _lureMode && _lureReeling);
         public HookGrade LastGrade { get; private set; }
         public float LastGradeAt { get; private set; } = -10f;
 
@@ -115,7 +117,7 @@ namespace Fishing.Angling
         // 대기 중 릴 감기
         int _waitCol, _waitRow;
         bool _waitInSpot;
-        bool _reeling;
+        bool _reeling, _lureReeling;
         float _reelFxAt;
 
         void Start()
@@ -547,6 +549,7 @@ namespace Fishing.Angling
             float rate;
             if (Trolling)
             {
+                _lureReeling = false;
                 var boat = Game.Boat;
                 float dist = Mathf.Clamp(CastDistance, 10f, 25f);
                 var target = boat.SternPosition - boat.Forward * dist;
@@ -563,6 +566,7 @@ namespace Fishing.Angling
             else
             {
                 bool hold = Input.GetMouseButton(0) && !UiBlocking;
+                _lureReeling = hold;
                 if (hold)
                 {
                     var player = Game.Player.transform.position;

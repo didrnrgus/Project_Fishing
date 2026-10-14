@@ -7,6 +7,7 @@ namespace Fishing.EditorTools
     ///  - Resources/Characters, Resources/Animations: 휴머노이드 리그 (애니메이션 리타깃)
     ///  - Resources/Characters/Angler_*.fbx: tools/blender/build_characters.py가 만든 낚시꾼(몸 + 옷 메쉬)
     ///  - ThirdParty/Quaternius/Source: 그 원본 Superhero FBX. 런타임에는 안 쓰므로 가볍게(애니메이션·머티리얼 없음)
+    ///  - Resources/Animations/Mixamo: Mixamo FBX를 MixamoClips 표대로 쪼갠다 (낚시 동작)
     ///  - 이름에 "Loop"가 들어간 클립은 반복 재생
     ///  - Resources/Fish: 레거시 애니메이션 (Animation 컴포넌트). Fish/Species는 build_fish.py가 만든 어종별 모델(클립 5개)
     ///  - Resources/Fish/Textures: *_n = 노멀 맵, *_m = 금속성·매끈함(선형), 나머지 = 알베도(알파 = 지느러미)
@@ -110,10 +111,30 @@ namespace Fishing.EditorTools
             }
         }
 
+        /// <summary>
+        /// Mixamo FBX(Resources/Animations/Mixamo, 30fps)를 쪼갠 클립. 프레임은 Unity 기준(0부터).
+        /// Fishing Cast 한 개에 "들기 → 던지기 → 내리며 기다리기 → 릴 감기 → 처음 자세" 가 이어져 있다(docs/03 "애니메이션").
+        /// </summary>
+        static readonly (string file, string clip, int first, int last)[] MixamoClips =
+        {
+            ("FishingIdle", "Fishing_Idle_Loop", 0, 105),   // 낚싯대를 허리 앞에 든 대기 (전체)
+            ("FishingCast", "Fishing_Windup", 0, 45),       // 어깨 너머로 들어 올리기 (끝 자세에서 멈춤)
+            ("FishingCast", "Fishing_Hook", 0, 30),         // 챔질: 홱 들어 올리기 (빠르게 재생)
+            ("FishingCast", "Fishing_Cast", 45, 95),        // 앞으로 던지고 팔을 뻗은 채 내리기
+            ("FishingCast", "Fishing_Reel_Loop", 207, 238), // 릴 감기 한 바퀴 (포즈 차 2cm 구간)
+            ("FishingCast", "Fishing_Sequence", 0, 263),    // 전체 (NPC가 가끔 통째로)
+            ("Cheering", "Cheer_ArmsUp", 0, 87),            // 랜딩 환호: 두 팔 들고 흔들기
+        };
+
         void OnPreprocessAnimation()
         {
             if (!assetPath.Contains("Resources/Animations/") && !assetPath.Contains("Resources/Fish/")) return;
             var importer = (ModelImporter)assetImporter;
+            if (assetPath.Contains("Resources/Animations/Mixamo/"))
+            {
+                PreprocessMixamo(importer);
+                return;
+            }
             var clips = importer.defaultClipAnimations;
             foreach (var clip in clips)
             {
@@ -129,6 +150,37 @@ namespace Fishing.EditorTools
                 clip.keepOriginalPositionXZ = true;
             }
             importer.clipAnimations = clips;
+        }
+
+        static void PreprocessMixamo(ModelImporter importer)
+        {
+            var defaults = importer.defaultClipAnimations;
+            if (defaults.Length == 0) return;
+            string file = System.IO.Path.GetFileNameWithoutExtension(importer.assetPath);
+            var clips = new System.Collections.Generic.List<ModelImporterClipAnimation>();
+            foreach (var (f, name, first, last) in MixamoClips)
+            {
+                if (f != file) continue;
+                bool loop = name.Contains("Loop");
+                clips.Add(new ModelImporterClipAnimation
+                {
+                    name = name,
+                    takeName = defaults[0].takeName,
+                    firstFrame = first,
+                    lastFrame = last,
+                    loopTime = loop,
+                    loopPose = loop,
+                    lockRootRotation = true,
+                    lockRootHeightY = true,
+                    lockRootPositionXZ = true,
+                    keepOriginalOrientation = true,
+                    // Mixamo는 +Z, UAL은 -Z를 본다(CharacterFactory가 모델을 180° 돌려 둠) → UAL 쪽에 맞춘다
+                    rotationOffset = 180f,
+                    keepOriginalPositionY = true,
+                    keepOriginalPositionXZ = true,
+                });
+            }
+            if (clips.Count > 0) importer.clipAnimations = clips.ToArray();
         }
     }
 }

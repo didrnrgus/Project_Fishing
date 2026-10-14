@@ -7,7 +7,8 @@ namespace Fishing.Characters
 {
     /// <summary>
     /// AnimatorController 에셋 없이 Playables로 클립을 섞어 재생한다.
-    /// 클립은 Universal Animation Library(Resources/Animations/UAL1_Standard)에서 이름으로 찾는다.
+    /// 클립은 Universal Animation Library(Resources/Animations/UAL1_Standard)와
+    /// Mixamo 낚시 동작(Resources/Animations/Mixamo, AssetImportRules.MixamoClips가 쪼갬)에서 이름으로 찾는다.
     /// </summary>
     [RequireComponent(typeof(Animator))]
     public class CharacterAnimator : MonoBehaviour
@@ -16,9 +17,13 @@ namespace Fishing.Characters
         public const string Walk = "Walk_Loop";
         public const string Jog = "Jog_Fwd_Loop";
         public const string Sprint = "Sprint_Loop";
-        public const string HoldRod = "Idle_Torch_Loop";
-        public const string Cast = "Sword_Attack";
-        public const string Hook = "Spell_Simple_Shoot";
+        public const string HoldRod = "Fishing_Idle_Loop";
+        public const string Windup = "Fishing_Windup";
+        public const string Cast = "Fishing_Cast";
+        public const string Hook = "Fishing_Hook";
+        public const string Reel = "Fishing_Reel_Loop";
+        public const string FishingSequence = "Fishing_Sequence";
+        public const string Cheer = "Cheer_ArmsUp";
         public const string Talk = "Idle_Talking_Loop";
         public const string Sit = "Sitting_Idle_Loop";
         public const string Interact = "Interact";
@@ -46,11 +51,12 @@ namespace Fishing.Characters
             {
                 if (_clips != null) return _clips;
                 _clips = new Dictionary<string, AnimationClip>();
-                foreach (var c in Resources.LoadAll<AnimationClip>("Animations/UAL1_Standard"))
-                {
-                    var name = c.name.Contains("|") ? c.name.Substring(c.name.LastIndexOf('|') + 1) : c.name;
-                    if (!_clips.ContainsKey(name)) _clips[name] = c;
-                }
+                foreach (var folder in new[] { "Animations/UAL1_Standard", "Animations/Mixamo" })
+                    foreach (var c in Resources.LoadAll<AnimationClip>(folder))
+                    {
+                        var name = c.name.Contains("|") ? c.name.Substring(c.name.LastIndexOf('|') + 1) : c.name;
+                        if (!_clips.ContainsKey(name)) _clips[name] = c;
+                    }
                 return _clips;
             }
         }
@@ -89,7 +95,10 @@ namespace Fishing.Characters
             return _names.Count - 1;
         }
 
-        /// <summary>반복 상태 전환 (대기, 걷기, 낚싯대 들기 …). 한 번짜리 동작 중이면 끝난 뒤 이 상태로 돌아간다.</summary>
+        /// <summary>
+        /// 반복 상태 전환 (대기, 걷기, 낚싯대 들기 …). 한 번짜리 동작 중이면 끝난 뒤 이 상태로 돌아간다.
+        /// 반복하지 않는 클립(Windup)을 주면 처음부터 한 번 재생하고 끝 자세에서 멈춰 있다.
+        /// </summary>
         public void SetLoop(string clipName, float speed = 1f)
         {
             _loopState = clipName;
@@ -111,6 +120,8 @@ namespace Fishing.Characters
             if (i < 0) return;
             var p = _playables[i];
             p.SetSpeed(speed);
+            // 반복하지 않는 클립은 다시 들어올 때마다 처음부터
+            if (!restart && i != _target && !p.GetAnimationClip().isLooping) restart = true;
             if (restart || i != _target) p.SetTime(restart ? 0 : p.GetTime());
             if (restart) p.SetDone(false);
             _target = i;
