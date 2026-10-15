@@ -21,6 +21,14 @@ namespace Fishing.Dev
     public class DevAutomation : MonoBehaviour
     {
         DevArgs _args;
+        float _fps;   // 최근 프레임의 평균 FPS (지수 이동 평균, 촬영 로그용)
+
+        void Update()
+        {
+            float dt = Time.unscaledDeltaTime;
+            if (dt <= 0f) return;
+            _fps = _fps <= 0f ? 1f / dt : Mathf.Lerp(_fps, 1f / dt, 0.1f);
+        }
 
         public static DevArgs Parse()
         {
@@ -711,6 +719,9 @@ namespace Fishing.Dev
             Game.CameraRig.Yaw = 0f;
             yield return new WaitForSeconds(1f);
             Game.Fishing.Autoplay = true;
+            // 앞 장면들의 파이팅으로 체력·내구도가 바닥나 있으면 페널티 때문에 오래 걸린다
+            Game.Profile.ChangeStamina(Game.Profile.StaminaCap);
+            Game.Profile.Data.rodDurability = 100f;
             CheckClear("DebugStartFight");
             Game.Fishing.DebugStartFight("nileperch", 158f, 20f);
             yield return new WaitForSeconds(2.5f);
@@ -771,7 +782,7 @@ namespace Fishing.Dev
             yield return new WaitForEndOfFrame();
             var path = Path.Combine(_args.ShotDir, name + ".png");
             ScreenCapture.CaptureScreenshot(path);
-            Debug.Log($"[Dev] 스크린샷: {path}");
+            Debug.Log($"[Dev] 스크린샷: {path} ({_fps:0} FPS, {Fishing.World.FieldMap.Id}, 정적 배칭 {Fishing.World.WorldBatcher.LastBatched}개)");
             yield return null;
             yield return null;
         }

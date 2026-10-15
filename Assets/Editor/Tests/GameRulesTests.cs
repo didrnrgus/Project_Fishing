@@ -17,17 +17,18 @@ namespace Fishing.EditorTools.Tests
         static GearDef G(string id) => GearDatabase.GetGear(id);
 
         /// <summary>FightBot으로 끝까지 싸운다 (BalanceSim과 같은 방식, 반응 지연 없이).</summary>
-        static FishFight Run(string species, float len, string rod, string reel, string line, float limit = 240f)
+        static FishFight Run(string species, float len, string rod, string reel, string line, float limit = 240f,
+            float staminaFactor = 1f, float reelFactor = -1f)
         {
             var f = new FishFight(FishDatabase.Get(species), len, 18f, 0.8f, G(rod), G(reel), G(line));
             float nextTap = 0f;
             while (f.Outcome == FightOutcome.None && f.Elapsed < limit)
             {
-                f.Tick(1f / 60f, FightBot.Input(f, 0.3f));
+                f.Tick(1f / 60f, FightBot.Input(f, 0.3f), staminaFactor, 1f, reelFactor);
                 if (f.LandingChance) f.StartLanding();
                 if (f.Landing && f.Elapsed >= nextTap)
                 {
-                    f.LandingTap();
+                    f.LandingTap(staminaFactor);
                     nextTap = f.Elapsed + 1f / FightBot.LandingTapsPerSecond;
                 }
             }
@@ -44,6 +45,17 @@ namespace Fishing.EditorTools.Tests
             for (int i = 0; i < 10; i++)
                 if (Run("crucian", 25f, "rod_basic", "reel_basic", "line_nylon").Outcome == FightOutcome.Landed) landed++;
             Assert.GreaterOrEqual(landed, 9, "작은 붕어는 입문 장비로 거의 다 잡혀야 한다");
+        }
+
+        [Test]
+        public void TiredPlayerCanStillLandTrophyFish()
+        {
+            // 체력 20% 이하(지침: 데미지·연타 ×0.45, 릴 ×0.8)여도 대물을 끝내 올릴 수 있어야 한다.
+            // 랜딩 중 물고기가 지치지 않으면 연타가 되밀림을 못 이겨 랜딩·파이팅만 끝없이 오갔다 (나일농어 158cm).
+            int landed = 0;
+            for (int i = 0; i < 10; i++)
+                if (Run("nileperch", 158f, "rod_heavy", "reel_hispeed", "line_pe", 180f, 0.45f, 0.8f).Outcome == FightOutcome.Landed) landed++;
+            Assert.GreaterOrEqual(landed, 7, "지친 상태로도 대물 장비면 나일농어 대물을 대부분 올려야 한다");
         }
 
         [Test]

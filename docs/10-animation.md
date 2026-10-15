@@ -1,4 +1,4 @@
-# 10. 캐릭터 애니메이션 (UAL + Mixamo 낚시 동작 + Human Basic Motions)
+# 10. 캐릭터 애니메이션 (UAL + Mixamo 낚시·상황 동작 + Human Basic Motions)
 
 캐릭터 동작은 AnimatorController 없이 `CharacterAnimator`(Playables 믹서)가 클립 이름으로 재생한다. 클립은 두 곳에서 찾는다.
 
@@ -19,8 +19,12 @@
 | `FishingIdle.fbx` | X Bot@Fishing Idle | 106프레임 (3.5초) |
 | `FishingCast.fbx` | X Bot@Fishing Cast | 264프레임 (8.8초) |
 | `Cheering.fbx` | X Bot@Cheering | 88프레임 (2.9초) |
+| `Clapping.fbx` | X Bot@Clapping | 클립 `Clap_Loop` 0~35프레임 (근처에서 대물을 낚으면 NPC가 돌아보며 박수) |
+| `Excited.fbx` | X Bot@Excited | 끝까지 (괴물·전설 어종을 낚았을 때, 8장) |
+| `Rallying.fbx` | X Bot@Rallying | 끝까지 (조합 연락관 손짓, 8장) |
+| `Scared.fbx` | X Bot@Scared | 끝까지, 재생은 앞부분만 (줄 끊김, 8장) |
 
-`MixamoAnimation/`에 남은 것(지금 안 씀): Cheering (1)(주먹 불끈 — 고개를 숙여 환호 클로즈업에서 얼굴이 모자에 가려 뺐다), Clapping, Excited, Rallying, Scared, Sitting·Sitting Idle 여러 개. 대회 시상·관중·앉은 NPC 등에 쓰고 싶으면 같은 방법으로 옮긴다(아래 4장).
+`MixamoAnimation/`에 남은 것(지금 안 씀): Cheering (1)(주먹 불끈 — 고개를 숙여 환호 클로즈업에서 얼굴이 모자에 가려 뺐다), Sitting·Sitting Idle 여러 개. 대회 시상·앉은 NPC 등에 쓰고 싶으면 같은 방법으로 옮긴다(아래 4장).
 
 ## 2. Fishing Cast 쪼개기
 
@@ -118,3 +122,17 @@ UAL의 `Idle_Loop`는 주먹 쥔 슈퍼히어로 자세라서, 에셋 스토어 
 |---|---|
 | ![걷기](images/00d_walk.png) | ![달리기](images/00e_run.png) |
 
+## 8. 상황 동작: 제자리 돌기 · Excited · Rallying · Scared (2026-10-15)
+
+받아 두고 안 쓰던 동작을 상황에 붙였다. 클립 목록은 `AssetImportRules`(Mixamo는 `(파일, 클립, 시작, 끝)`이고 끝 -1 = 마지막 프레임), 이름 상수는 `CharacterAnimator`.
+
+| 동작 | 클립 | 언제 | 코드 |
+|---|---|---|---|
+| 제자리 돌기 | `Basic_TurnLeft_Loop` / `Basic_TurnRight_Loop` (Human Basic Motions Turn01, 남·녀) | NPC가 플레이어 쪽으로 25° 넘게 몸을 돌릴 때 발을 옮기며 돈다. 8° 안으로 들어오면 멈춤(사이는 이전 상태 유지 — 떨림 방지). 앉은 NPC는 그대로 | `NpcAngler` `_turning` |
+| Excited | `Excited` (Mixamo) | 괴물 어종(`Boss`)이나 희귀도 5 어종을 낚았을 때, 보통 환호 대신 | `FishingController` → `PlayerController.PlayExcited` (×1.2배속) |
+| Rallying | `Rallying` (Mixamo) | 보고할 퀘스트가 있고 플레이어가 15m 안에 오면 조합 연락관(`union`)이 9~14초마다 손짓 | `NpcAngler` `_nextRally` |
+| Scared | `Scared` (Mixamo) | 줄이 끊어졌을 때 움찔 (낚싯대 자세를 돌린 뒤 한 번) | `FishingController` → `PlayerController.PlayScared` (×1.3배속) |
+
+- 한 번짜리 동작은 `PlayOnce(클립, 배속, 섞기 시간)`으로 틀고, 끝나면 원래 루프로 돌아간다.
+- 몸 방향은 코드가 돌리고 Turn 클립은 발만 맞춘다(루트 모션 없음).
+- **아직 화면 확인 전**: 자동 촬영에 이 네 동작이 나오는 장면을 넣어 어색하지 않은지 볼 것 ([WORK-IN-PROGRESS.md](WORK-IN-PROGRESS.md)).
