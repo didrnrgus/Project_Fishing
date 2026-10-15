@@ -694,7 +694,7 @@ namespace Fishing.World
         void BuildBreakwaters()
         {
             var parapet = Mats.Lit(new Color(0.66f, 0.66f, 0.64f));
-            var tetra = Mats.Lit(new Color(0.6f, 0.6f, 0.58f), 0.15f);
+            var tetra = Mats.Textured("concrete", new Color(0.74f, 0.73f, 0.7f), 1f, 0.12f);
             float bottom = _map.BaseWaterY - 6f;
             foreach (var b in S.Breakwaters)
             {
@@ -716,11 +716,9 @@ namespace Fishing.World
                 // 테트라포드: 파도막이 벽 반대쪽(바깥)과 팔의 북쪽
                 float side = b.ParapetWest ? b.Stem.xMin - 1f : b.Stem.xMax + 1f;
                 float sgn = b.ParapetWest ? -1f : 1f;
-                for (float z = b.Stem.yMin + 6f; z < b.Stem.yMax + 2f; z += R(2.3f, 3f))
-                    _props.Tetrapod(new Vector3(side + sgn * R(0.2f, 2.5f), _map.BaseWaterY + R(-0.6f, 0.4f), z + R(-0.8f, 0.8f)), tetra);
+                _props.TetrapodBank(new Vector3(side, 0f, b.Stem.yMin + 6f), new Vector3(side, 0f, b.Stem.yMax + 2f), new Vector3(sgn, 0f, 0f), _map.BaseWaterY, tetra);
                 if (b.Arm.width > 0f)
-                    for (float x = b.Arm.xMin; x < b.Arm.xMax; x += R(2.3f, 3f))
-                        _props.Tetrapod(new Vector3(x + R(-0.8f, 0.8f), _map.BaseWaterY + R(-0.6f, 0.4f), b.Arm.yMax + R(1f, 3.5f)), tetra);
+                    _props.TetrapodBank(new Vector3(b.Arm.xMin, 0f, b.Arm.yMax + 0.5f), new Vector3(b.Arm.xMax, 0f, b.Arm.yMax + 0.5f), Vector3.forward, _map.BaseWaterY, tetra);
                 if (b.Light.a > 0f)
                 {
                     var lp = CoastMapDef.LighthousePos(b);

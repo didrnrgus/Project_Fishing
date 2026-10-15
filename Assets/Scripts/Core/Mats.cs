@@ -38,7 +38,10 @@ namespace Fishing.Core
             return m;
         }
 
-        /// <summary>Resources/Terrain 텍스처(Poly Haven CC0)를 입힌 Standard 머티리얼 (바위·자갈). 없으면 단색.</summary>
+        /// <summary>
+        /// Resources/Terrain 텍스처(Poly Haven CC0)를 입힌 머티리얼 (바위·자갈·데크·콘크리트). 없으면 단색.
+        /// 셰이더는 반복 무늬를 깨는 Fishing/Ground (두 번 샘플 섞기 + 큰 얼룩), 없으면 Standard.
+        /// </summary>
         public static Material Textured(string name, Color tint, float tiling = 1f, float smoothness = 0.2f) =>
             Textured(name, tint, new Vector2(tiling, tiling), smoothness);
 
@@ -54,7 +57,7 @@ namespace Fishing.Core
             if (Cache.TryGetValue(key, out var m)) return m;
             var diff = Resources.Load<Texture2D>("Terrain/" + name + "_diff");
             if (diff == null) return Lit(tint, smoothness);
-            m = new Material(Shader.Find("Standard")) { color = tint, mainTexture = diff, mainTextureScale = tiling };
+            m = new Material(Shader.Find("Fishing/Ground") ?? Shader.Find("Standard")) { color = tint, mainTexture = diff, mainTextureScale = tiling };
             var nor = Resources.Load<Texture2D>("Terrain/" + name + "_nor");
             if (nor != null)
             {

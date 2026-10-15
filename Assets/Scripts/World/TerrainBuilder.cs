@@ -5,7 +5,7 @@ namespace Fishing.World
 {
     /// <summary>
     /// 높이 함수와 칠하기 함수로 Unity Terrain을 만든다 (홍현 <see cref="SeaTerrain"/>, 서천 <see cref="SeocheonTerrain"/>).
-    /// 텍스처는 Resources/Terrain의 Poly Haven CC0 (SOURCES.md). 층마다 색을 살짝 바꿀 수 있다(같은 모래로 갯벌 진흙 만들기).
+    /// 텍스처는 Resources/Terrain의 Poly Haven CC0 (SOURCES.md). 셰이더는 반복 무늬를 깨는 Fishing/Terrain (Assets/Shaders/Terrain.shader).
     /// </summary>
     public static class TerrainBuilder
     {
@@ -82,8 +82,10 @@ namespace Fishing.World
             go.transform.SetParent(parent, false);
             go.transform.position = new Vector3(area.xMin, baseY, area.yMin);
             var terrain = go.GetComponent<Terrain>();
-            var shader = Shader.Find("Nature/Terrain/Standard");
+            // 반복 무늬 깨기 지형 셰이더 (층마다 두 번 샘플 + 큰 얼룩). 없으면 내장 Standard 지형
+            var shader = Shader.Find("Fishing/Terrain") ?? Shader.Find("Nature/Terrain/Standard");
             if (shader != null) terrain.materialTemplate = new Material(shader);
+            terrain.drawInstanced = false; // Fishing/Terrain은 인스턴싱 지형 경로를 쓰지 않는다
             terrain.heightmapPixelError = 2f; // 4면 멀리서 지형이 길·앞마당 위로 솟아 깜빡인다
             terrain.basemapDistance = 250f;
             terrain.drawTreesAndFoliage = false;

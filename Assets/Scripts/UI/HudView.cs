@@ -562,6 +562,8 @@ namespace Fishing.UI
             _castShownUntil = Time.time + 1.6f;
         }
 
+        const int MaxToasts = 3;
+
         public void Toast(string message, ToastKind kind)
         {
             var color = kind switch
@@ -591,7 +593,8 @@ namespace Fishing.UI
             var group = root.gameObject.AddComponent<CanvasGroup>();
             group.blocksRaycasts = false;
             _toasts.Add((root, group, Time.time + (kind == ToastKind.Great ? 5f : 3.2f)));
-            while (_toasts.Count > 5)
+            // 한꺼번에 많이 오면(레벨 보상·업적·퀘스트) 화면 가운데를 덮으므로 최근 3개만 남긴다
+            while (_toasts.Count > MaxToasts)
             {
                 Object.Destroy(_toasts[0].root.gameObject);
                 _toasts.RemoveAt(0);
@@ -904,7 +907,7 @@ namespace Fishing.UI
             _toastRoot.anchoredPosition = result ? new Vector2(-40, -78)
                 : fight ? new Vector2(-30, -200)
                 : Game.UI.BlockingPanelOpen ? new Vector2(0, -16)
-                : new Vector2(0, -262);
+                : new Vector2(0, -284); // 캐스팅 비거리 숫자(위 180~260) 아래
             // 최근 것이 맨 위, 아래로 쌓는다 (두 줄 알림은 그만큼 더 내려간다)
             float y = 0f;
             for (int i = _toasts.Count - 1; i >= 0; i--)

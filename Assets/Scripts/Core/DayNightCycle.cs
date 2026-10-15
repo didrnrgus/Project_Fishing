@@ -177,11 +177,12 @@ namespace Fishing.Core
             // 06:00에 해가 뜨고 18:00에 진다
             float sunAngle = Game.Clock.Minutes / GameClock.MinutesPerDay * 360f - 90f;
             float elevation = Mathf.Sin(sunAngle * Mathf.Deg2Rad);
-            float day = Mathf.Clamp01(elevation * 3f + 0.2f);
+            // 해 뜰 녘·질 녘(고도 0 근처)에도 하늘빛이 절반은 남게: 예전 0.2는 06시에 하늘은 주황인데 땅이 거의 검었다
+            float day = Mathf.Clamp01(elevation * 3f + 0.42f);
             float warm = 1f - Mathf.Clamp01(elevation * 3.5f);
 
             _sun.transform.rotation = Quaternion.Euler(sunAngle, -35f, 0f);
-            _sun.intensity = Mathf.Clamp01(elevation * 2.5f) * 1.0f * _weatherDim;
+            _sun.intensity = (elevation > -0.03f ? Mathf.Clamp01(elevation * 2.5f + 0.15f) : 0f) * 1.0f * _weatherDim; // 지평선의 낮은 햇빛
             _sun.color = Color.Lerp(new Color(1f, 0.96f, 0.88f), new Color(1f, 0.52f, 0.28f), warm);
             _sun.enabled = _sun.intensity > 0.01f;
 

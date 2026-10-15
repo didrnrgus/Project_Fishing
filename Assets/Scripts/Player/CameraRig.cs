@@ -146,11 +146,18 @@ namespace Fishing.PlayerSystems
             var desired = target - orbit * Vector3.forward * Distance;
             desired.y = Mathf.Max(desired.y, FieldMap.WaterY + 0.5f);
 
-            // 나무·건물에 가리면 카메라를 앞으로 당긴다 (플레이어 자신은 콜라이더가 CharacterController뿐)
+            // 나무·건물에 가리면 카메라를 앞으로 당긴다 (플레이어 자신은 콜라이더가 CharacterController뿐).
+            // 내가 탄 배와 그 위 사람(크루저 선장 등)은 빼야 한다: 걸리면 카메라가 머리 뒤 1.2m로 붙어 모자만 보인다
             var toCam = desired - target;
-            if (Physics.SphereCast(target, 0.3f, toCam.normalized, out var hit, toCam.magnitude, ~0, QueryTriggerInteraction.Ignore)
-                && hit.collider.gameObject != Game.Player.gameObject)
-                desired = target + toCam.normalized * Mathf.Max(1.2f, hit.distance - 0.2f);
+            float block = float.MaxValue;
+            var boat = Game.Boat != null && Game.Player.OnBoat ? Game.Boat.Hull : null;
+            foreach (var h in Physics.SphereCastAll(target, 0.3f, toCam.normalized, toCam.magnitude, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (h.collider.gameObject == Game.Player.gameObject || (boat != null && h.transform.IsChildOf(boat))) continue;
+                block = Mathf.Min(block, h.distance);
+            }
+            if (block < float.MaxValue)
+                desired = target + toCam.normalized * Mathf.Max(1.2f, block - 0.2f);
             var followPos = Vector3.Lerp(transform.position, desired, dt * 12f);
             var followRot = Quaternion.LookRotation(target - followPos);
 

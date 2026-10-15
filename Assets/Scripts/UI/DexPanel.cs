@@ -162,7 +162,7 @@ namespace Fishing.UI
             t.rectTransform.At(new Vector2(0, 1), new Vector2(16, -8), new Vector2(300, 24));
         }
 
-        const float TabStep = 93f;
+        const float TabStep = 93f, TitleRoom = 430f;
 
         public override void Open()
         {
@@ -188,15 +188,17 @@ namespace Fishing.UI
             Title.text = $"어류 도감 · {Fishing.World.Maps.Get(_tab).ShortName}  <size=20><color=#8fa3b5>{known}/{species.Count}</color></size>";
             UIFactory.ClearChildren(_grid);
 
-            // 낚시터 탭 (제목 줄 오른쪽, 닫기 버튼 옆). 11곳이 한 줄에 들어가게 좁게
+            // 낚시터 탭 (제목 줄 오른쪽, 닫기 버튼 옆). 제목 자리(TitleRoom)를 비우고 남은 폭에 맵 수만큼 나눠 한 줄로.
+            // 탭에서는 '앞바다'를 떼서 짧게 (제목에는 그대로)
             var tabs = Fishing.World.Maps.All;
+            float step = Mathf.Min(TabStep, (FrameW - 74f - TitleRoom) / tabs.Length);
             for (int t = 0; t < tabs.Length; t++)
             {
                 var map = tabs[t];
                 bool sel = map.Id == _tab;
-                var b = UIFactory.Button(Frame, map.ShortName, () => { _tab = map.Id; Refresh(); }, sel ? UIFactory.TabOn : UIFactory.TabOff, 14);
+                var b = UIFactory.Button(Frame, map.ShortName.Replace(" 앞바다", ""), () => { _tab = map.Id; Refresh(); }, sel ? UIFactory.TabOn : UIFactory.TabOff, 14);
                 UIFactory.SetRadius(b.targetGraphic, UIFactory.Pill);
-                ((RectTransform)b.transform).At(new Vector2(1, 1), new Vector2(-74 - (tabs.Length - 1 - t) * TabStep, -18), new Vector2(TabStep - 5, 34));
+                ((RectTransform)b.transform).At(new Vector2(1, 1), new Vector2(-74 - (tabs.Length - 1 - t) * step, -18), new Vector2(step - 5, 34));
                 b.gameObject.name = "DexTab";
             }
 

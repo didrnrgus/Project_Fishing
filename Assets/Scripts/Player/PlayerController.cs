@@ -59,6 +59,7 @@ namespace Fishing.PlayerSystems
         float _extendTarget = 1f;
         Transform _mount;
         bool _mountSeated;
+        SitSeat _sitSeat;
         float _airTime;
         const float JumpSpeed = 6.2f;
         float _stride;
@@ -125,6 +126,7 @@ namespace Fishing.PlayerSystems
             if (_character != null) Destroy(_character);
             _character = CharacterFactory.Create(look, Model);
             _anim = _character.GetComponent<CharacterAnimator>();
+            _sitSeat = SitSeat.Attach(_character.transform);
             Head = null;
             foreach (var t in _character.GetComponentsInChildren<Transform>(true))
             {
@@ -374,6 +376,7 @@ namespace Fishing.PlayerSystems
         void UpdateAnimation()
         {
             bool fishing = Game.Fishing != null && Game.Fishing.State != Angling.FishingState.Idle;
+            if (_sitSeat != null) _sitSeat.Active = _mount != null && _mountSeated;
             if (_mount != null)
             {
                 _anim.SetLoop(_mountSeated ? CharacterAnimator.Drive : fishing ? FishingPose() : CharacterAnimator.Idle);

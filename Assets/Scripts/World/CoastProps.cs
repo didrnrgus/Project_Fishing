@@ -28,17 +28,107 @@ namespace Fishing.World
 
         float R(float min, float max) => (float)(min + _rng.NextDouble() * (max - min));
 
-        public void Tetrapod(Vector3 p, Material mat)
+        public void Tetrapod(Vector3 p, Material mat) => Tetrapod(_root, p, Quaternion.Euler(R(0f, 360f), R(0f, 360f), R(0f, 360f)), R(0.9f, 1.1f), mat, true);
+
+        /// <summary>테트라포드 한 개 (다리 끝까지 약 1.05m × scale). collider면 볼록 메쉬 콜라이더 (찌가 걸린다).</summary>
+        public static void Tetrapod(Transform parent, Vector3 p, Quaternion rot, float scale, Material mat, bool collider)
         {
-            var t = new GameObject("Tetrapod").transform;
-            t.SetParent(_root, false);
-            t.localPosition = p;
-            t.localRotation = Quaternion.Euler(R(0f, 360f), R(0f, 360f), R(0f, 360f));
+            var go = new GameObject("Tetrapod");
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = p;
+            go.transform.localRotation = rot;
+            go.transform.localScale = Vector3.one * scale;
+            go.AddComponent<MeshFilter>().sharedMesh = TetrapodMesh();
+            go.AddComponent<MeshRenderer>().sharedMaterial = mat;
+            if (collider) go.AddComponent<MeshCollider>().convex = true;
+        }
+
+        /// <summary>
+        /// 방파제 바깥 테트라포드 더미: from→to 선을 따라 바깥(outward) 쪽으로 rows줄, 줄마다 엇갈리고 바깥 줄일수록 낮게 잠긴다
+        /// (실제 방파제처럼 벽에 기댄 안쪽 줄이 가장 높다).
+        /// </summary>
+        public void TetrapodBank(Vector3 from, Vector3 to, Vector3 outward, float waterY, Material mat, int rows = 3)
+        {
+            var along = to - from;
+            float len = along.magnitude;
+            if (len < 0.1f) return;
+            along /= len;
+            outward = Vector3.ProjectOnPlane(outward, Vector3.up).normalized;
+            for (int k = 0; k < rows; k++)
+                for (float s = (k % 2) * 1f; s < len; s += R(1.8f, 2.3f))
+                {
+                    var p = from + along * s + outward * (0.6f + k * 1.7f + R(-0.3f, 0.3f));
+                    p.y = waterY + 0.35f - k * 0.55f + R(-0.25f, 0.25f);
+                    Tetrapod(p, mat);
+                }
+        }
+
+        static Mesh _tetrapod;
+
+        /// <summary>
+        /// 테트라포드 메쉬: 정사면체 방향 다리 4개, 가운데가 굵고(반지름 0.42) 끝이 가는(0.24) 원뿔대, 끝은 평평하게 자른 면.
+        /// 다리마다 옆면 법선을 원뿔대 경사에 맞춰 부드럽게, 끝면은 따로.
+        /// </summary>
+        public static Mesh TetrapodMesh()
+        {
+            if (_tetrapod != null) return _tetrapod;
+            const int seg = 12;
+            const float len = 1.05f, r0 = 0.42f, r1 = 0.24f, back = 0.15f;
+            var v = new List<Vector3>();
+            var n = new List<Vector3>();
+            var uv = new List<Vector2>();
+            var tri = new List<int>();
             for (int leg = 0; leg < 4; leg++)
             {
-                var dir = leg == 0 ? Vector3.up : Quaternion.Euler(109.5f, leg * 120f, 0f) * Vector3.up;
-                Mats.Prim(PrimitiveType.Capsule, "Leg", t, dir * 0.55f, new Vector3(0.6f, 0.6f, 0.6f), mat, false, Quaternion.FromToRotation(Vector3.up, dir));
+                var d = leg == 0 ? Vector3.up : Quaternion.Euler(109.47f, leg * 120f, 0f) * Vector3.up;
+                var q = Quaternion.FromToRotation(Vector3.up, d);
+                var a = q * Vector3.right;
+                var b = q * Vector3.forward;
+                // 옆면
+                int side = v.Count;
+                for (int i = 0; i <= seg; i++)
+                {
+                    float th = i / (float)seg * Mathf.PI * 2f;
+                    var radial = Mathf.Cos(th) * a + Mathf.Sin(th) * b;
+                    var normal = (radial * (len + back) + d * (r0 - r1)).normalized;
+                    v.Add(-d * back + radial * r0); n.Add(normal); uv.Add(new Vector2(i / (float)seg * 1.2f, 0f));
+                    v.Add(d * len + radial * r1); n.Add(normal); uv.Add(new Vector2(i / (float)seg * 1.2f, 0.6f));
+                }
+                for (int i = 0; i < seg; i++)
+                {
+                    int b0 = side + i * 2, t0 = b0 + 1, b1 = b0 + 2, t1 = b0 + 3;
+                    tri.AddRange(new[] { b0, t0, b1, b1, t0, t1 });
+                }
+                // 끝면 (바깥) + 밑면 (가운데 안쪽, 다른 다리 틈으로 안이 보이지 않게)
+                for (int cap = 0; cap < 2; cap++)
+                {
+                    var c = cap == 0 ? d * len : -d * back;
+                    float r = cap == 0 ? r1 : r0;
+                    var cn = cap == 0 ? d : -d;
+                    int center = v.Count;
+                    v.Add(c); n.Add(cn); uv.Add(new Vector2(0.5f, 0.5f));
+                    for (int i = 0; i <= seg; i++)
+                    {
+                        float th = i / (float)seg * Mathf.PI * 2f;
+                        v.Add(c + (Mathf.Cos(th) * a + Mathf.Sin(th) * b) * r); n.Add(cn);
+                        uv.Add(new Vector2(0.5f + Mathf.Cos(th) * 0.25f, 0.5f + Mathf.Sin(th) * 0.25f));
+                    }
+                    for (int i = 0; i < seg; i++)
+                    {
+                        int p0 = center + 1 + i, p1 = p0 + 1;
+                        if (cap == 0) tri.AddRange(new[] { center, p1, p0 });
+                        else tri.AddRange(new[] { center, p0, p1 });
+                    }
+                }
             }
+            _tetrapod = new Mesh { name = "Tetrapod" };
+            _tetrapod.SetVertices(v);
+            _tetrapod.SetNormals(n);
+            _tetrapod.SetUVs(0, uv);
+            _tetrapod.SetTriangles(tri, 0);
+            _tetrapod.RecalculateTangents();
+            _tetrapod.RecalculateBounds();
+            return _tetrapod;
         }
 
         /// <summary>등대: 몸통 색, 밤 불빛 색 (항구 입구 오른쪽 빨강·왼쪽 흰색 — 실제 항로 표지 규칙). scale로 크기를 키운다.</summary>
@@ -329,10 +419,10 @@ namespace Fishing.World
             return _gable;
         }
 
-        /// <summary>갯바위 덩어리 (텍스처 바위 구를 찌그러뜨려 눕힌다).</summary>
+        /// <summary>갯바위 덩어리 (절차적 바위 메쉬를 눕힌다, <see cref="Rocks"/>).</summary>
         public void Boulder(Vector3 at, float size, Material mat)
         {
-            Mats.Prim(PrimitiveType.Sphere, "Boulder", _root, at, new Vector3(size * R(1f, 1.5f), size * R(0.55f, 0.8f), size * R(0.9f, 1.2f)), mat, false,
+            Rocks.Prim("Boulder", _root, at, new Vector3(size * R(1f, 1.5f), size * R(0.55f, 0.8f), size * R(0.9f, 1.2f)), mat,
                 Quaternion.Euler(R(-15f, 15f), R(0f, 360f), R(-15f, 15f)));
         }
     }

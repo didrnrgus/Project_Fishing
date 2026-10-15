@@ -55,27 +55,77 @@ namespace Fishing.UI
 
         public abstract void Refresh();
 
-        /// <summary>본문을 비우고 위에서부터 행을 쌓는 헬퍼.</summary>
+        /// <summary>
+        /// 위에서부터 행을 쌓는 헬퍼. 행은 parent를 꽉 채운 스크롤 영역(잘라내기 + 휠·드래그 스크롤 + 얇은 스크롤바) 안에 쌓여서,
+        /// 행이 많아도 창 밖으로 삐져나오지 않는다. 다시 그려도(Refresh) 같은 key면 스크롤 위치를 이어 간다.
+        /// </summary>
         protected class RowCursor
         {
-            readonly RectTransform _parent;
+            static readonly System.Collections.Generic.Dictionary<string, float> ScrollMemory = new System.Collections.Generic.Dictionary<string, float>();
+
+            readonly RectTransform _content;
             float _y;
 
-            public RowCursor(RectTransform parent, float startY = 0f)
+            public RowCursor(RectTransform parent, float startY = 0f, string key = null)
             {
-                _parent = parent;
                 _y = startY;
+                key ??= Path(parent);
+
+                var view = UIFactory.Node("Scroll", parent).Fill();
+                view.gameObject.AddComponent<RectMask2D>();
+                view.gameObject.AddComponent<Image>().color = Color.clear; // 빈 곳에서도 휠이 먹게
+                _content = UIFactory.Node("Rows", view);
+                _content.anchorMin = new Vector2(0, 1);
+                _content.anchorMax = new Vector2(1, 1);
+                _content.pivot = new Vector2(0.5f, 1);
+                _content.sizeDelta = new Vector2(0, _y);
+
+                var bar = UIFactory.Node("Bar", parent);
+                bar.anchorMin = new Vector2(1, 0);
+                bar.anchorMax = new Vector2(1, 1);
+                bar.pivot = new Vector2(0, 0.5f);
+                bar.anchoredPosition = new Vector2(4, 0);
+                bar.sizeDelta = new Vector2(5, -8);
+                bar.gameObject.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.06f);
+                var handle = UIFactory.Image(UIFactory.Node("Area", bar).Fill(), new Color(1f, 1f, 1f, 0.35f), UIFactory.Circle, "Handle");
+                handle.raycastTarget = true;
+                handle.rectTransform.Fill();
+                var sb = bar.gameObject.AddComponent<Scrollbar>();
+                sb.direction = Scrollbar.Direction.BottomToTop;
+                sb.handleRect = handle.rectTransform;
+                sb.targetGraphic = handle;
+
+                var sr = view.gameObject.AddComponent<ScrollRect>();
+                sr.content = _content;
+                sr.viewport = view;
+                sr.horizontal = false;
+                sr.movementType = ScrollRect.MovementType.Clamped;
+                sr.scrollSensitivity = 45f;
+                sr.inertia = false;
+                sr.verticalScrollbar = sb;
+                sr.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
+                ScrollMemory.TryGetValue(key, out float y);
+                _content.anchoredPosition = new Vector2(0, y);
+                sr.onValueChanged.AddListener(_ => ScrollMemory[key] = _content.anchoredPosition.y);
+            }
+
+            static string Path(Transform t)
+            {
+                var s = t.name;
+                for (var p = t.parent; p != null; p = p.parent) s = p.name + "/" + s;
+                return s;
             }
 
             public RectTransform Next(float height, float gap = 6f)
             {
-                var rt = UIFactory.Node("Row", _parent);
+                var rt = UIFactory.Node("Row", _content);
                 rt.anchorMin = new Vector2(0, 1);
                 rt.anchorMax = new Vector2(1, 1);
                 rt.pivot = new Vector2(0.5f, 1);
                 rt.anchoredPosition = new Vector2(0, -_y);
                 rt.sizeDelta = new Vector2(0, height);
                 _y += height + gap;
+                _content.sizeDelta = new Vector2(0, _y);
                 return rt;
             }
         }

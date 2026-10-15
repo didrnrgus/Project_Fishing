@@ -30,8 +30,11 @@ namespace Fishing.UI
         public override void Refresh()
         {
             UIFactory.ClearChildren(Body);
-            var rows = new RowCursor(Body);
-            var tabs = rows.Next(42, 10);
+            // 탭 줄은 고정, 그 아래 목록만 스크롤 (탭마다 스크롤 위치를 따로 기억)
+            var tabs = UIFactory.Node("Tabs", Body);
+            tabs.anchorMin = new Vector2(0, 1); tabs.anchorMax = new Vector2(1, 1); tabs.pivot = new Vector2(0.5f, 1);
+            tabs.anchoredPosition = Vector2.zero; tabs.sizeDelta = new Vector2(0, 42);
+            var rows = new RowCursor(UIFactory.Node("List", Body).Fill(0, 0, 52, 0), 0f, "quest" + _tab);
             // 원작 퀘스트 색: 이야기 보라 · 일일 파랑 · 일반 노랑 (탭 이름 앞 점)
             string[] names = { "<color=#c49aff>●</color> 이야기", "<color=#6ab8ff>●</color> 일일 의뢰", "<color=#ffd060>●</color> 대물 도전", "업적 · 칭호", "대회", "빙고 · 출석", "일지" };
             int[] order = { 0, 1, 2, 5, 3, 4, 6 };

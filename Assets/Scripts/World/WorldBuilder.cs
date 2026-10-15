@@ -267,14 +267,14 @@ namespace Fishing.World
             for (int i = 0; i < 70; i++)
             {
                 var pos = new Vector3(R(-100f, -50f), HanRiverMap.WaterY + R(-0.1f, 0.25f), R(-60f, -57f));
-                Mats.Prim(PrimitiveType.Sphere, "Rock", rocks, pos, new Vector3(R(0.6f, 1.6f), R(0.4f, 0.9f), R(0.6f, 1.4f)), mat, false);
+                Rocks.Prim("Rock", rocks, pos, new Vector3(R(0.6f, 1.6f), R(0.4f, 0.9f), R(0.6f, 1.4f)), mat, Quaternion.Euler(0f, pos.x * 37f + pos.z * 11f, 0f)); // 회전은 위치로 (R을 더 부르면 뒤 소품 배치가 바뀐다)
             }
             // 교각 주변 사석
             foreach (var z in HanRiverMap.BridgePierZ)
                 for (int i = 0; i < 10; i++)
                 {
                     var pos = new Vector3(HanRiverMap.BridgeX + R(-4f, 4f), HanRiverMap.WaterY, z + R(-5f, 5f));
-                    Mats.Prim(PrimitiveType.Sphere, "Rock", rocks, pos, new Vector3(R(0.8f, 1.8f), R(0.4f, 0.8f), R(0.8f, 1.6f)), mat, false);
+                    Rocks.Prim("Rock", rocks, pos, new Vector3(R(0.8f, 1.8f), R(0.4f, 0.8f), R(0.8f, 1.6f)), mat, Quaternion.Euler(0f, pos.x * 37f + pos.z * 11f, 0f)); // 회전은 위치로 (R을 더 부르면 뒤 소품 배치가 바뀐다)
                 }
         }
 

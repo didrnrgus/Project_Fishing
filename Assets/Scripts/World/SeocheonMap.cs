@@ -325,7 +325,7 @@ namespace Fishing.World
         {
             var concrete = Mats.TexturedBox("concrete", new Color(0.92f, 0.92f, 0.9f), new Vector2(8f, 60f), 4f, 0.2f);
             var parapet = Mats.Lit(new Color(0.66f, 0.66f, 0.64f));
-            var tetra = Mats.Lit(new Color(0.6f, 0.6f, 0.58f), 0.15f);
+            var tetra = Mats.Textured("concrete", new Color(0.74f, 0.73f, 0.7f), 1f, 0.12f);
             float bottom = _map.BaseWaterY - 5f;
             void Body(Rect r, string name, bool parapetWest)
             {
@@ -343,10 +343,10 @@ namespace Fishing.World
             Body(SeocheonDef.WhiteBw, "WhiteBreakwater", true);
 
             // 테트라포드: 큰 방파제 바깥(동쪽)과 꺾인 팔 바깥(북쪽)
-            for (float z = SeocheonDef.RedStem.yMin + 6f; z < SeocheonDef.RedStem.yMax + 3f; z += R(2.3f, 3f))
-                _props.Tetrapod(new Vector3(SeocheonDef.RedStem.xMax + R(1f, 3.5f), _map.BaseWaterY + R(-0.6f, 0.4f), z + R(-0.8f, 0.8f)), tetra);
-            for (float x = SeocheonDef.RedArm.xMin; x < SeocheonDef.RedArm.xMax; x += R(2.3f, 3f))
-                _props.Tetrapod(new Vector3(x + R(-0.8f, 0.8f), _map.BaseWaterY + R(-0.6f, 0.4f), SeocheonDef.RedArm.yMax + R(1f, 3.5f)), tetra);
+            var st = SeocheonDef.RedStem;
+            _props.TetrapodBank(new Vector3(st.xMax + 0.5f, 0f, st.yMin + 6f), new Vector3(st.xMax + 0.5f, 0f, st.yMax + 3f), Vector3.right, _map.BaseWaterY, tetra);
+            var arm = SeocheonDef.RedArm;
+            _props.TetrapodBank(new Vector3(arm.xMin, 0f, arm.yMax + 0.5f), new Vector3(arm.xMax, 0f, arm.yMax + 0.5f), Vector3.forward, _map.BaseWaterY, tetra);
 
             _props.Lighthouse(new Vector3(SeocheonDef.RedArm.xMin + 3f, _map.LandY, SeocheonDef.RedArm.center.y), new Color(0.85f, 0.15f, 0.12f), new Color(1f, 0.45f, 0.4f));
             _props.Lighthouse(new Vector3(SeocheonDef.WhiteBw.center.x, _map.LandY, SeocheonDef.WhiteBw.yMax - 3f), new Color(0.95f, 0.95f, 0.93f), new Color(0.6f, 1f, 0.6f));
@@ -406,8 +406,8 @@ namespace Fishing.World
                 float x = SeocheonDef.CapeBase.x + side * (w + R(4f, 8f));
                 if (z > SeocheonDef.CapeTip.y - 2f) { x = SeocheonDef.CapeBase.x + R(-14f, 14f); z = SeocheonDef.CapeTip.y + w + R(3f, 7f); }
                 float s = R(2.5f, 5.5f);
-                Mats.Prim(PrimitiveType.Sphere, "CliffRock", _root, new Vector3(x, _map.BaseWaterY + R(-0.6f, 0.8f), z),
-                    new Vector3(s * R(1f, 1.5f), s * 0.7f, s), rock, false, Quaternion.Euler(R(-15f, 15f), R(0f, 360f), R(-15f, 15f)));
+                Rocks.Prim("CliffRock", _root, new Vector3(x, _map.BaseWaterY + R(-0.6f, 0.8f), z),
+                    new Vector3(s * R(1f, 1.5f), s * 0.7f, s), rock, Quaternion.Euler(R(-15f, 15f), R(0f, 360f), R(-15f, 15f)));
             }
         }
 
@@ -419,8 +419,8 @@ namespace Fishing.World
             {
                 float a = k / 9f * Mathf.PI * 2f + R(-0.2f, 0.2f);
                 float s = R(2.5f, 5f);
-                Mats.Prim(PrimitiveType.Sphere, "IsletRock", _root, new Vector3(c.x + Mathf.Cos(a) * (SeocheonDef.IsletRadius + 2f), _map.BaseWaterY + R(-0.8f, 0.5f),
-                    c.z + Mathf.Sin(a) * (SeocheonDef.IsletRadius + 2f)), new Vector3(s, s * R(0.6f, 1f), s * R(0.8f, 1.2f)), rock, false,
+                Rocks.Prim("IsletRock", _root, new Vector3(c.x + Mathf.Cos(a) * (SeocheonDef.IsletRadius + 2f), _map.BaseWaterY + R(-0.8f, 0.5f),
+                    c.z + Mathf.Sin(a) * (SeocheonDef.IsletRadius + 2f)), new Vector3(s, s * R(0.6f, 1f), s * R(0.8f, 1.2f)), rock,
                     Quaternion.Euler(R(-20f, 20f), R(0f, 360f), R(-20f, 20f)));
             }
         }

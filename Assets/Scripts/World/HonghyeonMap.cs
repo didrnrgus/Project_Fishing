@@ -185,8 +185,8 @@ namespace Fishing.World
             {
                 if (x > 0f && x < 62f) continue; // 포구 앞은 비워 둔다
                 float s = R(2f, 5f);
-                Mats.Prim(PrimitiveType.Sphere, "ShoreRock", _root, new Vector3(x, _map.WaterY + s * 0.15f, HonghyeonDef.ShoreZ + R(-0.5f, 2.5f)),
-                    new Vector3(s * R(1f, 1.6f), s * 0.6f, s), _rng.NextDouble() < 0.5 ? rock : rockDark, false,
+                Rocks.Prim("ShoreRock", _root, new Vector3(x, _map.WaterY + s * 0.15f, HonghyeonDef.ShoreZ + R(-0.5f, 2.5f)),
+                    new Vector3(s * R(1f, 1.6f), s * 0.6f, s), _rng.NextDouble() < 0.5 ? rock : rockDark,
                     Quaternion.Euler(R(-10f, 10f), R(0f, 360f), R(-10f, 10f)));
             }
         }
@@ -224,22 +224,14 @@ namespace Fishing.World
             Mats.Prim(PrimitiveType.Cube, "Parapet", bw, new Vector3(b.xMin + 0.3f, _map.LandY + 0.6f, b.center.y), new Vector3(0.6f, 1.2f, b.height),
                 Mats.Lit(new Color(0.64f, 0.64f, 0.62f)), false);
 
-            // 테트라포드 (바깥쪽): 4방향 다리를 가진 콘크리트 블록 흉내
-            var tetra = Mats.Lit(new Color(0.6f, 0.6f, 0.58f), 0.15f);
-            for (float z = b.yMin + 3f; z < b.yMax + 4f; z += R(2.2f, 3f))
-            for (int k = 0; k < 2; k++)
-            {
-                var p = new Vector3(b.xMin - R(1f, 3.5f) - k * 1.5f, _map.WaterY + R(-0.4f, 0.5f), z + R(-0.8f, 0.8f));
-                var t = new GameObject("Tetrapod").transform;
-                t.SetParent(bw, false);
-                t.localPosition = p;
-                t.localRotation = Quaternion.Euler(R(0f, 360f), R(0f, 360f), R(0f, 360f));
-                for (int leg = 0; leg < 4; leg++)
+            // 테트라포드 (바깥쪽): 벽에 기댄 안쪽 줄이 가장 높고 바깥 줄일수록 잠긴다
+            var tetra = Mats.Textured("concrete", new Color(0.74f, 0.73f, 0.7f), 1f, 0.12f);
+            for (int k = 0; k < 3; k++)
+                for (float z = b.yMin + 3f + (k % 2); z < b.yMax + 4f; z += R(1.8f, 2.3f))
                 {
-                    var dir = leg == 0 ? Vector3.up : Quaternion.Euler(109.5f, leg * 120f, 0f) * Vector3.up;
-                    Mats.Prim(PrimitiveType.Capsule, "Leg", t, dir * 0.55f, new Vector3(0.6f, 0.6f, 0.6f), tetra, false, Quaternion.FromToRotation(Vector3.up, dir));
+                    var p = new Vector3(b.xMin - 0.6f - k * 1.7f + R(-0.3f, 0.3f), _map.WaterY + 0.35f - k * 0.55f + R(-0.25f, 0.25f), z);
+                    CoastProps.Tetrapod(bw, p, Quaternion.Euler(R(0f, 360f), R(0f, 360f), R(0f, 360f)), R(0.9f, 1.1f), tetra, false);
                 }
-            }
 
             // 빨간 등대
             var lighthouse = new GameObject("Lighthouse").transform;
@@ -272,7 +264,7 @@ namespace Fishing.World
                     float a = k / 12f * Mathf.PI * 2f + R(-0.2f, 0.2f);
                     float s = R(3f, 6f);
                     var p = new Vector3(c.x + Mathf.Cos(a) * (r + 2f), _map.WaterY + R(-0.8f, 0.6f), c.z + Mathf.Sin(a) * (r + 2f));
-                    Mats.Prim(PrimitiveType.Sphere, "Rock", isl, p, new Vector3(s, s * R(0.6f, 1f), s * R(0.8f, 1.2f)), rock, false,
+                    Rocks.Prim("Rock", isl, p, new Vector3(s, s * R(0.6f, 1f), s * R(0.8f, 1.2f)), rock,
                         Quaternion.Euler(R(-20f, 20f), R(0f, 360f), R(-20f, 20f)));
                 }
             }
