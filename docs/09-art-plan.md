@@ -1,6 +1,6 @@
 # 09. 물고기 모델 · 아이템 이미지 계획
 
-> 상태 (2026-10-14): **3장 물고기, 4장 아이템 아이콘 완료** — 처음 32종, 이후 맵·계절과 함께 9종(서천 6종, 빙어, 다금바리·돗돔)을 더해 41종, 2026-10-15 해안 낚시터와 함께 13종(3-12)을 더해 **54종** 모델·텍스처·애니메이션 5종·도감 3D 미리보기·아이콘, 아이템 아이콘 37종 + 잡동사니 6종(아이콘·3D 모델)이 게임에 들어갔다.
+> 상태 (2026-10-14): **3장 물고기, 4장 아이템 아이콘 완료** — 처음 32종, 이후 맵·계절과 함께 9종(서천 6종, 빙어, 다금바리·돗돔)을 더해 41종, 2026-10-15 해안 낚시터와 함께 16종(3-12)을 더해 **57종** 모델·텍스처·애니메이션 5종·도감 3D 미리보기·아이콘, 아이템 아이콘 37종 + 잡동사니 6종(아이콘·3D 모델)이 게임에 들어갔다.
 > 사용자가 도감 자료를 주기 전에 진행해 달라고 해서, 웹 자료(부록 출처)를 바탕으로 만들었다. 잉어 시제품 확인 단계는 건너뛰었다.
 > 순서: 3장(물고기) → 4장(아이템 이미지).
 
@@ -254,14 +254,14 @@
 | 확인 | `Fishing/Check Fish Models` 메뉴 → `Logs/fish-check.txt` (렌더러·크기·머리 방향 +Z·클립 길이), autoshot `10_result`, `11_dex`, `11b_dex_detail`, `28_aquarium` |
 
 ```bash
-bpyenv/Scripts/python -I tools/blender/build_fish.py                       # 54종 FBX · 텍스처 · 아이콘
+bpyenv/Scripts/python -I tools/blender/build_fish.py                       # 57종 FBX · 텍스처 · 아이콘
 bpyenv/Scripts/python -I tools/blender/build_fish.py --only carp --preview --anim   # 옆·위·비스듬히 + 클립별 4프레임
 bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.png
 ```
 - 임포트 규칙을 바꿨으면 메뉴 **Fishing > Reimport Fish Assets**.
 - 남은 개선: 입 벌리기(턱 뼈), 비늘 하나하나의 굴곡을 더 진하게, 메기·장어 지느러미 반투명, 고등어 토막지느러미(finlet).
 
-### 3-12. 해안 낚시터 어종 13종 (2026-10-15)
+### 3-12. 해안 낚시터 어종 16종 (2026-10-15)
 
 새 낚시터 8곳(02 문서 9-8)에 맞춰 같은 파이프라인으로 13종을 더했다. 몸 틀은 그대로 쓰고 수치·무늬만 어종에 맞췄다.
 
@@ -282,6 +282,9 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish
 | 갈치 | G | 꼬리지느러미 없이 가늘어지는 은빛 띠 몸(금속성 0.85), 몸 전체 등지느러미, 뼈 14개 |
 | 삼치 | E | 길쭉한 방추형, 등 청회색에 검은 점 줄, 토막지느러미 |
 | 점농어 | C | 농어 몸에 등·옆구리 검은 점 |
+| 자리돔 | D | 손바닥만 한 짙은 회갈색 몸, 깊게 갈라진 꼬리, 등지느러미 밑 흰 점 |
+| 옥돔 | C | 가파른 이마·큰 눈, 분홍빛 붉은 몸에 노란 가는 줄, 노란 꼬리 끝 |
+| 무늬오징어 | Q | 외투막을 두르는 넓은 지느러미 치마, 반투명 갈색 얼룩, 청록 눈 |
 
 ```bash
 bpyenv/Scripts/python -I tools/blender/build_fish.py --only atkamackerel,sandfish,flatfish,squid,giantoctopus,cod,pollock,redrockfish,yellowtail,amberjack,hairtail,spanishmackerel,spottedseabass
