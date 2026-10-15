@@ -711,6 +711,9 @@ namespace Fishing.Dev
             Game.CameraRig.Yaw = 0f;
             yield return new WaitForSeconds(1f);
             Game.Fishing.Autoplay = true;
+            // 앞 장면들의 파이팅으로 체력·내구도가 바닥나 있으면 페널티 때문에 오래 걸린다
+            Game.Profile.ChangeStamina(Game.Profile.StaminaCap);
+            Game.Profile.Data.rodDurability = 100f;
             CheckClear("DebugStartFight");
             Game.Fishing.DebugStartFight("nileperch", 158f, 20f);
             yield return new WaitForSeconds(2.5f);
