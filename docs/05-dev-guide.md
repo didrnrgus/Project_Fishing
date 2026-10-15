@@ -41,6 +41,7 @@
 ```bash
 sh tools/build.sh                 # 윈도우 빌드
 sh tools/autoshot.sh              # 빌드 실행 → Screenshots/ 에 약 100장 자동 촬영 후 종료, 맵별 평균 FPS 출력
+sh tools/autoshot.sh 06_fight     # 그 장면까지만 찍고 끝낸다 (한 장면 빨리 확인, -autoshotStop)
 sh tools/balance.sh               # 밸런스 리포트 (전체)
 sh tools/balance.sh -simSummary   # 밸런스 리포트 (대물급만)
 sh tools/test.sh                  # 게임 규칙 단위 테스트 (EditMode, Logs/test-results.xml)

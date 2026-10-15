@@ -17,6 +17,7 @@ namespace Fishing.Characters
 
         CharacterAnimator _anim;
         Transform _hand, _rod, _nameTag;
+        RodGrip _grip;
         TelescopicRod _rodModel;
         // 낚싯줄과 물에 뜬 찌 (앞이 트인 물이 있을 때만)
         LineRenderer _line;
@@ -68,6 +69,7 @@ namespace Fishing.Characters
                 _anim = character.GetComponent<CharacterAnimator>();
                 foreach (var t in character.GetComponentsInChildren<Transform>(true))
                     if (t.name == "hand_r") _hand = t;
+                if (role == Role.Angler) _grip = RodGrip.Find(character.transform);
                 // 앉아 있는 NPC(크루저 선장 등)는 엉덩이 밑에 아이스박스
                 if (role == Role.Sitter) { var seat = SitSeat.Attach(character.transform); if (seat != null) seat.Active = true; }
             }
@@ -254,7 +256,12 @@ namespace Fishing.Characters
             _turning = Mathf.Abs(diff) > 25f ? (diff < 0f ? -1 : 1) : (Mathf.Abs(diff) < 8f ? 0 : _turning);
             transform.localRotation = Quaternion.Slerp(transform.localRotation, want, Time.deltaTime * 6f);
 
-            if (_rod != null && _hand != null) _rod.position = _hand.position;
+            if (_rod != null && _grip != null)
+            {
+                _rod.position = _grip.Palm;
+                _grip.Wrap(_rod.position, _rod.forward);
+            }
+            else if (_rod != null && _hand != null) _rod.position = _hand.position;
             // 줄 무게로 초릿대가 살짝 숙여지고, 바람에 조금 흔들린다
             if (_rodModel != null)
                 _rodModel.Drive(6f + Mathf.PerlinNoise(Time.time * 0.7f, transform.position.x) * 6f, transform.forward - Vector3.up, 0f, Time.deltaTime);

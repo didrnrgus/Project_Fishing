@@ -12,6 +12,8 @@ namespace Fishing.Dev
     {
         public bool Enabled;
         public string ShotDir;
+        /// <summary>-autoshotStop 이름: 그 장면을 찍고 바로 끝낸다 (한 장면만 빨리 확인할 때).</summary>
+        public string StopAfter;
     }
 
     /// <summary>
@@ -40,6 +42,7 @@ namespace Fishing.Dev
                     result.Enabled = true;
                     result.ShotDir = args[i + 1];
                 }
+                else if (args[i] == "-autoshotStop") result.StopAfter = args[i + 1];
             return result;
         }
 
@@ -785,6 +788,12 @@ namespace Fishing.Dev
             Debug.Log($"[Dev] 스크린샷: {path} ({_fps:0} FPS, {Fishing.World.FieldMap.Id}, 정적 배칭 {Fishing.World.WorldBatcher.LastBatched}개)");
             yield return null;
             yield return null;
+            if (name == _args.StopAfter)
+            {
+                yield return new WaitForSecondsRealtime(0.5f);
+                Debug.Log("[Dev] 자동 스크린샷 완료 (-autoshotStop " + name + ")");
+                Application.Quit();
+            }
         }
     }
 }

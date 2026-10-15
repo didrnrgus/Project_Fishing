@@ -273,6 +273,8 @@ GameBootstrap.Start → GameUI.EnterLobby (Mode=Lobby, 카메라 고정)
 | `KenneyProps.SpawnBush` | Nature Starter Kit 2 덤불·나무 + 잎 겉면 꽃·열매 (동백·귤·진달래·당산나무). Kenney 나무는 모두 NSK2로 돌린다 |
 | `World/VegetationLibrary.cs` + `Editor/VegetationBake.cs` | 받은 실사풍 소나무·활엽수·바위·풀 참조 묶음 (`Resources/VegetationLibrary.asset`, 빌드 때 채움). `KenneyProps.Spawn`(나무)·`Rocks.Prim`(바위, 눈 맵은 `Rocks.Snowy`)이 있으면 먼저 쓴다 |
 | `World/GrassField.cs` + `Shaders/Grass.shader` | 풀·들꽃 포기: 지형 풀 층·풀 텍스처 바닥을 레이캐스트로 훑어 심고 48m 칸 메쉬로 굽는다, 바람 흔들림, 130m 밖 칸은 끔(`GrassCuller`). `MapLoader`가 월드를 지은 직후 부른다 |
+| `Characters/RodGrip.cs` | 3인칭 오른손이 낚싯대를 쥔다: 릴 시트를 손바닥 가운데에, 손가락 마디를 낚싯대 축으로 감는다 (플레이어·NPC 낚시꾼) |
+| `Fishing/FpHand.cs` | 1인칭 주먹 메쉬: 손잡이(오른손)·릴 노브(왼손, 거울)를 감아 쥔 손가락 튜브·엄지·손등·손목 |
 | `UIPanel.RowCursor` | 창 목록을 쌓으면 자동으로 잘라내기 + 휠 스크롤 + 스크롤바 (key로 스크롤 위치 기억) |
 
 새 셰이더는 코드에서 `Shader.Find`로 찾으므로 `ProjectSettings/GraphicsSettings.asset` Always Included와 `ProjectTools.RuntimeShaders`에 넣었다 (meta의 guid를 고정해 두었다).

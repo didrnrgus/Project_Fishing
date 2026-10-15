@@ -18,7 +18,7 @@ namespace Fishing.Angling
         Transform _root;
         TelescopicRod _rod;
         string _rodId, _reelId;
-        Transform _leftHand, _rightHand;
+        Transform _leftHand, _rightHand, _rightWrist, _leftWrist;
         Transform _armL, _armR;
         // 팔뚝 위쪽은 입은 상의 색 소매 (반팔이면 팔꿈치 위까지, 긴팔이면 손목까지)
         Transform _sleeveL, _sleeveR;
@@ -70,8 +70,8 @@ namespace Fishing.Angling
             fill.transform.SetParent(_root, false);
             fill.transform.localPosition = new Vector3(-0.15f, 0.25f, -0.25f);
             fill.type = LightType.Point;
-            fill.range = 1.2f;
-            fill.intensity = 0.9f;
+            fill.range = 1.5f;
+            fill.intensity = 1.3f;
             fill.color = new Color(1f, 0.95f, 0.85f);
             fill.shadows = LightShadows.None;
 
@@ -106,42 +106,9 @@ namespace Fishing.Angling
             // 왼손: 릴 손잡이(노브)를 감싸 쥐고 손잡이와 같이 돈다 (자리는 LateUpdate에서 노브를 따라간다)
             // 오른손: 릴 다리를 손가락 사이에 끼우고 손잡이를 쥔다
             if (_rod.HandleKnob != null)
-                _leftHand = Fist("HandLeft", transform, glove, pad, skin, -1f);
-            _rightHand = Fist("HandRight", _rod.transform, glove, pad, skin, 1f);
-            _rightHand.localPosition = new Vector3(0.012f, 0.1f, -0.02f);
-        }
-
-        /// <summary>
-        /// 쥔 주먹: 손바닥·손등 + 쥔 막대(로컬 Y)를 감싸는 손가락 네 개(장갑 마디 + 맨살 끝마디) + 엄지 + 손목.
-        /// 로컬 좌표: Y = 쥔 막대 방향, +Z = 손가락이 감아 도는 앞쪽, side 쪽 X = 손등. side -1이면 왼손(거울).
-        /// </summary>
-        static Transform Fist(string name, Transform parent, Material glove, Material pad, Material skin, float side)
-        {
-            var h = new GameObject(name).transform;
-            h.SetParent(parent, false);
-            h.localScale = Vector3.one * 1.2f;
-            float sx = side;
-            Mats.Prim(PrimitiveType.Sphere, "Palm", h, new Vector3(0.022f * sx, -0.004f, -0.006f), new Vector3(0.05f, 0.088f, 0.062f), glove, false);
-            Mats.Prim(PrimitiveType.Sphere, "BackPad", h, new Vector3(0.036f * sx, 0.004f, -0.004f), new Vector3(0.02f, 0.06f, 0.044f), pad, false);
-            for (int i = 0; i < 4; i++)
-            {
-                float y = 0.03f - i * 0.02f;
-                float len = i == 3 ? 0.8f : i == 0 ? 0.95f : 1f;
-                // 첫 마디는 손바닥에서 앞으로, 끝마디(맨살)는 막대 앞을 지나 안쪽으로 굽는다
-                Mats.Prim(PrimitiveType.Capsule, "Finger" + i, h, new Vector3(0.012f * sx, y, 0.022f), new Vector3(0.019f, 0.016f * len, 0.019f), glove, false,
-                    Quaternion.Euler(90f, 0f, 0f));
-                Mats.Prim(PrimitiveType.Capsule, "FingerTip" + i, h, new Vector3(-0.008f * sx, y, 0.03f), new Vector3(0.017f, 0.014f * len, 0.017f), skin, false,
-                    Quaternion.Euler(0f, 0f, 90f) * Quaternion.Euler(0f, 0f, -25f * sx));
-            }
-            // 손등 쪽 손가락 마디 줄 (주먹을 쥔 모양이 보이게)
-            for (int i = 0; i < 4; i++)
-                Mats.Prim(PrimitiveType.Sphere, "Knuckle" + i, h, new Vector3(0.03f * sx, 0.03f - i * 0.02f, 0.016f), new Vector3(0.022f, 0.019f, 0.022f), pad, false);
-            Mats.Prim(PrimitiveType.Capsule, "Thumb", h, new Vector3(-0.004f * sx, 0.04f, 0.012f), new Vector3(0.02f, 0.022f, 0.02f), glove, false,
-                Quaternion.Euler(0f, 0f, 70f * sx));
-            Mats.Prim(PrimitiveType.Sphere, "ThumbTip", h, new Vector3(-0.022f * sx, 0.047f, 0.014f), new Vector3(0.017f, 0.02f, 0.017f), skin, false);
-            Mats.Prim(PrimitiveType.Capsule, "Wrist", h, new Vector3(0.03f * sx, -0.012f, -0.05f), new Vector3(0.046f, 0.03f, 0.042f), glove, false,
-                Quaternion.Euler(90f, 0f, 0f));
-            return h;
+                _leftHand = FpHand.BuildLeft(transform, 0.012f, glove, pad, skin, out _leftWrist);
+            // 오른손: 손잡이를 실제로 감아 쥔 손가락 메쉬 (FpHand)
+            _rightHand = FpHand.BuildRight(_rod.transform, glove, pad, skin, out _rightWrist);
         }
 
         static readonly System.Collections.Generic.Dictionary<float, Mesh> LimbMeshes = new System.Collections.Generic.Dictionary<float, Mesh>();
@@ -195,15 +162,19 @@ namespace Fishing.Angling
             return m;
         }
 
-        /// <summary>왼손을 릴 노브에 맞춘다: 노브 축을 감싸 쥐고, 손등은 어깨 쪽을 향한다.</summary>
+        /// <summary>왼손을 릴 노브에 맞춘다: 손 원점 = 노브, 로컬 +Y = 노브 축, 손등은 릴 몸통 반대쪽(바깥)을 본다.</summary>
         void PoseLeftHand()
         {
             var knob = _rod.HandleKnob;
             if (_leftHand == null || knob == null) return;
             var axis = knob.up; // 캡슐 노브의 길이 방향
-            var fwd = Vector3.ProjectOnPlane(knob.position - transform.TransformPoint(ShoulderL), axis);
-            if (fwd.sqrMagnitude < 1e-6f) fwd = transform.forward;
-            _leftHand.SetPositionAndRotation(knob.position - fwd.normalized * 0.026f, Quaternion.LookRotation(fwd, axis));
+            var outward = Vector3.ProjectOnPlane(knob.position - _rod.Reel.position, axis);
+            if (outward.sqrMagnitude < 1e-6f) outward = -transform.right;
+            outward.Normalize();
+            // 거울(X −1) 안의 +X(손등)가 바깥을 보려면 손 원점의 right = −outward
+            var right = -outward;
+            var fwd = Vector3.Cross(right, axis);
+            _leftHand.SetPositionAndRotation(knob.position, Quaternion.LookRotation(fwd, axis));
         }
 
         /// <summary>입은 상의 색으로 소매를 칠한다 (긴팔이면 아래팔까지 소매).</summary>
@@ -355,8 +326,8 @@ namespace Fishing.Angling
             _rod.SpinReel(_reelTurns, _lineOut, Time.deltaTime);
             PoseLeftHand();
             // 팔은 손목(손 뒤쪽)까지
-            if (_leftHand != null) Arm(_sleeveL, _armL, transform.TransformPoint(ShoulderL), _leftHand.TransformPoint(new Vector3(-0.03f, -0.012f, -0.06f)));
-            Arm(_sleeveR, _armR, transform.TransformPoint(ShoulderR), _rightHand.TransformPoint(new Vector3(0.03f, -0.012f, -0.06f)));
+            if (_leftHand != null) Arm(_sleeveL, _armL, transform.TransformPoint(ShoulderL), _leftWrist.position);
+            Arm(_sleeveR, _armR, transform.TransformPoint(ShoulderR), _rightWrist.position);
 
             var tipPos = _rod.Tip.position;
             float sag = Mathf.Lerp(0.8f, 0.02f, Mathf.Clamp01(f.Tension * 1.5f));

@@ -60,6 +60,7 @@ namespace Fishing.PlayerSystems
         Transform _mount;
         bool _mountSeated;
         SitSeat _sitSeat;
+        RodGrip _grip;
         float _airTime;
         const float JumpSpeed = 6.2f;
         float _stride;
@@ -127,6 +128,7 @@ namespace Fishing.PlayerSystems
             _character = CharacterFactory.Create(look, Model);
             _anim = _character.GetComponent<CharacterAnimator>();
             _sitSeat = SitSeat.Attach(_character.transform);
+            _grip = RodGrip.Find(_character.transform);
             Head = null;
             foreach (var t in _character.GetComponentsInChildren<Transform>(true))
             {
@@ -403,10 +405,16 @@ namespace Fishing.PlayerSystems
             _currentLean = Mathf.Lerp(_currentLean, BodyLean, Time.deltaTime * 12f);
             if (_spine != null && Mathf.Abs(_currentLean) > 0.05f)
                 _spine.rotation = Quaternion.AngleAxis(-_currentLean, Model.right) * _spine.rotation;
-            if (_hand != null) _rodPivot.position = _hand.position;
             _currentRodPitch = Mathf.Lerp(_currentRodPitch, RodPitch, Time.deltaTime * RodPitchSpeed);
             _currentRodYaw = Mathf.Lerp(_currentRodYaw, RodYaw, Time.deltaTime * 14f);
             _rodPivot.localRotation = Quaternion.Euler(0f, _currentRodYaw, 0f) * Quaternion.Euler(-_currentRodPitch, 0f, 0f);
+            // 릴 시트를 손바닥 가운데에 두고 손가락으로 감싸 쥔다 (RodGrip). 뼈가 없는 단순 모델은 손목에
+            if (_grip != null)
+            {
+                _rodPivot.position = _grip.Palm;
+                _grip.Wrap(_rodPivot.position, _rodPivot.forward);
+            }
+            else if (_hand != null) _rodPivot.position = _hand.position;
 
             UpdateRodGear();
             // 펼치기: 1.2초에 걸쳐 끝 마디부터. 마디가 하나 빠질 때마다 '착'
