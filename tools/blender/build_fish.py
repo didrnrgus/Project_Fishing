@@ -37,7 +37,7 @@ import cephalopod as CP  # noqa: E402
 import fish_species as FS  # noqa: E402
 import fish_tex  # noqa: E402
 
-NR, NA = 44, 28   # 몸 고리 수, 고리 둘레 버텍스 수
+NR, NA = 64, 40   # 몸 고리 수, 고리 둘레 버텍스 수 (+ 아가미 뚜껑 근처에 고리 몇 개 더)
 FPS = 30
 
 
@@ -127,20 +127,39 @@ def body_uv(d, s, a):
     return (u, v)
 
 
+def fish_tex_smooth(e0, e1, x):
+    t = min(1.0, max(0.0, (x - e0) / (e1 - e0 + 1e-9)))
+    return t * t * (3 - 2 * t)
+
+
 def build_body_mesh(d, B):
     verts, faces, uvs = [], [], []
     ss = [0.006 + (1 - 0.006) * (0.5 - 0.5 * math.cos(math.pi * i / (NR - 1))) for i in range(NR)]
+    he = fish_tex.head_end_of(d)
+    flat = d.get('flat')
+    if not flat:
+        # 아가미 뚜껑 턱이 뭉개지지 않게 그 근처에 고리를 더 넣는다
+        ss = sorted(set(round(x, 5) for x in ss + [he - 0.06 + 0.008 * i for i in range(10)]))
+    nr = len(ss)
     for s in ss:
         for k in range(NA):
             a = 2 * math.pi * k / NA
-            verts.append(B.ring_point(s, a))
+            x, y, z = B.ring_point(s, a)
+            if not flat:
+                # 아가미 뚜껑 판이 몸 위로 살짝 덮인다: 뒤 가장자리 바로 앞이 볼록하고 그 뒤로 턱이 진다
+                v = body_uv(d, s, a)[1]
+                ge = fish_tex.gill_edge(d, v)
+                bump = fish_tex_smooth(ge - 0.07, ge - 0.006, s) * fish_tex_smooth(ge + 0.014, ge + 0.002, s)
+                side = fish_tex_smooth(0.05, 0.25, v) * fish_tex_smooth(0.98, 0.8, v)
+                x *= 1 + 0.06 * bump * side
+            verts.append((x, y, z))
     # 주둥이 끝 점, 꼬리자루 끝 점
     nose = len(verts)
     verts.append((0.0, B.y(0.0), B.zc(0.0)))
     tail = len(verts)
     verts.append((0.0, B.y(1.0) + 0.002, B.zc(1.0)))
     loops_uv = []
-    for i in range(NR - 1):
+    for i in range(nr - 1):
         for k in range(NA):
             k2 = (k + 1) % NA
             f = (i * NA + k, i * NA + k2, (i + 1) * NA + k2, (i + 1) * NA + k)
@@ -152,7 +171,7 @@ def build_body_mesh(d, B):
         a1, a2 = 2 * math.pi * k / NA, 2 * math.pi * (k + 1) / NA
         faces.append((nose, k2, k))
         loops_uv.append([(0.0, 0.5), body_uv(d, ss[0], a2), body_uv(d, ss[0], a1)])
-        base = (NR - 1) * NA
+        base = (nr - 1) * NA
         faces.append((tail, base + k, base + k2))
         loops_uv.append([(0.75, 0.5), body_uv(d, 1.0, a1), body_uv(d, 1.0, a2)])
     return verts, faces, loops_uv
@@ -360,7 +379,7 @@ def make_barbels(d, B):
                 t = i / 8
                 p = start + d0 * L * t + mathutils.Vector((0, 0.55, -0.15)) * L * t * t
                 pts.append(tuple(p))
-            out.append(make_tube(pts, th, th * 0.3, (0.875, 0.25, 0.9375, 0.375)))
+            out.append(make_tube(pts, th * 0.7, th * 0.2, (0.875, 0.25, 0.9375, 0.375)))   # 가늘고 끝이 뾰족한 살 수염
     if d.get('beak'):
         L = d['beak']
         z0 = B.zc(0.02) - B.bot(0.02) * 0.4
@@ -670,7 +689,7 @@ def build(sid):
     arm = build_rig(d, B, body, fins)
     # LOD1 (수족관에 여러 마리): 몸·지느러미를 줄인 복사본
     lods = []
-    for ob, ratio in ((body, 0.28), (fins, 0.35)):
+    for ob, ratio in ((body, 0.14), (fins, 0.35)):
         c = ob.copy()
         c.data = ob.data.copy()
         c.name = ob.name + '_LOD1'
@@ -689,7 +708,7 @@ def build(sid):
 
 def make_lods(body, fins):
     lods = []
-    for ob, ratio in ((body, 0.28), (fins, 0.35)):
+    for ob, ratio in ((body, 0.14), (fins, 0.35)):
         c = ob.copy()
         c.data = ob.data.copy()
         c.name = ob.name + '_LOD1'
@@ -750,9 +769,13 @@ def write_textures(d):
 # =====================================================================
 
 def apply_preview_materials(d, body, fins, tex_path):
+    """Unity Fishing/Fish 셰이더와 같은 입력: 알베도(A = 지느러미 잘라내기), 노멀, 금속성(R)·매끈함(A)."""
     img = bpy.data.images.load(tex_path)
     nimg = bpy.data.images.load(tex_path.replace('.png', '_n.png'))
     nimg.colorspace_settings.name = 'Non-Color'
+    mimg = bpy.data.images.load(tex_path.replace('.png', '_m.png'))
+    mimg.colorspace_settings.name = 'Non-Color'
+    mimg.alpha_mode = 'CHANNEL_PACKED'
     for ob, cut in ((body, False), (fins, True)):
         m = bpy.data.materials.new(ob.name + 'Mat')
         m.use_nodes = True
@@ -762,14 +785,28 @@ def apply_preview_materials(d, body, fins, tex_path):
         t.image = img
         nt.links.new(t.outputs['Color'], bsdf.inputs['Base Color'])
         if cut:
-            nt.links.new(t.outputs['Alpha'], bsdf.inputs['Alpha'])
+            # Unity: _Cutoff 0.45로 잘라내고 남은 막은 불투명 (얇은 막이라 뒤에서 빛이 비친다)
+            gt = nt.nodes.new('ShaderNodeMath')
+            gt.operation = 'GREATER_THAN'
+            gt.inputs[1].default_value = 0.45
+            nt.links.new(t.outputs['Alpha'], gt.inputs[0])
+            nt.links.new(gt.outputs[0], bsdf.inputs['Alpha'])
+            bsdf.inputs['Transmission Weight'].default_value = 0.25
         nm = nt.nodes.new('ShaderNodeNormalMap')
         nt2 = nt.nodes.new('ShaderNodeTexImage')
         nt2.image = nimg
         nt.links.new(nt2.outputs['Color'], nm.inputs['Color'])
         nt.links.new(nm.outputs['Normal'], bsdf.inputs['Normal'])
-        bsdf.inputs['Roughness'].default_value = 0.35
-        bsdf.inputs['Metallic'].default_value = d['colors'].get('metallic', 0.0) * 0.5 + d['colors'].get('silver', 0) * 0.25
+        mt = nt.nodes.new('ShaderNodeTexImage')
+        mt.image = mimg
+        sep = nt.nodes.new('ShaderNodeSeparateColor')
+        nt.links.new(mt.outputs['Color'], sep.inputs['Color'])
+        nt.links.new(sep.outputs['Red'], bsdf.inputs['Metallic'])
+        inv = nt.nodes.new('ShaderNodeMath')
+        inv.operation = 'SUBTRACT'
+        inv.inputs[0].default_value = 1.0
+        nt.links.new(mt.outputs['Alpha'], inv.inputs[1])
+        nt.links.new(inv.outputs[0], bsdf.inputs['Roughness'])
         ob.data.materials.clear()
         ob.data.materials.append(m)
 

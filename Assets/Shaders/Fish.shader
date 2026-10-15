@@ -1,7 +1,8 @@
 // 물고기 (tools/blender/build_fish.py가 만든 어종별 모델).
 // 몸과 지느러미가 같은 아틀라스 텍스처를 쓴다: 알베도(A = 지느러미 가장자리), 노멀(비늘), 금속성(R)·매끈함(A).
 // 지느러미 머티리얼은 _Cutoff로 해진 가장자리를 잘라 내고, 얇은 막이라 빛이 뒤에서 비치는 느낌(_Translucency)을 더한다.
-// 은빛 고기는 시선이 비스듬할수록 비늘이 반짝인다(_Sheen).
+// 은빛 고기는 시선이 비스듬할수록 비늘이 반짝이고(_Sheen), 금속성이 높은 비늘에는 보는 각도에 따라 색이 도는
+// 얇은 막 간섭(무지갯빛, _Iridescence)이 은은하게 얹힌다.
 // 잘라내기는 alphatest: 지시어 대신 clip()으로 한다. alphatest:를 쓰면 렌더 텍스처에 알파 0이 써져서
 // 결과 화면·도감(투명 렌더 텍스처 → UI)에서 물고기가 사라진다.
 Shader "Fishing/Fish"
@@ -16,6 +17,7 @@ Shader "Fishing/Fish"
         _Sheen ("Sheen", Range(0,1)) = 0.3
         _Translucency ("Translucency", Range(0,1)) = 0.0
         _Wet ("Wet (물 밖에서 번들거림)", Range(0,1)) = 0.0
+        _Iridescence ("Iridescence (은빛 비늘 무지갯빛)", Range(0,1)) = 0.35
     }
     SubShader
     {
@@ -28,7 +30,7 @@ Shader "Fishing/Fish"
 
         sampler2D _MainTex, _BumpMap, _MetalTex;
         fixed4 _Tint;
-        half _Sheen, _Translucency, _Wet, _Cutoff;
+        half _Sheen, _Translucency, _Wet, _Cutoff, _Iridescence;
 
         struct Input
         {
@@ -49,6 +51,9 @@ Shader "Fishing/Fish"
             half rim = 1.0 - saturate(dot(normalize(IN.viewDir), o.Normal));
             // 은빛 비늘: 비스듬히 볼 때 하늘빛이 살짝 번진다
             o.Emission = c.rgb * (_Sheen * m.r * pow(rim, 3.0) * 1.5 + _Translucency * 0.35);
+            // 얇은 막 간섭: 시선 각도에 따라 파랑 → 보라 → 금빛으로 돈다 (금속성 비늘에만, 가장자리일수록)
+            half3 irid = 0.5 + 0.5 * cos(6.2831853 * (rim * 1.4 + half3(0.0, 0.33, 0.67)));
+            o.Emission += irid * m.r * rim * rim * _Iridescence * 0.22;
         }
         ENDCG
     }

@@ -53,6 +53,7 @@
 
 ### 다음에 로컬(Windows, Unity)에서 할 일 — 순서대로
 
+0. **물고기 다시 만들기** (클라우드는 LFS 업로드가 막혀 스크립트만 올렸다): `bpyenv/Scripts/python -I tools/blender/build_fish.py` → Unity `Fishing > Reimport Fish Assets` → 도감·결과 화면에서 눈이 한쪽에 하나인지, 실사풍 텍스처(09 문서 3-14·3-15)가 들어갔는지 확인 → FBX·텍스처·아이콘 커밋
 1. `sh tools/build.sh` — **에러 0인지 먼저**. 이번 세션 코드(`WorldBatcher.cs`, `MapLoader`·`DevAutomation`·`FishFight`·테스트 수정)는 Unity 컴파일러로 확인하지 못했다.
 2. `sh tools/test.sh` — 31/31 기대 (새 테스트 `TiredPlayerCanStillLandTrophyFish`).
 3. `sh tools/autoshot.sh` — 화면 확인. 특히:
