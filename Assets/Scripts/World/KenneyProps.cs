@@ -117,7 +117,14 @@ namespace Fishing.World
                 box.center = b.center;
                 box.size = b.size;
             }
-            else if (n.StartsWith("tree_"))
+            else if (path.StartsWith("Props/") && !n.StartsWith("palm"))
+            {
+                // 해외 소품 배 (펠루카·정크선): 상자
+                var box = go.AddComponent<BoxCollider>();
+                box.center = b.center;
+                box.size = b.size;
+            }
+            else if (n.StartsWith("tree_") || n.StartsWith("palm"))
             {
                 var cap = go.AddComponent<CapsuleCollider>();
                 cap.radius = b.size.y * 0.04f;

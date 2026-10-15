@@ -55,7 +55,7 @@ namespace Fishing.Core
             s.bigPaid = false;
             var rng = new System.Random(s.card * 7919 + p.Data.level * 31);
             var pool = new List<string>();
-            foreach (var area in FishingAreas.Korea)
+            foreach (var area in FishingAreas.All)
             {
                 if (!area.Open || area.Level > p.Data.level || area.MapId == null) continue;
                 foreach (var sp in FishDatabase.DexOf(area.MapId))

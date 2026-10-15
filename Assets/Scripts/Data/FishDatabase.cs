@@ -59,7 +59,10 @@ namespace Fishing.Data
         /// <summary>남해·서해 모두.</summary>
         public static readonly string[] Seas = { "honghyeon", "yokji", "geomun", "jeju", "seocheon", "yeongheung", "taean" };
         /// <summary>바다 미끼를 파는 낚시터.</summary>
-        public static readonly string[] SeaMaps = AllSeas;
+        /// <summary>바다 미끼를 파는 곳: 국내 바다 + 해외 바다(하롱베이·산토리니).</summary>
+        public static readonly string[] SeaMaps = { "honghyeon", "yokji", "geomun", "jeju", "seocheon", "yeongheung", "taean", "heonhwa", "samcheok", "deungdae", "cheongjin", "halong", "santorini" };
+        /// <summary>민물 미끼(지렁이·떡밥·옥수수·플라이)를 파는 곳: 한강 · 나일강.</summary>
+        public static readonly string[] FreshMaps = { "hangang", "nile" };
         /// <summary>에기(가짜 새우 미끼)를 파는 곳: 서해(주꾸미·갑오징어), 동해(오징어·대문어), 제주·거문도(무늬오징어).</summary>
         public static readonly string[] EgiMaps = { "seocheon", "yeongheung", "taean", "heonhwa", "samcheok", "deungdae", "cheongjin", "jeju", "geomun" };
 
@@ -417,6 +420,84 @@ namespace Fishing.Data
                 Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.Squid, BaitKind.Lure },
                 Times = new[] { TimeBand.Night }, Weathers = AnyWeather,
                 Power = 1.8f, Speed = 1.7f, Stamina = 2.6f, Aggression = 0.9f, Exp = 600, Price = 40000 },
+
+            // ================= 해외 거점 (원작: 동남아 2012-04 · 지중해 · 나일강 하류 2013-03) =================
+            // ---------- 하롱베이 (베트남) ----------
+            new FishSpecies { Id = "barramundi", Name = "바라문디", Latin = "Lates calcarifer", Temper = "맹그로브와 기수역의 은빛 사냥꾼. 걸리면 수면 위로 머리를 흔들며 뛴다", Maps = M("halong"),
+                MinLen = 35, MaxLen = 120, TrophyLen = 95, TrophyName = "미터급 바라문디", WeightCoef = 0.011f, Rarity = 3,
+                Habitats = new[] { Habitat.Shallow, Habitat.Weed }, Baits = new[] { BaitKind.Lure, BaitKind.Minnow, BaitKind.Shrimp },
+                Times = new[] { TimeBand.Dawn, TimeBand.Evening, TimeBand.Night }, Weathers = AnyWeather,
+                Power = 1.2f, Speed = 1.1f, Stamina = 1.5f, Aggression = 0.8f, Exp = 80, Price = 5200 },
+            new FishSpecies { Id = "orangegrouper", Name = "얼룩바리", Latin = "Epinephelus coioides", Temper = "석회암 봉우리 밑 바위굴의 주인. 물면 굴로 처박는다", Maps = M("halong"),
+                MinLen = 25, MaxLen = 100, TrophyLen = 75, TrophyName = "대형 얼룩바리", WeightCoef = 0.016f, Rarity = 3,
+                Habitats = new[] { Habitat.Rocky, Habitat.Deep }, Baits = new[] { BaitKind.Squid, BaitKind.Minnow, BaitKind.Shrimp, BaitKind.CutBait },
+                Times = new[] { TimeBand.Morning, TimeBand.Day, TimeBand.Evening }, Weathers = AnyWeather,
+                Power = 1.25f, Speed = 0.7f, Stamina = 1.5f, Aggression = 0.55f, Exp = 75, Price = 4800 },
+            new FishSpecies { Id = "mangrovejack", Name = "맹그로브잭", Latin = "Lutjanus argentimaculatus", Temper = "붉은 몸의 퉁돔. 수상 마을 기둥과 그물 밑에 숨어 산다", Maps = M("halong"),
+                MinLen = 20, MaxLen = 80, TrophyLen = 60, TrophyName = "대형 맹그로브잭", WeightCoef = 0.016f, Rarity = 2,
+                Habitats = new[] { Habitat.Rocky, Habitat.Weed }, Baits = new[] { BaitKind.Shrimp, BaitKind.Squid, BaitKind.Lure },
+                Times = new[] { TimeBand.Evening, TimeBand.Night }, Weathers = AnyWeather,
+                Power = 0.95f, Speed = 1.0f, Stamina = 1.2f, Aggression = 0.75f, Exp = 45, Price = 2400 },
+            new FishSpecies { Id = "gianttrevally", Name = "자이언트 트레발리", Latin = "Caranx ignobilis", Temper = "GT라 불리는 열대 바다의 깡패. 릴이 비명을 지른다", Maps = M("halong"),
+                MinLen = 50, MaxLen = 150, TrophyLen = 120, TrophyName = "괴물 GT", WeightCoef = 0.016f, Rarity = 4,
+                Habitats = new[] { Habitat.Deep, Habitat.Rocky }, Baits = new[] { BaitKind.Lure, BaitKind.Minnow },
+                Times = new[] { TimeBand.Dawn, TimeBand.Morning, TimeBand.Evening }, Weathers = AnyWeather,
+                Power = 1.6f, Speed = 1.6f, Stamina = 1.9f, Aggression = 0.9f, Exp = 160, Price = 12000 },
+            new FishSpecies { Id = "barracuda", Name = "꼬치고기", Latin = "Sphyraena jello", Temper = "날카로운 이빨의 은빛 창. 수면 가까이서 루어를 낚아챈다", Maps = M("halong"),
+                MinLen = 40, MaxLen = 140, TrophyLen = 110, TrophyName = "대형 꼬치고기", WeightCoef = 0.0045f, Rarity = 2,
+                Habitats = new[] { Habitat.Deep, Habitat.Shallow }, Baits = new[] { BaitKind.Lure, BaitKind.Minnow },
+                Times = new[] { TimeBand.Morning, TimeBand.Day }, Weathers = new[] { Weather.Clear },
+                Power = 0.9f, Speed = 1.7f, Stamina = 1.1f, Aggression = 0.85f, Exp = 50, Price = 2600 },
+
+            // ---------- 산토리니 (그리스 · 에게해) ----------
+            // 원작 영상: "지중해 산토리니 어종, 유럽대구 미끼"
+            new FishSpecies { Id = "giltheadbream", Name = "귀족도미", Latin = "Sparus aurata", Temper = "눈 사이 금빛 띠가 왕관 같다. 조개를 깨 먹는 단단한 이빨", Maps = M("santorini"),
+                MinLen = 18, MaxLen = 70, TrophyLen = 55, TrophyName = "대형 귀족도미", WeightCoef = 0.018f, Rarity = 2,
+                Habitats = new[] { Habitat.Shallow, Habitat.Rocky }, Baits = new[] { BaitKind.SeaWorm, BaitKind.Shrimp, BaitKind.Krill },
+                Times = new[] { TimeBand.Morning, TimeBand.Day, TimeBand.Evening }, Weathers = AnyWeather,
+                Power = 0.85f, Speed = 0.9f, Stamina = 1.2f, Aggression = 0.6f, Exp = 40, Price = 2200 },
+            new FishSpecies { Id = "europeanseabass", Name = "유럽농어", Latin = "Dicentrarchus labrax", Temper = "파도가 부서지는 갯바위의 은빛 농어. 그리스 사람들은 '라브라키'라 부른다", Maps = M("santorini"),
+                MinLen = 25, MaxLen = 100, TrophyLen = 75, TrophyName = "대형 유럽농어", WeightCoef = 0.0105f, Rarity = 2,
+                Habitats = new[] { Habitat.Rocky, Habitat.Shallow }, Baits = new[] { BaitKind.Lure, BaitKind.Minnow, BaitKind.SeaWorm },
+                Times = new[] { TimeBand.Dawn, TimeBand.Evening, TimeBand.Night }, Weathers = new[] { Weather.Cloudy, Weather.Rain },
+                Power = 0.95f, Speed = 1.1f, Stamina = 1.2f, Aggression = 0.7f, Exp = 45, Price = 2500 },
+            new FishSpecies { Id = "hake", Name = "유럽대구", Latin = "Merluccius merluccius", Temper = "깊은 칼데라 바닥의 대구. 밤이면 떠올라 정어리를 쫓는다", Maps = M("santorini"),
+                MinLen = 25, MaxLen = 100, TrophyLen = 80, TrophyName = "대형 유럽대구", WeightCoef = 0.0075f, Rarity = 2,
+                Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.Squid, BaitKind.Minnow, BaitKind.CutBait },
+                Times = new[] { TimeBand.Evening, TimeBand.Night, TimeBand.Dawn }, Weathers = AnyWeather,
+                Power = 0.8f, Speed = 0.8f, Stamina = 1.1f, Aggression = 0.5f, Exp = 40, Price = 2000 },
+            new FishSpecies { Id = "moray", Name = "지중해곰치", Latin = "Muraena helena", Temper = "현무암 틈에서 입을 벌리고 있는 얼룩 곰치. 바위에 몸을 감아 버틴다", Maps = M("santorini"),
+                MinLen = 50, MaxLen = 150, TrophyLen = 120, TrophyName = "대형 곰치", WeightCoef = 0.0028f, Rarity = 3,
+                Habitats = new[] { Habitat.Rocky }, Baits = new[] { BaitKind.Squid, BaitKind.CutBait },
+                Times = new[] { TimeBand.Evening, TimeBand.Night }, Weathers = AnyWeather,
+                Power = 1.15f, Speed = 0.6f, Stamina = 1.6f, Aggression = 0.6f, Exp = 70, Price = 3600 },
+            new FishSpecies { Id = "bluefintuna", Name = "참다랑어", Latin = "Thunnus thynnus", Temper = "에게해 먼바다를 가로지르는 바다의 탄환. 배를 끌고 다닐 만큼 세다", Maps = M("santorini"), FarSeaOnly = true,
+                MinLen = 90, MaxLen = 260, TrophyLen = 200, TrophyName = "200급 참치", WeightCoef = 0.0155f, Rarity = 4,
+                Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.Lure, BaitKind.Squid, BaitKind.Minnow },
+                Times = new[] { TimeBand.Dawn, TimeBand.Morning }, Weathers = AnyWeather,
+                Power = 1.85f, Speed = 1.8f, Stamina = 2.4f, Aggression = 0.85f, Exp = 260, Price = 30000 },
+
+            // ---------- 나일강 하류 (이집트) ----------
+            new FishSpecies { Id = "nileperch", Name = "나일농어", Latin = "Lates niloticus", Temper = "나일강의 거인. 2m까지 자라고, 고대 이집트 벽화에도 그려졌다", Maps = M("nile"),
+                MinLen = 50, MaxLen = 190, TrophyLen = 150, TrophyName = "나일의 거인", WeightCoef = 0.011f, Rarity = 4,
+                Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.Minnow, BaitKind.Lure, BaitKind.CutBait },
+                Times = new[] { TimeBand.Dawn, TimeBand.Evening, TimeBand.Night }, Weathers = AnyWeather,
+                Power = 1.7f, Speed = 1.0f, Stamina = 2.2f, Aggression = 0.65f, Exp = 220, Price = 16000 },
+            new FishSpecies { Id = "tilapia", Name = "나일틸라피아", Latin = "Oreochromis niloticus", Temper = "입속에 알을 품어 기르는 나일의 붕어. 강변 사람들의 저녁거리", Maps = M("nile"),
+                MinLen = 10, MaxLen = 50, TrophyLen = 40, TrophyName = "대형 틸라피아", WeightCoef = 0.019f, Rarity = 1,
+                Habitats = new[] { Habitat.Shallow, Habitat.Weed }, Baits = new[] { BaitKind.Worm, BaitKind.Paste, BaitKind.Corn },
+                Times = new[] { TimeBand.Morning, TimeBand.Day, TimeBand.Evening }, Weathers = AnyWeather,
+                Power = 0.5f, Speed = 0.8f, Stamina = 1.0f, Aggression = 0.55f, Exp = 18, Price = 500 },
+            new FishSpecies { Id = "africancatfish", Name = "아프리카메기", Latin = "Clarias gariepinus", Temper = "가물어도 진흙 속에서 버티는 질긴 메기. 밤에 수염으로 먹이를 찾는다", Maps = M("nile"),
+                MinLen = 40, MaxLen = 150, TrophyLen = 110, TrophyName = "대형 아프리카메기", WeightCoef = 0.008f, Rarity = 2,
+                Habitats = new[] { Habitat.Deep, Habitat.Weed }, Baits = new[] { BaitKind.Worm, BaitKind.CutBait, BaitKind.Minnow },
+                Times = new[] { TimeBand.Evening, TimeBand.Night }, Weathers = new[] { Weather.Cloudy, Weather.Rain },
+                Power = 1.15f, Speed = 0.6f, Stamina = 1.7f, Aggression = 0.45f, Exp = 60, Price = 2800 },
+            new FishSpecies { Id = "tigerfish", Name = "타이거피시", Latin = "Hydrocynus vittatus", Temper = "줄무늬 몸에 송곳니가 밖으로 드러난 아프리카 강의 호랑이. 바늘을 뱉어 내기 일쑤다", Maps = M("nile"),
+                MinLen = 25, MaxLen = 90, TrophyLen = 70, TrophyName = "대형 타이거피시", WeightCoef = 0.012f, Rarity = 3,
+                Habitats = new[] { Habitat.Shallow, Habitat.Deep }, Baits = new[] { BaitKind.Lure, BaitKind.Minnow, BaitKind.Fly },
+                Times = new[] { TimeBand.Morning, TimeBand.Day }, Weathers = new[] { Weather.Clear },
+                Power = 1.1f, Speed = 1.7f, Stamina = 1.3f, Aggression = 0.95f, Exp = 90, Price = 5400 },
 
             // ---------- 제주 (서귀포) ----------
             new FishSpecies { Id = "damselfish", Name = "자리돔", Latin = "Chromis notata", Temper = "제주 사람들의 여름 자리물회. 갯바위 앞 물속에 구름처럼 떼 지어 산다", Maps = M("jeju"),

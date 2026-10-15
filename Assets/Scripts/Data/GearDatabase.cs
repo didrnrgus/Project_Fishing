@@ -116,6 +116,11 @@ namespace Fishing.Data
                 Power = 0.9f, Flex = 0.95f, CastRange = 16f, Desc = "가볍고 낭창한 플라이대. 플라이(털바늘)를 흘리면 입질이 1.3배 빠르다." },
             new GearDef { Id = "rod_heavy", Name = "헤비 원투대", Slot = GearSlot.Rod, Price = 25000, Level = 12,
                 Power = 2.0f, Flex = 0.35f, CastRange = 32f, Desc = "멀리, 강하게. 대물 전용." },
+            // 해외 거점용 (원작: 동남아 업데이트마다 "채비 10여 종" 추가)
+            new GearDef { Id = "rod_gt", Name = "GT 파핑대", Slot = GearSlot.Rod, Price = 60000, Level = 25,
+                Power = 2.2f, Flex = 0.3f, CastRange = 34f, Desc = "열대 바다 대물용 초경질 루어대. 무거운 파핑 루어를 멀리 던진다." },
+            new GearDef { Id = "rod_nile", Name = "나일 원투대", Slot = GearSlot.Rod, Price = 90000, Level = 31,
+                Power = 2.4f, Flex = 0.45f, CastRange = 33f, Desc = "2m 나일농어와 힘겨루기하는 굵은 원투대. 경질이지만 끝이 잘 휜다." },
             // 원작 대회 1~3위 보상 「거거 낚시대」 (상점에서 팔지 않음)
             new GearDef { Id = "rod_gege", Name = "거거 낚시대", Slot = GearSlot.Rod, Price = 0, Level = 10, NotSold = true,
                 Power = 1.85f, Flex = 0.6f, CastRange = 28f, Desc = "조합 낚시 대회 우승 상품. 가볍고 질겨서 손맛과 힘을 모두 잡았다." },
@@ -139,6 +144,8 @@ namespace Fishing.Data
                 ReelSpeed = 4.2f, Capacity = 90f, Desc = "감는 힘이 좋다." },
             new GearDef { Id = "reel_hispeed", Name = "하이기어 릴", Slot = GearSlot.Reel, Price = 15000, Level = 10,
                 ReelSpeed = 5.5f, Capacity = 120f, Desc = "빠르게 거리를 좁힌다." },
+            new GearDef { Id = "reel_jigging", Name = "대형 지깅 릴", Slot = GearSlot.Reel, Price = 70000, Level = 25,
+                ReelSpeed = 6.2f, Capacity = 200f, Desc = "참다랑어·GT용 대형 릴. 권사량 200m, 드랙이 묵직하다." },
             // 원작 대회 보상 「나팔고둥」 (나팔고둥 껍데기 같은 무늬의 릴)
             new GearDef { Id = "reel_napal", Name = "나팔고둥 릴", Slot = GearSlot.Reel, Price = 0, Level = 10, NotSold = true,
                 ReelSpeed = 5.0f, Capacity = 140f, Desc = "조합 낚시 대회 입상 상품. 권사량이 넉넉하고 드랙이 부드럽다." },
@@ -152,6 +159,8 @@ namespace Fishing.Data
                 Strength = 1.3f, Desc = "잘 끊어지지 않는다." },
             new GearDef { Id = "line_pe", Name = "강사 줄 (PE 4호)", Slot = GearSlot.Line, Price = 6000, Level = 8,
                 Strength = 1.7f, Desc = "대물과의 힘싸움을 버틴다." },
+            new GearDef { Id = "line_pe8", Name = "PE 8호 + 쇼크리더", Slot = GearSlot.Line, Price = 25000, Level = 25,
+                Strength = 2.2f, Desc = "GT·참다랑어·나일농어용. 이빨과 바위에 쓸려도 버티는 굵은 목줄을 달았다." },
 
             new GearDef { Id = "boat_rubber", Name = "고무보트", Slot = GearSlot.Boat, Price = 4000, Level = 3,
                 BoatSpeed = 6f, FuelCapacity = 20f, FuelPerKm = 12f, Stability = 0.3f, OpenSea = false,
@@ -172,9 +181,9 @@ namespace Fishing.Data
 
         public static readonly List<BaitDef> Baits = new List<BaitDef>
         {
-            new BaitDef { Id = "bait_worm", Name = "지렁이", Kind = BaitKind.Worm, PackSize = 30, Price = 300, Maps = FishSpecies.HanOnly },
-            new BaitDef { Id = "bait_paste", Name = "떡밥", Kind = BaitKind.Paste, PackSize = 30, Price = 400, Maps = FishSpecies.HanOnly },
-            new BaitDef { Id = "bait_corn", Name = "옥수수", Kind = BaitKind.Corn, PackSize = 30, Price = 300, Maps = FishSpecies.HanOnly },
+            new BaitDef { Id = "bait_worm", Name = "지렁이", Kind = BaitKind.Worm, PackSize = 30, Price = 300, Maps = FishSpecies.FreshMaps },
+            new BaitDef { Id = "bait_paste", Name = "떡밥", Kind = BaitKind.Paste, PackSize = 30, Price = 400, Maps = FishSpecies.FreshMaps },
+            new BaitDef { Id = "bait_corn", Name = "옥수수", Kind = BaitKind.Corn, PackSize = 30, Price = 300, Maps = FishSpecies.FreshMaps },
             new BaitDef { Id = "bait_krill", Name = "크릴", Kind = BaitKind.Krill, PackSize = 30, Price = 400, Maps = FishSpecies.SeaMaps },
             new BaitDef { Id = "bait_seaworm", Name = "청갯지렁이", Kind = BaitKind.SeaWorm, PackSize = 30, Price = 500, Maps = FishSpecies.SeaMaps },
             new BaitDef { Id = "bait_squid", Name = "오징어살", Kind = BaitKind.Squid, PackSize = 20, Price = 600, Maps = FishSpecies.SeaMaps },
@@ -184,7 +193,7 @@ namespace Fishing.Data
             // 서천 앞바다: 주꾸미·갑오징어용 새우 모양 가짜 미끼 (원작풍)
             new BaitDef { Id = "bait_egi", Name = "에기", Kind = BaitKind.Egi, PackSize = 5, Price = 1800, Maps = FishSpecies.EgiMaps },
             // 한강: 수면에 띄워 흘리는 제물낚시 털바늘. 피라미·끄리·강준치·블루길
-            new BaitDef { Id = "bait_fly", Name = "플라이", Kind = BaitKind.Fly, PackSize = 10, Price = 1200, Maps = FishSpecies.HanOnly, Level = 4 },
+            new BaitDef { Id = "bait_fly", Name = "플라이", Kind = BaitKind.Fly, PackSize = 10, Price = 1200, Maps = FishSpecies.FreshMaps, Level = 4 },
 
             // 해체 미끼 (원작풍 이름: 원작에도 "촉촉한이리" 같은 형용사+부위 미끼가 있었다). 살림망에서 고기를 해체해 얻는다
             new BaitDef { Id = "bait_cut1", Name = "어분덩이", Kind = BaitKind.CutBait, NotSold = true, Level = 1, Potency = 1.0f },

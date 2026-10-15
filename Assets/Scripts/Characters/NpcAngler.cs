@@ -35,6 +35,9 @@ namespace Fishing.Characters
         public string NpcId = "angler";
         public CharacterLook Look { get; private set; }
         Transform _faceTarget;
+        /// <summary>몸을 돌리는 중 (-1 왼쪽, 1 오른쪽, 0 아님): 제자리 돌기 클립을 튼다.</summary>
+        int _turning;
+        float _nextRally;
         Quaternion _homeRot;
 
         public static NpcAngler Spawn(Transform parent, Vector3 localPos, float yaw, CharacterLook look, Role role, bool showNameTag = true)
@@ -141,12 +144,23 @@ namespace Fishing.Characters
         {
             if (_anim != null)
             {
-                _anim.SetLoop(_role switch
+                // 몸을 크게 돌리는 중이면 발을 옮기며 돈다 (Human Basic Motions Turn), 앉은 사람은 그대로
+                if (_turning != 0 && _role != Role.Sitter)
+                    _anim.SetLoop(_turning < 0 ? CharacterAnimator.TurnLeft : CharacterAnimator.TurnRight, 1.2f);
+                else
+                    _anim.SetLoop(_role switch
+                    {
+                        Role.Angler => CharacterAnimator.HoldRod,
+                        Role.Talker => CharacterAnimator.Talk,
+                        _ => CharacterAnimator.Sit
+                    });
+                // 조합 연락관: 보고할 퀘스트가 있고 내가 가까이 오면 손짓해 부른다 (Mixamo Rallying)
+                if (NpcId == "union" && Game.Quests != null && Game.Quests.Ready && _faceTarget == null && Game.Player != null && Time.time > _nextRally &&
+                    (Game.Player.transform.position - transform.position).sqrMagnitude < 15f * 15f)
                 {
-                    Role.Angler => CharacterAnimator.HoldRod,
-                    Role.Talker => CharacterAnimator.Talk,
-                    _ => CharacterAnimator.Sit
-                });
+                    _nextRally = Time.time + Random.Range(9f, 14f);
+                    _anim.PlayOnce(CharacterAnimator.Rallying, 1f, 0.8f);
+                }
                 if (_role == Role.Angler && !Idle && Time.time > _nextCast)
                 {
                     _nextCast = Time.time + Random.Range(20f, 45f);
@@ -234,6 +248,8 @@ namespace Fishing.Characters
                 if (d.sqrMagnitude > 0.01f)
                     want = Quaternion.Inverse(transform.parent != null ? transform.parent.rotation : Quaternion.identity) * Quaternion.LookRotation(d);
             }
+            float diff = Mathf.DeltaAngle(transform.localEulerAngles.y, want.eulerAngles.y);
+            _turning = Mathf.Abs(diff) > 25f ? (diff < 0f ? -1 : 1) : (Mathf.Abs(diff) < 8f ? 0 : _turning);
             transform.localRotation = Quaternion.Slerp(transform.localRotation, want, Time.deltaTime * 6f);
 
             if (_rod != null && _hand != null) _rod.position = _hand.position;

@@ -35,7 +35,20 @@ namespace Fishing.World
         DolHareubang = 2048,  // 돌하르방 (포구·낚시점 앞)
         Tangerines = 4096,    // 돌담 두른 귤밭
         Columnar = 8192,      // 첫 곶 둘레의 육각 주상절리 기둥
+        Karst = 16384,        // 수평선까지 이어진 석회암 봉우리 (하롱베이)
+        Junks = 32768,        // 주황 돛 정크선 (하롱베이)
+        FloatingVillage = 65536, // 수상 가옥 마을 (하롱베이)
+        Caldera = 131072,     // 바다 건너 칼데라 절벽 위 하얀 마을, 가운데 검은 화산섬 (산토리니)
+        Windmills = 262144,   // 절벽 위 하얀 풍차 (키클라데스)
+        Pyramids = 524288,    // 사막 너머 피라미드 (나일강 하류)
+        Feluccas = 1048576,   // 큰 삼각돛 펠루카 (나일강)
     }
+
+    /// <summary>마을 집 양식: 한국 바닷가 / 키클라데스(하얀 집·파란 돔) / 이집트(흙벽돌 평지붕) / 베트남(좁고 높은 색깔 집).</summary>
+    public enum HouseStyle { Korean, Cyclades, Egypt, Vietnam }
+
+    /// <summary>나무 양식: 한국(소나무·활엽수) / 야자수 / 열대(야자수 + 활엽수) / 지중해(작고 둥근 올리브).</summary>
+    public enum TreeStyle { Korean, Palm, Tropical, Mediterranean }
 
     public struct ShoreSeg
     {
@@ -160,6 +173,13 @@ namespace Fishing.World
         /// <summary>마을 건물 수 배율 (섬은 적게), 북쪽 항구풍(회색 큰 건물).</summary>
         public float VillageDensity = 1f;
         public bool NorthPort;
+        /// <summary>강: 맞은편 둑이 시작하는 z (0이면 바다). 민물이라 <see cref="River"/>도 켠다 (나일강).</summary>
+        public float FarShoreZ;
+        public bool River;
+        public HouseStyle Houses;
+        public TreeStyle TreeKind;
+        /// <summary>물가에서 45m 넘게 떨어진 땅은 사막 모래 (이집트).</summary>
+        public bool SandLand;
         public Func<List<FishSchool>> Schools;
         public int Seed = 1;
     }
@@ -177,7 +197,7 @@ namespace Fishing.World
         public override string ShortName => S.ShortName;
         public override string ShopName => S.ShopName;
         public override string UnionContact => S.UnionContact;
-        public override bool IsSea => true;
+        public override bool IsSea => !S.River;
 
         public const float TerrainMinX = -210f, TerrainMinZ = -200f, TerrainSizeX = 420f, TerrainSizeZ = 470f, TerrainBaseY = -14f, TerrainHeight = 64f;
 
@@ -241,6 +261,8 @@ namespace Fishing.World
             foreach (var pf in spec.Platforms)
                 Mark(MapMark.Shape.Rect, pf.Area.center.x, pf.Area.center.y, pf.Area.width, pf.Area.height,
                     pf.Kind == PlatformKind.FishFarm ? new Color(0.35f, 0.55f, 0.65f) : new Color(0.72f, 0.52f, 0.3f), pf.Name);
+            if (spec.FarShoreZ > 0f)
+                Mark(MapMark.Shape.Rect, 0f, spec.FarShoreZ + 70f, 400f, 140f, new Color(0.36f, 0.42f, 0.24f), "건너편 둑");
             Mark(MapMark.Shape.Circle, ShopPos.x, ShopPos.z, 8f, 8f, new Color(1f, 0.82f, 0.35f), "낚시점");
         }
 
@@ -269,6 +291,9 @@ namespace Fishing.World
                 if (s.Kind == kind) w = Mathf.Max(w, Smooth(s.X0 - 8f, s.X0 + 8f, x) * Smooth(s.X1 + 8f, s.X1 - 8f, x));
             return w;
         }
+
+        /// <summary>강 맞은편 둑의 물가 z (살짝 굽이친다).</summary>
+        public float FarShoreAt(float x) => S.FarShoreZ + 10f * Mathf.Sin(x * 0.011f + S.Seed) + 4f * Mathf.Sin(x * 0.031f + 1.7f);
 
         public bool IsMudAt(float x, float z) => KindWeight(x, ShoreKind.Mud) > 0.5f && z > ShoreAt(x) - 2f && z < ShoreAt(x) + 110f;
 
@@ -378,6 +403,18 @@ namespace Fishing.World
                 float sd = new Vector2(x - st.Pos.x, z - st.Pos.z).magnitude;
                 if (sd < st.Radius + 6f) y = Mathf.Max(y, Mathf.Lerp(LandY + 0.5f, -3f, Smooth(st.Radius, st.Radius + 6f, sd)));
             }
+
+            // 강: 맞은편 둑 (완만한 진흙 둑 → 둑 위 평지, 멀어질수록 살짝 높아진다)
+            if (S.FarShoreZ > 0f)
+            {
+                float e = z - FarShoreAt(x);
+                if (e > -30f)
+                {
+                    float bank = Mathf.Lerp(-S.NearDepth - 0.5f, LandY, Smooth(-26f, 0f, e));
+                    if (e > 0f) bank += Smooth(0f, 50f, e) * 1.6f + (Mathf.PerlinNoise(x * 0.03f, z * 0.03f) - 0.5f) * 1.2f * Smooth(0f, 20f, e);
+                    y = Mathf.Max(y, bank);
+                }
+            }
             return Mathf.Max(y, TerrainBaseY + 1f);
         }
 
@@ -467,6 +504,7 @@ namespace Fishing.World
                 if (cd < w + 6f) return c.Name;
             }
             if (p.z < ShoreAt(p.x)) return S.LandName;
+            if (S.FarShoreZ > 0f && p.z > FarShoreAt(p.x) - 2f) return "건너편 둑";
             return IsFarSea(p) ? "먼바다" : S.SeaName;
         }
 
@@ -480,7 +518,7 @@ namespace Fishing.World
     }
 
     /// <summary>해안 맵 월드: 바다·지형·해안 구조물·방파제·곶·섬·바위기둥·시설·마을·낚시점·NPC·특별 풍경.</summary>
-    public class CoastWorldBuilder
+    public partial class CoastWorldBuilder
     {
         readonly CoastMapDef _map;
         readonly CoastSpec S;
@@ -524,6 +562,7 @@ namespace Fishing.World
             BuildShop();
             BuildFeatures();
             BuildFarIslands();
+            BuildFarBank();
             BuildNpcs();
             foreach (var (text, pos, color) in S.Signs) WorldBuilder.AddSignBothSides(_root, text, pos, color);
             return _root;
@@ -557,6 +596,12 @@ namespace Fishing.World
                     if (mudZone) mud = Smooth(-1f, 5f + n * 8f, d);
                     if (beachZone) sand = Smooth(-9f - n * 4f, -5f, d);
                     if ((S.Features & CoastFeature.Dunes) != 0 && S.DuneArea.Contains(new Vector2(x, z))) sand = 1f;
+                    // 사막: 강가 초록 띠(45m) 밖은 모래. 맞은편 둑도 같다
+                    if (S.SandLand)
+                    {
+                        float far = S.FarShoreZ > 0f ? z - _map.FarShoreAt(x) : -999f;
+                        sand = Mathf.Max(sand, Mathf.Max(Smooth(-38f, -58f, d + n * 10f), Smooth(38f, 58f, far + n * 10f)));
+                    }
                     // 물가와 물속: 자갈(바위 해안) 또는 모래
                     if (!beachZone && !mudZone) shore = Smooth(LandYPlus(0.9f), waterY, y) * 0.9f;
                     if (y < waterY - 0.6f && !mudZone) { sand = Mathf.Max(sand, 0.5f); shore = Mathf.Max(shore, 0.4f); }
@@ -667,6 +712,7 @@ namespace Fishing.World
                 }
                 Body(b.Stem, true);
                 if (b.Arm.width > 0f) Body(b.Arm, false);
+                BreakwaterDetails(b);
                 // 테트라포드: 파도막이 벽 반대쪽(바깥)과 팔의 북쪽
                 float side = b.ParapetWest ? b.Stem.xMin - 1f : b.Stem.xMax + 1f;
                 float sgn = b.ParapetWest ? -1f : 1f;
@@ -688,6 +734,54 @@ namespace Fishing.World
         }
 
         // ---------------- 곶 · 섬 · 바위기둥 ----------------
+
+        /// <summary>
+        /// 방파제 윗면 디테일: 10m마다 이음매(짙은 줄), 안쪽 가장자리 노란 안전선, 계류 말뚝(비트)과 쇠고리, 안쪽 벽의 철제 사다리,
+        /// 수면 근처 젖은 짙은 띠와 따개비 낀 아랫단.
+        /// </summary>
+        void BreakwaterDetails(BreakwaterSpec b)
+        {
+            var seam = Mats.Lit(new Color(0.55f, 0.55f, 0.53f), 0.1f);
+            var yellow = Mats.Lit(new Color(0.95f, 0.78f, 0.15f), 0.3f);
+            var bitt = Mats.Lit(new Color(0.15f, 0.16f, 0.18f), 0.45f, 0.3f);
+            var ladder = Mats.Lit(new Color(0.55f, 0.35f, 0.18f), 0.4f, 0.6f);
+            var wet = Mats.Lit(new Color(0.28f, 0.29f, 0.27f), 0.6f);
+            float top = _map.LandY + 0.012f;
+            void Along(Rect r, bool stem)
+            {
+                // 이음매 (5mm 위로 띄워 z-fighting 방지)
+                if (stem) for (float z = r.yMin + 10f; z < r.yMax - 1f; z += 10f)
+                        Mats.Prim(PrimitiveType.Cube, "BreakwaterSeam", _root, new Vector3(r.center.x, top, z), new Vector3(r.width - 0.1f, 0.02f, 0.08f), seam, false);
+                else for (float x = r.xMin + 10f; x < r.xMax - 1f; x += 10f)
+                        Mats.Prim(PrimitiveType.Cube, "BreakwaterSeam", _root, new Vector3(x, top, r.center.y), new Vector3(0.08f, 0.02f, r.height - 0.1f), seam, false);
+                // 안쪽(배가 대는 쪽) 가장자리 노란 선과 계류 말뚝
+                bool westInner = !b.ParapetWest;
+                if (stem)
+                {
+                    float ex = westInner ? r.xMin + 0.35f : r.xMax - 0.35f;
+                    Mats.Prim(PrimitiveType.Cube, "SafetyLine", _root, new Vector3(ex, top + 0.004f, r.center.y), new Vector3(0.25f, 0.02f, r.height - 0.4f), yellow, false);
+                    for (float z = r.yMin + 7f; z < r.yMax - 4f; z += 14f)
+                    {
+                        var p = new Vector3(westInner ? r.xMin + 0.9f : r.xMax - 0.9f, _map.LandY, z);
+                        Mats.Prim(PrimitiveType.Cylinder, "Bitt", _root, p + Vector3.up * 0.3f, new Vector3(0.38f, 0.3f, 0.38f), bitt);
+                        Mats.Prim(PrimitiveType.Cylinder, "BittCap", _root, p + Vector3.up * 0.62f, new Vector3(0.5f, 0.05f, 0.5f), bitt, false);
+                    }
+                    // 안쪽 벽 철제 사다리 (수면에서 윗면까지)
+                    for (float z = r.yMin + 18f; z < r.yMax - 6f; z += 26f)
+                    {
+                        float wx = westInner ? r.xMin - 0.08f : r.xMax + 0.08f;
+                        foreach (float s in new[] { -0.25f, 0.25f })
+                            Mats.Prim(PrimitiveType.Cube, "LadderRail", _root, new Vector3(wx, (_map.LandY + _map.BaseWaterY - 1.2f) * 0.5f, z + s), new Vector3(0.05f, _map.LandY - _map.BaseWaterY + 1.2f, 0.05f), ladder, false);
+                        for (float yy = _map.BaseWaterY - 1f; yy < _map.LandY; yy += 0.3f)
+                            Mats.Prim(PrimitiveType.Cube, "LadderRung", _root, new Vector3(wx, yy, z), new Vector3(0.04f, 0.04f, 0.5f), ladder, false);
+                    }
+                }
+                // 수면 근처 젖은 띠 (벽 둘레, 1cm 바깥)
+                Mats.Prim(PrimitiveType.Cube, "BreakwaterWet", _root, new Vector3(r.center.x, _map.BaseWaterY - 0.4f, r.center.y), new Vector3(r.width + 0.02f, 1.6f, r.height + 0.02f), wet, false);
+            }
+            Along(b.Stem, true);
+            if (b.Arm.width > 0f) Along(b.Arm, false);
+        }
 
         void PlaceLandmark(Landmark lm, Vector3 at, float yaw)
         {
@@ -753,6 +847,7 @@ namespace Fishing.World
                 }
                 else if (KenneyProps.Available)
                 {
+                    if (S.TreeKind != TreeStyle.Korean) { Tree(new Vector3(x, y - 0.05f, z)); continue; }
                     string kind = S.Snow ? "tree_pineRoundC" : new[] { "tree_pineRoundA", "tree_pineRoundB", "tree_pineRoundC", "tree_default" }[_rng.Next(4)];
                     KenneyProps.Spawn("Kenney/Nature/" + kind, _root, new Vector3(x, y - 0.05f, z), R(0f, 360f), R(5f, 9f));
                 }
@@ -941,32 +1036,77 @@ namespace Fishing.World
         }
 
         /// <summary>해안 데크길·잔교: 기둥 위 나무 데크, 데크길은 바다 쪽 난간.</summary>
+        /// <summary>
+        /// 나무 데크길·잔교: 판자 상판 + 아래 세로 장선(그림자 단) + 4m마다 말뚝(물에 젖은 짙은 아랫단)과 X자 가새.
+        /// 난간이면 2m마다 기둥, 손잡이와 중간대 두 줄. 잔교 끝에는 계류 말뚝 두 개.
+        /// </summary>
         void Boardwalk(Rect r, bool railing)
         {
             float y = _map.LandY + 0.25f;
             var root = new GameObject("Boardwalk").transform;
             root.SetParent(_root, false);
-            Mats.Prim(PrimitiveType.Cube, "BoardwalkDeck", root, new Vector3(r.center.x, y, r.center.y), new Vector3(r.width, 0.25f, r.height),
+            Mats.Prim(PrimitiveType.Cube, "BoardwalkDeck", root, new Vector3(r.center.x, y, r.center.y), new Vector3(r.width, 0.18f, r.height),
                 Mats.TexturedBox("deck", new Color(0.8f, 0.66f, 0.5f), new Vector2(r.width, r.height), 2f, 0.3f));
             var post = Mats.Lit(new Color(0.35f, 0.28f, 0.2f), 0.3f);
+            var joist = Mats.Lit(new Color(0.42f, 0.33f, 0.24f), 0.2f);
+            var wetPile = Mats.Lit(new Color(0.16f, 0.15f, 0.13f), 0.55f);
             bool longX = r.width > r.height;
             float len = longX ? r.width : r.height;
+            float wid = longX ? r.height : r.width;
+            // 장선: 상판 아래 길이 방향 세 줄
+            foreach (float off in new[] { -0.35f, 0f, 0.35f })
+            {
+                var c = longX ? new Vector3(r.center.x, y - 0.22f, r.center.y + off * wid) : new Vector3(r.center.x + off * wid, y - 0.22f, r.center.y);
+                Mats.Prim(PrimitiveType.Cube, "BoardwalkJoist", root, c, longX ? new Vector3(len, 0.24f, 0.16f) : new Vector3(0.16f, 0.24f, len), joist, false);
+            }
             for (float t = 1f; t < len; t += 4f)
             {
+                float lowest = y;
                 foreach (float side in new[] { -1f, 1f })
                 {
-                    var p = longX ? new Vector3(r.xMin + t, 0f, r.center.y + side * (r.height * 0.5f - 0.3f)) : new Vector3(r.center.x + side * (r.width * 0.5f - 0.3f), 0f, r.yMin + t);
+                    var p = longX ? new Vector3(r.xMin + t, 0f, r.center.y + side * (wid * 0.5f - 0.3f)) : new Vector3(r.center.x + side * (wid * 0.5f - 0.3f), 0f, r.yMin + t);
                     float ground = Mathf.Min(H(p.x, p.z), y) - 1f;
+                    lowest = Mathf.Min(lowest, ground);
                     Mats.Prim(PrimitiveType.Cylinder, "BoardwalkPile", root, new Vector3(p.x, (y + ground) * 0.5f, p.z), new Vector3(0.3f, (y - ground) * 0.5f, 0.3f), post, false);
+                    // 물에 잠기는 아랫단은 짙고 젖은 색 (수면 위 0.4m까지)
+                    float wetTop = Mathf.Min(y - 0.3f, _map.BaseWaterY + 0.4f);
+                    if (wetTop > ground)
+                        Mats.Prim(PrimitiveType.Cylinder, "BoardwalkPileWet", root, new Vector3(p.x, (wetTop + ground) * 0.5f, p.z), new Vector3(0.32f, (wetTop - ground) * 0.5f, 0.32f), wetPile, false);
                     if (railing) Mats.Prim(PrimitiveType.Cylinder, "BoardwalkPost", root, new Vector3(p.x, y + 0.55f, p.z), new Vector3(0.1f, 0.5f, 0.1f), post, false);
+                }
+                // 말뚝 사이 가로 보 (상판 바로 아래)
+                var mid = longX ? new Vector3(r.xMin + t, y - 0.38f, r.center.y) : new Vector3(r.center.x, y - 0.38f, r.yMin + t);
+                Mats.Prim(PrimitiveType.Cube, "BoardwalkBeam", root, mid, longX ? new Vector3(0.18f, 0.2f, wid - 0.4f) : new Vector3(wid - 0.4f, 0.2f, 0.18f), joist, false);
+                // 물 위로 1m 넘게 떠 있으면 X자 가새
+                if (y - lowest > 2.2f)
+                {
+                    float h = Mathf.Min(y - 0.5f - Mathf.Max(lowest, _map.BaseWaterY - 0.5f), 2.4f);
+                    float diag = Mathf.Atan2(h, wid - 0.6f) * Mathf.Rad2Deg;
+                    var c = mid + Vector3.down * (h * 0.5f + 0.1f);
+                    float lenD = Mathf.Sqrt(h * h + (wid - 0.6f) * (wid - 0.6f));
+                    foreach (float sg in new[] { -1f, 1f })
+                        Mats.Prim(PrimitiveType.Cube, "BoardwalkBrace", root, c, longX ? new Vector3(0.08f, 0.12f, lenD) : new Vector3(lenD, 0.12f, 0.08f), joist, false,
+                            longX ? Quaternion.Euler(sg * diag, 0f, 0f) : Quaternion.Euler(0f, 0f, sg * diag));
                 }
             }
             if (railing)
                 foreach (float side in new[] { -1f, 1f })
                 {
-                    var c = longX ? new Vector3(r.center.x, y + 1.05f, r.center.y + side * (r.height * 0.5f - 0.3f)) : new Vector3(r.center.x + side * (r.width * 0.5f - 0.3f), y + 1.05f, r.center.y);
+                    var c = longX ? new Vector3(r.center.x, y + 1.05f, r.center.y + side * (wid * 0.5f - 0.3f)) : new Vector3(r.center.x + side * (wid * 0.5f - 0.3f), y + 1.05f, r.center.y);
                     Mats.Prim(PrimitiveType.Cube, "BoardwalkRail", root, c, longX ? new Vector3(r.width, 0.08f, 0.08f) : new Vector3(0.08f, 0.08f, r.height), post, false);
+                    var m = c + Vector3.down * 0.45f;
+                    Mats.Prim(PrimitiveType.Cube, "BoardwalkRailMid", root, m, longX ? new Vector3(r.width, 0.06f, 0.06f) : new Vector3(0.06f, 0.06f, r.height), post, false);
                 }
+            else
+            {
+                // 잔교 끝: 계류 말뚝 둘 (배를 묶는 굵은 말뚝)
+                var end = longX ? new Vector3(r.xMax - 0.5f, 0f, r.center.y) : new Vector3(r.center.x, 0f, r.yMax - 0.5f);
+                foreach (float side in new[] { -1f, 1f })
+                {
+                    var p = end + (longX ? new Vector3(0f, 0f, side * (wid * 0.5f - 0.4f)) : new Vector3(side * (wid * 0.5f - 0.4f), 0f, 0f));
+                    Mats.Prim(PrimitiveType.Cylinder, "MooringPost", root, new Vector3(p.x, y + 0.4f, p.z), new Vector3(0.35f, 0.4f, 0.35f), wetPile, false);
+                }
+            }
         }
 
         // ---------------- 마을 · 낚시점 · NPC ----------------
@@ -989,7 +1129,7 @@ namespace Fishing.World
                 if (S.NorthPort)
                     KenneyProps.Spawn("Kenney/City/" + small[_rng.Next(small.Length)], _root, new Vector3(x, y - 0.05f, z), yaw + R(-4f, 4f), R(5f, 10f));
                 else // 바닷가 마을 집: 길가는 횟집·민박 간판이 가끔
-                    _props.KoreanHouse(new Vector3(x, y - 0.05f, z), yaw - 180f + R(-3f, 3f), _rng.NextDouble() < 0.4);
+                    House(new Vector3(x, y - 0.05f, z), yaw - 180f + R(-3f, 3f), _rng.NextDouble() < 0.4);
             }
             // 언덕 위 집과 나무
             int count = Mathf.RoundToInt(70 * S.VillageDensity) + 30;
@@ -1006,12 +1146,12 @@ namespace Fishing.World
                 {
                     var (hy, flat) = Footing(x, z, 3.5f);
                     if (flat && S.NorthPort) KenneyProps.Spawn("Kenney/City/" + small[_rng.Next(small.Length)], _root, new Vector3(x, hy - 0.05f, z), 180f + R(-20f, 20f), R(5f, 7f));
-                    else if (flat) _props.KoreanHouse(new Vector3(x, hy - 0.05f, z), R(-20f, 20f), false);
+                    else if (flat) House(new Vector3(x, hy - 0.05f, z), R(-20f, 20f), false);
                 }
                 else
-                    KenneyProps.Spawn("Kenney/Nature/" + (S.Snow ? "tree_pineRoundC" : new[] { "tree_pineRoundA", "tree_pineRoundC", "tree_default", "tree_oak", "tree_pineRoundB" }[_rng.Next(5)]), _root,
-                        new Vector3(x, y - 0.05f, z), R(0f, 360f), R(5f, 9f));
+                    Tree(new Vector3(x, y - 0.05f, z));
             }
+            if (S.Houses == HouseStyle.Cyclades) CliffVillage();
         }
 
         /// <summary>건물 발밑: 네 귀퉁이 중 가장 낮은 높이, 비탈이 완만한지 (높낮이 차 1.5m 이하).</summary>
@@ -1101,6 +1241,7 @@ namespace Fishing.World
             if ((S.Features & CoastFeature.DolHareubang) != 0) DolHareubangs();
             if ((S.Features & CoastFeature.Tangerines) != 0) Tangerines();
             if ((S.Features & CoastFeature.Columnar) != 0) ColumnarJoints();
+            BuildOverseasFeatures();
         }
 
         /// <summary>한라산: 육지 뒤로 완만하게 솟은 큰 방패 화산, 꼭대기에 백록담 분화구 테.</summary>

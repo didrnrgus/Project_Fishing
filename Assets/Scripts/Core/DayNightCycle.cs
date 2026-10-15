@@ -22,6 +22,11 @@ namespace Fishing.Core
         Transform _overcastDome;
         Material _overcastMat;
         float _overcast;
+        // 맑은 낮 뭉게구름 하늘 (Fantasy Skybox FREE "Day 01·03·05 Sunless"): 게임 날짜마다 셋 중 하나를 옅게 덮는다
+        Transform _fairDome;
+        Material _fairMat;
+        Cubemap[] _fairCubes;
+        float _fair;
 
         /// <summary>낚시터가 바뀌면 그 맵의 가로등으로 바꾼다.</summary>
         public void SetLampSet(List<Light> lamps, List<Renderer> bulbs)
@@ -90,6 +95,42 @@ namespace Fishing.Core
             r.receiveShadows = false;
             _overcastDome = go.transform;
             go.SetActive(false);
+
+            _fairCubes = new[] { Resources.Load<Cubemap>("Sky/Fair01"), Resources.Load<Cubemap>("Sky/Fair02"), Resources.Load<Cubemap>("Sky/Fair03") };
+            if (_fairCubes[0] == null) return;
+            _fairMat = new Material(shader);
+            var fair = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            fair.name = "FairSkyDome";
+            Object.Destroy(fair.GetComponent<Collider>());
+            fair.transform.SetParent(transform, false);
+            fair.transform.localScale = Vector3.one * 2320f; // 흐림 돔보다 살짝 바깥 (둘이 함께 보일 때 흐림이 위)
+            var fr = fair.GetComponent<MeshRenderer>();
+            fr.sharedMaterial = _fairMat;
+            fr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            fr.receiveShadows = false;
+            _fairMat.renderQueue = 3000 - 301; // 흐림 돔(Transparent-300)보다 먼저
+            _fairDome = fair.transform;
+            fair.SetActive(false);
+        }
+
+        /// <summary>
+        /// 맑은 날 낮(해가 높을 때)에만 그림 같은 뭉게구름 하늘을 0.45만큼 덮는다. 흐려지면 흐림 돔에 자리를 내준다.
+        /// 해 없는 큐브맵이라 절차적 하늘의 해가 비쳐 보인다. 노을·밤에는 사라진다.
+        /// </summary>
+        void UpdateFair(float day, float warm)
+        {
+            if (_fairDome == null) return;
+            float target = Game.Weather.Current == Weather.Clear ? 0.45f * Mathf.Clamp01((day - 0.55f) / 0.35f) * (1f - warm * 0.8f) : 0f;
+            _fair = Mathf.MoveTowards(_fair, target, Time.deltaTime * 0.12f);
+            bool show = _fair > 0.01f && Game.Mode == GameMode.Field && Game.CameraRig != null;
+            _fairDome.gameObject.SetActive(show);
+            if (!show) return;
+            _fairDome.position = Game.CameraRig.Cam.transform.position;
+            var cube = _fairCubes[Mathf.Abs(Game.Clock.Day) % _fairCubes.Length];
+            if (cube != null && _fairMat.GetTexture("_Cube") != cube) _fairMat.SetTexture("_Cube", cube);
+            _fairMat.SetColor("_Tint", Color.Lerp(new Color(0.75f, 0.8f, 0.9f), Color.white, day));
+            _fairMat.SetFloat("_Blend", _fair);
+            _fairMat.SetFloat("_Yaw", Game.Clock.TotalMinutes * 0.03f + 40f);
         }
 
         /// <summary>흐림 0.75, 비 0.95만큼 큐브맵 하늘을 덮는다. 낮 밝기·노을색에 맞춰 어둡게, 밤엔 거의 검게.</summary>
@@ -188,6 +229,7 @@ namespace Fishing.Core
             }
 
             UpdateOvercast(day, warm);
+            UpdateFair(day, warm);
             Fishing.World.KenneyProps.SetNightGlow(1f - day);
             bool wantLamps = day < 0.45f || _weatherDim < 0.45f;
             Fishing.World.WaterGlints.SetNight(Mathf.Clamp01((0.55f - day) / 0.35f));

@@ -174,6 +174,29 @@ namespace Fishing.Data
                 Goal = QuestGoal.CatchSpecies, SpeciesId = "beakfish", Count = 1, RewardGold = 25000, RewardExp = 3000 },
             new QuestDef { Title = "미터급 부시리", Desc = "마지막 부탁일세. 거문도 아침 G4, 낮 C6에 몰려오는 부시리 무리에서 1m가 넘는 놈을 낚아 오게. 그럼 자네가 진짜 강태공이지!",
                 Goal = QuestGoal.CatchMinLength, SpeciesId = "amberjack", MinLen = 100f, Count = 1, RewardGold = 80000, RewardExp = 5000, RewardKeepNet = 3 },
+
+            // ================= 해외 거점 (원작: 동남아 → 지중해 → 나일강) =================
+            // ---------- 하롱베이 (Lv.25) ----------
+            new QuestDef { Title = "바다 건너 하롱베이", Desc = "한국 바다는 다 돌아봤군! 조합 하롱베이 지부 응우옌 지부장이 기다린다네. 석회암 봉우리 사이 바라문디부터 인사하게. (낚시터 목록 [동남아] 탭, Lv.25부터)",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "barramundi", Count = 1, RewardGold = 30000, RewardExp = 4000 },
+            new QuestDef { Title = "봉우리 밑 바위굴", Desc = "봉우리 아래 바위굴엔 얼룩바리가 산다네. 물리면 굴로 처박으니 장력을 늦추지 말게. 두 마리!",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "orangegrouper", Count = 2, RewardGold = 30000, RewardExp = 4500 },
+            new QuestDef { Title = "GT의 비명", Desc = "새벽 F5, 저녁 C7 물살에 자이언트 트레발리가 몰려온다네. 릴이 비명을 지르는 소리를 들어 보게.",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "gianttrevally", Count = 1, RewardGold = 50000, RewardExp = 6000 },
+            // ---------- 산토리니 (Lv.28) ----------
+            new QuestDef { Title = "하얀 마을 아래 항구", Desc = "산토리니 이아 절벽 아래 암모우디 항구라네. 깊은 칼데라 바다의 유럽대구를 한 마리 낚아 보게. 원작 영상에도 나온 그 고기일세. (낚시터 목록 [지중해] 탭, Lv.28부터)",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "hake", Count = 1, RewardGold = 40000, RewardExp = 5000 },
+            new QuestDef { Title = "금빛 왕관", Desc = "눈 사이에 금빛 띠를 두른 귀족도미 세 마리. 타베르나 요르고스가 저녁 요리에 쓰겠다더군.",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "giltheadbream", Count = 3, RewardGold = 40000, RewardExp = 5500 },
+            new QuestDef { Title = "에게해의 탄환", Desc = "먼바다(배로 D7·G8)에 참다랑어 떼가 지나간다네. 새벽과 아침에만. 배를 끌고 다닐 만큼 세니 각오하게!",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "bluefintuna", Count = 1, RewardGold = 90000, RewardExp = 9000 },
+            // ---------- 나일강 하류 (Lv.31) ----------
+            new QuestDef { Title = "나일강의 저녁거리", Desc = "나일강 하류일세. 강변 사람들 저녁거리인 틸라피아를 다섯 마리 낚아 하산 지부장에게 갖다 주게. 지렁이·떡밥이 잘 듣는다네. (낚시터 목록 [아프리카] 탭, Lv.31부터)",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "tilapia", Count = 5, RewardGold = 50000, RewardExp = 6000 },
+            new QuestDef { Title = "강의 호랑이", Desc = "송곳니를 드러낸 타이거피시는 바늘을 잘 뱉는다네. 맑은 낮에 루어로 두 마리!",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "tigerfish", Count = 2, RewardGold = 60000, RewardExp = 7000 },
+            new QuestDef { Title = "나일의 거인", Desc = "벽화 속 그 고기, 나일농어. 새벽 B4·저녁 G5 깊은 골에 어군이 든다네. 1.5m가 넘는 놈을 낚으면 자네는 세계의 강태공일세!",
+                Goal = QuestGoal.CatchMinLength, SpeciesId = "nileperch", MinLen = 150f, Count = 1, RewardGold = 150000, RewardExp = 15000, RewardKeepNet = 3 },
         };
     }
 }

@@ -53,6 +53,14 @@ namespace Fishing.Angling
                     // 풍림화산: 검은 옻칠 블랭크, 붉은 링(띠), 금빛 손잡이
                     return new Style { Blank = new Color(0.05f, 0.04f, 0.04f), Ferrule = new Color(0.75f, 0.1f, 0.08f), Grip = new Color(0.78f, 0.6f, 0.2f),
                         Length = 3.4f, Sections = 5, ButtDiameter = 0.036f, TipDiameter = 0.007f, Flex = rod.Flex };
+                case "rod_gt":
+                    // GT 파핑대: 짧고 굵은 흰 블랭크, 검은 EVA 손잡이
+                    return new Style { Blank = new Color(0.92f, 0.92f, 0.9f), Ferrule = new Color(0.2f, 0.2f, 0.22f), Grip = new Color(0.08f, 0.08f, 0.09f),
+                        Length = 2.6f, Sections = 3, ButtDiameter = 0.042f, TipDiameter = 0.01f, Flex = rod.Flex };
+                case "rod_nile":
+                    // 나일 원투대: 모래색 블랭크, 청록 링 (나일강 펠루카 색)
+                    return new Style { Blank = new Color(0.78f, 0.66f, 0.45f), Ferrule = new Color(0.15f, 0.5f, 0.55f), Grip = new Color(0.35f, 0.24f, 0.15f),
+                        Length = 3.8f, Sections = 4, ButtDiameter = 0.044f, TipDiameter = 0.01f, Flex = rod.Flex };
                 case "rod_gangbaram":
                     // Lv.5 보상: 강바람처럼 시원한 하늘색 블랭크, 은색 링, 검은 EVA 손잡이
                     return new Style { Blank = new Color(0.16f, 0.48f, 0.7f), Ferrule = new Color(0.82f, 0.84f, 0.88f), Grip = new Color(0.1f, 0.1f, 0.11f),
@@ -205,6 +213,8 @@ namespace Fishing.Angling
                 case "reel_pungrim":
                     // 풍림화산: 검은 옻칠 몸통, 붉은 테, 금빛 스풀
                     body = new Color(0.05f, 0.04f, 0.04f); accent = new Color(0.78f, 0.1f, 0.08f); spoolCol = new Color(0.85f, 0.66f, 0.22f); size = 1.2f; doubleKnob = true; break;
+                case "reel_jigging":
+                    body = new Color(0.12f, 0.14f, 0.18f); accent = new Color(0.85f, 0.55f, 0.15f); spoolCol = new Color(0.8f, 0.82f, 0.86f); size = 1.35f; doubleKnob = true; break;
                 case "reel_victory5":
                     // Lv.4 보상: 빨간 몸통에 은색 테
                     body = new Color(0.78f, 0.12f, 0.16f); accent = new Color(0.9f, 0.9f, 0.93f); spoolCol = new Color(0.7f, 0.72f, 0.76f); size = 1.05f; break;

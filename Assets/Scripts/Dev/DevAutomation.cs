@@ -610,7 +610,7 @@ namespace Fishing.Dev
         IEnumerator CoastTour()
         {
             var p = Game.Profile;
-            p.Data.level = Mathf.Max(p.Data.level, 25);
+            p.Data.level = Mathf.Max(p.Data.level, 31);
             Game.Weather.Force(Weather.Clear);
             var shots = new (string map, string shot, Vector3 pos, float yaw, float camYaw, float pitch, float dist, int minute, Weather weather)[]
             {
@@ -629,13 +629,20 @@ namespace Fishing.Dev
                 ("cheongjin", "49_cheongjin_port", new Vector3(28f, 1.1f, -47f), 0f, 30f, 16f, 20f, 10 * 60, Weather.Clear),
                 ("cheongjin", "49b_cheongjin_racks", new Vector3(-60f, 1.1f, -68f), 0f, 200f, 12f, 14f, 14 * 60, Weather.Cloudy),
                 ("geomun", "50_geomun_lighthouse", new Vector3(-90f, 1.1f, -45f), 300f, 300f, 12f, 24f, 17 * 60 + 30, Weather.Clear),
+                // 해외 거점
+                ("halong", "55_halong_bay", new Vector3(4f, 1.1f, -47f), 0f, 10f, 12f, 16f, 9 * 60, Weather.Clear),
+                ("halong", "55b_halong_karst", new Vector3(-70f, 1.1f, -46f), 0f, -20f, 8f, 14f, 16 * 60 + 30, Weather.Clear),
+                ("santorini", "56_santorini_cliff", new Vector3(-6f, 1.1f, -42f), 180f, 165f, 16f, 34f, 11 * 60, Weather.Clear),
+                ("santorini", "56b_santorini_caldera", new Vector3(39f, 1.1f, -28f), 0f, -10f, 6f, 13f, 17 * 60 + 30, Weather.Clear),
+                ("nile", "57_nile_bank", new Vector3(6f, 1.1f, -47f), 0f, 10f, 10f, 14f, 10 * 60, Weather.Clear),
+                ("nile", "57b_nile_sunset", new Vector3(-20f, 1.1f, -42f), 0f, -15f, 6f, 12f, 17 * 60 + 40, Weather.Clear),
             };
             string loaded = null;
             foreach (var s in shots)
             {
                 if (loaded != s.map)
                 {
-                    Game.UI.EnterField(Fishing.Data.FishingAreas.Korea.Find(a => a.Id == s.map), 1);
+                    Game.UI.EnterField(System.Linq.Enumerable.First(Fishing.Data.FishingAreas.All, a => a.Id == s.map), 1);
                     Game.UI.Help.Close();
                     loaded = s.map;
                     yield return new WaitForSeconds(1f);
@@ -686,7 +693,36 @@ namespace Fishing.Dev
             Game.UI.OpenExclusive(Game.UI.Areas);
             yield return new WaitForSeconds(0.5f);
             yield return Shot("53_area_list_all");
+            // 해외 거점 지도 (동남아 · 지중해 · 아프리카)
+            foreach (var hub in new[] { "sea", "med", "africa" })
+            {
+                Game.UI.Areas.SelectHub(hub);
+                yield return new WaitForSeconds(0.4f);
+                yield return Shot("53_area_list_" + hub);
+            }
+            Game.UI.Areas.SelectHub("korea");
             Game.UI.Areas.Close();
+
+            // 나일강 나일농어 파이팅·결과
+            Game.Clock.Set(6, 7 * 60);
+            Game.UI.EnterField(System.Linq.Enumerable.First(Fishing.Data.FishingAreas.All, a => a.Id == "nile"), 1);
+            Game.UI.Help.Close();
+            Game.Player.Teleport(new Vector3(10f, 1.1f, -42f), 0f);
+            Game.CameraRig.Yaw = 0f;
+            yield return new WaitForSeconds(1f);
+            Game.Fishing.Autoplay = true;
+            CheckClear("DebugStartFight");
+            Game.Fishing.DebugStartFight("nileperch", 158f, 20f);
+            yield return new WaitForSeconds(2.5f);
+            yield return Shot("58_nile_fight");
+            fight = Game.Fishing.Fight;
+            timeout = Time.time + 90f;
+            while (Game.Fishing.State == FishingState.Fighting && Time.time < timeout) yield return null;
+            if (fight != null) Debug.Log($"[Dev] 나일강 파이팅 종료: {fight.Species.Name} {fight.Length:0.0}cm, 결과={fight.Outcome}");
+            yield return WaitResult();
+            yield return Shot("58b_nile_result");
+            yield return CloseResult();
+            Game.Fishing.Autoplay = false;
         }
 
         /// <summary>바라보는 쪽 16m로 던질 때 궤적에 막는 것이 있으면 로그로 알린다 (연출 장면이 어색하지 않은지 검사).</summary>

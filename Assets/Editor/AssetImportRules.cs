@@ -64,7 +64,7 @@ namespace Fishing.EditorTools
                     importer.optimizeMeshVertices = true;
                 }
             }
-            else if (assetPath.Contains("Resources/Junk/"))
+            else if (assetPath.Contains("Resources/Junk/") || assetPath.Contains("Resources/Props/"))
             {
                 // 잡동사니 (tools/blender/build_icons.py): 정적 모델, 머티리얼은 FBX 색 그대로
                 importer.animationType = ModelImporterAnimationType.None;
@@ -134,6 +134,9 @@ namespace Fishing.EditorTools
             ("FishingCast", "Fishing_Sequence", 0, 263),    // 전체 (NPC가 가끔 통째로)
             ("Cheering", "Cheer_ArmsUp", 0, 87),            // 랜딩 환호: 두 팔 들고 흔들기
             ("Clapping", "Clap_Loop", 0, 35),               // 박수 (근처에서 대물을 낚으면 NPC가 친다)
+            ("Excited", "Excited", 0, -1),                  // 펄쩍 뛰며 기뻐하기 (괴물·전설 어종을 낚았을 때, -1 = 끝까지)
+            ("Rallying", "Rallying", 0, -1),                // 손짓하며 부르기 (보고할 퀘스트가 있으면 조합 연락관이)
+            ("Scared", "Scared", 0, -1),                    // 움찔 놀라기 (줄이 끊어졌을 때)
         };
 
         /// <summary>
@@ -149,6 +152,8 @@ namespace Fishing.EditorTools
             ("Talk", "Basic_Talk_Loop"),     // Talk01: 손짓하며 말하기 (NPC 대화 상대)
             ("JumpBegin", "Basic_JumpBegin"),// Jump01 - Begin: 웅크렸다 뛰어오르기 (한 번)
             ("Fall", "Basic_Fall_Loop"),     // Fall01: 공중에서 떨어지는 자세
+            ("TurnLeft", "Basic_TurnLeft_Loop"),   // Turn01_Left: 제자리에서 발을 옮기며 왼쪽으로 돌기 (몸 방향은 코드가 돌린다)
+            ("TurnRight", "Basic_TurnRight_Loop"), // Turn01_Right
         };
 
         void OnPreprocessAnimation()
@@ -225,7 +230,7 @@ namespace Fishing.EditorTools
                     name = name,
                     takeName = defaults[0].takeName,
                     firstFrame = first,
-                    lastFrame = last,
+                    lastFrame = last < 0 ? defaults[0].lastFrame : last,
                     loopTime = loop,
                     loopPose = loop,
                     lockRootRotation = true,
