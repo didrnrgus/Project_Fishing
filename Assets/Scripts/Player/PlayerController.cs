@@ -241,6 +241,12 @@ namespace Fishing.PlayerSystems
         /// <summary>낚아 올렸을 때 (두 팔 들고 환호).</summary>
         public void PlayCheer() => _anim?.PlayOnce(CharacterAnimator.Cheer, 1.1f);
 
+        /// <summary>괴물·전설 어종을 낚았을 때: 펄쩍 뛰며 기뻐한다 (Mixamo Excited).</summary>
+        public void PlayExcited() => _anim?.PlayOnce(CharacterAnimator.Excited, 1.2f, 0.7f);
+
+        /// <summary>줄이 끊어졌을 때: 움찔 놀란다 (Mixamo Scared, 앞부분만).</summary>
+        public void PlayScared() => _anim?.PlayOnce(CharacterAnimator.Scared, 1.3f, 0.5f);
+
         public void Teleport(Vector3 pos, float yaw)
         {
             _cc.enabled = false;

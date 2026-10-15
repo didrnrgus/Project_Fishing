@@ -75,22 +75,91 @@ namespace Fishing.World
             Mats.Prim(PrimitiveType.Cube, "Expressway", _root, new Vector3(0f, HanRiverMap.LandY + 0.02f, 74f), new Vector3(600f, 0.08f, 10f), Mats.TexturedBox("asphalt", Color.white, new Vector2(600f, 10f), 6f, 0.15f), false);
         }
 
+        /// <summary>
+        /// 동작대교: 콘크리트 상판(아래로 좁은 박스 거더), 교각마다 쌍기둥 + 머리 보(코핑) + 물가르기 받침,
+        /// 강 가운데 경간 위에는 동작대교의 상징인 **파란 아치**(양쪽 난간 위로 솟은 아치 + 수직 행어), 난간 기둥·두 줄 손잡이.
+        /// </summary>
         void BuildBridge()
         {
             var deckMat = Mats.TexturedBox("concrete", new Color(0.9f, 0.9f, 0.88f), new Vector2(18f, 240f), 6f, 0.2f);
-            var steel = Mats.Lit(new Color(0.25f, 0.42f, 0.55f), 0.4f, 0.3f);
+            var girder = Mats.Lit(new Color(0.7f, 0.7f, 0.68f), 0.15f);
+            var pierMat = Mats.TexturedBox("concrete", new Color(0.82f, 0.82f, 0.8f), new Vector2(4f, 14f), 4f, 0.15f);
+            var wet = Mats.Lit(new Color(0.3f, 0.32f, 0.3f), 0.5f);
+            var steel = Mats.Lit(new Color(0.18f, 0.42f, 0.68f), 0.45f, 0.35f);
+            var rail = Mats.Lit(new Color(0.75f, 0.78f, 0.8f), 0.4f, 0.4f);
             float x = HanRiverMap.BridgeX;
             float deckY = 12f;
+            const float len = 240f, width = 18f;
 
             var bridge = new GameObject("Bridge").transform;
             bridge.SetParent(_root, false);
-            Mats.Prim(PrimitiveType.Cube, "Deck", bridge, new Vector3(x, deckY, 0f), new Vector3(18f, 1.6f, 240f), deckMat);
-            Mats.Prim(PrimitiveType.Cube, "RailL", bridge, new Vector3(x - 8.8f, deckY + 1.2f, 0f), new Vector3(0.3f, 0.9f, 240f), steel, false);
-            Mats.Prim(PrimitiveType.Cube, "RailR", bridge, new Vector3(x + 8.8f, deckY + 1.2f, 0f), new Vector3(0.3f, 0.9f, 240f), steel, false);
+            Mats.Prim(PrimitiveType.Cube, "Deck", bridge, new Vector3(x, deckY, 0f), new Vector3(width, 0.9f, len), deckMat);
+            // 박스 거더: 상판보다 좁고 깊다 (아래에서 올려다보면 그림자 단이 진다)
+            Mats.Prim(PrimitiveType.Cube, "Girder", bridge, new Vector3(x, deckY - 1.2f, 0f), new Vector3(width - 5f, 1.6f, len), girder, false);
+            // 상판 가장자리 턱 (보도와 차도 경계)
+            foreach (float s in new[] { -1f, 1f })
+                Mats.Prim(PrimitiveType.Cube, "Curb", bridge, new Vector3(x + s * (width * 0.5f - 2.2f), deckY + 0.55f, 0f), new Vector3(0.35f, 0.25f, len), girder, false);
 
+            // 난간: 2m마다 기둥, 손잡이 두 줄
+            foreach (float s in new[] { -1f, 1f })
+            {
+                float rx = x + s * (width * 0.5f - 0.2f);
+                Mats.Prim(PrimitiveType.Cube, "RailTop", bridge, new Vector3(rx, deckY + 1.55f, 0f), new Vector3(0.12f, 0.1f, len), rail, false);
+                Mats.Prim(PrimitiveType.Cube, "RailMid", bridge, new Vector3(rx, deckY + 1.0f, 0f), new Vector3(0.08f, 0.08f, len), rail, false);
+                for (float z = -len * 0.5f + 1f; z < len * 0.5f; z += 2f)
+                    Mats.Prim(PrimitiveType.Cube, "RailPost", bridge, new Vector3(rx, deckY + 1.0f, z), new Vector3(0.1f, 1.1f, 0.1f), rail, false);
+            }
+
+            // 교각: 쌍기둥 + 머리 보 + 물가르기 받침 (물에 젖은 짙은 띠)
             foreach (var z in HanRiverMap.BridgePierZ)
             {
-                Mats.Prim(PrimitiveType.Cube, "Pier", bridge, new Vector3(x, deckY * 0.5f - 1f, z), new Vector3(5f, deckY + 2f, 6f), deckMat);
+                Mats.Prim(PrimitiveType.Cube, "PierCap", bridge, new Vector3(x, deckY - 2.6f, z), new Vector3(width - 1f, 1.4f, 3.2f), pierMat);
+                foreach (float s in new[] { -1f, 1f })
+                    Mats.Prim(PrimitiveType.Cylinder, "PierColumn", bridge, new Vector3(x + s * 4.2f, (deckY - 3.3f + HanRiverMap.WaterY - 1.5f) * 0.5f, z),
+                        new Vector3(2.6f, (deckY - 3.3f - HanRiverMap.WaterY + 1.5f) * 0.5f, 2.6f), pierMat);
+                Mats.Prim(PrimitiveType.Cube, "PierFooting", bridge, new Vector3(x, HanRiverMap.WaterY - 0.4f, z), new Vector3(12.5f, 2.2f, 4.2f), wet, false);
+                // 물가르기: 앞뒤 끝을 뾰족하게 (상류·하류 쪽 = ±x)
+                foreach (float s in new[] { -1f, 1f })
+                    Mats.Prim(PrimitiveType.Cube, "Cutwater", bridge, new Vector3(x + s * 6.25f, HanRiverMap.WaterY - 0.4f, z), new Vector3(2.9f, 2.2f, 2.9f), wet, false,
+                        Quaternion.Euler(0f, 45f, 0f));
+            }
+
+            // 파란 아치: 가운데 두 경간 (교각 사이) 위로, 양쪽 난간 바깥에
+            var piers = HanRiverMap.BridgePierZ;
+            for (int i = 0; i < piers.Length - 1; i++)
+            {
+                float z0 = piers[i], z1 = piers[i + 1];
+                if (Mathf.Abs((z0 + z1) * 0.5f) > 20f) continue; // 강 한가운데 경간만
+                foreach (float s in new[] { -1f, 1f })
+                    Arch(bridge, new Vector3(x + s * (width * 0.5f + 0.4f), deckY + 0.5f, z0 + 1.6f), new Vector3(x + s * (width * 0.5f + 0.4f), deckY + 0.5f, z1 - 1.6f), 9f, steel);
+                // 두 아치를 잇는 위쪽 가로대 (사람이 지나가는 높이보다 훨씬 위)
+                for (int k = 1; k < 4; k++)
+                {
+                    float t = k / 4f;
+                    float zz = Mathf.Lerp(z0 + 1.6f, z1 - 1.6f, t);
+                    float h = deckY + 0.5f + 9f * 4f * t * (1f - t);
+                    Mats.Prim(PrimitiveType.Cube, "ArchBrace", bridge, new Vector3(x, h, zz), new Vector3(width + 0.8f, 0.35f, 0.35f), steel, false);
+                }
+            }
+        }
+
+        /// <summary>a→b 사이 포물선 아치 (마디 16개) + 4m마다 상판으로 내리는 행어.</summary>
+        void Arch(Transform parent, Vector3 a, Vector3 b, float rise, Material steel)
+        {
+            const int seg = 16;
+            Vector3 P(float t) => Vector3.Lerp(a, b, t) + Vector3.up * rise * 4f * t * (1f - t);
+            for (int i = 0; i < seg; i++)
+            {
+                var p0 = P(i / (float)seg);
+                var p1 = P((i + 1) / (float)seg);
+                var d = p1 - p0;
+                Mats.Prim(PrimitiveType.Cube, "ArchRib", parent, (p0 + p1) * 0.5f, new Vector3(0.6f, 0.8f, d.magnitude + 0.08f), steel, false, Quaternion.LookRotation(d.normalized));
+            }
+            float span = Vector3.Distance(a, b);
+            for (float u = 4f; u < span - 2f; u += 4f)
+            {
+                var top = P(u / span);
+                Mats.Prim(PrimitiveType.Cube, "Hanger", parent, new Vector3(top.x, (top.y + a.y) * 0.5f, top.z), new Vector3(0.08f, top.y - a.y, 0.08f), steel, false);
             }
         }
 

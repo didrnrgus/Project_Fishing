@@ -37,6 +37,11 @@ namespace Fishing.Characters
         public const string Drive = "Driving_Loop";
         public const string JumpStart = "Basic_JumpBegin";
         public const string JumpLoop = "Basic_Fall_Loop";
+        public const string TurnLeft = "Basic_TurnLeft_Loop";
+        public const string TurnRight = "Basic_TurnRight_Loop";
+        public const string Excited = "Excited";
+        public const string Rallying = "Rallying";
+        public const string Scared = "Scared";
 
         static Dictionary<string, AnimationClip> _clips;
 

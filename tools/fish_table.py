@@ -15,8 +15,10 @@ SRC = os.path.join(ROOT, 'Assets', 'Scripts', 'Data', 'FishDatabase.cs')
 DOC = os.path.join(ROOT, 'docs', '02-game-design.md')
 
 SHORT = {'hangang': '한강', 'honghyeon': '홍현', 'seocheon': '서천', 'yeongheung': '영흥도', 'taean': '태안', 'samcheok': '삼척',
-         'deungdae': '등대섬', 'heonhwa': '헌화로', 'yokji': '욕지도', 'cheongjin': '청진', 'geomun': '거문도', 'jeju': '제주'}
-ORDER = ['hangang', 'honghyeon', 'yokji', 'geomun', 'jeju', 'seocheon', 'yeongheung', 'taean', 'heonhwa', 'samcheok', 'deungdae', 'cheongjin']
+         'deungdae': '등대섬', 'heonhwa': '헌화로', 'yokji': '욕지도', 'cheongjin': '청진', 'geomun': '거문도', 'jeju': '제주',
+         'halong': '하롱베이', 'santorini': '산토리니', 'nile': '나일강'}
+ORDER = ['hangang', 'honghyeon', 'yokji', 'geomun', 'jeju', 'seocheon', 'yeongheung', 'taean', 'heonhwa', 'samcheok', 'deungdae', 'cheongjin',
+         'halong', 'santorini', 'nile']
 SOUTH = ['honghyeon', 'yokji', 'geomun', 'jeju']
 WEST = ['seocheon', 'yeongheung', 'taean']
 EAST = ['heonhwa', 'samcheok', 'deungdae', 'cheongjin']
@@ -90,7 +92,7 @@ def species():
         if rarity == 0:
             continue
         maps = maps_of(field(b, 'Maps'))
-        sea = maps is not None and maps[0] != 'hangang'
+        sea = maps is not None and maps[0] not in ('hangang', 'nile')
         num = lambda n: float(field(b, n).rstrip('f'))
         habs = enum_list(field(b, 'Habitats'), {k: v[1 if sea else 0] for k, v in HAB.items()})
         seasons = enum_list(field(b, 'Seasons'), SEASON)
@@ -99,6 +101,8 @@ def species():
             cond += ' · 어군 전용'
         if 'FarSeaOnly = true' in b:
             cond += ' · 먼바다 전용'
+        if 'BossCoins' in b:
+            cond += f" · 괴물 어종(대물 코인 {field(b, 'BossCoins')})"
         yield dict(maps=maps, map=map_label(maps), name=field(b, 'Name').strip('"'), rarity=rarity,
                    len=f"{num('MinLen'):g}~{num('MaxLen'):g}", trophy=f"{num('TrophyLen'):g} {field(b, 'TrophyName').strip(chr(34))}",
                    hab=', '.join(habs), bait=', '.join(enum_list(field(b, 'Baits'), BAIT)), time=', '.join(enum_list(field(b, 'Times'), TIME)), cond=cond)

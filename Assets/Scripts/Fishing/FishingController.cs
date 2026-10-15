@@ -1098,13 +1098,16 @@ namespace Fishing.Angling
                 }, ToastKind.Warn);
                 Fight = null;
                 ToIdle();
+                // 줄이 툭 끊기면 움찔 (ToIdle이 낚싯대 자세를 돌린 뒤에 한 번짜리 동작)
+                if (outcome == FightOutcome.LineBroken) Game.Player.PlayScared();
                 p.NotifyChanged();
                 return;
             }
 
             Game.Sound.Success();
             Rumble.Pulse(0.5f, 0.8f, 0.35f);   // 랜딩
-            Game.Player.PlayCheer();
+            if (f.Species.Boss || f.Species.Rarity >= 5) Game.Player.PlayExcited();
+            else Game.Player.PlayCheer();
             // 대물이면 근처 NPC가 돌아보며 박수
             if (f.Species.IsTrophy(f.Length) || f.Species.Rarity >= 4)
                 Fishing.Characters.NpcAngler.Applaud(Game.Player.transform.position, Game.Player.transform);

@@ -215,6 +215,8 @@ ROD_STYLE = {  # TelescopicRod.StyleFor 와 같은 색
     'rod_gangbaram': ('#297ab3', '#d1d6e0', '#1a1a1c', 4, 'ring'),
     'rod_goldgege': ('#dba838', '#ebe6d6', '#4d2e1a', 5, 'pearl'),
     'rod_pungrim': ('#0d0a0a', '#bf1a14', '#c79a33', 5, 'carbon'),
+    'rod_gt': ('#ebebe6', '#333338', '#141417', 3, 'heavy'),
+    'rod_nile': ('#c7a873', '#26808c', '#593d26', 4, 'heavy'),
 }
 
 
@@ -265,6 +267,7 @@ REEL_STYLE = {
     'reel_napal': ('#edd9b3', '#b85c29', '#d98c4d', 1.15, False),
     'reel_victory5': ('#c71f29', '#e6e6ed', '#b3b8c2', 1.05, False),
     'reel_pungrim': ('#0d0a0a', '#c71a14', '#d9a838', 1.2, True),
+    'reel_jigging': ('#1f242e', '#d98c26', '#ccd1db', 1.35, True),
 }
 
 
@@ -945,8 +948,8 @@ def model_robotfish(iid):
 
 
 ITEMS = {
-    'rod_basic': model_rod, 'rod_carbon': model_rod, 'rod_bamboo': model_rod, 'rod_heavy': model_rod, 'rod_gege': model_rod, 'rod_fly': model_rod, 'rod_gangbaram': model_rod, 'rod_goldgege': model_rod, 'rod_pungrim': model_rod,
-    'reel_basic': model_reel, 'reel_power': model_reel, 'reel_hispeed': model_reel, 'reel_napal': model_reel, 'reel_victory5': model_reel, 'reel_pungrim': model_reel, 'boat_blackspear': model_boat, 'coin_bigfish': model_coin,
+    'rod_basic': model_rod, 'rod_carbon': model_rod, 'rod_bamboo': model_rod, 'rod_heavy': model_rod, 'rod_gege': model_rod, 'rod_fly': model_rod, 'rod_gangbaram': model_rod, 'rod_goldgege': model_rod, 'rod_pungrim': model_rod, 'rod_gt': model_rod, 'rod_nile': model_rod,
+    'reel_basic': model_reel, 'reel_power': model_reel, 'reel_hispeed': model_reel, 'reel_napal': model_reel, 'reel_victory5': model_reel, 'reel_pungrim': model_reel, 'reel_jigging': model_reel, 'line_pe8': model_line, 'boat_blackspear': model_boat, 'coin_bigfish': model_coin,
     'line_nylon': model_line, 'line_carbon': model_line, 'line_pe': model_line,
     'boat_rubber': model_boat, 'boat_speed': model_boat, 'boat_sail': model_boat, 'boat_cruiser': model_boat,
     'bait_worm': model_worm, 'bait_paste': model_paste, 'bait_corn': model_corn, 'bait_krill': model_krill,

@@ -153,9 +153,13 @@ namespace Fishing.World
         public static readonly FieldMapDef Jeju = new CoastMapDef(KoreaCoasts.Jeju());
         public static readonly FieldMapDef Cheongjin = new CoastMapDef(KoreaCoasts.Cheongjin());
         public static readonly FieldMapDef Geomun = new CoastMapDef(KoreaCoasts.Geomun());
+        // 해외 거점 (OverseasCoasts)
+        public static readonly FieldMapDef HaLong = new CoastMapDef(OverseasCoasts.HaLong());
+        public static readonly FieldMapDef Santorini = new CoastMapDef(OverseasCoasts.Santorini());
+        public static readonly FieldMapDef Nile = new CoastMapDef(OverseasCoasts.Nile());
 
         /// <summary>열린 낚시터 (입장 레벨 순, 도감 탭·대물 도전 순서).</summary>
-        public static readonly FieldMapDef[] All = { HanRiver, Honghyeon, Seocheon, Yeongheung, Taean, Samcheok, Deungdae, Heonhwa, Yokji, Jeju, Cheongjin, Geomun };
+        public static readonly FieldMapDef[] All = { HanRiver, Honghyeon, Seocheon, Yeongheung, Taean, Samcheok, Deungdae, Heonhwa, Yokji, Jeju, Cheongjin, Geomun, HaLong, Santorini, Nile };
 
         public static FieldMapDef Get(string id)
         {

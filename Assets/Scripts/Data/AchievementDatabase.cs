@@ -29,6 +29,7 @@ namespace Fishing.Data
         public static readonly (int level, string title)[] LevelTitles =
         {
             (1, "초보 조사"), (5, "견습 조사"), (10, "중급 조사"), (15, "고수 조사"), (20, "명인"), (25, "강태공"),
+            (30, "세계의 조사"), (35, "대양의 명인"), (40, "낚시의 신"),
         };
 
         static bool Dex(Core.PlayerProfile p, string id, float minLen) => p.Dex(id) is { } d && d.maxLength >= minLen;

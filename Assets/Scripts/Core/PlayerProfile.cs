@@ -9,7 +9,8 @@ namespace Fishing.Core
     /// <summary>플레이어 진행 상황. SaveData를 감싸서 규칙(레벨업, 재화, 아이템)을 담당한다.</summary>
     public class PlayerProfile
     {
-        public const int MaxLevel = 25;
+        /// <summary>만렙 (원작: 오픈 25 → 동남아 30·35 → 40, 2020년 55). 솔로판은 해외 거점을 열면서 40.</summary>
+        public const int MaxLevel = 40;
         public const int KeepNetBase = 20;
         /// <summary>살림망 칸 수 (기본 20 + 퀘스트 확장).</summary>
         public int KeepNetSize => KeepNetBase + Data.keepNetBonus;

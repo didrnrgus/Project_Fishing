@@ -10,7 +10,8 @@ namespace Fishing.UI
 {
     /// <summary>
     /// 원작 "낚시터 목록 FISHINGAREA LIST" 화면.
-    ///  왼쪽: KOREA 지도와 낚시터 이름 목록 / 오른쪽: MAP INFO(도감 달성도), FISH INFO(어종 넘겨보기, 개인 기록)
+    ///  왼쪽: 거점 탭(한국·동남아·지중해·아프리카 — 원작 "거점 이동"), 거점 지도와 낚시터 이름 목록
+    ///  오른쪽: MAP INFO(도감 달성도), FISH INFO(어종 넘겨보기, 개인 기록)
     ///  아래: 채널(방) 목록 + [빠른입장] [방만들기] [입장하기] [나가기]
     /// </summary>
     public class FishingAreaPanel : UIPanel
@@ -25,6 +26,11 @@ namespace Fishing.UI
         RectTransform _mapLabel;
         TMP_Text _mapLabelText;
         FishingArea _selected;
+        string _hub = "korea";
+        TMP_Text _hubTitle;
+        readonly List<(Image bg, TMP_Text text, FishingHub hub)> _hubTabs = new List<(Image, TMP_Text, FishingHub)>();
+        RectTransform _listRoot, _markerRoot, _map;
+        LeTai.Asset.TranslucentImage.TranslucentImage _mapImage;
         int _fishIndex;
         int _channel = 1;
 
@@ -38,38 +44,29 @@ namespace Fishing.UI
             // ---- 지도 ----
             var mapFrame = UIFactory.Shape(Body, UIFactory.Surface, UIFactory.RadiusCard, "MapFrame", 0f);
             mapFrame.rectTransform.At(new Vector2(0, 1), Vector2.zero, new Vector2(MapW + 230, MapH + 16));
-            UIFactory.Text(mapFrame.transform, "KOREA", 30, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold).rectTransform
-                .At(new Vector2(0, 1), new Vector2(14, -10), new Vector2(200, 40));
-            var map = UIFactory.Node("Map", mapFrame.transform).At(new Vector2(1, 1), new Vector2(-8, -8), new Vector2(MapW, MapH));
-            var raw = UIFactory.RoundedTexture(map, KoreaMap.Texture, 10f, "MapTexture");
-            raw.rectTransform.Fill();
-
-            float listY = -56f;
-            foreach (var area in FishingAreas.Korea)
+            _hubTitle = UIFactory.Text(mapFrame.transform, "KOREA", 26, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
+            _hubTitle.rectTransform.At(new Vector2(0, 1), new Vector2(14, -8), new Vector2(210, 36));
+            // "SOUTHEAST ASIA"·"MEDITERRANEAN"처럼 긴 이름은 한 줄에 들어가게 줄인다
+            _hubTitle.textWrappingMode = TextWrappingModes.NoWrap;
+            _hubTitle.enableAutoSizing = true;
+            _hubTitle.fontSizeMin = 14f;
+            _hubTitle.fontSizeMax = 26f;
+            // 거점 탭 2×2 (원작: 레벨이 되면 다음 거점 낚시터로 이동)
+            for (int i = 0; i < FishingAreas.Hubs.Count; i++)
             {
-                var a = area;
-                // 왼쪽 이름 목록
-                var item = UIFactory.Button(mapFrame.transform, "", () => Select(a), new Color(0, 0, 0, 0), 17);
-                ((RectTransform)item.transform).At(new Vector2(0, 1), new Vector2(10, listY), new Vector2(200, 28));
-                var t = item.GetComponentInChildren<TMP_Text>();
-                t.alignment = UIFactory.Align(TextAnchor.MiddleLeft);
-                t.text = a.Name;
-                _listItems.Add((t, a));
-                listY -= 30f;
-
-                // 지도 마커
-                var uv = KoreaMap.ToUV(a.Lon, a.Lat);
-                var ring = UIFactory.Image(map, a.Open ? new Color(0.45f, 0.85f, 0.3f) : new Color(0.3f, 0.7f, 0.95f), UIFactory.Ring, "Marker");
-                ring.raycastTarget = true;
-                ring.rectTransform.At(new Vector2(0, 0), new Vector2(uv.x * MapW, uv.y * MapH), new Vector2(30, 30), new Vector2(0.5f, 0.5f));
-                var dot = UIFactory.Image(ring.transform, new Color(0.05f, 0.1f, 0.15f, 0.9f), UIFactory.Circle, "Dot");
-                dot.rectTransform.Fill(5, 5, 5, 5);
-                UIFactory.Text(ring.transform, "↓", 15, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold).rectTransform.Fill();
-                var btn = ring.gameObject.AddComponent<Button>();
-                btn.onClick.AddListener(() => Select(a));
-                _markers.Add((btn, ring, a));
+                var hub = FishingAreas.Hubs[i];
+                var b = UIFactory.Button(mapFrame.transform, hub.Name, () => SelectHub(hub.Id), UIFactory.TabOff, 15);
+                UIFactory.SetRadius(b.targetGraphic, UIFactory.Pill);
+                ((RectTransform)b.transform).At(new Vector2(0, 1), new Vector2(10 + (i % 2) * 104, -48 - (i / 2) * 32), new Vector2(98, 28));
+                _hubTabs.Add((b.GetComponent<Image>(), b.GetComponentInChildren<TMP_Text>(), hub));
             }
-            _mapLabel = UIFactory.Node("SelectedLabel", map).At(new Vector2(0, 0), Vector2.zero, new Vector2(130, 30), new Vector2(0.5f, 0f));
+            _listRoot = UIFactory.Node("AreaList", mapFrame.transform).At(new Vector2(0, 1), new Vector2(0, -116), new Vector2(220, MapH - 110));
+            _map = UIFactory.Node("Map", mapFrame.transform).At(new Vector2(1, 1), new Vector2(-8, -8), new Vector2(MapW, MapH));
+            _mapImage = UIFactory.RoundedTexture(_map, KoreaMap.Texture, 10f, "MapTexture");
+            _mapImage.rectTransform.Fill();
+            _markerRoot = UIFactory.Node("Markers", _map);
+            _markerRoot.Fill();
+            _mapLabel = UIFactory.Node("SelectedLabel", _map).At(new Vector2(0, 0), Vector2.zero, new Vector2(130, 30), new Vector2(0.5f, 0f));
             var labelBg = UIFactory.Shape(_mapLabel, new Color(0.03f, 0.1f, 0.13f, 0.92f), UIFactory.Pill, "Bg", 4f);
             labelBg.rectTransform.Fill();
             UIFactory.AddBorder(labelBg, new Color(0.36f, 0.88f, 0.8f, 0.7f), 1.5f);
@@ -137,7 +134,56 @@ namespace Fishing.UI
             _status = UIFactory.Text(Body, "", 16, UIFactory.Warn, TextAnchor.MiddleCenter);
             _status.rectTransform.At(new Vector2(0, 0), new Vector2(rightX, 244), new Vector2(460, 26));
 
+            BuildHub("korea");
             Select(FishingAreas.Korea[0]);
+        }
+
+        /// <summary>거점을 바꾼다: 지도 그림, 낚시터 이름 목록, 지도 마커를 다시 만든다.</summary>
+        void BuildHub(string hubId)
+        {
+            _hub = hubId;
+            var hub = FishingAreas.Hubs.Find(h => h.Id == hubId);
+            _hubTitle.text = hub.English;
+            _mapImage.rawTexture = RegionMap.Texture(hubId);
+            _mapImage.SetVerticesDirty();
+            UIFactory.ClearChildren(_listRoot);
+            UIFactory.ClearChildren(_markerRoot);
+            _listItems.Clear();
+            _markers.Clear();
+            float listY = 0f;
+            foreach (var area in FishingAreas.InHub(hubId))
+            {
+                var a = area;
+                // 왼쪽 이름 목록
+                var item = UIFactory.Button(_listRoot, "", () => Select(a), new Color(0, 0, 0, 0), 17);
+                ((RectTransform)item.transform).At(new Vector2(0, 1), new Vector2(10, listY), new Vector2(200, 28));
+                var t = item.GetComponentInChildren<TMP_Text>();
+                t.alignment = UIFactory.Align(TextAnchor.MiddleLeft);
+                t.text = a.Name;
+                _listItems.Add((t, a));
+                listY -= 30f;
+
+                // 지도 마커
+                var uv = RegionMap.ToUV(hubId, a.Lon, a.Lat);
+                var ring = UIFactory.Image(_markerRoot, a.Open ? new Color(0.45f, 0.85f, 0.3f) : new Color(0.3f, 0.7f, 0.95f), UIFactory.Ring, "Marker");
+                ring.raycastTarget = true;
+                ring.rectTransform.At(new Vector2(0, 0), new Vector2(uv.x * MapW, uv.y * MapH), new Vector2(30, 30), new Vector2(0.5f, 0.5f));
+                var dot = UIFactory.Image(ring.transform, new Color(0.05f, 0.1f, 0.15f, 0.9f), UIFactory.Circle, "Dot");
+                dot.rectTransform.Fill(5, 5, 5, 5);
+                UIFactory.Text(ring.transform, "↓", 15, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold).rectTransform.Fill();
+                var btn = ring.gameObject.AddComponent<Button>();
+                btn.onClick.AddListener(() => Select(a));
+                _markers.Add((btn, ring, a));
+            }
+            _mapLabel.SetAsLastSibling();
+        }
+
+        public void SelectHub(string hubId)
+        {
+            if (hubId == _hub) return;
+            BuildHub(hubId);
+            var first = System.Linq.Enumerable.FirstOrDefault(FishingAreas.InHub(hubId), a => a.Open) ?? System.Linq.Enumerable.First(FishingAreas.InHub(hubId));
+            Select(first);
         }
 
         static void Header(Transform parent, string text)
@@ -165,6 +211,7 @@ namespace Fishing.UI
         void Flip(int dir)
         {
             var list = FishDatabase.DexOf(_selected?.MapId ?? "hangang").ToList();
+            if (list.Count == 0) return;
             _fishIndex = (_fishIndex + dir + list.Count) % list.Count;
             Refresh();
         }
@@ -202,8 +249,13 @@ namespace Fishing.UI
             }
             foreach (var (btn, ring, area) in _markers)
                 ring.rectTransform.localScale = Vector3.one * (area == _selected ? 1.45f : 1f);
+            foreach (var (bg, text, hub) in _hubTabs)
+            {
+                bg.color = hub.Id == _hub ? UIFactory.TabOn : UIFactory.TabOff;
+                text.text = p.Data.level < hub.Level ? $"{hub.Name} <size=11><color=#c08060>Lv.{hub.Level}</color></size>" : hub.Name;
+            }
 
-            var uv = KoreaMap.ToUV(_selected.Lon, _selected.Lat);
+            var uv = RegionMap.ToUV(_hub, _selected.Lon, _selected.Lat);
             _mapLabel.anchoredPosition = new Vector2(uv.x * MapW, uv.y * MapH + 22f);
             _mapLabelText.text = _selected.Name;
 

@@ -13,6 +13,15 @@ namespace Fishing.Data
         public string Desc;
         /// <summary>실제 맵 아이디 (열린 낚시터만).</summary>
         public string MapId;
+        /// <summary>거점 (원작: 한국 → 동남아 → 지중해 → 나일강). <see cref="FishingAreas.Hubs"/>의 Id.</summary>
+        public string Hub = "korea";
+    }
+
+    /// <summary>거점: 낚시터 목록 화면 왼쪽 위 탭. 지도 범위(경도·위도)는 <see cref="Fishing.UI.RegionMap"/>이 그린다.</summary>
+    public sealed class FishingHub
+    {
+        public string Id, Name, English;
+        public int Level;
     }
 
     /// <summary>
@@ -49,9 +58,49 @@ namespace Fishing.Data
                 Desc = "대물을 꿈꾸는 조사들의 성지. 거문도 등대와 백도, 부시리·돌돔·갈치, 먼바다엔 다금바리·돗돔." },
         };
 
+        /// <summary>
+        /// 해외 거점 (원작: 2012-04 동남아 ① 앙코르와트·하롱베이·빈펄·돈콘, 지중해 산토리니, 2013-03 나일강 하류).
+        /// 솔로판은 거점마다 대표 낚시터 한 곳. 만렙도 원작처럼 25 → 40으로 늘렸다.
+        /// </summary>
+        public static readonly List<FishingArea> Overseas = new List<FishingArea>
+        {
+            new FishingArea { Id = "halong", Hub = "sea", Name = "하롱베이", Lon = 107.08f, Lat = 20.91f, Open = true, Level = 25, MapId = "halong",
+                Desc = "에메랄드 바다에 솟은 석회암 봉우리 수천 개. 수상 마을과 정크선, 바라문디·얼룩바리·GT." },
+            new FishingArea { Id = "angkor", Hub = "sea", Name = "톤레삽 호수", Lon = 104.0f, Lat = 13.0f, Open = false, Level = 26, Desc = "앙코르와트 옆 동남아 최대 호수. (준비 중)" },
+            new FishingArea { Id = "phuket", Hub = "sea", Name = "푸켓", Lon = 98.35f, Lat = 7.9f, Open = false, Level = 30, Desc = "안다만해의 섬. (준비 중)" },
+            new FishingArea { Id = "sentosa", Hub = "sea", Name = "센토사", Lon = 103.83f, Lat = 1.25f, Open = false, Level = 35, Desc = "싱가포르 남쪽 섬. (준비 중)" },
+            new FishingArea { Id = "santorini", Hub = "med", Name = "산토리니", Lon = 25.37f, Lat = 36.46f, Open = true, Level = 28, MapId = "santorini",
+                Desc = "칼데라 절벽 위 하얀 마을과 파란 돔. 깊은 바다의 유럽대구·귀족도미, 먼바다엔 참다랑어." },
+            new FishingArea { Id = "venice", Hub = "med", Name = "베네치아", Lon = 12.33f, Lat = 45.44f, Open = false, Level = 33, Desc = "운하와 석호의 도시. (준비 중)" },
+            new FishingArea { Id = "nile", Hub = "africa", Name = "나일강 하류", Lon = 31.23f, Lat = 29.9f, Open = true, Level = 31, MapId = "nile",
+                Desc = "야자수 강가와 펠루카, 사막 너머 피라미드. 2m 나일농어와 송곳니 타이거피시가 사는 민물." },
+        };
+
+        public static readonly List<FishingHub> Hubs = new List<FishingHub>
+        {
+            new FishingHub { Id = "korea", Name = "한국", English = "KOREA", Level = 1 },
+            new FishingHub { Id = "sea", Name = "동남아", English = "SOUTHEAST ASIA", Level = 25 },
+            new FishingHub { Id = "med", Name = "지중해", English = "MEDITERRANEAN", Level = 28 },
+            new FishingHub { Id = "africa", Name = "아프리카", English = "AFRICA · NILE", Level = 31 },
+        };
+
+        public static IEnumerable<FishingArea> All
+        {
+            get
+            {
+                foreach (var a in Korea) yield return a;
+                foreach (var a in Overseas) yield return a;
+            }
+        }
+
+        public static IEnumerable<FishingArea> InHub(string hub)
+        {
+            foreach (var a in All) if (a.Hub == hub) yield return a;
+        }
+
         public static int EntryLevel(string mapId)
         {
-            foreach (var a in Korea)
+            foreach (var a in All)
                 if (a.MapId == mapId) return a.Level;
             return 1;
         }

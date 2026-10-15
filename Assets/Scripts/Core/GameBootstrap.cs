@@ -93,7 +93,7 @@ namespace Fishing.Core
                     Game.Toast("한국 낚시 조합이 고무보트를 지급했습니다! 물가에서 B로 꺼내 타세요.", ToastKind.Great);
                 }
                 foreach (var msg in Game.Profile.GrantLevelRewards()) Game.Toast(msg + " (가방·장비에서 확인)", ToastKind.Great);
-                foreach (var area in FishingAreas.Korea)
+                foreach (var area in FishingAreas.All)
                     if (area.Open && area.Level == level && area.Level > 1)
                         Game.Toast($"새 낚시터가 열렸습니다: {area.Name}. 대기실 [낚시터 선택하기]에서 입장하세요.", ToastKind.Great);
             };
