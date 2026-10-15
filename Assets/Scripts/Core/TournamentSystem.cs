@@ -191,6 +191,7 @@ namespace Fishing.Core
                 me.Rank <= 3 ? ToastKind.Great : ToastKind.Info);
             Game.Toast($"대회 보상: {gold:N0}골드" + (conch > 0 ? $" · 소라고동 {conch}" : "") + extra + $" · 대회 포인트 +{gained}",
                 ToastKind.Good);
+            Profile.Log($"{TournamentRules.Title(s.day, s.mapId)} — {me.Rank}위 ({me.Count}마리 · 최장 {me.Longest:0.0}cm)");
             int nowEmblem = TournamentRules.EmblemIndex(s.points);
             if (nowEmblem > prevEmblem) Game.Toast($"계급 엠블럼 승급! {TournamentRules.Emblems[nowEmblem].name}", ToastKind.Great);
             if (Game.Sound != null) { if (me.Rank <= 3) Game.Sound.LevelUp(); else Game.Sound.Coin(); }

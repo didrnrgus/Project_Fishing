@@ -44,7 +44,8 @@ namespace Fishing.UI
         RectTransform _slackHint;
         TMP_Text _slackHintText;
         readonly Image[] _pips = new Image[5];
-        TMP_Text _counterText, _warnText, _staminaText, _hitText;
+        TMP_Text _counterText, _warnText, _staminaText, _hitText, _focusText;
+        Image _focusFill;
         FishFight _hitShownFor;
         float _hitAt;
         RectTransform _warnPill;
@@ -168,6 +169,16 @@ namespace Fishing.UI
                 ring.rectTransform.At(new Vector2(0, 0.5f), new Vector2(11 + i * 31, 0), new Vector2(28, 28));
                 _pips[i] = ring;
             }
+
+            // 포커싱 (Q): 콤보 칸 바로 위. 켜져 있으면 남은 시간만큼 금색 막대, 쿨타임이면 남은 분
+            var focusBox = UIFactory.Glass(bottom, "FocusBox", UIFactory.Pill, null, 0.6f, true, false);
+            focusBox.rectTransform.At(new Vector2(0, 0.5f), new Vector2(30, 108), new Vector2(176, 36));
+            _focusFill = UIFactory.Shape(focusBox.transform, new Color(1f, 0.78f, 0.3f, 0.55f), UIFactory.Pill, "Fill", 0f);
+            _focusFill.rectTransform.Fill(3, 3, 3, 3);
+            _focusFill.type = Image.Type.Filled;
+            _focusFill.fillMethod = Image.FillMethod.Horizontal;
+            _focusText = UIFactory.Text(focusBox.transform, "", 17, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            _focusText.rectTransform.Fill();
 
             var barBack = UIFactory.Shape(bottom, Color.white, UIFactory.Pill, "TensionBack", 4f);
             barBack.sprite = UIFactory.TensionGradient;
@@ -494,9 +505,32 @@ namespace Fishing.UI
 
             UpdatePops();
 
-            float stamina = Game.Profile.Data.stamina;
-            _staminaText.text = stamina < 30f ? $"체력 {stamina:0} · 지쳐서 힘이 빠진다..." : $"체력 {stamina:0}";
-            _staminaText.color = stamina < 30f ? UIFactory.Danger : UIFactory.TextDim;
+            var p = Game.Profile;
+            float stamina = p.Data.stamina;
+            _staminaText.text = p.StaminaTier switch
+            {
+                2 => $"체력 {stamina:0} · 탈진! 힘이 거의 없다 (능력치 85%↓ · 릴 65%↓)",
+                1 => $"체력 {stamina:0} · 지쳐서 힘이 빠진다 (능력치 55%↓ · 릴 20%↓)",
+                _ => $"체력 {stamina:0}",
+            };
+            _staminaText.color = p.StaminaTier > 0 ? UIFactory.Danger : UIFactory.TextDim;
+
+            string key = Settings.KeyName(KeyAction.Focus);
+            if (f.Focused)
+            {
+                _focusFill.fillAmount = f.FocusLeft / FishFight.FocusDuration;
+                _focusText.text = $"<color=#ffe080>포커싱 {f.FocusLeft:0.0}초</color>";
+            }
+            else if (p.FocusReady)
+            {
+                _focusFill.fillAmount = 0.25f + 0.1f * Mathf.Sin(Time.time * 4f);
+                _focusText.text = $"[{key}] 포커싱";
+            }
+            else
+            {
+                _focusFill.fillAmount = 0f;
+                _focusText.text = $"<color=#8a98a8>포커싱 {Mathf.CeilToInt(p.Data.focusCooldown / 60f)}분 뒤</color>";
+            }
         }
 
         void UpdatePops()

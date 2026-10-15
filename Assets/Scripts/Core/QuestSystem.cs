@@ -53,6 +53,16 @@ namespace Fishing.Core
             }
             // 원작: 도감을 채우면 소라고동
             if (c.NewSpecies) GiveConch(1, $"도감 등록: {c.Species.Name}");
+            if (c.Species.Boss)
+            {
+                _profile.AddItem(ItemDatabase.BigCoinId, c.Species.BossCoins);
+                Game.Toast($"괴물 어종 {c.Species.Name}! 대물 코인 +{c.Species.BossCoins} (조합 교환소에서 풍림화산 채비로)", ToastKind.Great);
+            }
+            // 일지: 처음 낚은 어종 · 대물 · 괴물
+            if (c.NewSpecies || c.Species.IsTrophy(c.Length) || c.Species.Boss || c.Species.Rarity >= 4)
+                _profile.Log($"{System.Array.Find(Fishing.World.Maps.All, m => m.Id == c.MapId)?.ShortName ?? ""}에서 {c.Species.Name} {c.Length:0.0}cm" +
+                             (c.NewSpecies ? " (첫 만남)" : "") + (c.Species.IsTrophy(c.Length) ? $" — {c.Species.TrophyName}!" : ""));
+            Bingo.OnCatch(c);
             OnCatchDaily(c);
             OnCatchTrophy(c);
             OnCatchStory(c);
@@ -100,6 +110,7 @@ namespace Fishing.Core
         void Complete(QuestDef q)
         {
             Game.Toast($"퀘스트 완료: {q.Title}  ({q.RewardText})", ToastKind.Great);
+            _profile.Log($"이야기 퀘스트 완료 — {q.Title}");
             if (Game.Sound != null) Game.Sound.LevelUp();
             if (q.RewardGold > 0) _profile.AddGold(q.RewardGold);
             if (!string.IsNullOrEmpty(q.RewardBaitId)) _profile.AddItem(q.RewardBaitId, q.RewardBaitCount);

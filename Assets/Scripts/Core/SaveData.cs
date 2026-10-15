@@ -84,6 +84,15 @@ namespace Fishing.Core
         public bool ready; // 목표 달성, 보고 대기
     }
 
+    /// <summary>낚시 일지 한 줄 (원작 "일지": 그날그날의 기록).</summary>
+    [Serializable]
+    public class JournalEntry
+    {
+        public int day;
+        public float minutes;
+        public string text;
+    }
+
     [Serializable]
     public class SaveData
     {
@@ -113,6 +122,15 @@ namespace Fishing.Core
         public List<string> achievements = new List<string>();
         public List<string> specialFinds = new List<string>(); // 로봇 물고기, 생선 캔 같은 특별한 것
         public int bestCombo;
+        public float focusCooldown;          // 포커싱 다시 쓰기까지 남은 실제 시간(초)
+        public float regenPerMin;            // 분당 회복형 음식: 게임 1분에 체력 +
+        public float regenUntil;             // 그 효과가 끝나는 게임 시각 (TotalMinutes)
+        public List<int> levelRewards = new List<int>(); // 받은 레벨 보상
+        public BingoSave bingo = new BingoSave();
+        public string attendLast = "";       // 마지막 출석 날짜 (실제 날짜 yyyy-MM-dd)
+        public int attendStamp;              // 찍은 도장 수 (7칸마다 한 바퀴)
+        public int attendTotal;
+        public List<JournalEntry> journal = new List<JournalEntry>();
         public List<AquaFish> aquarium = new List<AquaFish>();
         public List<string> aquariumDecor = new List<string>();
         public string title = "";                              // 고른 칭호 (빈 문자열이면 레벨 칭호) // 마지막으로 있던 낚시터

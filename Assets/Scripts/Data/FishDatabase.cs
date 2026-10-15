@@ -31,6 +31,12 @@ namespace Fishing.Data
         public bool SchoolOnly;
         /// <summary>먼바다 포인트(배로 나가는 맵 앞쪽 38%)에서만 문다: 수심 100m 넘는 곳에 사는 다금바리·돗돔.</summary>
         public bool FarSeaOnly;
+        /// <summary>
+        /// 괴물 어종 (원작 이벤트 몬스터: 괴물잉어·괴물가물치·폭군삼치·황새치). 낚으면 대물 코인을 주고,
+        /// 코인은 조합 교환소에서 풍림화산 채비로 바꾼다. 히든·포식자 어군에는 끼지 않는다.
+        /// </summary>
+        public int BossCoins;
+        public bool Boss => BossCoins > 0;
         /// <summary>제철 (null이면 사계절). 제철이면 잘 물고 아니면 덜 문다 (<see cref="Seasons.BiteFactor"/>).</summary>
         public Season[] Seasons;
         /// <summary>잡동사니가 걸리는 빈도 배율.</summary>
@@ -169,6 +175,31 @@ namespace Fishing.Data
                 Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.Corn, BaitKind.Paste },
                 Times = new[] { TimeBand.Dawn }, Weathers = new[] { Weather.Clear, Weather.Cloudy },
                 Power = 1.25f, Speed = 0.8f, Stamina = 1.8f, Aggression = 0.55f, Exp = 300, Price = 30000 },
+
+            // 원작 2013 공략의 한강 어종 은어·떡붕어
+            new FishSpecies { Id = "sweetfish", Name = "은어", Latin = "Plecoglossus altivelis", Temper = "맑은 여울에서 이끼를 뜯는다. 수박 향이 난다는 1년살이 물고기",
+                MinLen = 10, MaxLen = 28, TrophyLen = 23, TrophyName = "대은어", WeightCoef = 0.008f, Rarity = 2,
+                Seasons = new[] { Season.Summer, Season.Autumn }, Habitats = new[] { Habitat.Shallow, Habitat.Rocky }, Baits = new[] { BaitKind.Fly, BaitKind.Lure, BaitKind.Worm },
+                Times = new[] { TimeBand.Morning, TimeBand.Day }, Weathers = new[] { Weather.Clear },
+                Power = 0.35f, Speed = 1.5f, Stamina = 0.8f, Aggression = 0.8f, Exp = 16, Price = 700 },
+            new FishSpecies { Id = "gengorobuna", Name = "떡붕어", Latin = "Carassius cuvieri", Temper = "붕어보다 체고가 높은 일본 원산 붕어. 떡밥을 좋아하고 중층에 뜬다",
+                MinLen = 12, MaxLen = 50, TrophyLen = 40, TrophyName = "대형 떡붕어", WeightCoef = 0.02f, Rarity = 1,
+                Seasons = new[] { Season.Spring, Season.Summer }, Habitats = new[] { Habitat.Deep, Habitat.Shallow }, Baits = new[] { BaitKind.Paste, BaitKind.Corn },
+                Times = new[] { TimeBand.Morning, TimeBand.Day, TimeBand.Evening }, Weathers = AnyWeather,
+                Power = 0.5f, Speed = 0.7f, Stamina = 1.0f, Aggression = 0.4f, Exp = 14, Price = 350 },
+
+            // ---------- 괴물 어종 (원작 이벤트 몬스터) ----------
+            // 원작: 한강 부표 지점에 괴물잉어가 나타났다 (이벤트). 솔로판은 비·흐린 밤에 깊은 곳에서 아주 드물게 문다
+            new FishSpecies { Id = "monstercarp", Name = "괴물잉어", Latin = "Cyprinus carpio (거대 개체)", Temper = "한강 부표 아래 산다는 전설의 잉어. 이끼 낀 비늘 하나가 손바닥만 하다",
+                MinLen = 110, MaxLen = 150, TrophyLen = 130, TrophyName = "한강의 주인", WeightCoef = 0.014f, Rarity = 5, BossCoins = 3,
+                Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.Corn, BaitKind.Paste },
+                Times = new[] { TimeBand.Night }, Weathers = new[] { Weather.Rain, Weather.Cloudy },
+                Power = 1.5f, Speed = 0.75f, Stamina = 2.4f, Aggression = 0.5f, Exp = 400, Price = 20000 },
+            new FishSpecies { Id = "monstersnakehead", Name = "괴물가물치", Latin = "Channa argus (거대 개체)", Temper = "수초 숲의 폭군. 개구리도 오리 새끼도 한입에 삼킨다는 소문",
+                MinLen = 100, MaxLen = 135, TrophyLen = 120, TrophyName = "수초의 폭군", WeightCoef = 0.009f, Rarity = 5, BossCoins = 3,
+                Habitats = new[] { Habitat.Weed }, Baits = new[] { BaitKind.Lure, BaitKind.Minnow },
+                Times = new[] { TimeBand.Evening, TimeBand.Night }, Weathers = new[] { Weather.Rain },
+                Power = 1.6f, Speed = 0.9f, Stamina = 2.2f, Aggression = 0.85f, Exp = 380, Price = 18000 },
 
             // ================= 홍현 앞바다 (남해) =================
             // 원작: 홍현 앞바다 인기 어종은 감성돔. 대물 퀘스트 "자이언트 그루퍼"는 저녁 C4 / 아침 E3 어군에서만.
@@ -374,6 +405,18 @@ namespace Fishing.Data
                 Seasons = new[] { Season.Autumn }, Habitats = new[] { Habitat.Deep, Habitat.Shallow }, Baits = new[] { BaitKind.Lure, BaitKind.Minnow },
                 Times = new[] { TimeBand.Dawn, TimeBand.Morning }, Weathers = AnyWeather,
                 Power = 0.8f, Speed = 1.6f, Stamina = 1.1f, Aggression = 0.85f, Exp = 34, Price = 2600 },
+
+            new FishSpecies { Id = "tyrantmackerel", Name = "폭군삼치", Latin = "Scomberomorus niphonius (거대 개체)", Temper = "삼치 떼를 거느린다는 괴물 삼치. 이빨에 줄이 스치면 끝이다", Maps = M("yokji", "geomun", "jeju"),
+                MinLen = 110, MaxLen = 150, TrophyLen = 135, TrophyName = "남해의 폭군", WeightCoef = 0.006f, Rarity = 5, BossCoins = 4,
+                Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.Lure, BaitKind.Minnow },
+                Times = new[] { TimeBand.Dawn }, Weathers = new[] { Weather.Cloudy, Weather.Rain },
+                Power = 1.55f, Speed = 1.9f, Stamina = 2.2f, Aggression = 0.95f, Exp = 450, Price = 24000 },
+            // 황새치 (Xiphias gladius): 밤이면 먼바다 수면 가까이 올라온다. 배를 타고 먼바다에서만
+            new FishSpecies { Id = "swordfish", Name = "황새치", Latin = "Xiphias gladius", Temper = "칼 같은 위턱을 휘두르는 먼바다의 검객. 밤에 수면 가까이 올라온다", Maps = M("geomun", "jeju", "deungdae"),
+                MinLen = 150, MaxLen = 300, TrophyLen = 250, TrophyName = "바다의 검객", WeightCoef = 0.0065f, Rarity = 5, BossCoins = 5, FarSeaOnly = true,
+                Habitats = new[] { Habitat.Deep }, Baits = new[] { BaitKind.Squid, BaitKind.Lure },
+                Times = new[] { TimeBand.Night }, Weathers = AnyWeather,
+                Power = 1.8f, Speed = 1.7f, Stamina = 2.6f, Aggression = 0.9f, Exp = 600, Price = 40000 },
 
             // ---------- 제주 (서귀포) ----------
             new FishSpecies { Id = "damselfish", Name = "자리돔", Latin = "Chromis notata", Temper = "제주 사람들의 여름 자리물회. 갯바위 앞 물속에 구름처럼 떼 지어 산다", Maps = M("jeju"),

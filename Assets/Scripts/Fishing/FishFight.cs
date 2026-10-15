@@ -64,6 +64,15 @@ namespace Fishing.Angling
         public float Pull { get; private set; }
         /// <summary>카운터 데미지 배율 (의상).</summary>
         public float CounterBonus = 1f;
+
+        /// <summary>
+        /// 포커싱 (원작 파이팅 스킬): 켜져 있는 동안 장력이 천천히 변하고(물고기가 당겨도 덜 튄다) 데미지가 커진다.
+        /// 원작: "일정 시간 텐션 이동 속도 감소 + 데미지 증가, 접속 20분마다 1회". 쿨타임은 PlayerProfile이 잰다.
+        /// </summary>
+        public const float FocusDuration = 8f, FocusTensionSlow = 0.4f, FocusDamage = 1.5f, FocusCounter = 1.3f;
+        public float FocusLeft { get; private set; }
+        public bool Focused => FocusLeft > 0f;
+        public void Focus() => FocusLeft = FocusDuration;
         /// <summary>마우스로 당겨서(+) 또는 늦춰서(-) 더해진 장력.</summary>
         public float DragLoad { get; private set; }
         /// <summary>물고기가 있는(당기는) 쪽: -1 왼쪽, +1 오른쪽.</summary>
@@ -127,10 +136,11 @@ namespace Fishing.Angling
         }
 
         /// <summary>staminaFactor: 체력이 떨어지면 감는 힘과 데미지가 준다. durability: 낚싯대 내구도 배율.</summary>
-        public void Tick(float dt, FightInput input, float staminaFactor = 1f, float durability = 1f)
+        public void Tick(float dt, FightInput input, float staminaFactor = 1f, float durability = 1f, float reelFactor = -1f)
         {
             if (Outcome != FightOutcome.None) return;
             Elapsed += dt;
+            if (FocusLeft > 0f) FocusLeft = Mathf.Max(0f, FocusLeft - dt);
             if (Landing)
             {
                 TickLanding(dt);
@@ -153,12 +163,12 @@ namespace Fishing.Angling
             if (input.Releasing) raw *= 0.45f;
             raw *= 1f - 0.2f * Rod.Flex; // 연조대는 충격을 흡수한다
             float target = Mathf.Max(0f, raw / Line.Strength + DragLoad * (1f - 0.25f * Rod.Flex));
-            float response = Mathf.Lerp(7f, 4f, Rod.Flex); // 경조대일수록 장력이 빨리 튄다
+            float response = Mathf.Lerp(7f, 4f, Rod.Flex) * (Focused ? FocusTensionSlow : 1f); // 경조대일수록 장력이 빨리 튄다 (포커싱이면 느리게)
             Tension = Mathf.Lerp(Tension, target, 1f - Mathf.Exp(-response * dt));
 
             // 거리: 줄을 풀거나 드랙이 미끄러지면 멀어지고, 감으면 가까워진다
             float takeLine = input.Releasing ? Pull * 3.5f + 1f : Mathf.Max(0f, Tension - 0.85f) * 10f;
-            float reelIn = input.Reeling ? Reel.ReelSpeed * staminaFactor * Mathf.Clamp01(1.15f - Pull * 0.6f) : 0f;
+            float reelIn = input.Reeling ? Reel.ReelSpeed * (reelFactor >= 0f ? reelFactor : staminaFactor) * Mathf.Clamp01(1.15f - Pull * 0.6f) : 0f;
             Distance = Mathf.Max(0.5f, Distance + (takeLine - reelIn) * dt);
 
             // 체력이 남은 물고기를 너무 가까이 끌어오면 놀라서 도망간다
@@ -183,7 +193,7 @@ namespace Fishing.Angling
 
             // 데미지: 하이텐션 구간에서 크게 들어간다
             float zone = Tension < 0.25f ? 0.25f : Tension < HighTension ? 0.75f : Tension < DangerTension ? 1.3f : 1.6f;
-            float dmg = 8f * Rod.Power * zone * (0.6f + 0.8f * opposition) * staminaFactor * durability;
+            float dmg = 8f * Rod.Power * zone * (0.6f + 0.8f * opposition) * staminaFactor * durability * (Focused ? FocusDamage : 1f);
             float before = HP;
             HP = Mathf.Max(0f, HP - dmg * dt);
             _damagePool += before - HP;
@@ -313,7 +323,7 @@ namespace Fishing.Angling
             int want = CounterDirection;
             if (flick * want < FlickThreshold) return;
 
-            float damage = MaxHP * (0.07f + 0.02f * Combo) * Rod.Power * staminaFactor * durability * CounterBonus;
+            float damage = MaxHP * (0.07f + 0.02f * Combo) * Rod.Power * staminaFactor * durability * CounterBonus * (Focused ? FocusCounter : 1f);
             LastCounterDamage = Mathf.Min(HP, damage);
             HP = Mathf.Max(0f, HP - damage);
             Combo = Mathf.Min(5, Combo + 1);

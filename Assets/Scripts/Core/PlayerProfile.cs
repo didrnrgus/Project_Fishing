@@ -112,8 +112,92 @@ namespace Fishing.Core
 
         public static int ExpToNext(int level) => Mathf.RoundToInt(100f * Mathf.Pow(level, 1.5f));
 
-        /// <summary>체력이 30 미만이면 지쳐서 능력치가 떨어진다.</summary>
-        public float StaminaFactor => Data.stamina < 30f ? 0.65f : 1f;
+        /// <summary>체력 비율 0~1.</summary>
+        public float StaminaRatio => StaminaCap > 0f ? Data.stamina / StaminaCap : 0f;
+        /// <summary>
+        /// 체력 단계 (원작 2013 공략): 0 = 괜찮음, 1 = 20% 이하(지침), 2 = 5% 이하(탈진).
+        /// </summary>
+        public int StaminaTier => StaminaRatio <= 0.05f ? 2 : StaminaRatio <= 0.2f ? 1 : 0;
+        /// <summary>
+        /// 능력치(데미지·카운터·랜딩) 배율. 원작은 20% 이하 70% 감소, 5% 이하 95% 감소로 아주 가혹해서
+        /// 솔로판은 조금 누그러뜨렸다: 20% 이하 0.45, 5% 이하 0.15.
+        /// </summary>
+        public float StaminaFactor => StaminaTier switch { 2 => 0.15f, 1 => 0.45f, _ => 1f };
+        /// <summary>릴 감는 속도 배율 (원작: 20% 이하 20% 감소, 5% 이하 대폭 감소).</summary>
+        public float ReelFactor => StaminaTier switch { 2 => 0.35f, 1 => 0.8f, _ => 1f } * (HasCottonGloves ? 1.05f : 1f);
+        /// <summary>파이팅 데미지 배율 (내구도 × 의상 × 목장갑).</summary>
+        public float FightPower => DurabilityFactor * (1f + Costume.Damage) * (HasCottonGloves ? 1.05f : 1f);
+
+        /// <summary>
+        /// 아직 안 받은 레벨 보상을 준다 (레벨 업 때, 그리고 예전 세이브를 불러올 때 따라잡기).
+        /// 받은 것들의 글을 돌려준다.
+        /// </summary>
+        public System.Collections.Generic.List<string> GrantLevelRewards()
+        {
+            var got = new System.Collections.Generic.List<string>();
+            foreach (var (lv, id, count, text) in LevelRewards.All)
+            {
+                if (Data.level < lv || Data.levelRewards.Contains(lv)) continue;
+                Data.levelRewards.Add(lv);
+                if (id == CottonGlovesId) { if (!Data.specialFinds.Contains(id)) Data.specialFinds.Add(id); }
+                else if (GearDatabase.GetGear(id) != null) { if (!Owns(id)) Data.ownedGear.Add(id); }
+                else AddItem(id, count);
+                got.Add($"Lv.{lv} 보상: {text}");
+            }
+            if (got.Count > 0) NotifyChanged();
+            return got;
+        }
+
+        // ---- 낚시 일지 ----
+        public const int JournalMax = 300;
+        /// <summary>일지에 한 줄 남긴다 (게임 날짜·시각과 함께). 오래된 것부터 지운다.</summary>
+        public void Log(string text)
+        {
+            Data.journal.Add(new JournalEntry { day = Game.Clock != null ? Game.Clock.Day : Data.clockDay, minutes = Game.Clock != null ? Game.Clock.Minutes : 0f, text = text });
+            if (Data.journal.Count > JournalMax) Data.journal.RemoveRange(0, Data.journal.Count - JournalMax);
+        }
+
+        // ---- 포커싱 (파이팅 스킬) ----
+        /// <summary>원작: 접속 유지 20분마다 1회.</summary>
+        public const float FocusCooldownSeconds = 20f * 60f;
+        public bool FocusReady => Data.focusCooldown <= 0f;
+        public void UseFocus() => Data.focusCooldown = FocusCooldownSeconds;
+        /// <summary>실제 시간이 흐르면 쿨타임이 준다 (GameBootstrap이 매 프레임).</summary>
+        public void TickFocus(float realSeconds) { if (Data.focusCooldown > 0f) Data.focusCooldown = Mathf.Max(0f, Data.focusCooldown - realSeconds); }
+
+        // ---- 음식 ----
+        /// <summary>음식을 먹는다: 즉시 회복 + (분당 회복형이면) 게임 시간 동안 서서히 회복. 배부르면 false.</summary>
+        public bool Eat(FoodDef food, float nowMinutes)
+        {
+            bool full = Data.stamina >= StaminaCap - 0.5f;
+            if (full && food.PerMinute <= 0f) return false;
+            if (!ConsumeItem(food.Id)) return false;
+            ChangeStamina(food.Instant);
+            if (food.PerMinute > 0f)
+            {
+                // 남은 분당 회복이 더 크면 그대로, 아니면 새 음식으로 바꾼다
+                float left = Mathf.Max(0f, Data.regenUntil - nowMinutes) * Data.regenPerMin;
+                if (food.PerMinute * food.Minutes >= left)
+                {
+                    Data.regenPerMin = food.PerMinute;
+                    Data.regenUntil = nowMinutes + food.Minutes;
+                }
+            }
+            NotifyChanged();
+            return true;
+        }
+
+        public bool Regenerating(float nowMinutes) => nowMinutes < Data.regenUntil && Data.regenPerMin > 0f;
+
+        /// <summary>분당 회복형 음식 효과 (GameBootstrap이 게임 시간 흐름만큼).</summary>
+        public void TickRegen(float nowMinutes, float gameMinutes)
+        {
+            if (Regenerating(nowMinutes)) ChangeStamina(Data.regenPerMin * gameMinutes);
+        }
+
+        /// <summary>목장갑 (원작 Lv.6 보상 "미끄러지지 않는 목장갑": 힘·속도 상승).</summary>
+        public const string CottonGlovesId = "acc_cottongloves";
+        public bool HasCottonGloves => Data.specialFinds.Contains(CottonGlovesId);
         public float DurabilityFactor => Data.rodDurability <= 0f ? 0.5f : 1f;
 
         public void NotifyChanged() => Changed?.Invoke();

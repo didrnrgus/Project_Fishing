@@ -170,7 +170,7 @@ namespace Fishing.UI
             _reportStats.text = $"최고 장력 <color=#ffc850>{peak:0}%</color>   ·   위험 구간 {danger * FightHudView.LogInterval:0.0}초";
         }
 
-        public void Show(CaughtFish fish, int exp, bool record, float prevBest, int prevBestDay, Action<bool> onChoose)
+        public void Show(CaughtFish fish, int exp, bool record, float prevBest, int prevBestDay, bool firstGet, Action<bool> onChoose)
         {
             var s = FishDatabase.Get(fish.speciesId);
             _onChoose = onChoose;
@@ -191,7 +191,9 @@ namespace Fishing.UI
             _weight.text = s.IsJunk ? "" : $"{fish.weight / 1000f:0.00}kg";
             _zone.text = s.IsJunk ? s.Temper : $"{s.Latin}  ·  {fish.zone}";
             _badge.text = trophy ? $"{s.TrophyName}\n<size=34>EXP+100%</size>" : "";
-            _newRecord.text = record && !s.IsJunk ? "★ 개인 신기록!" : "";
+            // 원작: 처음 낚은 어종이면 결과 화면에 "First Get" 표시
+            _newRecord.text = s.IsJunk ? "" : firstGet ? "<color=#7fe8ff>★ FIRST GET!</color>  <size=20>도감에 새로 올랐습니다</size>"
+                : record ? "★ 개인 신기록!" : "";
 
             var rarityColor = s.Rarity switch
             {

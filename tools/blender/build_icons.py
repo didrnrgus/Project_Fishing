@@ -212,6 +212,9 @@ ROD_STYLE = {  # TelescopicRod.StyleFor 와 같은 색
     'rod_heavy': ('#1a265c', '#d1d6e0', '#1f1f1f', 4, 'heavy'),
     'rod_gege': ('#e6e0d1', '#ebb84d', '#52331f', 5, 'pearl'),
     'rod_fly': ('#3e4a2c', '#bf9e4d', '#b88f5c', 3, 'fly'),
+    'rod_gangbaram': ('#297ab3', '#d1d6e0', '#1a1a1c', 4, 'ring'),
+    'rod_goldgege': ('#dba838', '#ebe6d6', '#4d2e1a', 5, 'pearl'),
+    'rod_pungrim': ('#0d0a0a', '#bf1a14', '#c79a33', 5, 'carbon'),
 }
 
 
@@ -260,6 +263,8 @@ REEL_STYLE = {
     'reel_power': ('#141417', '#e6b340', '#d9a838', 1.2, False),
     'reel_hispeed': ('#264d99', '#d9dde6', '#bfc7d9', 1.1, True),
     'reel_napal': ('#edd9b3', '#b85c29', '#d98c4d', 1.15, False),
+    'reel_victory5': ('#c71f29', '#e6e6ed', '#b3b8c2', 1.05, False),
+    'reel_pungrim': ('#0d0a0a', '#c71a14', '#d9a838', 1.2, True),
 }
 
 
@@ -368,6 +373,8 @@ def model_boat(iid):
         objs.append(cyl(0.008, 0.008, 0.8, mat('#c8a060', 0.6), loc=(0.35, 0.1, 0.22), rot=(math.radians(80), 0, math.radians(10))))
     else:
         mw, mbl = mat('#f4f4f2', 0.25, coat=0.8), mat('#2a5ad8', 0.3, coat=0.6)
+        if iid == 'boat_blackspear':
+            mw, mbl = mat('#18181c', 0.2, coat=1.0), mat('#d9a838', 0.25, metal=0.8)
         bm = bmesh.new()
         # 선체: 뱃머리가 뾰족한 V자 단면
         prof = [(-0.5, 0.0), (-0.3, 0.75), (0.0, 1.0), (0.4, 1.0), (0.55, 0.95)]
@@ -657,6 +664,92 @@ def model_kimbap(iid):
     return objs, 'item'
 
 
+def model_ramen(iid):
+    """컵라면: 위가 넓은 종이컵 + 반쯤 연 뚜껑 + 김."""
+    cup = cyl(0.12, 0.16, 0.2, mat('#e83a2a', 0.5), loc=(0, 0, 0.1), seg=40)
+    band = cyl(0.142, 0.152, 0.05, mat('#f6f0e0', 0.6), loc=(0, 0, 0.13), seg=40)
+    soup = cyl(0.15, 0.15, 0.01, mat('#c8862a', 0.3), loc=(0, 0, 0.19), seg=40)
+    noodle = [torus(0.05 + 0.025 * i, 0.008, mat('#f2d68a', 0.55), loc=(0.02 * i, -0.01, 0.198)) for i in range(3)]
+    lid = cyl(0.165, 0.165, 0.006, mat('#d8d8d0', 0.25, metal=0.8), loc=(-0.07, 0.04, 0.24), rot=(math.radians(-40), math.radians(20), 0), seg=40)
+    return [cup, band, soup, lid] + noodle, 'item'
+
+
+def model_fishcake(iid):
+    """살살녹는어묵: 꼬치 두 개에 접힌 어묵."""
+    objs = []
+    for k in range(2):
+        x = -0.06 + 0.12 * k
+        objs.append(cyl(0.006, 0.006, 0.5, mat('#c8a26a', 0.7), loc=(x, 0, 0.0), rot=(0, math.radians(-12 + 24 * k), 0), seg=10))
+        for j in range(3):
+            z = -0.08 + j * 0.09
+            objs.append(box((0.13, 0.03, 0.08), mat('#e8c890', 0.65), loc=(x + z * math.sin(math.radians(-12 + 24 * k)), 0.015 * ((j % 2) * 2 - 1), z),
+                            rot=(0, math.radians(-12 + 24 * k), math.radians(8 * ((j % 2) * 2 - 1))), bevel=0.012))
+    return objs, 'item'
+
+
+def model_coffee(iid):
+    """보온병 믹스커피: 은색 보온병 + 컵 뚜껑 + 노란 막대 커피."""
+    body = cyl(0.07, 0.07, 0.38, mat('#c8ccd2', 0.18, metal=0.9), loc=(0, 0, 0.19), seg=40)
+    band = cyl(0.072, 0.072, 0.07, mat('#2a5a9a', 0.45), loc=(0, 0, 0.22), seg=40)
+    cap = cyl(0.074, 0.068, 0.09, mat('#2a2a2a', 0.5), loc=(0, 0, 0.425), seg=40)
+    cup = cyl(0.06, 0.05, 0.07, mat('#2a2a2a', 0.5), loc=(0.17, -0.03, 0.035), seg=32)
+    coffee = cyl(0.055, 0.055, 0.005, mat('#7a4a22', 0.2), loc=(0.17, -0.03, 0.068), seg=32)
+    stick = box((0.03, 0.13, 0.006), mat('#f0c020', 0.45), loc=(-0.15, -0.05, 0.004), rot=(0, 0, math.radians(30)), bevel=0.002)
+    return [body, band, cap, cup, coffee, stick], 'item'
+
+
+def model_dosirak(iid):
+    """바다 도시락: 칸 나뉜 상자에 밥·회·반찬."""
+    base = box((0.42, 0.3, 0.07), mat('#1e1e22', 0.4), loc=(0, 0, 0.035), bevel=0.012)
+    rice = box((0.18, 0.26, 0.03), mat('#f6f4ee', 0.85), loc=(-0.1, 0, 0.07), bevel=0.01)
+    sesame = box((0.03, 0.03, 0.01), mat('#c82a2a', 0.5), loc=(-0.1, 0, 0.088), bevel=0.004)
+    objs = [base, rice, sesame]
+    for i in range(4):
+        objs.append(box((0.09, 0.045, 0.014), mat('#f08a6a' if i % 2 == 0 else '#f6e4dc', 0.3), loc=(0.1, -0.09 + i * 0.055, 0.074),
+                        rot=(math.radians(10), 0, math.radians(6)), bevel=0.006))
+    objs.append(sphere(0.025, mat('#3a8a2a', 0.6), loc=(0.17, 0.1, 0.075), scale=(1.2, 1, 0.6)))
+    return objs, 'item'
+
+
+def model_gloves(iid):
+    """미끄러지지 않는 목장갑: 흰 면장갑 + 손바닥 빨간 고무 코팅 + 손목 띠."""
+    cot, red, cuff = mat('#eeeae0', 0.95), mat('#c8282a', 0.55), mat('#3a6ab0', 0.8)
+    objs = []
+    for g in range(2):
+        gx = -0.1 + 0.2 * g
+        rot_z = math.radians(-15 + 30 * g)
+        parts = [box((0.15, 0.04, 0.17), cot, loc=(0, 0, 0.12), bevel=0.018),
+                 box((0.152, 0.01, 0.15), red, loc=(0, -0.021, 0.13), bevel=0.004),
+                 box((0.16, 0.048, 0.045), cuff, loc=(0, 0, 0.02), bevel=0.012)]
+        for k in range(4):
+            fx = -0.054 + 0.036 * k
+            ln = 0.1 + 0.02 * (1 - abs(k - 1.5) / 1.5)
+            parts.append(cyl(0.016, 0.015, ln, cot, loc=(fx, 0, 0.205 + ln / 2), seg=14))
+            parts.append(cyl(0.0162, 0.0152, ln * 0.7, red, loc=(fx, -0.003, 0.205 + ln * 0.35), seg=14))
+        parts.append(cyl(0.018, 0.016, 0.09, cot, loc=(0.1, 0, 0.15), rot=(0, math.radians(-50), 0), seg=14))
+        o = join(parts, f'Glove{g}')
+        o.location = (gx, 0.03 * g, 0)
+        o.rotation_euler = (math.radians(-12), 0, rot_z)
+        objs.append(o)
+    return objs, 'item'
+
+
+def model_coin(iid):
+    """대물 코인: 금화 세 닢, 가운데에 물고기 무늬 돋을새김."""
+    gold = mat('#e8b838', 0.22, metal=1.0)
+    objs = []
+    for i, (x, y, z, rx) in enumerate(((-0.1, 0.02, 0.02, 0), (0.08, -0.04, 0.05, 15), (0.0, 0.06, 0.13, 60))):
+        parts = [cyl(0.12, 0.12, 0.022, gold, seg=48), torus(0.11, 0.008, gold, loc=(0, 0, 0.011), seg=48)]
+        # 물고기 (타원 몸 + 삼각 꼬리)
+        parts.append(sphere(0.05, gold, loc=(-0.01, 0, 0.012), scale=(1.0, 0.45, 0.12)))
+        parts.append(box((0.03, 0.05, 0.008), gold, loc=(0.055, 0, 0.012), rot=(0, 0, math.radians(45))))
+        o = join(parts, f'Coin{i}')
+        o.location = (x, y, z)
+        o.rotation_euler = (math.radians(rx), 0, math.radians(20 * i))
+        objs.append(o)
+    return objs, 'item'
+
+
 def model_scale(iid):
     objs = []
     m = mat('#d8e4ec', 0.08, metal=0.6, film=500, coat=1.0)
@@ -852,15 +945,17 @@ def model_robotfish(iid):
 
 
 ITEMS = {
-    'rod_basic': model_rod, 'rod_carbon': model_rod, 'rod_bamboo': model_rod, 'rod_heavy': model_rod, 'rod_gege': model_rod, 'rod_fly': model_rod,
-    'reel_basic': model_reel, 'reel_power': model_reel, 'reel_hispeed': model_reel, 'reel_napal': model_reel,
+    'rod_basic': model_rod, 'rod_carbon': model_rod, 'rod_bamboo': model_rod, 'rod_heavy': model_rod, 'rod_gege': model_rod, 'rod_fly': model_rod, 'rod_gangbaram': model_rod, 'rod_goldgege': model_rod, 'rod_pungrim': model_rod,
+    'reel_basic': model_reel, 'reel_power': model_reel, 'reel_hispeed': model_reel, 'reel_napal': model_reel, 'reel_victory5': model_reel, 'reel_pungrim': model_reel, 'boat_blackspear': model_boat, 'coin_bigfish': model_coin,
     'line_nylon': model_line, 'line_carbon': model_line, 'line_pe': model_line,
     'boat_rubber': model_boat, 'boat_speed': model_boat, 'boat_sail': model_boat, 'boat_cruiser': model_boat,
     'bait_worm': model_worm, 'bait_paste': model_paste, 'bait_corn': model_corn, 'bait_krill': model_krill,
     'bait_seaworm': model_seaworm, 'bait_squid': model_squid, 'bait_shrimp': model_shrimp, 'bait_minnow': model_minnow,
     'bait_lure': model_lure, 'bait_egi': model_egi, 'bait_fly': model_fly,
     'bait_cut1': model_cutbait, 'bait_cut2': model_cutbait, 'bait_cut3': model_cutbait, 'bait_cut4': model_cutbait, 'bait_cut5': model_cutbait,
-    'food_kimbap': model_kimbap,
+    'food_kimbap': model_kimbap, 'food_ramen': model_ramen, 'food_fishcake': model_fishcake,
+    'food_coffee': model_coffee, 'food_dosirak': model_dosirak,
+    'acc_cottongloves': model_gloves,
     'mat_scale': model_scale, 'mat_starsand': model_starsand, 'mat_conch': model_conch,
 }
 

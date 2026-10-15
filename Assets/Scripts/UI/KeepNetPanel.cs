@@ -84,8 +84,9 @@ namespace Fishing.UI
             }
 
             var footer = rows.Next(52, 14);
-            int kimbap = p.Count(GearDatabase.KimbapId);
-            RowButton(footer, $"김밥 먹기 ({kimbap}개)", EatKimbap, 0, 240, UIFactory.BtnGood, kimbap > 0, 17);
+            // 가진 음식 중 첫 번째를 먹는다 (가방에서 골라 먹을 수도 있다)
+            var food = GearDatabase.Foods.FirstOrDefault(fd => p.Count(fd.Id) > 0);
+            RowButton(footer, food != null ? $"{food.Name} 먹기 ({p.Count(food.Id)}개)" : "음식 없음", () => Eat(food), 0, 240, UIFactory.BtnGood, food != null, 17);
             Cell(rows.Next(40), $"{PlayerProfile.BaitFishMaxLength:0}cm 미만은 생미끼로, 그보다 큰 고기는 해체해서 해체 미끼·반짝이는 비늘(강화 재료)·별모래를 얻습니다.",
                 4, 840, 13, UIFactory.TextDim);
 
@@ -168,18 +169,11 @@ namespace Fishing.UI
 
         const string MinnowBaitId = "bait_minnow";
 
-        void EatKimbap()
+        void Eat(FoodDef food)
         {
-            var p = Game.Profile;
-            if (p.Data.stamina >= p.StaminaCap - 0.5f)
-            {
-                Game.Toast("배가 부릅니다.", ToastKind.Warn);
-                return;
-            }
-            if (!p.ConsumeItem(GearDatabase.KimbapId)) return;
-            p.ChangeStamina(GearDatabase.KimbapStamina);
-            Game.Toast($"김밥을 먹었습니다. 체력 +{GearDatabase.KimbapStamina:0}", ToastKind.Good);
-            p.NotifyChanged();
+            if (food == null) return;
+            if (!Game.Profile.Eat(food, Game.Clock.TotalMinutes)) { Game.Toast("배가 부릅니다.", ToastKind.Warn); return; }
+            Game.Toast($"{food.Name}을(를) 먹었습니다. {food.EffectText}", ToastKind.Good);
         }
     }
 }

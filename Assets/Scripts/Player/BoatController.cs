@@ -353,6 +353,7 @@ namespace Fishing.PlayerSystems
             (_halfLen, _halfWidth) = Def.Id switch
             {
                 "boat_speed" => (2.6f, 1.0f),
+                "boat_blackspear" => (2.7f, 1.0f),
                 "boat_sail" => (2.5f, 0.95f),
                 "boat_cruiser" => (4.4f, 1.55f),
                 _ => (1.65f, 0.8f),
@@ -367,6 +368,7 @@ namespace Fishing.PlayerSystems
             switch (Def.Id)
             {
                 case "boat_speed": BuildSpeedBoat(); break;
+                case "boat_blackspear": BuildBlackSpear(); break;
                 case "boat_sail": BuildSailBoat(); break;
                 case "boat_cruiser": BuildCruiser(); break;
                 default: BuildRubberBoat(); break;
@@ -465,6 +467,22 @@ namespace Fishing.PlayerSystems
             _seat = Point("Seat", new Vector3(0f, 0.75f, -1.2f));
             _bow = Point("Bow", new Vector3(0f, 0.85f, 3f));
             _stern = Point("Stern", new Vector3(0f, 0f, -4.4f));
+        }
+
+        /// <summary>출석 보상 블랙스피어: Kenney 모터보트(c형)를 검게 칠한다 (선실 안이 비치지 않게 덧대는 판은 두지 않는다).</summary>
+        void BuildBlackSpear()
+        {
+            var go = KenneyProps.Available ? KenneyProps.Spawn("Kenney/Watercraft/boat-speed-c", _boat, new Vector3(0f, -0.4f, 0f), 0f, 0f, 5.4f, solid: false) : null;
+            if (go == null) { BuildSpeedBoat(); return; }
+            foreach (var r in go.GetComponentsInChildren<Renderer>())
+            {
+                var mats = r.materials;
+                foreach (var m in mats) if (m.HasProperty("_Color")) m.color *= new Color(0.22f, 0.22f, 0.26f);
+                r.materials = mats;
+            }
+            _seat = Point("Seat", new Vector3(0f, 0.62f, -0.2f));
+            _bow = Point("Bow", new Vector3(0f, 0.72f, 1.7f));
+            _stern = Point("Stern", new Vector3(0f, 0f, -2.7f));
         }
 
         void BuildSpeedBoat()

@@ -254,9 +254,10 @@ namespace Fishing.UI
                 root.anchoredPosition = ToMap(c.x, c.z) + offset;
                 float pulse = 1f + Mathf.Sin(Time.unscaledTime * 3f + i) * 0.08f;
                 halo.rectTransform.localScale = Vector3.one * (s.Special ? 1.4f : s.Big ? 1f : 0.55f) * pulse;
-                halo.color = s.Special ? new Color(1f, 0.3f, 0.25f, 0.45f) : new Color(1f, 0.7f, 0.25f, 0.35f);
+                halo.color = s.Kind == SchoolKind.Hidden ? new Color(1f, 0.9f, 0.3f, 0.55f) : s.Kind == SchoolKind.Predator ? new Color(1f, 0.25f, 0.4f, 0.5f)
+                    : s.Special ? new Color(1f, 0.3f, 0.25f, 0.45f) : new Color(1f, 0.7f, 0.25f, 0.35f);
                 root.GetChild(1).localScale = Vector3.one * (s.Special ? 1.5f : s.Big ? 1.2f : 0.75f);
-                label.text = s.Special ? $"{s.Name} · 대물" : $"{s.Name} · {(s.Big ? "대" : "소")}";
+                label.text = s.Kind != SchoolKind.Normal ? s.Name : $"{s.Name} · {s.ShortLabel}";
             }
 
             if (Time.unscaledTime >= _nextListRefresh)
@@ -274,7 +275,14 @@ namespace Fishing.UI
             {
                 var s = schools[i];
                 string state;
-                if (s.Special)
+                if (s.Kind != SchoolKind.Normal)
+                {
+                    float left = Mathf.Max(0f, s.ExpiresAt - Game.Clock.TotalMinutes) / 60f;
+                    state = s.Hidden
+                        ? (s.Kind == SchoolKind.Hidden ? "<color=#9ab0c0>숨어 있음 · 큰 어군이 모두 흩어지면 나타남</color>" : "<color=#9ab0c0>먼바다에 있음 · 가끔 나타나 고기떼를 흩음</color>")
+                        : $"<color={(s.Kind == SchoolKind.Hidden ? "#ffe060" : "#ff7080")}>지금 출현!</color>  {Mathf.CeilToInt(left)}시간 뒤 사라짐 · 남은 {s.CatchesLeft}마리";
+                }
+                else if (s.Special)
                 {
                     string when = s.Schedule == null ? "" : string.Join(" · ", System.Array.ConvertAll(s.Schedule, e => $"{Names.Of(e.band)} {FieldMap.CellName(e.col, e.row)}"));
                     state = s.Hidden ? $"<color=#9ab0c0>숨어 있음</color>  ({when})" : $"<color=#ff8070>지금 출현!</color>  ({when})";

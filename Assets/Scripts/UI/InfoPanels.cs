@@ -1,4 +1,5 @@
 using System.Linq;
+using Fishing.Angling;
 using Fishing.Core;
 using Fishing.Data;
 using TMPro;
@@ -17,7 +18,7 @@ namespace Fishing.UI
 
         public QuestPanel(Transform canvas)
         {
-            BuildFrame(canvas, "QuestPanel", "조합 퀘스트", new Vector2(980, 880));
+            BuildFrame(canvas, "QuestPanel", "조합 퀘스트", new Vector2(1000, 880));
         }
 
         public void ShowTab(int tab)
@@ -31,12 +32,14 @@ namespace Fishing.UI
             UIFactory.ClearChildren(Body);
             var rows = new RowCursor(Body);
             var tabs = rows.Next(42, 10);
-            string[] names = { "이야기", "일일 의뢰", "대물 도전", "업적 · 칭호", "대회" };
-            for (int i = 0; i < names.Length; i++)
+            // 원작 퀘스트 색: 이야기 보라 · 일일 파랑 · 일반 노랑 (탭 이름 앞 점)
+            string[] names = { "<color=#c49aff>●</color> 이야기", "<color=#6ab8ff>●</color> 일일 의뢰", "<color=#ffd060>●</color> 대물 도전", "업적 · 칭호", "대회", "빙고 · 출석", "일지" };
+            int[] order = { 0, 1, 2, 5, 3, 4, 6 };
+            for (int k = 0; k < order.Length; k++)
             {
-                int t = i;
-                var tb = RowButton(tabs, names[i], () => { _tab = t; Refresh(); }, i * 184f, 176,
-                    _tab == i ? UIFactory.TabOn : UIFactory.TabOff, true, 18);
+                int t = order[k];
+                var tb = RowButton(tabs, names[t], () => { _tab = t; Refresh(); }, k * 138f, 132,
+                    _tab == t ? UIFactory.TabOn : UIFactory.TabOff, true, 16);
                 UIFactory.SetRadius(tb.targetGraphic, UIFactory.Pill);
             }
             Title.text = $"조합 퀘스트   <size=18><color=#ffd060>소라고동 {Game.Profile.Count(AchievementDatabase.ConchId)}개</color></size>";
@@ -46,7 +49,98 @@ namespace Fishing.UI
                 case 1: Daily(rows); break;
                 case 2: Trophy(rows); break;
                 case 3: Achievements(rows); break;
+                case 5: BingoTab(rows); break;
+                case 6: Journal(rows); break;
                 default: Tournament(rows); break;
+            }
+        }
+
+        static readonly Color StoryColor = new Color(0.77f, 0.6f, 1f), DailyColor = new Color(0.42f, 0.72f, 1f);
+
+        void BingoTab(RowCursor rows)
+        {
+            var p = Game.Profile;
+            Bingo.EnsureCard();
+            var s = p.Data.bingo;
+            int lines = Bingo.Lines();
+            Cell(rows.Next(30), $"빙고 {s.card}번째 판  <size=14><color=#8090a0>칸에 적힌 고기를 낚으면 칠해진다 · 한 줄마다 소라고동 {Bingo.LineConch} + {Bingo.LineGold:N0}골드 · " +
+                                $"{Bingo.LinesForBig}줄이면 {Bingo.BigRewardText(s)}</color></size>", 4, 960, 20, UIFactory.Accent);
+            var head = rows.Next(34, 4);
+            Cell(head, $"완성한 줄 <color=#ffd060>{lines}</color> / 12   ·   3줄 보상 {(s.bigPaid ? "<color=#70e070>받음</color>" : "아직")}   ·   3줄 채운 판 {s.cardsCleared}장",
+                4, 640, 18);
+            if (s.bigPaid) RowButton(head, "새 빙고판 받기", () => { Bingo.NewCard(); Refresh(); }, 720, 220, UIFactory.BtnGood, true, 17);
+
+            const float cw = 176f, ch = 72f, gap = 6f;
+            for (int r = 0; r < Bingo.Size; r++)
+            {
+                var row = rows.Next(ch, gap);
+                for (int c = 0; c < Bingo.Size; c++)
+                {
+                    int i = r * Bingo.Size + c;
+                    if (i >= s.cells.Count) break;
+                    bool done = s.done[i];
+                    string cell = s.cells[i];
+                    var bg = UIFactory.Shape(row, done ? new Color(0.25f, 0.6f, 0.35f, 0.85f) : new Color(1f, 1f, 1f, 0.06f), 12f, "Cell", 0f);
+                    bg.rectTransform.At(new Vector2(0, 0.5f), new Vector2(100 + c * (cw + gap), 0), new Vector2(cw, ch), new Vector2(0, 0.5f));
+                    if (cell.StartsWith("sp:"))
+                    {
+                        var sp = FishDatabase.Get(cell.Substring(3));
+                        var icon = sp != null ? FishModels.Icon(sp) : null;
+                        if (icon != null)
+                        {
+                            var img = UIFactory.Image(bg.transform, done ? Color.white : new Color(1f, 1f, 1f, 0.55f), icon, "Icon");
+                            img.preserveAspect = true;
+                            img.rectTransform.At(new Vector2(0, 0.5f), new Vector2(6, 0), new Vector2(56, 56), new Vector2(0, 0.5f));
+                        }
+                    }
+                    bool hasIcon = cell.StartsWith("sp:");
+                    var t = UIFactory.Text(bg.transform, $"{(done ? "<color=#ffffff>" : "")}{Bingo.CellText(cell)}{(done ? "</color>" : "")}" +
+                                                         (hasIcon ? $"\n<size=12><color=#9ab0c0>{Bingo.CellHint(cell)}</color></size>" : ""),
+                        cell == "free" ? 22 : 15, done ? Color.white : UIFactory.TextMain, hasIcon ? TextAnchor.MiddleLeft : TextAnchor.MiddleCenter, FontStyle.Bold);
+                    t.rectTransform.Fill(hasIcon ? 64 : 4, 4, 4, 4);
+                    if (done)
+                        UIFactory.Text(bg.transform, "★", 22, new Color(1f, 0.9f, 0.4f), TextAnchor.UpperRight, FontStyle.Bold).rectTransform.Fill(4, 2, 8, 2);
+                }
+            }
+
+            // 출석 체크 (실제 날짜)
+            rows.Next(10);
+            UIFactory.SectionTitle(rows.Next(30), "출석 체크", 4, 18);
+            var d = p.Data;
+            int stamped = d.attendStamp % Attendance.Rewards.Length;
+            if (stamped == 0 && d.attendStamp > 0 && Attendance.CheckedToday) stamped = Attendance.Rewards.Length;
+            Cell(rows.Next(26), $"게임을 켠 날마다(실제 날짜) 도장 하나 · 7일째 특수 배 「블랙스피어」 · 모두 {d.attendTotal}일 출석" +
+                                (Attendance.CheckedToday ? "  <color=#70e070>오늘 출석 완료</color>" : ""), 4, 960, 15, UIFactory.TextDim);
+            var stampRow = rows.Next(70, 4);
+            for (int k = 0; k < Attendance.Rewards.Length; k++)
+            {
+                bool got = k < stamped;
+                var box = UIFactory.Shape(stampRow, got ? new Color(0.85f, 0.55f, 0.2f, 0.85f) : new Color(1f, 1f, 1f, 0.06f), 12f, "Stamp", 0f);
+                box.rectTransform.At(new Vector2(0, 0.5f), new Vector2(4 + k * 136, 0), new Vector2(128, 66), new Vector2(0, 0.5f));
+                UIFactory.Text(box.transform, $"<b>{k + 1}일째</b>{(got ? " ★" : "")}\n<size=12>{Attendance.Rewards[k].text}</size>", 15,
+                    got ? Color.white : UIFactory.TextMain, TextAnchor.MiddleCenter).rectTransform.Fill(4, 4, 4, 4);
+            }
+        }
+
+        void Journal(RowCursor rows)
+        {
+            var list = Game.Profile.Data.journal;
+            Cell(rows.Next(30), $"낚시 일지  <size=14><color=#8090a0>처음 낚은 어종 · 대물 · 레벨 업 · 퀘스트 · 대회 · 출석을 날짜별로 적어 둔다 (최근 {PlayerProfile.JournalMax}줄)</color></size>",
+                4, 960, 20, UIFactory.Accent);
+            if (list.Count == 0) { Cell(rows.Next(30), "아직 적힌 것이 없습니다. 낚시를 시작해 보세요!", 4, 900, 17, UIFactory.TextDim); return; }
+            int lastDay = -1;
+            int shown = 0;
+            for (int i = list.Count - 1; i >= 0 && shown < 80; i--, shown++)
+            {
+                var e = list[i];
+                if (e.day != lastDay)
+                {
+                    lastDay = e.day;
+                    rows.Next(4);
+                    Cell(rows.Next(26), $"{e.day}일차", 4, 300, 17, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+                }
+                int h = Mathf.FloorToInt(e.minutes / 60f) % 24, m = Mathf.FloorToInt(e.minutes % 60f);
+                Cell(rows.Next(24, 1), $"<color=#8090a0>{h:00}:{m:00}</color>   {e.text}", 20, 920, 16, UIFactory.TextMain);
             }
         }
 
@@ -68,10 +162,10 @@ namespace Fishing.UI
         {
             var quests = Game.Quests;
             var q = quests.Current;
-            Cell(rows.Next(24), QuestDatabase.Giver, 4, 600, 16, UIFactory.Accent);
+            Cell(rows.Next(24), QuestDatabase.Giver + "  <color=#c49aff>· 이야기 퀘스트</color>", 4, 600, 16, UIFactory.Accent);
             if (q != null)
             {
-                Cell(rows.Next(40), q.Title, 4, 900, 28, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
+                Cell(rows.Next(40), q.Title, 4, 900, 28, StoryColor, TextAnchor.MiddleLeft, FontStyle.Bold);
                 var desc = Cell(rows.Next(60), $"\"{q.Desc}\"", 4, 900, 18, UIFactory.TextDim, TextAnchor.UpperLeft);
                 desc.fontStyle = FontStyles.Italic;
                 var goal = rows.Next(34);
@@ -108,7 +202,7 @@ namespace Fishing.UI
         void Daily(RowCursor rows)
         {
             Cell(rows.Next(30), "오늘의 조합 의뢰  <size=14><color=#8090a0>게임 하루마다 새로 3개 · 가 본 낚시터에서 · 완료하면 바로 보상 + 소라고동</color></size>",
-                4, 900, 20, UIFactory.Accent);
+                4, 900, 20, DailyColor);
             foreach (var q in Game.Quests.Daily)
             {
                 var row = rows.Next(56, 6);

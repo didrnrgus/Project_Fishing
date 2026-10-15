@@ -5,8 +5,17 @@ using UnityEngine;
 
 namespace Fishing.World
 {
+    /// <summary>
+    /// 원작 어군 3종 (게임메카 동남아 업데이트 기사): 고기떼(입질이 빠르지만 횟수 제한) /
+    /// 히든 어군(고기떼를 모두 낚으면 나타난다) / 포식자 어군(그 지역의 어군을 모두 흩어 놓고, 포식자를 낚으면 어군이 다시 나타난다).
+    /// </summary>
+    public enum SchoolKind { Normal, Hidden, Predator }
+
     public class FishSchool
     {
+        public SchoolKind Kind;
+        /// <summary>히든·포식자 어군이 사라지는 게임 시각(TotalMinutes).</summary>
+        public float ExpiresAt;
         public string Name;
         public string[] SpeciesIds;
         public TimeBand[] PreferredTimes = new TimeBand[0];
@@ -39,14 +48,18 @@ namespace Fishing.World
         public bool Contains(string speciesId) => System.Array.IndexOf(SpeciesIds, speciesId) >= 0;
 
         /// <summary>해당 어종의 입질 가중치 배율.</summary>
-        public float BiteBoost => Big ? 4f : 2f;
+        public float BiteBoost => Kind == SchoolKind.Hidden ? 6f : Kind == SchoolKind.Predator ? 3f : Big ? 4f : 2f;
         /// <summary>입질까지 기다리는 시간 배율.</summary>
-        public float WaitFactor => Big ? 0.5f : 0.75f;
+        public float WaitFactor => Kind == SchoolKind.Hidden ? 0.45f : Kind == SchoolKind.Predator ? 0.65f : Big ? 0.5f : 0.75f;
         /// <summary>길이 분포 지수 (작을수록 큰 고기가 잘 나온다).</summary>
-        public float LengthSkew => Big ? 1.7f : 2f;
-        public string SizeLabel => Special ? "대물 어군" : Big ? "큰 어군" : "작은 어군";
+        public float LengthSkew => Kind == SchoolKind.Hidden ? 1.4f : Kind == SchoolKind.Predator ? 1.3f : Big ? 1.7f : 2f;
+        public string SizeLabel => Kind == SchoolKind.Hidden ? "히든 어군" : Kind == SchoolKind.Predator ? "포식자 어군" : Special ? "대물 어군" : Big ? "큰 어군" : "작은 어군";
+        /// <summary>지도 표시용 짧은 이름.</summary>
+        public string ShortLabel => Kind == SchoolKind.Hidden ? "히든" : Kind == SchoolKind.Predator ? "포식자" : Special ? "대물" : Big ? "대" : "소";
         /// <summary>소용돌이 반지름(m).</summary>
-        public float SpotRadius => Special ? 4.5f : Big ? 3.5f : 2.2f;
+        public float SpotRadius => Kind != SchoolKind.Normal ? 4f : Special ? 4.5f : Big ? 3.5f : 2.2f;
+        /// <summary>소용돌이·지도 색: 히든은 금빛, 포식자는 붉은빛.</summary>
+        public Color Tint => Kind == SchoolKind.Hidden ? new Color(1f, 0.85f, 0.35f) : Kind == SchoolKind.Predator ? new Color(1f, 0.4f, 0.35f) : Color.white;
 
         /// <summary>찌가 소용돌이 안(어군 한가운데)에 떨어졌는지.</summary>
         public bool InSpot(Vector3 p)
@@ -75,14 +88,118 @@ namespace Fishing.World
         public readonly List<FishSchool> Schools = new List<FishSchool>();
         TimeBand _lastBand;
 
-        /// <summary>낚시터가 바뀌면 그 맵의 어군으로 바꾼다.</summary>
+        /// <summary>히든 어군이 머무는 게임 시간(분) · 포식자 어군이 머무는 게임 시간(분).</summary>
+        public const float HiddenMinutes = 120f, PredatorMinutes = 180f;
+        /// <summary>포식자가 나타날 확률 (게임 2시간마다 굴린다).</summary>
+        public const float PredatorChance = 0.18f;
+
+        /// <summary>낚시터가 바뀌면 그 맵의 어군으로 바꾼다. 히든·포식자 어군 자리도 하나씩 만들어 둔다 (처음엔 숨어 있음).</summary>
         public void Reset(List<FishSchool> schools)
         {
             foreach (var s in Schools)
                 if (s.Fx != null) Destroy(s.Fx.gameObject);
             Schools.Clear();
             Schools.AddRange(schools);
+            var hidden = MakeKind(SchoolKind.Hidden, schools);
+            if (hidden != null) Schools.Add(hidden);
+            var predator = MakeKind(SchoolKind.Predator, schools);
+            if (predator != null) Schools.Add(predator);
             if (Game.Clock != null) ApplySchedules(Game.Clock.Band);
+        }
+
+        /// <summary>
+        /// 히든: 그 낚시터의 가장 귀한 어종 둘(희귀도 3 이상). 포식자: 가장 힘센 큰 고기 하나.
+        /// 대물 퀘스트 전용(SchoolOnly)·먼바다 전용 어종은 뺀다.
+        /// </summary>
+        static FishSchool MakeKind(SchoolKind kind, List<FishSchool> normal)
+        {
+            var dex = new List<FishSpecies>();
+            foreach (var sp in FishDatabase.DexOf(FieldMap.Id))
+                if (!sp.SchoolOnly && !sp.FarSeaOnly && !sp.Boss && sp.Rarity <= 4 && sp.Id != "smelt") dex.Add(sp);
+            if (dex.Count == 0 || normal.Count == 0) return null;
+            string[] ids;
+            if (kind == SchoolKind.Hidden)
+            {
+                dex.RemoveAll(sp => sp.Rarity < 3);
+                if (dex.Count == 0) return null;
+                dex.Sort((a, b) => b.Rarity != a.Rarity ? b.Rarity.CompareTo(a.Rarity) : b.MaxLen.CompareTo(a.MaxLen));
+                ids = dex.Count >= 2 ? new[] { dex[0].Id, dex[1].Id } : new[] { dex[0].Id };
+            }
+            else
+            {
+                dex.RemoveAll(sp => sp.Rarity < 2 || sp.MaxLen < 50f);
+                if (dex.Count == 0) return null;
+                dex.Sort((a, b) => (b.Power * b.MaxLen).CompareTo(a.Power * a.MaxLen));
+                ids = new[] { dex[0].Id };
+            }
+            var first = normal[0];
+            return new FishSchool
+            {
+                Kind = kind, Hidden = true,
+                Name = kind == SchoolKind.Hidden ? "히든 어군" : FishDatabase.Get(ids[0]).Name + " 포식자",
+                SpeciesIds = ids, MinRow = first.MinRow, MaxRow = first.MaxRow, Col = first.Col, Row = first.Row,
+                CatchesLeft = kind == SchoolKind.Hidden ? 3 : 1,
+            };
+        }
+
+        FishSchool OfKind(SchoolKind kind) => Schools.Find(s => s.Kind == kind);
+
+        /// <summary>포식자가 나타나면 고기떼(일반 어군)가 모두 작은 어군으로 흩어진다.</summary>
+        void PredatorArrives(FishSchool pred, FishSchool near)
+        {
+            Appear(pred, near, PredatorMinutes);
+            foreach (var s in Schools)
+            {
+                if (s.Kind != SchoolKind.Normal || s.Special || !s.Big) continue;
+                s.Big = false;
+                s.CatchesLeft = 0;
+                s.ShrankAt = Game.Clock.TotalMinutes;
+            }
+        }
+
+        /// <summary>포식자를 낚아 쫓아내면 흩어졌던 고기떼가 바로 다시 모인다.</summary>
+        void RegroupAll()
+        {
+            foreach (var s in Schools)
+            {
+                if (s.Kind != SchoolKind.Normal || s.Big) continue;
+                s.Big = true;
+                s.CatchesLeft = CatchesToShrink;
+            }
+        }
+
+        /// <summary>히든·포식자 어군을 나타나게 한다. near가 있으면 그 옆 칸에.</summary>
+        void Appear(FishSchool s, FishSchool near, float minutes)
+        {
+            s.Hidden = false;
+            s.Big = true;
+            s.CatchesLeft = s.Kind == SchoolKind.Hidden ? 3 : 1;
+            s.ExpiresAt = Game.Clock.TotalMinutes + minutes;
+            for (int i = 0; i < 16; i++)
+            {
+                int col = near != null ? Mathf.Clamp(near.Col + Random.Range(-1, 2), 0, FieldMap.Cols - 1) : Random.Range(0, FieldMap.Cols);
+                int row = near != null ? Mathf.Clamp(near.Row + Random.Range(-1, 2), s.MinRow, s.MaxRow) : Random.Range(s.MinRow, s.MaxRow + 1);
+                if (!FieldMap.IsWater(FieldMap.CellCenter(col, row))) continue;
+                s.Col = col; s.Row = row;
+                if (near == null || col != near.Col || row != near.Row) break;
+            }
+            PickSpot(s);
+        }
+
+        void Vanish(FishSchool s, string why)
+        {
+            s.Hidden = true;
+            if (why != null && Game.Mode == GameMode.Field) Game.Toast(why, ToastKind.Info);
+        }
+
+        /// <summary>테스트·자동 촬영용: 히든/포식자 어군을 바로 띄운다.</summary>
+        public FishSchool DebugAppear(SchoolKind kind)
+        {
+            var s = OfKind(kind);
+            if (s == null) return null;
+            if (kind == SchoolKind.Predator) PredatorArrives(s, Schools.Find(x => x.Kind == SchoolKind.Normal && !x.Special));
+            else Appear(s, null, HiddenMinutes);
+            return s;
         }
 
         void Start()
@@ -120,9 +237,28 @@ namespace Fishing.World
                     if (s.Schedule != null && !s.Hidden && Game.Mode == GameMode.Field)
                         Game.Toast($"{s.Name} 어군이 {FieldMap.CellName(s.Col, s.Row)} 근처에 나타났다는 소문이 돈다!", ToastKind.Great);
             }
+            float now = Game.Clock.TotalMinutes;
+            foreach (var s in Schools)
+                if (s.Kind != SchoolKind.Normal && !s.Hidden && now >= s.ExpiresAt)
+                    Vanish(s, s.Kind == SchoolKind.Hidden ? "히든 어군이 깊은 곳으로 사라졌습니다." : $"{s.Name}가 먼바다로 떠났습니다.");
             if (Game.Clock.Hour % 2 != 0) return;
+
+            // 포식자: 가끔 큰 고기가 나타나 고기떼를 모두 흩어 놓는다 (원작: 그 지역 어군이 모두 사라진다)
+            var pred = OfKind(SchoolKind.Predator);
+            if (pred != null && pred.Hidden && Random.value < PredatorChance)
+            {
+                var prey = Schools.FindAll(x => x.Kind == SchoolKind.Normal && !x.Special && !x.Hidden && x.Big);
+                if (prey.Count > 0)
+                {
+                    PredatorArrives(pred, prey[Random.Range(0, prey.Count)]);
+                    if (Game.Mode == GameMode.Field)
+                        Game.Toast($"{pred.Name}가 {FieldMap.CellName(pred.Col, pred.Row)}에 나타나 고기떼가 모두 흩어졌습니다! 포식자를 낚으면 어군이 돌아옵니다.", ToastKind.Great);
+                }
+            }
+
             foreach (var s in Schools)
             {
+                if (s.Kind != SchoolKind.Normal) continue;
                 if (!s.Big && Game.Clock.TotalMinutes - s.ShrankAt >= RegroupMinutes)
                 {
                     s.Big = true;
@@ -164,9 +300,31 @@ namespace Fishing.World
             if (school == null || school.Special || !school.Big || !school.Contains(speciesId)) return;
             school.CatchesLeft--;
             if (school.CatchesLeft > 0) return;
+            if (school.Kind == SchoolKind.Predator)
+            {
+                Vanish(school, null);
+                RegroupAll();
+                Game.Toast($"{school.Name}를 쫓아냈습니다! 흩어졌던 고기떼가 다시 큰 어군으로 모였습니다.", ToastKind.Great);
+                return;
+            }
+            if (school.Kind == SchoolKind.Hidden)
+            {
+                Vanish(school, "히든 어군을 모두 낚아 흩어졌습니다!");
+                return;
+            }
             school.Big = false;
             school.ShrankAt = Game.Clock.TotalMinutes;
             Game.Toast($"{school.Name}가 흩어져 작은 어군이 되었습니다. 6시간 뒤 다시 모입니다.", ToastKind.Warn);
+
+            // 원작: 큰 어군이 모두 흩어지면 숨어 있던 히든 어군이 나타난다
+            var hidden = OfKind(SchoolKind.Hidden);
+            if (hidden != null && hidden.Hidden && Schools.TrueForAll(s => s.Kind != SchoolKind.Normal || s.Special || !s.Big))
+            {
+                Appear(hidden, null, HiddenMinutes);
+                var names = new List<string>();
+                foreach (var id in hidden.SpeciesIds) names.Add(FishDatabase.Get(id).Name);
+                Game.Toast($"큰 어군이 모두 흩어지자 숨어 있던 히든 어군({string.Join("·", names)})이 {FieldMap.CellName(hidden.Col, hidden.Row)}에 나타났습니다!", ToastKind.Great);
+            }
         }
 
         public FishSchool At(int col, int row)
@@ -185,7 +343,7 @@ namespace Fishing.World
                 if (s.MoveAt <= 0f) PickSpot(s);
                 else if (s.Schedule == null && Time.time >= s.MoveAt) Move(s);
                 if (s.Fx == null) s.Fx = SchoolSwirlFx.Create();
-                s.Fx.Show(field && !s.Hidden ? s.Spot : (Vector3?)null, s.SpotRadius);
+                s.Fx.Show(field && !s.Hidden ? s.Spot : (Vector3?)null, s.SpotRadius, s.Tint);
 
                 // 소용돌이 안에서 가끔 물고기가 튀어 올라 파문이 생긴다. 작은 어군은 덜 자주, 작게 튄다
                 if (!field || s.Hidden || Time.time < s.NextRippleAt) continue;
@@ -211,6 +369,7 @@ namespace Fishing.World
         Transform _swirl, _foam;
         Material _swirlMat, _foamMat;
         Vector3 _target;
+        Color _tint = Color.white;
         bool _visible;
         float _alpha, _radius = 3f, _targetRadius = 3f;
         float _seed;
@@ -236,8 +395,9 @@ namespace Fishing.World
         }
 
         /// <summary>spot이 null이면 사라진다.</summary>
-        public void Show(Vector3? spot, float radius)
+        public void Show(Vector3? spot, float radius, Color tint)
         {
+            _tint = tint;
             _visible = spot.HasValue;
             if (_visible) _target = new Vector3(spot.Value.x, FieldMap.WaterY + 0.12f, spot.Value.z);
             _targetRadius = radius;
@@ -257,8 +417,8 @@ namespace Fishing.World
             _foam.localRotation = Quaternion.Euler(90f, 60f - t * 9f, 0f);
             _foam.localScale = Vector3.one * _radius * 2.5f;
             // 파티클 셰이더는 색을 2배 하므로 0.5가 흰색
-            _swirlMat.SetColor("_TintColor", new Color(0.5f, 0.52f, 0.55f, 0.5f * _alpha * breathe));
-            _foamMat.SetColor("_TintColor", new Color(0.5f, 0.52f, 0.55f, 0.3f * _alpha * (1.4f - breathe)));
+            _swirlMat.SetColor("_TintColor", new Color(0.5f * _tint.r, 0.52f * _tint.g, 0.55f * _tint.b, 0.5f * _alpha * breathe));
+            _foamMat.SetColor("_TintColor", new Color(0.5f * _tint.r, 0.52f * _tint.g, 0.55f * _tint.b, 0.3f * _alpha * (1.4f - breathe)));
         }
 
         void OnDestroy()

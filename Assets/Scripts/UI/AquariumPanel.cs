@@ -128,6 +128,7 @@ namespace Fishing.UI
             int exp = 3 + (s?.Rarity ?? 1) * 3;
             p.AddExp(exp);
             Game.Toast($"{s?.Name}에게 먹이를 줬습니다. 경험치 +{exp}", ToastKind.Good);
+            Bingo.OnAction("feed");
             Changed();
         }
 
