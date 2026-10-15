@@ -21,6 +21,14 @@ namespace Fishing.Dev
     public class DevAutomation : MonoBehaviour
     {
         DevArgs _args;
+        float _fps;   // 최근 프레임의 평균 FPS (지수 이동 평균, 촬영 로그용)
+
+        void Update()
+        {
+            float dt = Time.unscaledDeltaTime;
+            if (dt <= 0f) return;
+            _fps = _fps <= 0f ? 1f / dt : Mathf.Lerp(_fps, 1f / dt, 0.1f);
+        }
 
         public static DevArgs Parse()
         {
@@ -774,7 +782,7 @@ namespace Fishing.Dev
             yield return new WaitForEndOfFrame();
             var path = Path.Combine(_args.ShotDir, name + ".png");
             ScreenCapture.CaptureScreenshot(path);
-            Debug.Log($"[Dev] 스크린샷: {path}");
+            Debug.Log($"[Dev] 스크린샷: {path} ({_fps:0} FPS, {Fishing.World.FieldMap.Id}, 정적 배칭 {Fishing.World.WorldBatcher.LastBatched}개)");
             yield return null;
             yield return null;
         }
