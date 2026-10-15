@@ -25,7 +25,9 @@
 | ![areas_world](docs/images/53_area_list_all.png) | ![halong](docs/images/55_halong_bay.png) |
 | **산토리니 (칼데라·방파제 테트라포드)** | **나일강 하류 (피라미드 노을)** |
 | ![santorini](docs/images/56b_santorini_caldera.png) | ![nile](docs/images/57b_nile_sunset.png) |
-| **거문도 등대** | **홍현 갯바위 섬 (반복 없는 지형 텍스처)** |
+| **한강 둔치 공원 (실사 활엽수·소나무·풀)** | **삼척 바닷가 (실사 바위·풀)** |
+| ![park](docs/images/00g_park_trees.png) | ![samcheok](docs/images/45_samcheok_chuam.png) |
+| **거문도 등대** | **홍현 갯바위 섬 (반복 없는 지형 텍스처·실사 바위)** |
 | ![geomun](docs/images/50_geomun_lighthouse.png) | ![islet](docs/images/22c_honghyeon_island.png) |
 
 | 캐스팅 (당겼다 밀기) | 챔질 (찌 게이지) |
@@ -67,7 +69,7 @@
 - **성장·수집**: 레벨 1~40(레벨 보상 장비), 장비(낚싯대·릴·줄·배) 강화 +15, 미끼 + 해체 미끼 5등급, 도감, 살림망, 이야기 퀘스트 45개(낚시터마다), **일일 의뢰**, **대물 도전**, **업적**·칭호, **빙고 5×5**, **출석 체크**, 낚시 일지, 소라고동 교환소, **의상**(6부위 25벌, 부위별 능력치), 대기실 **수족관**.
 - **조합 낚시 대회**: 매일 09~15시, AI 낚시꾼 7명과 마릿수·최장·길이 합계로 겨룬다. 계급 엠블럼, 우승 상품 거거 낚시대·나팔고둥 릴.
 - **손맛**: 마디를 펼치는 뽑기대가 줄 방향으로 휘고 출렁인다. 장비별 릴이 돌고, 릴·드랙·카운터 소리, 게임패드 진동.
-- **화면**: 다크 유리 UI(Translucent Image + Paraform), EasyChart 차트, 후처리(블룸·톤매핑·AO), 낮밤·노을·해달별, 날씨(흐린 날 층구름·비·겨울 눈), 물결 셰이더, 새벽 물안개. 바닥·지형은 반복 무늬를 깨는 셰이더(`Fishing/Ground`·`Fishing/Terrain`), 바위·테트라포드·등대·바위기둥은 절차적 메쉬.
+- **화면**: 다크 유리 UI(Translucent Image + Paraform), EasyChart 차트, 후처리(블룸·톤매핑·AO), 낮밤·노을·해달별, 날씨(흐린 날 층구름·비·겨울 눈), 물결 셰이더, 새벽 물안개. 바닥·지형은 반복 무늬를 깨는 셰이더(`Fishing/Ground`·`Fishing/Terrain`), 테트라포드·등대·바위기둥은 절차적 메쉬, 나무·바위·풀은 실사풍 에셋(Conifers [BOTD], Realistic Tree 9·10, Rock and Boulders 2, Grass Flowers Pack Free).
 - **사람과 물고기는 직접 만든 3D 모델**: headless Blender 스크립트(`tools/blender`)로 Quaternius CC0 몸을 보통 체형으로 다듬고 진짜 옷 메쉬(체크 남방 깃·조끼·웨이더·운동화·반장갑…)를 입힌다. 물고기 77종도 어종별 모델·텍스처·헤엄 애니메이션(오징어·문어·갑오징어는 다리마다 뼈), 아이템 아이콘도 렌더.
 - **편의**: 옵션(O) — 음량·감도·해상도·그림자·후처리·진동·**키 설정**.
 
@@ -151,6 +153,7 @@ tools/        build·autoshot·test·balance 스크립트, fightsim/(Unity 없�
 - 3D 모델: [Quaternius](https://quaternius.com) — Universal Base Characters(몸·머리카락), Universal Animation Library, Animated Fish Pack(어종 모델이 없을 때 대체) (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Quaternius/`.
 - 낚시·상황 동작: [Mixamo](https://www.mixamo.com) (Adobe) — Fishing Idle, Fishing Cast, Cheering, Clapping, Excited, Rallying, Scared.
 - 흐린 하늘: AllSky Free (rpgwhitelock), 맑은 하늘: Fantasy Skybox FREE, 나무: Nature Starter Kit 2 (Shapes) — Unity Asset Store.
+- 실사풍 식생·바위: Conifers [BOTD] (forst), Realistic Tree 9·10 (Pixel Games), Rock and Boulders 2, Grass Flowers Pack Free — Unity Asset Store.
 - 대기·걷기·뛰기: [Human Basic Motions FREE](https://assetstore.unity.com/packages/3d/animations/human-basic-motions-free-154271) (Kevin Iglesias, Unity Asset Store).
 - 배경·배 모델: [Kenney](https://kenney.nl) — City Kit Commercial, City Kit Roads, Nature Kit, Watercraft Kit (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Kenney/`.
 - 텍스처: [Poly Haven](https://polyhaven.com) (CC0) — 모래·풀·바위·해안·나무 데크·콘크리트·아스팔트(갯벌 진흙·눈은 모래를 바꿔 만듦) → `Assets/Resources/Terrain/SOURCES.md`

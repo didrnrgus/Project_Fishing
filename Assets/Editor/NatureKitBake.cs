@@ -13,7 +13,8 @@ namespace Fishing.EditorTools
     /// </summary>
     public static class NatureKitBake
     {
-        const string Src = "Assets/NatureStarterKit2/Nature";
+        // Tree Creator 프리팹이 있는 폴더: Nature Starter Kit 2, Realistic Tree 9·10 (Pixel Games)
+        static readonly string[] Srcs = { "Assets/NatureStarterKit2/Nature", "Assets/Tree9", "Assets/Tree10" };
         const string Dst = "Assets/Resources/NatureKit/Baked";
 
         [MenuItem("Fishing/Bake Nature Kit Trees")]
@@ -23,9 +24,11 @@ namespace Fishing.EditorTools
 
         static void Bake(bool force)
         {
-            if (!Directory.Exists(Src)) return;
             Directory.CreateDirectory(Dst);
-            foreach (var path in Directory.GetFiles(Src, "*.prefab"))
+            foreach (var src in Srcs)
+            {
+            if (!Directory.Exists(src)) continue;
+            foreach (var path in Directory.GetFiles(src, "*.prefab"))
             {
                 string name = Path.GetFileNameWithoutExtension(path);
                 string outPrefab = $"{Dst}/{name}.prefab";
@@ -51,6 +54,7 @@ namespace Fishing.EditorTools
                 PrefabUtility.SaveAsPrefabAsset(go, outPrefab);
                 Object.DestroyImmediate(go);
                 Debug.Log($"[NatureKitBake] {name}: {meshCopy.vertexCount} verts, submesh {meshCopy.subMeshCount}");
+            }
             }
             AssetDatabase.SaveAssets();
         }

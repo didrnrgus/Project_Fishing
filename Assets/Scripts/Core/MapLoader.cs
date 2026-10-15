@@ -19,6 +19,7 @@ namespace Fishing.Core
             WaterGlints.Clear();
             map.WaterY = map.BaseWaterY;
             Game.World = map.BuildWorld(lamps, bulbs);
+            GrassField.Plant(Game.World, map.BaseWaterY, map.Id.GetHashCode());
             WorldBatcher.Batch(Game.World);
             WaterSurface.SetColors(map.WaterDeep, map.WaterShallow);
             WaterSurface.SetSeabed(map);

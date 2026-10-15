@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Fishing.Core;
 using Fishing.UI;
 using UnityEngine;
@@ -372,26 +373,106 @@ namespace Fishing.World
         /// 산토리니 칼데라: 바다 건너 멀리 높이 200m 넘는 붉은·검은 줄무늬 절벽이 활처럼 둘러 서 있고,
         /// 그 위로 하얀 마을 띠. 칼데라 가운데엔 검은 용암 섬 네아 카메니.
         /// </summary>
+        /// <summary>
+        /// 산토리니 칼데라: 바다 건너 반원으로 둘러선 절벽. 예전에는 거대한 구 9개를 줄지어 놓아 "반구가 늘어선" 모양이었다.
+        /// 한 덩어리 절벽 메쉬(<see cref="CalderaMesh"/>)로 잇고, 붉은 화산암 / 짙은 용암층 띠 / 윗면 평지를 서브메쉬로 나누고,
+        /// 절벽 위에 하얀 집·파란 지붕을 촘촘히 얹는다 (이아·피라 마을처럼).
+        /// </summary>
         void Caldera()
         {
-            var cliff = Mats.Lit(new Color(0.42f, 0.3f, 0.26f), 0.05f);
-            var band = Mats.Lit(new Color(0.22f, 0.18f, 0.17f), 0.05f);
-            var town = Mats.Lit(new Color(0.95f, 0.95f, 0.92f), 0.1f);
-            var lava = Mats.Lit(new Color(0.12f, 0.11f, 0.11f), 0.1f);
-            for (int i = 0; i < 9; i++)
+            var cliff = Mats.Textured("rock", new Color(0.72f, 0.5f, 0.42f), new Vector2(40f, 6f), 0.1f);
+            var band = Mats.Textured("rock", new Color(0.3f, 0.26f, 0.25f), new Vector2(40f, 6f), 0.1f);
+            var top = Mats.Textured("sand", new Color(0.78f, 0.66f, 0.5f), new Vector2(30f, 3f), 0.05f);
+            var go = new GameObject("Caldera");
+            go.transform.SetParent(_root, false);
+            go.transform.localPosition = new Vector3(0f, _map.BaseWaterY - 25f, 260f);
+            go.AddComponent<MeshFilter>().sharedMesh = CalderaMesh(S.Seed, out var rim);
+            go.AddComponent<MeshRenderer>().sharedMaterials = new[] { cliff, band, top };
+            // 절벽 위 마을: 하얀 상자 집, 드문드문 파란 둥근 지붕
+            var white = Mats.Lit(new Color(0.96f, 0.96f, 0.93f), 0.15f);
+            var blue = Mats.Lit(new Color(0.12f, 0.32f, 0.7f), 0.4f);
+            foreach (var (p, inward) in rim)
             {
-                float a = Mathf.Lerp(-70f, 70f, i / 8f) * Mathf.Deg2Rad;
-                var p = new Vector3(Mathf.Sin(a) * 900f, 0f, 260f + Mathf.Cos(a) * 700f);
-                float hgt = R(150f, 220f);
-                Mats.Prim(PrimitiveType.Sphere, "CalderaCliff", _root, new Vector3(p.x, -hgt * 0.35f, p.z), new Vector3(R(280f, 360f), hgt * 1.6f, 160f), cliff, false,
-                    Quaternion.Euler(0f, a * Mathf.Rad2Deg, 0f));
-                Mats.Prim(PrimitiveType.Sphere, "CliffBand", _root, new Vector3(p.x, -hgt * 0.5f, p.z + 4f), new Vector3(R(280f, 340f) * 0.98f, hgt * 1.2f, 150f), band, false,
-                    Quaternion.Euler(0f, a * Mathf.Rad2Deg, 0f));
-                // 꼭대기 하얀 마을 띠
-                Mats.Prim(PrimitiveType.Cube, "CliffTown", _root, new Vector3(p.x, hgt * 0.42f, p.z - 10f), new Vector3(R(120f, 200f), 8f, 30f), town, false,
-                    Quaternion.Euler(0f, a * Mathf.Rad2Deg, 0f));
+                if (_rng.NextDouble() < 0.35) continue;
+                var at = go.transform.localPosition + p + inward * R(4f, 30f);
+                float w = R(7f, 14f), h = R(5f, 9f);
+                Mats.Prim(PrimitiveType.Cube, "CliffHouse", _root, at + Vector3.up * h * 0.4f, new Vector3(w, h, w * R(0.7f, 1.1f)), white, false,
+                    Quaternion.Euler(0f, R(0f, 90f), 0f));
+                if (_rng.NextDouble() < 0.12)
+                    Mats.Prim(PrimitiveType.Sphere, "CliffDome", _root, at + Vector3.up * h * 0.9f, Vector3.one * w * 0.6f, blue, false);
             }
-            Mats.Prim(PrimitiveType.Sphere, "NeaKameni", _root, new Vector3(-80f, -18f, 520f), new Vector3(260f, 70f, 180f), lava, false);
+            var lava = Mats.Textured("rock", new Color(0.22f, 0.2f, 0.2f), new Vector2(8f, 4f), 0.1f);
+            Rocks.Prim("NeaKameni", _root, new Vector3(-80f, _map.BaseWaterY + 6f, 520f), new Vector3(260f, 55f, 180f), lava);
+        }
+
+        /// <summary>
+        /// 칼데라 절벽 메쉬: 각도 -78°~78°의 타원 호(가로 900, 세로 700) 위로 바다(-y)에서 절벽 꼭대기까지 올라가 안쪽 평지로 이어진다.
+        /// 높이는 노이즈로 오르내리고(150~230m), 절벽면은 세로 협곡·층 굴곡이 있다. 서브메쉬 0 = 붉은 절벽, 1 = 짙은 용암층 띠, 2 = 윗면.
+        /// rim: 꼭대기 가장자리 점과 안쪽(마을 놓을 쪽) 방향.
+        /// </summary>
+        static Mesh CalderaMesh(int seed, out List<(Vector3 p, Vector3 inward)> rim)
+        {
+            const int seg = 140, rows = 16;
+            var v = new List<Vector3>();
+            var uv = new List<Vector2>();
+            rim = new List<(Vector3, Vector3)>();
+            float sd = seed * 0.71f;
+            for (int i = 0; i <= seg; i++)
+            {
+                float a = Mathf.Lerp(-78f, 78f, i / (float)seg) * Mathf.Deg2Rad;
+                var dir = new Vector3(Mathf.Sin(a) * 900f, 0f, Mathf.Cos(a) * 700f);
+                var outward = new Vector3(Mathf.Sin(a) / 900f, 0f, Mathf.Cos(a) / 700f).normalized;
+                float hgt = 150f + 80f * Mathf.PerlinNoise(sd + i * 0.045f, 3.1f) + 25f * (Mathf.PerlinNoise(sd + i * 0.21f, 8.7f) - 0.5f);
+                // 세로 협곡: 몇 군데 절벽이 안으로 파였다
+                float gully = Mathf.Pow(Mathf.Abs(Mathf.Sin(i * 0.31f + sd)), 14f) * 18f;
+                for (int r = 0; r <= rows; r++)
+                {
+                    float t = r / (float)rows;
+                    Vector3 p;
+                    if (r < rows - 2)
+                    {
+                        // 절벽면: 아래는 바다 밑에서 시작, 위로 갈수록 살짝 뒤로 기운다. 층마다 튀어나오고 들어간다
+                        float ft = t / ((rows - 2f) / rows);
+                        float y = Mathf.Lerp(-10f, hgt, ft);
+                        float lean = ft * 55f + Mathf.Sin(ft * 9f + i * 0.17f) * 6f + (Mathf.PerlinNoise(sd + i * 0.3f, ft * 6f) - 0.5f) * 22f + gully * (1f - ft * 0.5f);
+                        p = dir + outward * lean + Vector3.up * y;
+                    }
+                    else
+                    {
+                        // 윗면: 가장자리에서 바깥(섬 안쪽)으로 평지
+                        float back = r == rows - 1 ? 70f : 260f;
+                        p = dir + outward * (55f + back) + Vector3.up * (hgt + (r == rows - 1 ? 3f : 12f));
+                    }
+                    v.Add(p);
+                    uv.Add(new Vector2(i / (float)seg * 30f, p.y / 40f));
+                    if (r == rows - 2) rim.Add((p, outward));
+                }
+            }
+            var cliffT = new List<int>();
+            var bandT = new List<int>();
+            var topT = new List<int>();
+            for (int i = 0; i < seg; i++)
+            for (int r = 0; r < rows; r++)
+            {
+                int a0 = i * (rows + 1) + r, a1 = a0 + 1, b0 = a0 + rows + 1, b1 = b0 + 1;
+                // 바다 쪽(-outward, 원점 쪽)에서 보이게: 호의 안쪽이 앞면
+                var tri = new[] { a0, a1, b0, b0, a1, b1 };
+                float yMid = (v[a0].y + v[a1].y) * 0.5f;
+                float hgtHere = v[i * (rows + 1) + rows - 2].y;
+                var list = r >= rows - 2 ? topT : (yMid > hgtHere * 0.42f && yMid < hgtHere * 0.55f) ? bandT : cliffT;
+                list.AddRange(tri);
+            }
+            var m = new Mesh { name = "Caldera", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            m.SetVertices(v);
+            m.SetUVs(0, uv);
+            m.subMeshCount = 3;
+            m.SetTriangles(cliffT, 0);
+            m.SetTriangles(bandT, 1);
+            m.SetTriangles(topT, 2);
+            m.RecalculateNormals();
+            m.RecalculateTangents();
+            m.RecalculateBounds();
+            return m;
         }
 
         /// <summary>나일강 하류 서쪽 사막 너머 기자 피라미드 셋 (멀리, 안개 속 모래색).</summary>

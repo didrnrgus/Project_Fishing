@@ -542,6 +542,7 @@ namespace Fishing.World
         {
             _root = new GameObject("World_" + S.Id).transform;
             _rng = new System.Random(S.Seed * 7919 + 13);
+            Rocks.Snowy = S.Snow;
             _lamps = lamps;
             _bulbs = bulbs;
             _props = new CoastProps(_root, _rng, lamps, bulbs);
@@ -565,6 +566,7 @@ namespace Fishing.World
             BuildFarBank();
             BuildNpcs();
             foreach (var (text, pos, color) in S.Signs) WorldBuilder.AddSignBothSides(_root, text, pos, color);
+            Rocks.Snowy = false;
             return _root;
         }
 

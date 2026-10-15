@@ -57,14 +57,24 @@
 - 사용자 지적 10가지 + 함께 찾은 것: 아래 표. 고친 뒤 빌드 에러 0, 테스트 31/31, 자동 촬영 예외 0·캐스팅 막힘 0으로 다시 확인.
 - (선택이던 `balance.sh` 비교는 이번에 안 했다 — 밸런스 코드는 바꾸지 않았다.)
 
+### 2026-10-15 (6): 받은 실사풍 에셋 연결
+
+- 소나무 Conifers [BOTD] · 활엽수 Realistic Tree 9·10 · 바위 Rock and Boulders 2 · 풀 Grass Flowers Pack Free (아래 "받은 실사풍 에셋" 표).
+- Kenney 덤불도 Nature Starter Kit 2 덤불로. 산토리니 칼데라는 구 9개 대신 이어진 절벽 메쉬(층진 띠·협곡·윗면 + 절벽 위 하얀 집).
+- 풀 포기: 맵마다 1천~4만 2천 포기(48m 칸 메쉬, 130m 밖은 끔). 15곳 모두 60 FPS 그대로.
+- 확인: 빌드 성공, 테스트 31/31, 자동 촬영 99장 예외 0·캐스팅 막힘 0, 파이팅 5건 `Landed`.
+- 빌드 로그의 셰이더 에러 1건 `CTI/BIRP/LOD Leaves 301: Keyword 'LOD_FADE_CROSSFADE' is duplicated` — Unity 6 표면 셰이더 생성기가 `dithercrossfade`를 펼치며 내는 메시지라 공급사 셰이더를 고쳐도 사라지지 않았다. 소나무는 정상으로 그려지므로 그대로 둔다.
+- Forst 설치 런처(`LaunchConifersInstaller.cs`)는 컴파일 때마다 창을 띄워서 지웠다 (창의 Delete와 같음, 메뉴 Window › Forst로 다시 열 수 있다).
+- 저장소 용량: 풀 팩 데모 씬·바닥 텍스처, 소나무 팩 HDRP·URP 설치 패키지는 `.gitignore` (게임에서 안 씀, 로컬에만).
+
 ## 사용자 지적 사항 (2026-10-15, 플레이 화면을 보고)
 
 | # | 지적 | 원인·확인 | 상태 |
 |---|---|---|---|
 | 1 | 창(팝업) UI가 밖으로 삐져나오고 겹친다 | 창 안 목록에 스크롤·잘라내기가 없었다: 퀘스트 이야기 45개·업적 35개, 상점 장비 목록, 가방(배·장신구)이 창 아래로 넘침. 도감 맵 탭 15개가 제목 "어류 도감 · 한강 8/20"을 가림. 알림(토스트)이 화면 가운데에 5개까지 쌓여 캐릭터·비거리 숫자를 가림 | **고침**: `UIPanel.RowCursor`가 부모 영역에 잘라내기 + 휠 스크롤 + 얇은 스크롤바를 자동으로 만든다(상점·퀘스트·가방·살림망·교환·강화·의상·수족관·옵션 11곳, 다시 그려도 스크롤 위치 유지, 퀘스트 탭 줄은 고정). 도감 탭은 남은 폭에 맞춰 나누고 '앞바다'를 뗌. 알림은 최대 3개, 비거리 숫자 아래로 |
 | 2 | 배를 탈 때 등 앉는 동작에서 의자가 없어 공중에 앉아 있다 | 앉는 동작(UAL Driving·Sit)은 발 기준이라 배 갑판 위 허공에 앉음 | **고침**: `Characters/SitSeat` — 앉아 있는 동안 골반 뼈 높이를 재서 엉덩이 밑에 낚시용 아이스박스(흰 몸통·파란 뚜껑)를 깐다. 플레이어(배 운전)와 앉은 NPC(크루저 선장) |
-| 3 | 배경 바위·지형이 너무 정적이고 무늬가 반복된다 | 바위는 구를 찌그러뜨린 것, 테트라포드는 캡슐 4개 덩어리 | **고침**: `World/Rocks` 절차적 바위 메쉬 8종(노이즈 굴곡 + 절리면 깎기 + 평평한 밑면, 면마다 축 투영 UV), 테트라포드는 가운데가 굵은 4발 원뿔대 메쉬 + 벽에 기댄 3줄 더미(`CoastProps.TetrapodBank`). 실사 바위 에셋을 받으면 더 좋아진다 |
-| 4 | 나무가 너무 캐주얼하고 로우폴리 | Kenney·Nature Starter Kit 2 활엽수 | 일부 고침 + **에셋 필요**: Kenney 나무는 모두 NSK2 나무로 돌렸다(9번). 실사 소나무·활엽수는 무료 에셋 임포트 필요 (아래 "사용자가 해야 할 일") |
+| 3 | 배경 바위·지형이 너무 정적이고 무늬가 반복된다 | 바위는 구를 찌그러뜨린 것, 테트라포드는 캡슐 4개 덩어리 | **고침**: `World/Rocks` 절차적 바위 메쉬 8종(노이즈 굴곡 + 절리면 깎기 + 평평한 밑면, 면마다 축 투영 UV), 테트라포드는 가운데가 굵은 4발 원뿔대 메쉬 + 벽에 기댄 3줄 더미(`CoastProps.TetrapodBank`). 실사 바위 에셋을 받아 연결함(아래 "받은 실사풍 에셋") |
+| 4 | 나무가 너무 캐주얼하고 로우폴리 | Kenney·Nature Starter Kit 2 활엽수 | **고침**: 받은 실사 에셋 연결 — 소나무 Conifers [BOTD], 활엽수 Realistic Tree 9·10, 풀·들꽃 Grass Flowers Pack Free (아래 "받은 실사풍 에셋") |
 | 5 | 텍스처를 입힌 것(바닥·지형·바위)이 가까이서 보면 반복 무늬가 훤히 보여 싸 보이고 현실감이 떨어진다 | Poly Haven 1K 텍스처를 UV로 그대로 반복 | **고침**: 반복 깨기 셰이더 `Fishing/Ground`(Mats.Textured 전부)·`Fishing/Terrain`(+AddPass, Unity Terrain 전부) — 같은 텍스처를 회전·다른 배율로 한 번 더 읽어 노이즈로 섞고, 월드 좌표 큰 얼룩으로 밝기·채도·광택을 흔든다 |
 | 6 | 물가의 뗏목·지형 위에서 내 캐릭터가 반쯤 땅속에 파묻혀 있다 (NPC는 괜찮음) | 겨울 한강 드럼통 뗏목: 갑판·드럼통에 콜라이더가 없고 겨울엔 그 밑까지 얼음(걸을 수 있음)이라, 플레이어는 얼음(y 0.40)에 서고 갑판은 y 1.01 → 무릎까지 파묻힘. NPC는 갑판 높이에 직접 놓여 멀쩡했다 (자동 촬영 41·42번) | **고침**: 갑판·드럼통에 콜라이더(배도 못 뚫음, 갑판엔 점프로 올라감), 겨울 촬영 위치를 뗏목 앞 얼음 위로 |
 | 7 | README 스크린샷 갱신 | 해외 거점 장면이 없고 예전 화면 | **고침**: 마지막 자동 촬영을 docs/images에 복사, README에 해외 거점·바위기둥 등 장면 추가 |
@@ -80,14 +90,21 @@
 
 저장소는 **비공개**다(2026-10-15 확인). 에셋 스토어·Mixamo 약관이 막는 것은 판매가 아니라 원본 파일을 남이 받을 수 있게 올리는 것이라, 비공개로 두면 그대로 커밋해도 된다. **공개로 바꾸려면** 먼저 `Assets/Kevin Iglesias`·`AllSkyFree`·`Fantasy Skybox FREE`·`NatureStarterKit2`·`BigRookGames`·`MixamoAnimation`과 Resources로 옮긴 그 파일들(`Resources/Animations/Mixamo`·`KevinIglesias`, `Resources/Sky`, `Resources/NatureKit`)을 기록에서 빼야 한다.
 
+### 받은 실사풍 에셋 (2026-10-15 임포트, 연결 완료)
+
+| 에셋 | 폴더 | 쓰는 곳 |
+|---|---|---|
+| [Conifers [BOTD]](https://assetstore.unity.com/packages/slug/142076) (forst) | `Assets/Forst` (Built-in 판 설치, 설치 런처는 지움) | Kenney 소나무 자리 → Tall·Medium·Small (CTI 셰이더, LOD + 빌보드) |
+| [Realistic Tree 9](https://assetstore.unity.com/packages/3d/vegetation/trees/realistic-tree-9-rainbow-tree-54622) · [10](https://assetstore.unity.com/packages/3d/vegetation/trees/realistic-tree-10-54724) (Pixel Games) | `Assets/Tree9`, `Assets/Tree10` | 활엽수·당산나무 자리. Tree Creator라 `NatureKitBake`가 빌드 전에 `Resources/NatureKit/Baked`로 굽는다 |
+| [Rock and Boulders 2](https://assetstore.unity.com/packages/p/rock-and-boulders-2-6947) | `Assets/Rocks and Boulders 2` | `Rocks.Prim`(갯바위·섬 바위·석축) → 단일 바위 14종, 눈 맵(청진)은 눈 덮인 판 |
+| [Grass Flowers Pack Free](https://assetstore.unity.com/packages/p/grass-flowers-pack-free-138810) | `Assets/ALP_Assets` | `GrassField` 풀·들꽃 포기 (지형 풀 층·한강 둔치 잔디) |
+
+`Editor/VegetationBake`가 빌드할 때 위 프리팹·텍스처를 `Resources/VegetationLibrary.asset`에 묶는다 (Resources 밖이라도 참조로 빌드에 들어간다). 에셋 폴더를 지우면 예전 방식(NSK2 나무·절차적 바위·풀 없음)으로 돌아간다.
+
 ### 사용자가 해야 할 일 (계정 로그인이 필요해서 Claude가 못 한 것)
 
 | 에셋 | 어디서 | 넣으면 좋아지는 것 | 받은 뒤 할 일 |
 |---|---|---|---|
-| **Rock and Boulders 2** (Manufactura K4, 무료) | 에셋 스토어에서 이름 검색 | 지적 3: 갯바위·해안 바위·섬이 실사 바위로 (지금은 절차적 바위 메쉬) | 임포트만 하면 Claude가 `Rocks`·`Boulder`를 이 모델로 바꾼다 |
-| **Conifers [BOTD]** (Forst, 무료) | 에셋 스토어 | 지적 4: 해안 언덕·섬의 소나무(해송)를 실사로 | 임포트 → 빌드에서 빠지는 셰이더·LOD 확인 후 Kenney 침엽수 자리에 |
-| 실사 활엽수 무료 팩 (예: **Free SpeedTrees Package** 등 Built-in 렌더 파이프라인 지원 팩) | 에셋 스토어 "free tree" 검색 | 지적 4: Nature Starter Kit 2 활엽수가 캐주얼해 보임 | 임포트 → 같은 방식으로 굽기(`Editor/NatureKitBake`) |
-| **Grass Flowers Pack Free** (ALP, 무료) | 에셋 스토어 | 둔치·언덕에 풀·들꽃 (지금은 풀 텍스처만 있어 밋밋함) | 임포트 → 지형 디테일(풀) 또는 메쉬 뭉치로 배치 |
 | 국가유산청 전통 배 등 무료 에셋 | [국가유산청 에셋 예시(운현궁)](https://assetstore.unity.com/packages/3d/props/khs-unhyeongungcollect-273241) → 판매자 이름 눌러 무료 목록에서 배 찾기 | 서해·남해 배경 배 | 배경 소품 |
 | (선택) **VRoid Studio** 시험 모델 | [VRoid Studio](https://vroid.com/en/studio), [UniVRM](https://github.com/vrm-c/UniVRM/releases) | 원작 '청'·'명' 같은 한국 MMO풍 얼굴 | UniVRM으로 임포트해 지금 캐릭터와 비교 (08 5장) |
 

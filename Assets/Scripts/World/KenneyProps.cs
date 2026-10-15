@@ -50,8 +50,16 @@ namespace Fishing.World
         public static GameObject Spawn(string path, Transform parent, Vector3 localPos, float yaw, float height = 0f, float length = 0f, bool solid = true)
         {
             string leaf = path.Substring(path.LastIndexOf('/') + 1);
+            // 실사 에셋이 있으면 먼저: 소나무 자리 → Conifers [BOTD], 활엽수 자리 → Realistic Tree 9·10
+            if (leaf.StartsWith("tree_pine") && VegetationLibrary.HasConifers)
+                return SpawnRealTree(VegetationLibrary.Lib.conifers, parent, localPos, yaw, height > 0f ? height * 1.25f : 9f, solid);
+            if (System.Array.IndexOf(BroadleafKenney, leaf) >= 0 && VegetationLibrary.HasBroadleaf)
+                return SpawnRealTree(VegetationLibrary.Lib.broadleaf, parent, localPos, yaw, height > 0f ? height : 7f, solid);
             if (System.Array.IndexOf(BroadleafKenney, leaf) >= 0 && NatureKitAvailable)
                 return SpawnNatureKitTree(parent, localPos, yaw, height > 0f ? height : 7f, solid);
+            // Kenney 덤불(각진 초록 덩어리) → Nature Starter Kit 2 덤불
+            if (leaf.StartsWith("plant_bush") && NatureKitAvailable)
+                return SpawnBush(parent, localPos, yaw, height > 0f ? height : 1.2f);
             var prefab = Resources.Load<GameObject>(path);
             if (prefab == null) return null;
             var go = Object.Instantiate(prefab, parent, false);
@@ -84,6 +92,35 @@ namespace Fishing.World
             return go;
         }
 
+        /// <summary>
+        /// 실사 나무 (VegetationLibrary): 위치로 종류를 고르고 높이를 맞춘다. 크기마다 조금씩 다르게(±12%), 줄기 콜라이더.
+        /// LODGroup·빌보드가 있는 소나무도 통째로 늘리면 된다.
+        /// </summary>
+        public static GameObject SpawnRealTree(GameObject[] list, Transform parent, Vector3 localPos, float yaw, float height, bool solid)
+        {
+            int k = Mathf.Abs(Mathf.RoundToInt(localPos.x * 7.31f + localPos.z * 3.17f)) % list.Length;
+            var prefab = list[k];
+            var go = Object.Instantiate(prefab, parent, false);
+            go.name = "RealTree";
+            go.transform.localRotation = Quaternion.identity;
+            go.transform.localScale = Vector3.one;
+            var b = LocalBounds(go);
+            float s = b.size.y > 0.01f ? height / b.size.y : 1f;
+            s *= 0.88f + 0.24f * Mathf.PerlinNoise(localPos.x * 0.37f, localPos.z * 0.37f);
+            go.transform.localScale = Vector3.one * s;
+            go.transform.localPosition = localPos;
+            go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            foreach (var c in go.GetComponentsInChildren<Collider>(true)) Object.Destroy(c);
+            if (solid)
+            {
+                var cap = go.AddComponent<CapsuleCollider>();
+                cap.radius = b.size.y * 0.025f;
+                cap.height = b.size.y * 0.5f;
+                cap.center = new Vector3(0f, b.min.y + cap.height * 0.5f, 0f);
+            }
+            return go;
+        }
+
         /// <summary>Nature Starter Kit 2 활엽수 (위치로 종류를 고른다). 높이를 맞추고 줄기 콜라이더를 붙인다.</summary>
         static readonly string[] NatureKitBushes = { "bush01", "bush02", "bush03", "bush04", "bush05", "bush06" };
 
@@ -94,6 +131,8 @@ namespace Fishing.World
         public static GameObject SpawnBush(Transform parent, Vector3 localPos, float yaw, float height, int blossoms = 0, Material blossom = null, float size = 0.2f, bool tree = false)
         {
             if (!NatureKitAvailable) return null;
+            if (tree && blossoms == 0 && VegetationLibrary.HasBroadleaf)
+                return SpawnRealTree(VegetationLibrary.Lib.broadleaf, parent, localPos, yaw, height, false);
             var list = tree ? NatureKitTrees : System.Array.ConvertAll(NatureKitBushes, n => "NatureKit/Baked/" + n);
             int k = Mathf.Abs(Mathf.RoundToInt(localPos.x * 5.13f + localPos.z * 2.71f)) % list.Length;
             var prefab = Resources.Load<GameObject>(list[k]);

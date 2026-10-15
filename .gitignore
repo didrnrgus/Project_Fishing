@@ -51,3 +51,11 @@ __pycache__/
 # 에셋 스토어·Mixamo 에셋 (재배포 금지, 각자 받아서 넣기)
 /[Aa]ssets/[Aa]sset[Ss]tore/
 /[Aa]ssets/[Aa]sset[Ss]tore.meta
+
+# 받은 에셋 중 게임에서 안 쓰는 큰 파일 (데모 씬·다른 렌더 파이프라인 설치 패키지). 로컬에만 둔다
+/Assets/ALP_Assets/GrassFlowersFREE/Demo/
+/Assets/ALP_Assets/GrassFlowersFREE/Demo.meta
+/Assets/ALP_Assets/GrassFlowersFREE/Textures/Ground/
+/Assets/ALP_Assets/GrassFlowersFREE/Textures/Ground.meta
+/Assets/Forst/Conifers [[]BOTD]/Conifers_HDRP.unitypackage*
+/Assets/Forst/Conifers [[]BOTD]/Conifers_URP.unitypackage*

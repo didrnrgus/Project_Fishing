@@ -14,9 +14,37 @@ namespace Fishing.World
         const int Variants = 8;
         static Mesh[] _meshes;
 
-        /// <summary>Mats.Prim(PrimitiveType.Sphere, …)과 같은 인자: 지름 1 기준 크기(scale)로 놓는다.</summary>
+        /// <summary>눈 덮인 맵(청진포구)이면 맵을 짓는 동안 true — 실사 바위를 눈 덮인 판으로.</summary>
+        public static bool Snowy;
+
+        /// <summary>Mats.Prim(PrimitiveType.Sphere, …)과 같은 인자: 지름 1 기준 크기(scale)로 놓는다.
+        /// 실사 바위 에셋(Rock and Boulders 2)이 있으면 그것을 같은 크기로 (재질은 에셋 것), 없으면 절차적 메쉬.</summary>
         public static GameObject Prim(string name, Transform parent, Vector3 pos, Vector3 scale, Material mat, Quaternion? rot = null)
         {
+            if (VegetationLibrary.HasRocks)
+            {
+                var lib = VegetationLibrary.Lib;
+                var list = Snowy && lib.snowRocks != null && lib.snowRocks.Length > 0 ? lib.snowRocks : lib.rocks;
+                int k = Mathf.Abs(Mathf.FloorToInt(pos.x * 7.13f) * 31 + Mathf.FloorToInt(pos.z * 3.71f) * 17 + Mathf.FloorToInt(pos.y * 5.3f)) % list.Length;
+                var rock = Object.Instantiate(list[k], parent, false);
+                rock.name = name;
+                foreach (var c in rock.GetComponentsInChildren<Collider>(true)) Object.Destroy(c); // 예전 바위처럼 몸 없음 (물가 캐스팅을 막지 않게)
+                rock.transform.localPosition = Vector3.zero;
+                rock.transform.localRotation = Quaternion.identity;
+                rock.transform.localScale = Vector3.one;
+                var b = KenneyProps.LocalBounds(rock);
+                var size = new Vector3(Mathf.Max(0.01f, b.size.x), Mathf.Max(0.01f, b.size.y), Mathf.Max(0.01f, b.size.z));
+                // 축마다 크기를 맞추되 모양이 너무 찌그러지지 않게 평균 쪽으로 반쯤 당긴다
+                var sv = new Vector3(scale.x / size.x, scale.y / size.y, scale.z / size.z);
+                float avg = (sv.x + sv.y + sv.z) / 3f;
+                sv = Vector3.Lerp(sv, Vector3.one * avg, 0.5f);
+                var q = rot ?? Quaternion.identity;
+                rock.transform.localScale = sv;
+                rock.transform.localRotation = q;
+                rock.transform.localPosition = pos - q * Vector3.Scale(b.center, sv);
+                return rock;
+            }
+
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
             go.transform.localPosition = pos;
