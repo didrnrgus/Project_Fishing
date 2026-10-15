@@ -220,20 +220,51 @@ namespace Fishing.World
             AddSign(shop, "낚시점", new Vector3(0f, 3.9f, 2.3f), new Color(1f, 0.9f, 0.4f));
         }
 
-        public static void AddSign(Transform parent, string text, Vector3 localPos, Color color)
-        {
-            var t = UIFactory.WorldText(parent, text, localPos, color, 5f, "Sign");
-            t.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-            UIFactory.OneSided(t);
-        }
+        /// <summary>
+        /// 간판: 짙은 판 + 밝은 테두리 위에 글자 (예전에는 글자만 허공에 떠 있어 가까이서 보면 거대한 글자가 화면을 가렸다).
+        /// 글자 폭에 맞춰 판 크기를 정한다. 앞(+Z 반대, 글자를 읽는 쪽)에서만 읽힌다.
+        /// </summary>
+        public static void AddSign(Transform parent, string text, Vector3 localPos, Color color) => Signboard(parent, text, localPos, color, false, false);
 
-        /// <summary>앞뒤 어느 쪽에서 봐도 읽히는 표지 (길가처럼 양쪽에서 지나다니는 곳).</summary>
-        public static void AddSignBothSides(Transform parent, string text, Vector3 localPos, Color color)
+        /// <summary>앞뒤 어느 쪽에서 봐도 읽히는 표지 (길가처럼 양쪽에서 지나다니는 곳). 땅까지 기둥 두 개를 세운다.</summary>
+        public static void AddSignBothSides(Transform parent, string text, Vector3 localPos, Color color) => Signboard(parent, text, localPos, color, true, true);
+
+        static void Signboard(Transform parent, string text, Vector3 localPos, Color color, bool bothSides, bool posts)
         {
-            AddSign(parent, text, localPos, color);
-            var back = UIFactory.WorldText(parent, text, localPos, color, 5f, "SignBack");
-            back.transform.localRotation = Quaternion.identity;
-            UIFactory.OneSided(back);
+            var root = new GameObject("Signboard").transform;
+            root.SetParent(parent, false);
+            root.localPosition = localPos;
+            var front = UIFactory.WorldText(root, text, Vector3.zero, color, 5f, "Sign");
+            front.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            UIFactory.OneSided(front);
+            front.ForceMeshUpdate();
+            float w = Mathf.Max(1.5f, front.preferredWidth) + 0.9f;
+            float h = Mathf.Max(0.8f, front.preferredHeight) + 0.5f;
+            var board = Mats.Lit(new Color(0.1f, 0.13f, 0.17f), 0.35f);
+            var frame = Mats.Lit(Color.Lerp(color, Color.white, 0.35f) * 0.85f, 0.5f, 0.3f);
+            // 판 (글자 뒤 0.12m) + 테두리 (조금 크게, 조금 더 뒤)
+            float back = bothSides ? 0f : -0.12f; // 글자는 +Z 쪽에서 읽힌다(180° 돌림) → 판은 그 뒤(−Z)
+            Mats.Prim(PrimitiveType.Cube, "Board", root, new Vector3(0f, 0f, back), new Vector3(w, h, 0.12f), board, false);
+            Mats.Prim(PrimitiveType.Cube, "Frame", root, new Vector3(0f, 0f, back - (bothSides ? 0f : 0.02f)), new Vector3(w + 0.18f, h + 0.18f, bothSides ? 0.1f : 0.1f), frame, false);
+            if (bothSides)
+            {
+                front.transform.localPosition = new Vector3(0f, 0f, 0.08f);
+                var rear = UIFactory.WorldText(root, text, new Vector3(0f, 0f, -0.08f), color, 5f, "SignBack");
+                rear.transform.localRotation = Quaternion.identity;
+                UIFactory.OneSided(rear);
+            }
+            if (posts)
+            {
+                // 기둥: 판 아래에서 땅까지 (아래로 레이캐스트, 못 찾으면 6m)
+                var world = root.position;
+                float ground = world.y - 6f;
+                Physics.SyncTransforms();
+                if (Physics.Raycast(world + Vector3.down * (h * 0.5f + 0.1f), Vector3.down, out var hit, 30f, ~0, QueryTriggerInteraction.Ignore)) ground = hit.point.y;
+                float len = world.y - h * 0.5f - ground + 0.2f;
+                var pole = Mats.Lit(new Color(0.55f, 0.57f, 0.6f), 0.5f, 0.6f);
+                foreach (float x in new[] { -w * 0.35f, w * 0.35f })
+                    Mats.Prim(PrimitiveType.Cylinder, "Post", root, new Vector3(x, -h * 0.5f - len * 0.5f + 0.1f, 0f), new Vector3(0.18f, len * 0.5f, 0.18f), pole, true);
+            }
         }
 
         void BuildWeeds()

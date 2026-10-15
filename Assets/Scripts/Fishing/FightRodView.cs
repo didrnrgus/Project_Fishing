@@ -132,20 +132,26 @@ namespace Fishing.Angling
 
         static Mesh TaperedCapsule(float taper)
         {
-            const int seg = 16, rings = 14;
+            const int seg = 20, rings = 28;
             var v = new System.Collections.Generic.List<Vector3>();
             var tri = new System.Collections.Generic.List<int>();
             for (int r = 0; r <= rings; r++)
             {
                 float t = r / (float)rings;
                 float rad = Mathf.Lerp(0.5f, 0.5f * taper, t);
-                rad *= 1f + 0.08f * Mathf.Sin(Mathf.Clamp01(t * 1.6f) * Mathf.PI); // 팔꿈치 쪽 근육이 살짝 불룩
+                bool sleeve = taper > 0.8f;
+                if (sleeve)
+                    rad *= 1f + 0.13f * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.8f, 0.86f, t)) * (1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.95f, 0.99f, t))) // 접어 올린 소매 끝
+                         + 0.03f * Mathf.Sin(t * 37f) * (1f - t);                                                                                                 // 천 주름
+                else
+                    rad *= 1f + 0.14f * Mathf.Exp(-Mathf.Pow((t - 0.28f) / 0.18f, 2f)) - 0.06f * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.75f, 0.95f, t)); // 팔꿈치 쪽 근육, 손목은 잘록
                 float cap = Mathf.Min(Mathf.Clamp01(t / 0.12f), Mathf.Clamp01((1f - t) / 0.12f));
                 rad *= Mathf.Sqrt(1f - (1f - cap) * (1f - cap));                      // 양 끝은 둥글게 닫힌다
                 for (int k = 0; k <= seg; k++)
                 {
                     float a = k / (float)seg * Mathf.PI * 2f;
-                    v.Add(new Vector3(Mathf.Cos(a) * rad, -1f + 2f * t, Mathf.Sin(a) * rad * 0.85f));
+                    float flat = taper > 0.8f ? 0.9f : Mathf.Lerp(0.88f, 0.7f, t); // 아래팔은 손목으로 갈수록 납작
+                    v.Add(new Vector3(Mathf.Cos(a) * rad, -1f + 2f * t, Mathf.Sin(a) * rad * flat));
                 }
             }
             for (int r = 0; r < rings; r++)
@@ -160,6 +166,24 @@ namespace Fishing.Angling
             m.RecalculateNormals();
             m.RecalculateBounds();
             return m;
+        }
+
+        float _rightTwist = float.NaN;
+
+        /// <summary>
+        /// 오른손을 손잡이 축으로 돌려 손등(설계상 −42°)이 카메라 쪽을 보게 한다 (조금 위·엄지 쪽으로 치우치게).
+        /// 그래야 1인칭에서 손등·엄지가 보이고 손가락은 손잡이 아래로 숨는다. 고정 각도로 두면 낚싯대가 비틀릴 때
+        /// 손끝이 빗살처럼 옆으로 튀어나와 보였다.
+        /// </summary>
+        void PoseRightHand()
+        {
+            if (_rightHand == null) return;
+            var c = _rod.transform.InverseTransformPoint(transform.position);
+            float camDeg = Mathf.Atan2(c.z, c.x) * Mathf.Rad2Deg;
+            float target = camDeg + Mathf.DeltaAngle(camDeg, -90f) * 0.2f; // 엄지 쪽(위, −Z)으로 조금
+            float twist = -42f - target;                                     // Y축으로 α 돌리면 각도 φ → φ − α
+            _rightTwist = float.IsNaN(_rightTwist) ? twist : Mathf.LerpAngle(_rightTwist, twist, 1f - Mathf.Exp(-10f * Time.deltaTime));
+            _rightHand.localRotation = Quaternion.AngleAxis(_rightTwist, Vector3.up);
         }
 
         /// <summary>왼손을 릴 노브에 맞춘다: 손 원점 = 노브, 로컬 +Y = 노브 축, 손등은 릴 몸통 반대쪽(바깥)을 본다.</summary>
@@ -324,6 +348,7 @@ namespace Fishing.Angling
             var fishPos = FishWorldPos(f);
             BendRod(f, fishPos);
             _rod.SpinReel(_reelTurns, _lineOut, Time.deltaTime);
+            PoseRightHand();
             PoseLeftHand();
             // 팔은 손목(손 뒤쪽)까지
             if (_leftHand != null) Arm(_sleeveL, _armL, transform.TransformPoint(ShoulderL), _leftWrist.position);

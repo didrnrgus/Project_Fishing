@@ -81,8 +81,9 @@ namespace Fishing.Angling
             // 손목: 손등 뒤로 빠져나가며 장갑 끝 (팔은 FightRodView가 이 점까지 잇는다)
             wrist = new GameObject("Wrist").transform;
             wrist.SetParent(h, false);
-            wrist.localPosition = palmC + radial * 0.035f + new Vector3(0f, ymid - ys[3] - 0.06f, 0f);
-            Part(h, "Cuff", Tube(new[] { palmC + radial * 0.008f + Vector3.down * 0.015f, wrist.localPosition }, 0.022f, 0.021f, roundStart: true), glove);
+            // 손목은 손등보다 카메라 쪽으로 튀어나오면 아래팔이 손을 덮는다 → 손잡이 끝(−Y) 쪽 아래로
+            wrist.localPosition = new Vector3(palmC.x * 0.75f, ys[3] - 0.075f, palmC.z * 0.75f);
+            Part(h, "Cuff", Tube(new[] { palmC + Vector3.down * 0.02f, wrist.localPosition }, 0.022f, 0.021f, roundStart: true), glove);
         }
 
         static void Blob(Transform parent, string name, Vector3 pos, Quaternion rot, Vector3 size, Material mat)

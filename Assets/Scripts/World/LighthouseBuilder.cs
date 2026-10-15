@@ -101,7 +101,7 @@ namespace Fishing.World
 
         /// <summary>칠한 콘크리트: 텍스처 위에 색을 곱한다 (텍스처가 회색이라 조금 밝게 보정).</summary>
         static Material Painted(Color c) =>
-            Mats.Textured("concrete", new Color(Mathf.Min(1f, c.r * 1.22f), Mathf.Min(1f, c.g * 1.22f), Mathf.Min(1f, c.b * 1.22f)), new Vector2(4f, 3f), 0.35f);
+            Mats.Textured("concrete", CoastProps.PaintTint(c), new Vector2(4f, 3f), 0.35f);
 
         /// <summary>전망대: 바닥판 + 난간 기둥 + 위·가운데 난간대.</summary>
         static void Gallery(Transform lh, float y, float r, int posts, float h, Material mat)

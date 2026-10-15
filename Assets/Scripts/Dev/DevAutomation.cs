@@ -646,7 +646,7 @@ namespace Fishing.Dev
                 ("santorini", "56_santorini_cliff", new Vector3(-6f, 1.1f, -42f), 180f, 165f, 16f, 34f, 11 * 60, Weather.Clear),
                 ("santorini", "56b_santorini_caldera", new Vector3(39f, 1.1f, -28f), 0f, -10f, 6f, 13f, 17 * 60 + 30, Weather.Clear),
                 ("nile", "57_nile_bank", new Vector3(6f, 1.1f, -47f), 0f, 10f, 10f, 14f, 10 * 60, Weather.Clear),
-                ("nile", "57b_nile_sunset", new Vector3(-20f, 1.1f, -42f), 0f, -15f, 6f, 12f, 17 * 60 + 40, Weather.Clear),
+                ("nile", "57b_nile_sunset", new Vector3(-2f, 1.1f, -42f), 0f, -15f, 6f, 12f, 17 * 60 + 40, Weather.Clear),
             };
             string loaded = null;
             foreach (var s in shots)
