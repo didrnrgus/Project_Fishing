@@ -154,7 +154,7 @@ namespace Fishing.UI
             var t = Game.Tournament;
             var s = Game.Profile.Data.tournament;
             int day = Game.Clock.Day;
-            Cell(rows.Next(30), $"조합 낚시 대회  <size=14><color=#8090a0>매일 {TournamentRules.TimeText} · 한강 → 서천 앞바다 → 홍현 앞바다 차례로 · AI 낚시꾼 7명과 겨룬다</color></size>",
+            Cell(rows.Next(30), $"조합 낚시 대회  <size=14><color=#8090a0>매일 {TournamentRules.TimeText} · 한강 → 서천 → 홍현, 이어서 갈 수 있는 해안 낚시터 지역 대회 · AI 낚시꾼 7명과 겨룬다</color></size>",
                 4, 920, 20, UIFactory.Accent);
 
             // 오늘 대회 상태
@@ -167,7 +167,7 @@ namespace Fishing.UI
                 TournamentRules.Phase.Running => $"<color=#ffd060>진행 중 · 남은 시간 {Mathf.FloorToInt(t.MinutesLeft / 60f)}시간 {Mathf.FloorToInt(t.MinutesLeft % 60f):00}분</color>",
                 _ => "<color=#8090a0>오늘 대회 끝</color>",
             };
-            Cell(head, $"<b>{TournamentRules.Title(day)}</b>   {phase}" + (t.Joined ? "   <color=#7fd8ff>· 참가 중</color>" : ""), 12, 660, 19);
+            Cell(head, $"<b>{TournamentRules.Title(day, t.MapId)}</b>   {phase}" + (t.Joined ? "   <color=#7fd8ff>· 참가 중</color>" : ""), 12, 660, 19);
             var why = t.CannotJoinReason();
             if (why == null) RowButton(head, "참가 신청", () => { t.Join(); Refresh(); }, 700, 190, UIFactory.BtnGood, true, 18);
             else if (!t.Joined) Cell(head, why, 660, 250, 14, UIFactory.TextDim, TextAnchor.MiddleRight);

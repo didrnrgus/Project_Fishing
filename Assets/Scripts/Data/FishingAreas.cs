@@ -16,9 +16,9 @@ namespace Fishing.Data
     }
 
     /// <summary>
-    /// 원작 "낚시터 목록(KOREA)" 화면의 국내 낚시터 11곳 (원작 한국 코스 1~24레벨). 모두 열려 있고 레벨로 입장을 막는다.
+    /// 원작 "낚시터 목록(KOREA)" 화면의 국내 낚시터 11곳 + 원작 이벤트 지역 제주 (한국 코스 1~24레벨). 모두 열려 있고 레벨로 입장을 막는다.
     /// 한강(Lv.1), 홍현 앞바다(Lv.5, 배를 받는 레벨), 서천 앞바다(Lv.6, 대회 장소)는 맵마다 따로 만든 월드,
-    /// 나머지 8곳은 해안 맵 틀(World/CoastMap.cs + KoreaCoasts.cs)로 만든다. 위치는 지도에 찍을 대략적인 좌표다.
+    /// 나머지 9곳(제주 포함)은 해안 맵 틀(World/CoastMap.cs + KoreaCoasts.cs)로 만든다. 위치는 지도에 찍을 대략적인 좌표다.
     /// </summary>
     public static class FishingAreas
     {
@@ -43,6 +43,8 @@ namespace Fishing.Data
                 Desc = "남해 다랭이마을 아래 갯바위 바다. 감성돔이 인기, 방파제 등대와 갯바위 섬, 먼바다엔 자이언트 그루퍼." },
             new FishingArea { Id = "yokji", Name = "욕지도", Lon = 128.25f, Lat = 34.63f, Open = true, Level = 19, MapId = "yokji",
                 Desc = "참돔과 감성돔의 섬. 바다 위 가두리 낚시터, 펠리컨바위 출렁다리, 가을엔 방어·삼치·갈치." },
+            new FishingArea { Id = "jeju", Name = "제주 서귀포", Lon = 126.56f, Lat = 33.24f, Open = true, Level = 21, MapId = "jeju",
+                Desc = "원작 이벤트 지역. 검은 현무암 갯바위와 외돌개, 범섬, 주상절리, 뒤로 한라산. 자리돔·옥돔·무늬오징어, 밤 먼바다엔 다금바리 어군." },
             new FishingArea { Id = "geomun", Name = "거문도", Lon = 127.3f, Lat = 34.03f, Open = true, Level = 24, MapId = "geomun",
                 Desc = "대물을 꿈꾸는 조사들의 성지. 거문도 등대와 백도, 부시리·돌돔·갈치, 먼바다엔 다금바리·돗돔." },
         };

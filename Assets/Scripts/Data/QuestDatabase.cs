@@ -117,6 +117,63 @@ namespace Fishing.Data
             new QuestDef { Title = "서해의 왕", Desc = "여름 서해의 왕 민어! 저녁엔 C5, 밤엔 F6 어군에 들어온다지. 새우 미끼와 튼튼한 줄을 챙기게.",
                 Goal = QuestGoal.CatchSpecies, SpeciesId = "croaker", Count = 1, RewardGold = 50000, RewardExp = 3000,
                 RewardKeepNet = 2 },
+
+            // ---------- 영흥도 (Lv.9, 서해) ----------
+            new QuestDef { Title = "해무 속의 섬", Desc = "영흥도는 흐린 날 해무가 짙게 깔리는 섬이라네. 진두항 방파제에서 우럭부터 낚아 보게. (Lv.9부터 입장)",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "jacopever", Count = 2, RewardGold = 5000, RewardExp = 700,
+                RewardBaitId = "bait_minnow", RewardBaitCount = 10 },
+            new QuestDef { Title = "목섬 가는 길", Desc = "썰물이면 목섬까지 모래톱이 드러난다네. 물골을 오가는 점농어를 생미끼로 노려 보게. 물이 들기 전에 돌아오고!",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "spottedseabass", Count = 1, RewardGold = 10000, RewardExp = 1200 },
+
+            // ---------- 태안반도 연안 (Lv.11, 서해) ----------
+            new QuestDef { Title = "만리포의 원투", Desc = "만리포 긴 해변은 광어 밭이라네. 생미끼를 멀리 던져 모래 바닥을 노려 보게. (Lv.11부터 입장)",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "flounder", Count = 1, RewardGold = 7000, RewardExp = 1000 },
+            new QuestDef { Title = "대광어", Desc = "70cm가 넘는 광어를 꾼들은 대광어라 부르지. 할미·할아비바위 노을을 보며 한 마리 올려 보게.",
+                Goal = QuestGoal.CatchMinLength, SpeciesId = "flounder", MinLen = 70f, Count = 1, RewardGold = 15000, RewardExp = 1600 },
+
+            // ---------- 삼척 앞바다 (Lv.14, 동해) ----------
+            new QuestDef { Title = "동해의 맛", Desc = "동해로 가 보게! 삼척 앞바다 갯바위에서 누런 몸에 검은 띠, 임연수어를 낚아 오게. (Lv.14부터 입장)",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "atkamackerel", Count = 3, RewardGold = 7000, RewardExp = 1200,
+                RewardBaitId = "bait_egi", RewardBaitCount = 10 },
+            new QuestDef { Title = "집어등 아래", Desc = "밤이 되면 수평선에 오징어배 불빛이 줄지어 켜진다네. 에기로 밤바다의 오징어를 노려 보게.",
+                Goal = QuestGoal.CatchSpeciesInBand, SpeciesId = "squid", Band = TimeBand.Night, Count = 2, RewardGold = 12000, RewardExp = 1600 },
+
+            // ---------- 동해 등대섬 (Lv.16) ----------
+            new QuestDef { Title = "등대섬의 열기", Desc = "등대섬 물은 바닥이 보일 만큼 맑다네. 바위 아래 붉은 열기(불볼락)가 줄줄이 문다지. (Lv.16부터 입장)",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "redrockfish", Count = 4, RewardGold = 9000, RewardExp = 1500 },
+            new QuestDef { Title = "방어 떼를 쫓아", Desc = "새벽과 저녁에 방어 떼가 섬을 돌아 나간다네. 배를 타고 먼 물에서 생미끼나 루어로 붙어 보게.",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "yellowtail", Count = 1, RewardGold = 15000, RewardExp = 1900 },
+
+            // ---------- 헌화로 (Lv.18, 동해) ----------
+            new QuestDef { Title = "헌화가", Desc = "옛날 한 노인이 이 절벽의 진달래를 꺾어 수로부인에게 바쳤다지. 우리는 꽃 대신 새벽 갯바위의 감성돔을 바치세. (Lv.18부터 입장)",
+                Goal = QuestGoal.CatchSpeciesInBand, SpeciesId = "blackseabream", Band = TimeBand.Dawn, Count = 1, RewardGold = 15000, RewardExp = 2000 },
+            new QuestDef { Title = "바위굴의 거인", Desc = "헌화로 갯바위 굴에 대문어가 산다네. 새벽 D2, 저녁 G2에 굴 밖으로 나온다지. 바닥에 붙으면 버티기 싸움일세.",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "giantoctopus", Count = 1, RewardGold = 25000, RewardExp = 2600 },
+
+            // ---------- 욕지도 (Lv.19, 남해) ----------
+            new QuestDef { Title = "가두리 손님", Desc = "욕지도 가두리 낚시터 둘레엔 참돔이 모여든다네. 통로를 걸으며 그물 칸 사이로 찌를 넣어 보게. (Lv.19부터 입장)",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "redseabream", Count = 2, RewardGold = 15000, RewardExp = 2200 },
+            new QuestDef { Title = "은빛 칼", Desc = "밤이면 갈치가 몸을 세우고 수면 가까이 올라온다네. 해체 미끼나 오징어살로 노려 보게.",
+                Goal = QuestGoal.CatchSpeciesInBand, SpeciesId = "hairtail", Band = TimeBand.Night, Count = 3, RewardGold = 18000, RewardExp = 2500 },
+
+            // ---------- 제주 서귀포 (Lv.21) ----------
+            new QuestDef { Title = "외돌개 아래", Desc = "제주에 왔으면 자리돔부터 맛봐야지! 외돌개 앞 갯바위 물속에 구름처럼 떼 지어 있다네. 크릴 한 줌이면 된다. (Lv.21부터 입장)",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "damselfish", Count = 3, RewardGold = 12000, RewardExp = 2400,
+                RewardBaitId = "bait_egi", RewardBaitCount = 10 },
+            new QuestDef { Title = "진상품 옥돔", Desc = "임금님께 올리던 옥돔이라네. 깊은 모래펄 바닥에 갯지렁이를 내려 보게. 해녀 할망이 옥돔국을 끓여 준다더군.",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "tilefish", Count = 1, RewardGold = 22000, RewardExp = 2800 },
+
+            // ---------- 청진포구 (Lv.22, 동해 북부) ----------
+            new QuestDef { Title = "북쪽 끝 항구", Desc = "청진포구는 눈 덮인 큰 항구라네. 깊은 물에서 입 큰 대구부터 낚아 보게. (Lv.22부터 입장)",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "cod", Count = 1, RewardGold = 20000, RewardExp = 2800 },
+            new QuestDef { Title = "명태의 고향", Desc = "국민 생선 명태가 여기서 왔다네. 새벽엔 B5, 밤엔 F6 어군에만 들어오지. 덕장 주인이 꼭 한 마리 보고 싶다더군.",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "pollock", Count = 1, RewardGold = 60000, RewardExp = 4000, RewardKeepNet = 2 },
+
+            // ---------- 거문도 (Lv.24, 남해 먼바다) ----------
+            new QuestDef { Title = "거문도 등대", Desc = "1905년에 불을 밝힌 거문도 등대 아래 갯바위는 돌돔의 집이라네. 맑은 낮에 갯지렁이로 노려 보게. (Lv.24부터 입장)",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "beakfish", Count = 1, RewardGold = 25000, RewardExp = 3000 },
+            new QuestDef { Title = "미터급 부시리", Desc = "마지막 부탁일세. 거문도 아침 G4, 낮 C6에 몰려오는 부시리 무리에서 1m가 넘는 놈을 낚아 오게. 그럼 자네가 진짜 강태공이지!",
+                Goal = QuestGoal.CatchMinLength, SpeciesId = "amberjack", MinLen = 100f, Count = 1, RewardGold = 80000, RewardExp = 5000, RewardKeepNet = 3 },
         };
     }
 }

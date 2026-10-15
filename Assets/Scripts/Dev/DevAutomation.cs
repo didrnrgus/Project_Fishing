@@ -93,6 +93,13 @@ namespace Fishing.Dev
             Game.Player.DebugRun = false;
             yield return new WaitForSeconds(1.2f);
             yield return Shot("00f_idle");
+            // 둔치 공원 나무 (Nature Starter Kit 2 활엽수 + Kenney 소나무)
+            Game.Player.Teleport(new Vector3(-40f, 1.1f, -74f), 180f);
+            Game.CameraRig.Yaw = 200f;
+            Game.CameraRig.Pitch = 10f;
+            Game.CameraRig.Distance = 9f;
+            yield return new WaitForSeconds(1f);
+            yield return Shot("00g_park_trees");
             Game.CameraRig.Yaw = Game.Player.Yaw;
             Game.CameraRig.Distance = 7f;
 
@@ -594,6 +601,8 @@ namespace Fishing.Dev
                 ("heonhwa", "47_heonhwa_road", new Vector3(-40f, 1.1f, -47f), 90f, 140f, 12f, 16f, 13 * 60, Weather.Clear),
                 ("yokji", "48_yokji_farm", new Vector3(-126.5f, 1.4f, 0f), 0f, -20f, 22f, 20f, 15 * 60, Weather.Clear),
                 ("yokji", "48b_yokji_bridge", new Vector3(140f, 1.1f, -16f), 40f, 20f, 16f, 18f, 16 * 60, Weather.Clear),
+                ("jeju", "54_jeju_harbor", new Vector3(14f, 1.1f, -45f), 180f, 160f, 10f, 13f, 11 * 60, Weather.Clear),
+                ("jeju", "54b_jeju_oedolgae", new Vector3(-60f, 1.1f, -44f), 330f, 320f, 12f, 22f, 16 * 60 + 30, Weather.Clear),
                 ("cheongjin", "49_cheongjin_port", new Vector3(28f, 1.1f, -47f), 0f, 30f, 16f, 20f, 10 * 60, Weather.Clear),
                 ("cheongjin", "49b_cheongjin_racks", new Vector3(-60f, 1.1f, -68f), 0f, 200f, 12f, 14f, 14 * 60, Weather.Cloudy),
                 ("geomun", "50_geomun_lighthouse", new Vector3(-90f, 1.1f, -45f), 300f, 300f, 12f, 24f, 17 * 60 + 30, Weather.Clear),

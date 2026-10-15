@@ -162,7 +162,7 @@ namespace Fishing.UI
             t.rectTransform.At(new Vector2(0, 1), new Vector2(16, -8), new Vector2(300, 24));
         }
 
-        const float TabStep = 100f;
+        const float TabStep = 93f;
 
         public override void Open()
         {

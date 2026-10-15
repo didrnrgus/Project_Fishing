@@ -150,11 +150,12 @@ namespace Fishing.World
         public static readonly FieldMapDef Deungdae = new CoastMapDef(KoreaCoasts.Deungdae());
         public static readonly FieldMapDef Heonhwa = new CoastMapDef(KoreaCoasts.Heonhwa());
         public static readonly FieldMapDef Yokji = new CoastMapDef(KoreaCoasts.Yokji());
+        public static readonly FieldMapDef Jeju = new CoastMapDef(KoreaCoasts.Jeju());
         public static readonly FieldMapDef Cheongjin = new CoastMapDef(KoreaCoasts.Cheongjin());
         public static readonly FieldMapDef Geomun = new CoastMapDef(KoreaCoasts.Geomun());
 
         /// <summary>열린 낚시터 (입장 레벨 순, 도감 탭·대물 도전 순서).</summary>
-        public static readonly FieldMapDef[] All = { HanRiver, Honghyeon, Seocheon, Yeongheung, Taean, Samcheok, Deungdae, Heonhwa, Yokji, Cheongjin, Geomun };
+        public static readonly FieldMapDef[] All = { HanRiver, Honghyeon, Seocheon, Yeongheung, Taean, Samcheok, Deungdae, Heonhwa, Yokji, Jeju, Cheongjin, Geomun };
 
         public static FieldMapDef Get(string id)
         {

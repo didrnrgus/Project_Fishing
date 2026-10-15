@@ -434,6 +434,28 @@ SPECIES = {
                             colors=P('#3a5a74', '#b4c4cc', '#f4f6f4', silver=0.8, metallic=0.35, fin_up=('#4a6478', '#6a8090', 0.7), fin_low=('#b8c0c4', '#d0d8dc', 0.6),
                                      patterns=[('spots', dict(n=110, r=(4, 7), color='#1e3044', v=(0.55, 0.9), a=0.75)), ('finlets', True)]),
                             eye=dict(iris='#c8c8b0'), anim=dict(amp=1.1, freq=1.4)),
+    # ===== 제주 =====
+    # 자리돔 (Chromis notata): 손바닥만 한 자리돔과, 짙은 회갈색 몸에 등지느러미 밑 흰 점, 깊게 갈라진 꼬리
+    'damselfish': dict(type='D', name='자리돔', depth=0.42, width=0.13, snout=0.45, mouth=0.05, scales=30,
+                       fins=[_fin('dorsal', (0.3, 0.78), 0.3, prof=[(0, 0.5), (0.2, 1.0), (0.8, 0.8), (1, 1.1)], spiny=True),
+                             _fin('anal', (0.6, 0.8), 0.32), _fin('caudal', h=0.3, shape='deepfork'),
+                             _fin('pectoral', s=(0.3, 0.3), h=0.16), _fin('pelvic', s=(0.34, 0.34), h=0.13)],
+                       colors=P('#2a2e34', '#4a5058', '#8a8c88', silver=0.15, fin_up=('#2a2e34', '#1e2226', 0.9), fin_low=('#3a3e44', '#2a2e34', 0.9),
+                                patterns=[('spots', dict(n=1, r=(9, 9), u=(0.62, 0.62), v=(0.92, 0.92), color='#f0f2f0', a=0.9)), ('scale_edge', 0.5)]),
+                       eye=dict(iris='#6a8aa0'), anim=dict(amp=1.0, freq=1.4)),
+    # 옥돔 (Branchiostegus japonicus): 가파른 이마, 큰 눈, 분홍빛 붉은 몸, 눈 아래 은빛 삼각 무늬, 꼬리에 노란 줄
+    'tilefish': dict(type='C', name='옥돔', depth=0.25, width=0.12, tmax=0.3, snout=0.3, mouth=-0.25, arch=0.62, scales=70,
+                     fins=[_fin('dorsal', (0.27, 0.82), 0.25, prof=[(0, 0.6), (0.1, 1.0), (1, 0.8)]),
+                           _fin('anal', (0.5, 0.82), 0.25), _fin('caudal', h=0.22, shape='truncate'),
+                           _fin('pectoral', s=(0.26, 0.26), h=0.15), _fin('pelvic', s=(0.3, 0.3), h=0.1)],
+                     colors=P('#c0505a', '#e88a8a', '#f6e0dc', silver=0.3, fin_up=('#d07070', '#f0c040', 0.8), fin_low=('#e8a0a0', '#f0c8b0', 0.75),
+                              patterns=[('hstripes', dict(n=4, v=(0.55, 0.9), w=0.012, color='#f0d060', a=0.6))]),
+                     eye=dict(s=0.08, z=0.55, r=0.03, iris='#e0d0a0'), anim=dict(amp=0.9, freq=1.0)),
+    # 무늬오징어 (Sepioteuthis lessoniana): 외투막을 두르는 넓은 지느러미, 반투명한 갈색 얼룩. 에깅의 왕
+    'bigfinsquid': dict(type='Q', name='무늬오징어',
+                        colors=P('#7a5a46', '#b8957a', '#efe2d6', silver=0.05, fin_up=('#c8b098', '#ead8c4', 0.75), fin_low=('#c8b098', '#ead8c4', 0.75),
+                                 patterns=[('mottle', dict(color='#5a3e2c', a=0.45, scale=0.05)), ('spots', dict(n=120, r=(1, 3), color='#4a2e20', v=(0.4, 1.0), a=0.5))]),
+                        eye=dict(iris='#40c0c8')),
     # ===== 서해 (영흥도·태안) =====
     # 점농어 (Lateolabrax maculatus): 농어와 같은 몸에 등·옆구리 검은 점이 뚜렷하다
     'spottedseabass': dict(type='C', name='점농어', depth=0.24, width=0.12, mouth=0.25, snout=0.85, scales=80,

@@ -15,9 +15,9 @@ SRC = os.path.join(ROOT, 'Assets', 'Scripts', 'Data', 'FishDatabase.cs')
 DOC = os.path.join(ROOT, 'docs', '02-game-design.md')
 
 SHORT = {'hangang': '한강', 'honghyeon': '홍현', 'seocheon': '서천', 'yeongheung': '영흥도', 'taean': '태안', 'samcheok': '삼척',
-         'deungdae': '등대섬', 'heonhwa': '헌화로', 'yokji': '욕지도', 'cheongjin': '청진', 'geomun': '거문도'}
-ORDER = ['hangang', 'honghyeon', 'yokji', 'geomun', 'seocheon', 'yeongheung', 'taean', 'heonhwa', 'samcheok', 'deungdae', 'cheongjin']
-SOUTH = ['honghyeon', 'yokji', 'geomun']
+         'deungdae': '등대섬', 'heonhwa': '헌화로', 'yokji': '욕지도', 'cheongjin': '청진', 'geomun': '거문도', 'jeju': '제주'}
+ORDER = ['hangang', 'honghyeon', 'yokji', 'geomun', 'jeju', 'seocheon', 'yeongheung', 'taean', 'heonhwa', 'samcheok', 'deungdae', 'cheongjin']
+SOUTH = ['honghyeon', 'yokji', 'geomun', 'jeju']
 WEST = ['seocheon', 'yeongheung', 'taean']
 EAST = ['heonhwa', 'samcheok', 'deungdae', 'cheongjin']
 GROUPS = {

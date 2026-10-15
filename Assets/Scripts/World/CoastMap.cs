@@ -31,6 +31,10 @@ namespace Fishing.World
         Mountains = 128,      // 육지 뒤 높은 산줄기 (동해안)
         Azaleas = 256,        // 절벽에 핀 진달래 (헌화가)
         IceFloes = 512,       // 물 위에 떠다니는 얼음 조각 (청진포구)
+        Hallasan = 1024,      // 육지 뒤로 솟은 큰 화산 (한라산)
+        DolHareubang = 2048,  // 돌하르방 (포구·낚시점 앞)
+        Tangerines = 4096,    // 돌담 두른 귤밭
+        Columnar = 8192,      // 첫 곶 둘레의 육각 주상절리 기둥
     }
 
     public struct ShoreSeg
@@ -116,6 +120,8 @@ namespace Fishing.World
         public float FogBoost;
         /// <summary>땅이 눈으로 덮여 있다 (청진포구).</summary>
         public bool Snow;
+        /// <summary>검은 현무암 갯바위 (제주).</summary>
+        public bool DarkRock;
 
         public float ShoreZ = -40f;
         /// <summary>해안선 굴곡 (x 중심, 폭, z 이동). +면 바다로 튀어나오고, -면 만.</summary>
@@ -501,7 +507,7 @@ namespace Fishing.World
             _lamps = lamps;
             _bulbs = bulbs;
             _props = new CoastProps(_root, _rng, lamps, bulbs);
-            _rock = Mats.Textured("rock", new Color(0.8f, 0.78f, 0.74f), 1.2f, 0.3f);
+            _rock = S.DarkRock ? Mats.Textured("rock", new Color(0.3f, 0.29f, 0.29f), 1.2f, 0.35f) : Mats.Textured("rock", new Color(0.8f, 0.78f, 0.74f), 1.2f, 0.3f);
             _concrete = Mats.Textured("concrete", new Color(0.88f, 0.88f, 0.86f), 1f, 0.2f);
             _wood = Mats.Textured("deck", new Color(0.85f, 0.72f, 0.58f), 2f, 0.3f);
 
@@ -816,7 +822,7 @@ namespace Fishing.World
                 var go = new GameObject("StackRock");
                 go.transform.SetParent(t, false);
                 go.AddComponent<MeshFilter>().sharedMesh = StackMesh(st.Radius, st.Height + 2f, _rng.Next(1000));
-                go.AddComponent<MeshRenderer>().sharedMaterial = Mats.Textured("rock", new Color(0.78f, 0.74f, 0.68f), 1f, 0.25f);
+                go.AddComponent<MeshRenderer>().sharedMaterial = S.DarkRock ? Mats.Textured("rock", new Color(0.36f, 0.34f, 0.33f), 1f, 0.3f) : Mats.Textured("rock", new Color(0.78f, 0.74f, 0.68f), 1f, 0.25f);
                 // 아랫단: 파도에 젖은 짙은 띠
                 Mats.Prim(PrimitiveType.Cylinder, "StackWet", t, new Vector3(0f, 2.4f, 0f), new Vector3(st.Radius * 2.32f, 0.7f, st.Radius * 2.32f),
                     Mats.Lit(new Color(0.18f, 0.17f, 0.16f), 0.6f), false);
@@ -980,7 +986,10 @@ namespace Fishing.World
                 if (InFeature(x, z)) continue;
                 var tangent = new Vector2(1f, (_map.ShoreAt(x + 1f) - _map.ShoreAt(x - 1f)) * 0.5f).normalized;
                 float yaw = 180f + Mathf.Atan2(-tangent.y, tangent.x) * Mathf.Rad2Deg;
-                KenneyProps.Spawn("Kenney/City/" + small[_rng.Next(small.Length)], _root, new Vector3(x, y - 0.05f, z), yaw + R(-4f, 4f), R(5f, S.NorthPort ? 10f : 8f));
+                if (S.NorthPort)
+                    KenneyProps.Spawn("Kenney/City/" + small[_rng.Next(small.Length)], _root, new Vector3(x, y - 0.05f, z), yaw + R(-4f, 4f), R(5f, 10f));
+                else // 바닷가 마을 집: 길가는 횟집·민박 간판이 가끔
+                    _props.KoreanHouse(new Vector3(x, y - 0.05f, z), yaw - 180f + R(-3f, 3f), _rng.NextDouble() < 0.4);
             }
             // 언덕 위 집과 나무
             int count = Mathf.RoundToInt(70 * S.VillageDensity) + 30;
@@ -996,7 +1005,8 @@ namespace Fishing.World
                 if (house)
                 {
                     var (hy, flat) = Footing(x, z, 3.5f);
-                    if (flat) KenneyProps.Spawn("Kenney/City/" + small[_rng.Next(small.Length)], _root, new Vector3(x, hy - 0.05f, z), 180f + R(-20f, 20f), R(5f, 7f));
+                    if (flat && S.NorthPort) KenneyProps.Spawn("Kenney/City/" + small[_rng.Next(small.Length)], _root, new Vector3(x, hy - 0.05f, z), 180f + R(-20f, 20f), R(5f, 7f));
+                    else if (flat) _props.KoreanHouse(new Vector3(x, hy - 0.05f, z), R(-20f, 20f), false);
                 }
                 else
                     KenneyProps.Spawn("Kenney/Nature/" + (S.Snow ? "tree_pineRoundC" : new[] { "tree_pineRoundA", "tree_pineRoundC", "tree_default", "tree_oak", "tree_pineRoundB" }[_rng.Next(5)]), _root,
@@ -1087,6 +1097,174 @@ namespace Fishing.World
             if ((S.Features & CoastFeature.SuspensionBridge) != 0) SuspensionBridge();
             if ((S.Features & CoastFeature.Azaleas) != 0) Azaleas();
             if ((S.Features & CoastFeature.IceFloes) != 0) IceFloes();
+            if ((S.Features & CoastFeature.Hallasan) != 0) Hallasan();
+            if ((S.Features & CoastFeature.DolHareubang) != 0) DolHareubangs();
+            if ((S.Features & CoastFeature.Tangerines) != 0) Tangerines();
+            if ((S.Features & CoastFeature.Columnar) != 0) ColumnarJoints();
+        }
+
+        /// <summary>한라산: 육지 뒤로 완만하게 솟은 큰 방패 화산, 꼭대기에 백록담 분화구 테.</summary>
+        void Hallasan()
+        {
+            var slope = Mats.Lit(new Color(0.2f, 0.3f, 0.24f), 0.1f);
+            var far = Mats.Lit(new Color(0.3f, 0.38f, 0.4f), 0.05f);
+            var rim = Mats.Lit(new Color(0.42f, 0.4f, 0.36f), 0.1f);
+            Mats.Prim(PrimitiveType.Sphere, "Hallasan", _root, new Vector3(-40f, -40f, -700f), new Vector3(1600f, 330f, 700f), far, false);
+            Mats.Prim(PrimitiveType.Sphere, "HallasanNear", _root, new Vector3(-60f, -30f, -560f), new Vector3(900f, 210f, 400f), slope, false);
+            Mats.Prim(PrimitiveType.Cylinder, "Baengnokdam", _root, new Vector3(-40f, 122f, -700f), new Vector3(130f, 4f, 70f), rim, false);
+            // 오름 (작은 기생 화산)
+            for (int i = 0; i < 6; i++)
+                Mats.Prim(PrimitiveType.Sphere, "Oreum", _root, new Vector3(-320f + i * 120f + R(-30f, 30f), -6f, -300f + R(-40f, 30f)), new Vector3(R(60f, 110f), R(30f, 50f), R(50f, 90f)), slope, false);
+        }
+
+        /// <summary>돌하르방: 구멍 숭숭 현무암, 벙거지 모자, 큰 코, 배에 얹은 두 손.</summary>
+        void DolHareubang(Vector3 at, float yaw, float scale)
+        {
+            var t = new GameObject("DolHareubang").transform;
+            t.SetParent(_root, false);
+            t.localPosition = at;
+            t.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            t.localScale = Vector3.one * scale;
+            var stone = Mats.Textured("rock", new Color(0.32f, 0.31f, 0.31f), 0.6f, 0.25f);
+            var dark = Mats.Lit(new Color(0.15f, 0.15f, 0.15f), 0.2f);
+            Mats.Prim(PrimitiveType.Cube, "Base", t, new Vector3(0f, 0.15f, 0f), new Vector3(0.9f, 0.3f, 0.9f), stone);
+            // 몸은 위아래가 거의 같은 굵은 기둥, 머리는 몸만큼 크고 길쭉하다 (실물 비율: 머리 ≈ 몸의 0.8)
+            Mats.Prim(PrimitiveType.Cylinder, "Body", t, new Vector3(0f, 0.85f, 0f), new Vector3(0.6f, 0.55f, 0.5f), stone, false);
+            Mats.Prim(PrimitiveType.Capsule, "Head", t, new Vector3(0f, 1.78f, 0.02f), new Vector3(0.58f, 0.5f, 0.52f), stone, false);
+            Mats.Prim(PrimitiveType.Cylinder, "HatBrim", t, new Vector3(0f, 2.2f, 0f), new Vector3(0.6f, 0.04f, 0.56f), stone, false);
+            Mats.Prim(PrimitiveType.Capsule, "HatTop", t, new Vector3(0f, 2.33f, 0f), new Vector3(0.44f, 0.16f, 0.42f), stone, false);
+            Mats.Prim(PrimitiveType.Capsule, "Nose", t, new Vector3(0f, 1.72f, 0.27f), new Vector3(0.16f, 0.14f, 0.14f), stone, false);
+            Mats.Prim(PrimitiveType.Cube, "Mouth", t, new Vector3(0f, 1.56f, 0.25f), new Vector3(0.2f, 0.025f, 0.03f), dark, false);
+            foreach (float s in new[] { -1f, 1f })
+            {
+                // 툭 튀어나온 왕방울 눈
+                Mats.Prim(PrimitiveType.Sphere, "EyeBall", t, new Vector3(s * 0.13f, 1.9f, 0.22f), new Vector3(0.17f, 0.13f, 0.1f), stone, false);
+                Mats.Prim(PrimitiveType.Sphere, "Eye", t, new Vector3(s * 0.13f, 1.9f, 0.265f), new Vector3(0.09f, 0.06f, 0.03f), dark, false);
+                // 배에 얹은 두 손 (한 손이 조금 위)
+                Mats.Prim(PrimitiveType.Capsule, "Hand", t, new Vector3(s * 0.07f, 0.95f + (s > 0 ? 0.14f : -0.06f), 0.27f), new Vector3(0.14f, 0.2f, 0.1f), stone, false,
+                    Quaternion.Euler(0f, 0f, 90f));
+            }
+        }
+
+        void DolHareubangs()
+        {
+            var shop = S.ShopPos;
+            DolHareubang(new Vector3(shop.x - 4.8f, H(shop.x - 4.8f, shop.z + 3f), shop.z + 3f), 0f, 1f);
+            DolHareubang(new Vector3(shop.x + 4.8f, H(shop.x + 4.8f, shop.z + 3f), shop.z + 3f), 0f, 1f);
+            foreach (var b in S.Breakwaters)
+                DolHareubang(new Vector3(b.Stem.center.x, _map.LandY, b.Stem.yMin - 4f), 0f, 1.2f);
+        }
+
+        /// <summary>귤밭: 검은 현무암 돌담으로 두른 밭에 주황 귤이 달린 낮은 나무.</summary>
+        void Tangerines()
+        {
+            var wall = Mats.Textured("rock", new Color(0.26f, 0.25f, 0.25f), 0.5f, 0.2f);
+            var leaf = Mats.Lit(new Color(0.12f, 0.32f, 0.14f), 0.45f);
+            var fruit = Mats.Lit(new Color(1f, 0.55f, 0.08f), 0.5f);
+            var trunk = Mats.Lit(new Color(0.35f, 0.28f, 0.2f), 0.2f);
+            for (int g = 0; g < 5; g++)
+            {
+                float cx = -150f + g * 62f + R(-8f, 8f);
+                float cz = _map.ShoreAt(cx) - S.RoadOffset - R(30f, 50f);
+                var (gy, flat) = Footing(cx, cz, 10f);
+                if (!flat || InFeature(cx, cz)) continue;
+                const float half = 12f;
+                // 돌담 (둘레 네 변, 군데군데 틈)
+                foreach (var (o, size) in new[] { (new Vector3(0f, 0f, half), new Vector3(half * 2f, 0.9f, 0.6f)), (new Vector3(0f, 0f, -half), new Vector3(half * 2f, 0.9f, 0.6f)),
+                             (new Vector3(half, 0f, 0f), new Vector3(0.6f, 0.9f, half * 2f)), (new Vector3(-half, 0f, 0f), new Vector3(0.6f, 0.9f, half * 2f)) })
+                {
+                    var p = new Vector3(cx, H(cx + o.x, cz + o.z) + 0.4f, cz) + o;
+                    Mats.Prim(PrimitiveType.Cube, "StoneWall", _root, p, size, wall);
+                }
+                for (float x = -half + 2.5f; x < half - 1f; x += 3.2f)
+                for (float z = -half + 2.5f; z < half - 1f; z += 3.2f)
+                {
+                    float tx = cx + x + R(-0.4f, 0.4f), tz = cz + z + R(-0.4f, 0.4f);
+                    var tree = new GameObject("TangerineTree").transform;
+                    tree.SetParent(_root, false);
+                    tree.localPosition = new Vector3(tx, H(tx, tz), tz);
+                    float s = R(0.8f, 1.1f);
+                    Mats.Prim(PrimitiveType.Cylinder, "Trunk", tree, new Vector3(0f, 0.4f * s, 0f), new Vector3(0.18f, 0.4f * s, 0.18f), trunk, false);
+                    Mats.Prim(PrimitiveType.Sphere, "Leaves", tree, new Vector3(0f, 1.3f * s, 0f), new Vector3(2f, 1.6f, 2f) * s, leaf, false);
+                    for (int k = 0; k < 7; k++)
+                    {
+                        var d = new Vector3(R(-1f, 1f), R(-0.4f, 0.8f), R(-1f, 1f)).normalized;
+                        Mats.Prim(PrimitiveType.Sphere, "Tangerine", tree, new Vector3(0f, 1.3f * s, 0f) + Vector3.Scale(d, new Vector3(0.95f, 0.75f, 0.95f)) * s, Vector3.one * 0.16f, fruit, false);
+                    }
+                }
+            }
+        }
+
+        /// <summary>주상절리: 첫 곶 바다 쪽 둘레에 육각 기둥이 다발로 서 있다 (높이가 들쭉날쭉).</summary>
+        void ColumnarJoints()
+        {
+            if (S.Capes.Length == 0) return;
+            var c = S.Capes[0];
+            var mesh = HexPrism();
+            var mat = Mats.Textured("rock", new Color(0.3f, 0.29f, 0.29f), 0.5f, 0.3f);
+            var dir = (c.Tip - c.Base).normalized;
+            var n = new Vector2(dir.y, -dir.x);
+            for (int i = 0; i < 260; i++)
+            {
+                float t = R(0.35f, 1.05f);
+                float side = i % 3 == 0 ? 1f : i % 3 == 1 ? -1f : 0f;
+                var along = Vector2.Lerp(c.Base, c.Tip, Mathf.Min(1f, t));
+                float w = Mathf.Lerp(c.WidthBase, c.WidthTip, Mathf.Min(1f, t));
+                Vector2 p = side == 0f ? c.Tip + dir * (c.WidthTip * R(0.6f, 1.05f)) + n * R(-w, w) : along + n * side * w * R(0.75f, 1.05f);
+                float top = Mathf.Max(H(p.x, p.y) + R(-0.5f, 1.5f), _map.BaseWaterY + R(0.3f, 2.5f));
+                float bottom = _map.BaseWaterY - 4f;
+                float h = top - bottom;
+                if (h < 1f) continue;
+                var go = new GameObject("BasaltColumn");
+                go.transform.SetParent(_root, false);
+                go.transform.localPosition = new Vector3(p.x, bottom, p.y);
+                go.transform.localRotation = Quaternion.Euler(0f, R(0f, 60f), 0f);
+                float r = R(0.55f, 0.85f);
+                go.transform.localScale = new Vector3(r, h, r);
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                go.AddComponent<MeshRenderer>().sharedMaterial = mat;
+            }
+        }
+
+        static Mesh _hexPrism;
+
+        /// <summary>반지름 1, 높이 1(바닥 0 → 위 1)인 육각 기둥 (옆면 6장 + 윗면).</summary>
+        static Mesh HexPrism()
+        {
+            if (_hexPrism != null) return _hexPrism;
+            var v = new List<Vector3>();
+            var tri = new List<int>();
+            var uv = new List<Vector2>();
+            for (int k = 0; k < 6; k++)
+            {
+                float a0 = k * Mathf.PI / 3f, a1 = (k + 1) * Mathf.PI / 3f;
+                var p0 = new Vector3(Mathf.Cos(a0), 0f, Mathf.Sin(a0));
+                var p1 = new Vector3(Mathf.Cos(a1), 0f, Mathf.Sin(a1));
+                int b = v.Count;
+                v.AddRange(new[] { p0, p1, p1 + Vector3.up, p0 + Vector3.up });
+                uv.AddRange(new[] { new Vector2(0f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 2f), new Vector2(0f, 2f) });
+                tri.AddRange(new[] { b, b + 2, b + 1, b, b + 3, b + 2 });
+            }
+            int c = v.Count;
+            v.Add(Vector3.up);
+            uv.Add(new Vector2(0.5f, 0.5f));
+            for (int k = 0; k < 6; k++)
+            {
+                float a0 = k * Mathf.PI / 3f, a1 = (k + 1) * Mathf.PI / 3f;
+                int b = v.Count;
+                v.Add(new Vector3(Mathf.Cos(a0), 1f, Mathf.Sin(a0)));
+                v.Add(new Vector3(Mathf.Cos(a1), 1f, Mathf.Sin(a1)));
+                uv.Add(new Vector2(0.5f + Mathf.Cos(a0) * 0.5f, 0.5f + Mathf.Sin(a0) * 0.5f));
+                uv.Add(new Vector2(0.5f + Mathf.Cos(a1) * 0.5f, 0.5f + Mathf.Sin(a1) * 0.5f));
+                tri.AddRange(new[] { c, b + 1, b });
+            }
+            _hexPrism = new Mesh { name = "HexPrism" };
+            _hexPrism.SetVertices(v);
+            _hexPrism.SetUVs(0, uv);
+            _hexPrism.SetTriangles(tri, 0);
+            _hexPrism.RecalculateNormals();
+            _hexPrism.RecalculateBounds();
+            return _hexPrism;
         }
 
         /// <summary>절벽 비탈에 핀 분홍 진달래 덤불 (헌화가: 노인이 절벽의 꽃을 꺾어 수로부인에게 바쳤다).</summary>

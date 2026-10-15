@@ -29,13 +29,14 @@ namespace Fishing.Characters
         public const string Reel = "Fishing_Reel_Loop";
         public const string FishingSequence = "Fishing_Sequence";
         public const string Cheer = "Cheer_ArmsUp";
-        public const string Talk = "Idle_Talking_Loop";
+        public const string Talk = "Basic_Talk_Loop";
+        public const string Clap = "Clap_Loop";
         public const string Sit = "Sitting_Idle_Loop";
         public const string Interact = "Interact";
         public const string Dance = "Dance_Loop";
         public const string Drive = "Driving_Loop";
-        public const string JumpStart = "Jump_Start";
-        public const string JumpLoop = "Jump_Loop";
+        public const string JumpStart = "Basic_JumpBegin";
+        public const string JumpLoop = "Basic_Fall_Loop";
 
         static Dictionary<string, AnimationClip> _clips;
 

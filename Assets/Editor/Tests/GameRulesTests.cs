@@ -201,6 +201,15 @@ namespace Fishing.EditorTools.Tests
             Assert.AreEqual("hangang", TournamentRules.MapOf(1));
             Assert.AreEqual("seocheon", TournamentRules.MapOf(2));
             Assert.AreEqual("honghyeon", TournamentRules.MapOf(3));
+            // 지역 대회 (4~6일째): 입장할 수 있는 해안 낚시터만, 못 가면 원래 순서
+            Assert.AreEqual(TournamentRules.MapOf(4), TournamentRules.MapOf(4, 5), "Lv.5는 해안 낚시터에 못 가니 원래 순서");
+            Assert.AreEqual("yeongheung", TournamentRules.MapOf(4, 9));
+            for (int day = 1; day <= 60; day++)
+            {
+                string id = TournamentRules.MapOf(day, 12);
+                Assert.LessOrEqual(FishingAreas.EntryLevel(id), id == "honghyeon" || id == "seocheon" ? 25 : 12, $"{day}일째 {id}");
+            }
+            Assert.IsTrue(Enumerable.Range(1, 120).Select(d => TournamentRules.MapOf(d, 25)).Distinct().Count() == 12, "만렙이면 12곳 모두 대회가 열린다");
         }
     }
 

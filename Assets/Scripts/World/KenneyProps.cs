@@ -34,8 +34,18 @@ namespace Fishing.World
         /// <summary>
         /// 모델을 만든다. height > 0이면 높이를, length > 0이면 가장 긴 수평 길이를 그 값에 맞춘다.
         /// </summary>
+        // Kenney의 단순한 활엽수 자리에 쓰는 Nature Starter Kit 2 나무 (Tree Creator, Resources/NatureKit). 소나무는 Kenney 그대로
+        static readonly string[] BroadleafKenney = { "tree_default", "tree_oak", "tree_fat", "tree_detailed" };
+        // Tree Creator 나무는 빌드에서 메쉬가 빠지므로 에디터가 구워 둔 것(Editor/NatureKitBake → Resources/NatureKit/Baked)을 쓴다
+        static readonly string[] NatureKitTrees = { "NatureKit/Baked/tree01", "NatureKit/Baked/tree02", "NatureKit/Baked/tree03", "NatureKit/Baked/tree04" };
+        static bool? _natureKit;
+        public static bool NatureKitAvailable => _natureKit ??= Resources.Load<GameObject>(NatureKitTrees[0]) != null;
+
         public static GameObject Spawn(string path, Transform parent, Vector3 localPos, float yaw, float height = 0f, float length = 0f, bool solid = true)
         {
+            string leaf = path.Substring(path.LastIndexOf('/') + 1);
+            if (System.Array.IndexOf(BroadleafKenney, leaf) >= 0 && NatureKitAvailable)
+                return SpawnNatureKitTree(parent, localPos, yaw, height > 0f ? height : 7f, solid);
             var prefab = Resources.Load<GameObject>(path);
             if (prefab == null) return null;
             var go = Object.Instantiate(prefab, parent, false);
@@ -65,6 +75,31 @@ namespace Fishing.World
                 r.shadowCastingMode = city ? UnityEngine.Rendering.ShadowCastingMode.Off : UnityEngine.Rendering.ShadowCastingMode.On;
             }
             if (solid) AddCollider(go, path);
+            return go;
+        }
+
+        /// <summary>Nature Starter Kit 2 활엽수 (위치로 종류를 고른다). 높이를 맞추고 줄기 콜라이더를 붙인다.</summary>
+        static GameObject SpawnNatureKitTree(Transform parent, Vector3 localPos, float yaw, float height, bool solid)
+        {
+            int k = Mathf.Abs(Mathf.RoundToInt(localPos.x * 7.31f + localPos.z * 3.17f)) % NatureKitTrees.Length;
+            var prefab = Resources.Load<GameObject>(NatureKitTrees[k]);
+            var go = Object.Instantiate(prefab, parent, false);
+            go.name = "NatureTree";
+            go.transform.localRotation = Quaternion.identity;
+            go.transform.localScale = Vector3.one;
+            var b = LocalBounds(go);
+            float s = b.size.y > 0.01f ? height * 1.15f / b.size.y : 1f;
+            go.transform.localScale = Vector3.one * s;
+            go.transform.localPosition = localPos;
+            go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            if (solid)
+            {
+                var cap = go.AddComponent<CapsuleCollider>();
+                cap.radius = b.size.y * 0.025f;
+                cap.height = b.size.y * 0.5f;
+                cap.center = new Vector3(0f, b.min.y + cap.height * 0.5f, 0f);
+            }
             return go;
         }
 

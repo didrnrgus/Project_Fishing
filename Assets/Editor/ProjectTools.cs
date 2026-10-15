@@ -20,7 +20,7 @@ namespace Fishing.EditorTools
 
         static readonly string[] RuntimeShaders =
         {
-            "Standard", "Unlit/Color", "Skybox/Procedural", "Legacy Shaders/Particles/Alpha Blended", "UI/Default", "Fishing/Skin", "Fishing/Garment", "Fishing/Water", "Fishing/Sky", "Fishing/Fish", "Nature/Terrain/Standard"
+            "Standard", "Unlit/Color", "Skybox/Procedural", "Legacy Shaders/Particles/Alpha Blended", "UI/Default", "Fishing/Skin", "Fishing/Garment", "Fishing/Water", "Fishing/Sky", "Fishing/SkyCube", "Fishing/Fish", "Nature/Terrain/Standard"
         };
 
         [MenuItem("Fishing/Setup Project")]
@@ -93,6 +93,7 @@ namespace Fishing.EditorTools
             else AlwaysIncludeShaders();
             EnsurePostFx();
             FontSetup.Ensure();
+            NatureKitBake.Ensure();
             var options = new BuildPlayerOptions
             {
                 scenes = new[] { ScenePath },

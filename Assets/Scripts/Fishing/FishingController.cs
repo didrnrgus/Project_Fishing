@@ -1088,6 +1088,9 @@ namespace Fishing.Angling
             Game.Sound.Success();
             Rumble.Pulse(0.5f, 0.8f, 0.35f);   // 랜딩
             Game.Player.PlayCheer();
+            // 대물이면 근처 NPC가 돌아보며 박수
+            if (f.Species.IsTrophy(f.Length) || f.Species.Rarity >= 4)
+                Fishing.Characters.NpcAngler.Applaud(Game.Player.transform.position, Game.Player.transform);
             Effects.Splash(fishPos, 40, 1.8f);
             // 원작 1:12: 결과 화면 전에 캐릭터 얼굴 클로즈업
             _cheering = true;

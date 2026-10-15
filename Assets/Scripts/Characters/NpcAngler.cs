@@ -173,6 +173,28 @@ namespace Fishing.Characters
 
         void OnDestroy() => Talkable.Remove(this);
 
+        /// <summary>
+        /// 근처에서 누가 대물을 낚았을 때: 대화 NPC는 돌아보며 3초쯤 박수, 낚시꾼은 낚싯대를 들고 있으니 돌아보기만.
+        /// </summary>
+        public static void Applaud(Vector3 where, Transform who, float radius = 22f)
+        {
+            foreach (var npc in Talkable)
+            {
+                if (npc == null || (npc.transform.position - where).sqrMagnitude > radius * radius) continue;
+                npc.StartCoroutine(npc.ApplaudRoutine(who));
+            }
+        }
+
+        System.Collections.IEnumerator ApplaudRoutine(Transform who)
+        {
+            yield return new WaitForSeconds(Random.Range(0.2f, 0.8f));
+            var before = _faceTarget;
+            _faceTarget = who;
+            if (_role == Role.Talker && _anim != null) _anim.PlayOnce(CharacterAnimator.Clap, 1f, 2.6f);
+            yield return new WaitForSeconds(3.2f);
+            if (_faceTarget == who) _faceTarget = before;
+        }
+
         /// <summary>대화할 때 상대를 돌아본다. null이면 원래 방향으로.</summary>
         public void FaceTarget(Transform target) => _faceTarget = target;
 

@@ -198,7 +198,7 @@ namespace Fishing.UI
             if (t.Phase == TournamentRules.Phase.Registration)
             {
                 _tourTitle.text = "09:00 시작";
-                _tourBody.text = $"{TournamentRules.Title(t.Day)}\n<color=#8090a0>{TournamentRules.MapShortName(t.MapId)}에서 열립니다.\n많이 · 길게 · 길이 합계로 겨뤄요.</color>";
+                _tourBody.text = $"{TournamentRules.Title(t.Day, t.MapId)}\n<color=#8090a0>{TournamentRules.MapShortName(t.MapId)}에서 열립니다.\n많이 · 길게 · 길이 합계로 겨뤄요.</color>";
                 return;
             }
             float left = t.MinutesLeft;
