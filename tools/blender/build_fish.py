@@ -300,10 +300,15 @@ def make_eye(d, B, side):
         zr = 0.35 if side > 0 else -0.05
         s = e['s'] if side > 0 else e['s'] + 0.025
         side = eside
-    x = B.surface_x(s, zr) - r * 0.35
+    # 진짜 물고기 눈처럼 머리에 묻힌 납작한 돔: 겉으로는 반지름의 0.4만 나오고, 옆(x)으로 눌러서
+    # 머리가 얇은 어종(빙어·갈치·전갱이 …)도 안쪽 끝이 몸 가운데를 넘지 않게 한다 (넘으면 반대편 머리로 뚫고 나온다).
+    sx = B.surface_x(s, zr)
+    kx = min(r * 0.8, (sx + r * 0.25) / 2)
+    x = sx + r * 0.4 - kx
     c = mathutils.Vector((side * x, B.y(s), B.z_at(s, zr)))
     bm = bmesh.new()
-    bmesh.ops.create_uvsphere(bm, u_segments=14, v_segments=9, radius=r)
+    bmesh.ops.create_uvsphere(bm, u_segments=20, v_segments=12, radius=r)
+    bmesh.ops.scale(bm, vec=(kx / r, 1.0, 1.0), verts=bm.verts)
     uvl = bm.loops.layers.uv.new('UV')
     for f in bm.faces:
         for l in f.loops:
@@ -425,6 +430,19 @@ def solidify(ob, thick):
     m.use_rim = True
     bpy.context.view_layer.objects.active = ob
     bpy.ops.object.modifier_apply(modifier=m.name)
+    outward_normals(ob)
+
+
+def outward_normals(ob):
+    """면 방향을 바깥으로 맞춘다. 몸통 고리를 만드는 순서 때문에 면이 안쪽을 보고 있었다 — Blender 렌더는 뒷면도 그려서
+    티가 안 났지만 Unity는 뒷면을 버려서, 가까운 쪽 몸통이 사라지고 반대편 눈이 비쳐 '한쪽에 눈 두 개'가 됐다.
+    눈·수염처럼 떨어진 조각도 조각마다 따로 맞춘다."""
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    bm.to_mesh(ob.data)
+    bm.free()
+    ob.data.update()
 
 
 # =====================================================================
@@ -635,6 +653,7 @@ def build(sid):
     extras = [make_eye(d, B, 1), make_eye(d, B, -1)] + make_barbels(d, B)
     ex = bm_to_obj('Extras', extras)
     body = join([body, ex], 'Body')
+    outward_normals(body)
     fins = []
     for name, fv, ff, fu, kind in make_fins(d, B):
         fins.append(mesh_from(name, fv, ff, fu))
@@ -688,6 +707,7 @@ def make_lods(body, fins):
 def build_cephalopod(d, B):
     """주꾸미·갑오징어 (cephalopod.py): 몸통 사슬 + 다리 뼈."""
     body, fins, paths, arm_idx = CP.build(d)
+    outward_normals(body)
     solidify(fins, 0.002)
     arm = build_rig(d, B, body, fins)
     CP.add_arm_bones(arm, paths)
@@ -823,10 +843,12 @@ def render_icon(d, arm, body, fins, out):
 def render_preview(d, arm, out_dir):
     cam = render_setup((900, 520), False, samples=32)
     os.makedirs(out_dir, exist_ok=True)
-    views = {'side': ((2.2, 0, 0.05), None), 'top': ((0.001, 0, 2.4), None), 'three_q': ((1.5, -1.5, 0.7), None)}
+    # front_q: 도감 미리보기가 돌다가 앞쪽에서 비스듬히 볼 때, head: 머리 근접 (눈이 반대편으로 비치지 않는지)
+    views = {'side': ((2.2, 0, 0.05), (0, 0, 0)), 'top': ((0.001, 0, 2.4), (0, 0, 0)), 'three_q': ((1.5, -1.5, 0.7), (0, 0, 0)),
+             'front_q': ((1.6, -1.6, 0.25), (0, 0, 0)), 'head': ((0.55, -0.75, 0.12), (0, -0.38, 0.02))}
     pose_frame(arm, 'Swim_Slow', 12)
-    for name, (pos, _) in views.items():
-        look(cam, pos, (0, 0, 0))
+    for name, (pos, target) in views.items():
+        look(cam, pos, target)
         bpy.context.scene.render.filepath = os.path.join(out_dir, f'{d["id"]}_{name}.png')
         bpy.ops.render.render(write_still=True)
 
