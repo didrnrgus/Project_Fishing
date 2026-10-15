@@ -97,8 +97,10 @@ namespace Fishing.EditorTools
                 }
                 importer.mipmapEnabled = true;
                 importer.wrapMode = UnityEngine.TextureWrapMode.Clamp;
-                // 노멀·금속성은 작게 (빌드 크기): 알베도 1024, 노멀 512, 금속성 256
-                importer.maxTextureSize = assetPath.EndsWith("_n.png") ? 512 : assetPath.EndsWith("_m.png") ? 256 : 1024;
+                // 텍스처는 2048×1024 (fish_tex.S = 2). 비늘 결·나이테가 노멀·금속성 맵에 있어서 줄이면 뭉개진다:
+                // 알베도·노멀 2048, 금속성·매끈함 1024. 어종마다 쓸 때만 불러오므로(Resources) 메모리 부담은 그때뿐이다
+                importer.maxTextureSize = assetPath.EndsWith("_m.png") ? 1024 : 2048;
+                importer.textureCompression = TextureImporterCompression.CompressedHQ;
             }
             else if (assetPath.Contains("Resources/Terrain/"))
             {
