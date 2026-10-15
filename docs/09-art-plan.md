@@ -324,6 +324,26 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --only barramundi,orangegro
 
 - 확인 전: 자동 촬영 `58_nile_fight`·`58b_nile_result`와 도감 해외 탭으로 크기·방향 확인 ([WORK-IN-PROGRESS.md](WORK-IN-PROGRESS.md)).
 
+### 3-14. 뒤집힌 몸통 면 · 눈 다시 만들기 (2026-10-15)
+
+**증상** (도감 화면 제보): 잉어 머리 한쪽에 눈이 두 개 보이고, 다른 어종도 눈·몸이 이상했다.
+
+**원인**: 몸통 메쉬의 면이 **안쪽을 보고 있었다**(잉어 1728면 중 1426면). Blender 렌더는 뒷면도 그려서 미리보기·아이콘에서는 멀쩡했지만, Unity는 뒷면을 버린다(Cull Back). 그래서 카메라 쪽 몸통이 사라지고 몸 안쪽 벽과 **반대편 눈**이 비쳐 보였다. 조명도 뒤집혀 몸이 어둡고 평평했다. 모든 어종이 같았다.
+
+**수정** (`tools/blender/build_fish.py`):
+- `outward_normals()`: 몸통(+눈·수염)을 합친 뒤, 지느러미는 두께를 준 뒤 `bmesh.ops.recalc_face_normals`로 면을 바깥으로 맞춘다. 두족류도 같다.
+- **눈**: 반지름 0.65만큼 튀어나온 공 → 머리에 묻힌 납작한 돔(겉으로 0.4, 옆으로 눌러 안쪽 끝이 몸 가운데를 넘지 않음). 전엔 빙어·갈치·전갱이·삼치 등 머리가 얇은 15종은 눈이 반대편 머리를 뚫고 나왔다. 20×12 분할로 더 둥글게.
+- 미리보기에 `front_q`(앞쪽 비스듬히, 도감에서 돌 때)·`head`(머리 근접) 장면 추가.
+
+**확인 방법**: Blender에서 Unity처럼 보려면 재질에 "뒷면이면 투명"을 넣어 렌더한다(Geometry › Backfacing → Mix Shader의 Transparent). 수정 전에는 몸통이 깨지고, 수정 뒤에는 정상(잉어·참돔·배스·빙어·전갱이·갈치·가자미·오징어·문어·곰치 확인).
+
+> **FBX는 로컬에서 다시 내보내야 한다**: 클라우드 세션은 Git LFS 업로드가 막혀 있어(403) 스크립트만 커밋했다. 로컬에서 아래 첫 줄을 돌린 뒤 `Fishing > Reimport Fish Assets`, 그리고 FBX 77개를 커밋. 납작한 고기(가자미·광어)는 원래 두 눈이 한쪽에 있다.
+
+```bash
+bpyenv/Scripts/python -I tools/blender/build_fish.py --no-icons          # 77종 FBX 다시 내보내기 (텍스처·아이콘은 그대로)
+bpyenv/Scripts/python -I tools/blender/build_fish.py --only carp --preview   # side·top·three_q·front_q·head
+```
+
 ## 4-7. 만든 결과 (2026-10-14)
 
 ![아이템 아이콘](images/33_item_icons.png)
