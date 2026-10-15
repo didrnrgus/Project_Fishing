@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><Nullable>disable</Nullable><LangVersion>latest</LangVersion><ImplicitUsings>disable</ImplicitUsings><NoWarn>CS0414;CS0649;CS0168;CS0219</NoWarn></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/Scripts/Fishing/FightBot.cs" />
+    <Compile Include="../../Assets/Scripts/Fishing/FishFight.cs" />
+    <Compile Include="../../Assets/Scripts/Data/GearDatabase.cs" />
+    <Compile Include="../../Assets/Scripts/Data/RodUpgrade.cs" />
+    <Compile Include="../../Assets/Scripts/Data/FishDatabase.cs" />
+    <Compile Include="../../Assets/Scripts/Data/Enums.cs" /><Compile Include="../../Assets/Scripts/Data/Seasons.cs" />
+  </ItemGroup>
+</Project>
