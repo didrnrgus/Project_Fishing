@@ -6,7 +6,7 @@
 |---|---|---|
 | Quaternius Universal Animation Library (CC0) | `Resources/Animations/UAL1_Standard.fbx` | 대기·걷기·뛰기·점프·말하기·앉기·운전·춤 |
 | **Mixamo** (Adobe) | `Resources/Animations/Mixamo/*.fbx` | 낚싯대 들고 대기, 들어 올리기, 던지기, 챔질, 릴 감기, 환호, NPC 낚시 한 벌 |
-| **Human Basic Motions FREE** (Kevin Iglesias, Asset Store) | `Resources/Animations/KevinIglesias/*.fbx` | 맨손 대기, 걷기, 뛰기, 질주 (남·녀 따로, 7장) |
+| **Human Basic Motions FREE** (Kevin Iglesias, Asset Store) | `Resources/Animations/KevinIglesias/*.fbx` | 맨손 대기, 걷기, 뛰기, 질주, 말하기, 점프·낙하 (남·녀 따로, 7장) |
 
 두 FBX 모두 휴머노이드로 임포트해서(`AssetImportRules`) 어떤 캐릭터(Angler_Male·Female, NPC)에도 그대로 붙는다.
 
@@ -49,6 +49,7 @@
 | `Fishing_Reel_Loop` | FishingCast | 207~238 | ○ | 대기 중 좌클릭으로 찌·루어를 감는 동안 (`FishingController.ReelingIn`) |
 | `Fishing_Sequence` | FishingCast | 0~263 | | NPC 낚시꾼이 20~45초마다 한 벌 통째로 (끝 자세 = `HoldRod` 첫 자세라 이음새가 없다) |
 | `Cheer_ArmsUp` | Cheering | 0~87 | | 랜딩 환호 `PlayCheer()` (두 팔 들고 흔들기, 얼굴 클로즈업) |
+| `Clap_Loop` | Clapping | 0~35 | ○ | 근처에서 대물(대물 기준 이상 또는 ★4 이상)을 낚으면 22m 안 대화 NPC가 돌아보며 약 3초 박수 (`NpcAngler.Applaud`) |
 
 릴 감기 루프 207~238(1.03초)은 130~250 안에서 "시작·끝 포즈 차 + 속도 차"가 가장 작은 구간을 골랐다(포즈 차 약 2cm). 임포트할 때 Loop Pose를 켜서 그 차이도 섞는다.
 
@@ -87,7 +88,7 @@
 
 ## 6. 라이선스
 
-Mixamo 동작은 Adobe 계정으로 받아 게임에 넣어 배포할 수 있지만, **원본 FBX를 그대로 재배포하는 것은 허용되지 않는다.** 이 저장소는 공개라 원래 계획(08 문서 5장)은 `.gitignore`된 폴더에 두는 것이었는데, 2026-10-14에 에셋 스토어 패키지와 함께 `Assets/MixamoAnimation/`을 커밋했다(사용자 결정). 저장소를 비공개로 돌리거나 이 파일들을 LFS 기록에서 빼는 것은 사용자가 정한다.
+Mixamo 동작은 Adobe 계정으로 받아 게임에 넣어 배포할 수 있지만, **원본 FBX를 그대로 재배포하는 것은 허용되지 않는다.** 2026-10-14에 에셋 스토어 패키지와 함께 `Assets/MixamoAnimation/`을 커밋했다(사용자 결정). 저장소는 **비공개**다(2026-10-15 확인). 에셋 스토어·Mixamo 약관이 막는 것은 판매가 아니라 원본 파일을 남이 받을 수 있게 올리는 것이라, 비공개로 두면 그대로 커밋해도 된다. **공개로 바꾸려면** 먼저 `Assets/Kevin Iglesias`·`AllSkyFree`·`Fantasy Skybox FREE`·`NatureStarterKit2`·`BigRookGames`·`MixamoAnimation`과 Resources로 옮긴 그 파일들(`Resources/Animations/Mixamo`·`KevinIglesias`, `Resources/Sky`, `Resources/NatureKit`)을 기록에서 빼야 한다.
 
 ## 7. 대기·걷기·뛰기 (Human Basic Motions FREE)
 
@@ -99,6 +100,9 @@ UAL의 `Idle_Loop`는 주먹 쥔 슈퍼히어로 자세라서, 에셋 스토어 
 | `Walk_M/F.fbx` | Walk01_Forward | `Basic_Walk_Loop_M/_F` | 2.0 m/s (0.8초에 두 걸음) |
 | `Run_M/F.fbx` | Run01_Forward | `Basic_Run_Loop_M/_F` | 4.0 m/s (0.6초) |
 | `Sprint_M/F.fbx` | Sprint01_Forward | `Basic_Sprint_Loop_M/_F` | 6.0 m/s (0.52초) |
+| `Talk_M/F.fbx` | Talk01 | `Basic_Talk_Loop_M/_F` | — (NPC 대화 상대, 예전 UAL Idle_Talking) |
+| `JumpBegin_M/F.fbx` | Jump01 - Begin | `Basic_JumpBegin_M/_F` | — (Space 점프 시작, 한 번) |
+| `Fall_M/F.fbx` | Fall01 | `Basic_Fall_Loop_M/_F` | — (공중) |
 
 - 원래 속도는 같은 패키지의 루트 모션(`[RM]`) 판을 Blender로 열어 엉덩이가 한 바퀴에 간 거리로 쟀다.
 - **임포트**: 휴머노이드, 아바타는 패키지 그대로 **Copy From Other**(HumanM/F_Model) — 우리 규칙이 `CreateFromThisModel`로 덮지 않게 경로를 따로 처리한다. 루트는 포즈에 굽고, Mixamo처럼 +Z를 보므로 `rotationOffset = 180`.

@@ -34,16 +34,16 @@ Assets/
       Mats.cs                    런타임 머티리얼 캐시, 프리미티브·텍스처 상자 헬퍼, 절차적 텍스처
     Data/                        정적 데이터 테이블 (순수 C#)
       Enums.cs                   Habitat, TimeBand, Weather, BaitKind + 한글 이름
-      FishDatabase.cs            어종 54종 + 잡동사니 6종 (맵·제철·어군 전용·먼바다 전용). 바다 지역 묶음 SouthSea·WestSea·EastSea·AllSeas
+      FishDatabase.cs            어종 57종 + 잡동사니 6종 (맵·제철·어군 전용·먼바다 전용). 바다 지역 묶음 SouthSea·WestSea·EastSea·AllSeas
       GearDatabase.cs            낚싯대/릴/줄/배, 미끼(해체 미끼 5등급 포함), 김밥
       ItemDatabase.cs            가방 아이템 이름·설명
       CostumeDatabase.cs         의상 6부위 25벌 + 능력치
-      AchievementDatabase.cs     업적 34개, 레벨 칭호
-      QuestDatabase.cs           이야기 퀘스트 18개 (한강·홍현·서천)
+      AchievementDatabase.cs     업적 35개, 레벨 칭호
+      QuestDatabase.cs           이야기 퀘스트 36개 (낚시터마다)
       RodUpgrade.cs              장비 강화 규칙 (+1~+15, 확률·비용·재료·성능)
       Seasons.cs                 계절 (한 달 = 게임 7일, 1일째 = 4월), 제철 입질 배율
-      TournamentRules.cs         대회 규칙 (미션 점수, 엠블럼, 대회 맵 순서)
-      FishingAreas.cs            낚시터 목록 11곳 (경위도, 입장 레벨, 맵 id)
+      TournamentRules.cs         대회 규칙 (미션 점수, 엠블럼, 대회 맵 순서 — 6일 주기, 해안 낚시터 지역 대회)
+      FishingAreas.cs            낚시터 목록 12곳 (경위도, 입장 레벨, 맵 id)
     Characters/
       CharacterFactory.cs        Angler FBX(몸 + 옷 메쉬)에서 입은 옷만 남기고 색 입히기, 머리카락·이름표 (CharacterLook)
       CharacterAnimator.cs       Playables 믹서로 클립 재생 (AnimatorController 없이 SetLoop/PlayOnce). "이름_M/_F" 클립은 성별로 고른다
@@ -54,8 +54,8 @@ Assets/
       HonghyeonMap.cs            홍현 앞바다 정의·월드 (A~H × 1~8, 방파제·등대·갯바위 섬·다랭이 마을)
       SeocheonMap.cs             서천 앞바다 정의·지형·월드 (갯벌·홍원항 등대·동백정 정자)
       CoastMap.cs                해안 맵 틀: CoastSpec(사양) → CoastMapDef(지형 높이·판정) + CoastWorldBuilder(월드)
-      KoreaCoasts.cs             해안 낚시터 8곳 사양 (영흥도·태안·삼척·등대섬·헌화로·욕지도·청진포구·거문도)
-      CoastProps.cs              바닷가 공용 소품 (등대·큰 등대·테트라포드·정자·가로등·낚시점·바위)
+      KoreaCoasts.cs             해안 낚시터 9곳 사양 (영흥도·태안·삼척·등대섬·헌화로·욕지도·제주·청진포구·거문도)
+      CoastProps.cs              바닷가 공용 소품 (등대·큰 등대·테트라포드·정자·가로등·낚시점·바위·한국 바닷가 집)
       WorldBuilder.cs            한강 월드 (다리, 데크, 낚시점, 나무, 도시, NPC)
       TerrainBuilder.cs          높이 함수 + 칠하기 함수 → Unity Terrain (SeaTerrain = 홍현, SeocheonTerrain = 서천)
       SeaTerrain.cs              홍현 지형 (해변 비탈, 다랭이논 계단, 갯바위 섬)
@@ -102,9 +102,12 @@ Assets/
     Fish.shader                  물고기 (알파 컷 지느러미: clip(), 렌더 텍스처에서도 알파 유지)
     Water.shader                 버텍스 파도 + 흐르는 노멀맵, 하늘 반사, 밤 불빛 반짝임(WaterGlints), 물가 거품·얕은 물 (해저 높이 텍스처)
     Sky.shader                   Mode 0 달·별, Mode 1 구름(덮임 정도·노을색, 흐림·비 층구름)
+    SkyCube.shader               흐림·비 하늘 큐브맵 돔 (AllSky "Overcast Low", 스카이박스 뒤 Transparent-300에 그린다)
   Resources/
     Characters/                  Angler_Male·Female.fbx (tools/blender/build_characters.py), 머리카락, 텍스처
-    Animations/                  Quaternius UAL1_Standard, Mixamo/(낚시 동작 FBX 3개, AssetImportRules가 쪼갬), KevinIglesias/(대기·걷기·뛰기·질주 남·녀) → 10 문서
+    Animations/                  Quaternius UAL1_Standard, Mixamo/(낚시 동작·환호·박수, AssetImportRules가 쪼갬), KevinIglesias/(대기·걷기·뛰기·질주·말하기·점프 남·녀) → 10 문서
+    Sky/Overcast.png             흐린 하늘 큐브맵 (AllSky Free에서 옮김, 1024)
+    NatureKit/Baked/             Nature Starter Kit 2 나무·덤불을 일반 메쉬 프리팹으로 구운 것 (Editor/NatureKitBake)
     Fish/Species, Fish/Textures  어종별 물고기 FBX·텍스처 (tools/blender/build_fish.py)
     Icons/Fish, Icons/Items, Icons/Junk, Junk/   아이콘·잡동사니 모델 (build_fish.py, build_icons.py)
     Terrain/                     Poly Haven CC0 바닥 텍스처 (SOURCES.md)
@@ -120,9 +123,10 @@ Assets/
     AssetInspector.cs            임포트된 에셋 정보 → Logs/asset-inspect.txt
     FishModelCheck.cs            물고기 모델 확인 → Logs/fish-check.txt, 강제 재임포트
     FontSetup.cs                 Jalnan2 TMP 폰트 에셋 생성
+    NatureKitBake.cs             Tree Creator 나무 → 일반 메쉬 프리팹 굽기 (빌드 전 자동, 메뉴 Fishing > Bake Nature Kit Trees)
     BalanceSim.cs                파이팅 밸런스 시뮬레이션 → docs/balance-report.md
     Tests/GameRulesTests.cs      EditMode 단위 테스트 25개 (sh tools/test.sh)
-    Tests/CoastMapTests.cs       낚시터 정의 검사 5개 (물때마다 걸을 수 있는 곳, 어종이 사는 곳에서 낚이는지, 가두리 통로, 모래톱)
+    Tests/CoastMapTests.cs       낚시터 정의 검사 5개 (+ GameRulesTests의 대회 지역 순환) (물때마다 걸을 수 있는 곳, 어종이 사는 곳에서 낚이는지, 가두리 통로, 모래톱)
 tools/
   build.sh, autoshot.sh, test.sh, balance.sh    배치모드 빌드 / 자동 스크린샷 / 테스트 / 밸런스
   fish_table.py                  FishDatabase.cs → 02 문서 11장 어종 표 (--write)
@@ -201,7 +205,7 @@ GameBootstrap.Start → GameUI.EnterLobby (Mode=Lobby, 카메라 고정)
 | 해안선 | `ShoreZ`(-40), `ShoreBumps`(x, 폭, z 이동: 곶·만), `LandHalfWidth`(섬: 양옆이 바다), `Shores`(x 구간별 `Beach`/`Rock`/`Quay`/`Mud`) |
 | 지형 | `NearDepth`·`DepthSlope`(수심), `FlatWidth`(해안 평지), `CliffHeight`·`CliffWidth`(뒤 언덕·절벽), `RoadOffset`(해안도로) |
 | 구조물 | `Breakwaters`(몸통 Rect + 꺾인 팔 + 등대 색), `Capes`(등뼈·폭·높이·숲·`Landmark`), `Islets`(반지름·높이·걷기·`SandBar`), `Stacks`(바위기둥), `Platforms`(`FishFarm` 가두리 / `Boardwalk` 데크길 / `Pier` 잔교) |
-| 풍경 | `Features` 플래그: `SquidBoats`(집어등), `DryingRacks`(덕장), `SeaBridge`(대교), `Cranes`(큰 항구), `FarRocks`(먼 바위섬), `SuspensionBridge`(출렁다리), `Dunes`(+`DuneArea`), `Mountains`, `Azaleas`, `IceFloes`. `FarIslands`, `VillageDensity`, `NorthPort` |
+| 풍경 | `Features` 플래그: `SquidBoats`(집어등), `DryingRacks`(덕장), `SeaBridge`(대교), `Cranes`(큰 항구), `FarRocks`(먼 바위섬), `SuspensionBridge`(출렁다리), `Dunes`(+`DuneArea`), `Mountains`, `Azaleas`, `IceFloes`, `Hallasan`(큰 화산·오름), `DolHareubang`, `Tangerines`(돌담 귤밭), `Columnar`(주상절리 육각 기둥). `FarIslands`, `VillageDensity`, `NorthPort`(회색 항구 건물, 아니면 한국 바닷가 집), `DarkRock`(검은 현무암) |
 | 낚시 | `Grid`(8×8 서식지, 0행 = 해안), `Schools`(어군, 대물 어군은 `Special` + 시간대별 칸) |
 | 사람 | `Spawn`, `ShopPos`, `ShopOwner`, `Npcs`(Id "union" 하나 필수 = 조합 연락관), `Signs`, `Areas`(이름 붙은 자리) |
 
