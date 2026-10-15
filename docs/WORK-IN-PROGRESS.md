@@ -117,6 +117,16 @@
 
 `Editor/VegetationBake`가 빌드할 때 위 프리팹·텍스처를 `Resources/VegetationLibrary.asset`에 묶는다 (Resources 밖이라도 참조로 빌드에 들어간다). 에셋 폴더를 지우면 예전 방식(NSK2 나무·절차적 바위·풀 없음)으로 돌아간다.
 
+### 받은 캐릭터 에셋 (2026-10-15 임포트, 아직 게임에 연결 안 함 — 다음에 이어서)
+
+| 에셋 | 폴더 | 쓸 곳 (계획) |
+|---|---|---|
+| [Unity-Chan! Model](https://assetstore.unity.com/packages/3d/characters/unity-chan-model-18705) | `Assets/unity-chan!` | 서브컬처풍 NPC(조합 직원·낚시꾼)·플레이어 외형 후보. 유니티짱 라이선스: 라이선스 로고·크레딧 표시 필요 |
+| [Modern Zombie Free](https://assetstore.unity.com/packages/slug/58134) (Artalasky) | `Assets/Zombie` | 밤에만 나오는 이벤트 NPC |
+
+- 더 받을 것: Mixamo(mixamo.com Characters 탭, FBX for Unity · T-pose) `swat`·`soldier`·`zombie`·`vampire`·`mutant` 검색 → `Assets/MixamoCharacters/`. 군인·특공대는 항구 순찰 NPC, 좀비·귀신(여성 캐릭터에 반투명 셰이더)은 밤 이벤트 NPC로.
+- 연결할 때: Mixamo 동작(대기·걷기·환호 등)을 Humanoid로 돌려 쓰려면 각 모델 임포트 설정을 Humanoid로, NpcAngler가 CharacterFactory 대신 외부 프리팹을 쓰는 경로를 만든다. 빌드에 넣으려면 VegetationLibrary처럼 참조 묶음 에셋.
+
 ### 사용자가 해야 할 일 (계정 로그인이 필요해서 Claude가 못 한 것)
 
 | 에셋 | 어디서 | 넣으면 좋아지는 것 | 받은 뒤 할 일 |
