@@ -92,12 +92,27 @@ namespace Fishing.Data
             return i + 1 < Emblems.Length ? Emblems[i + 1].points - points : 0;
         }
 
-        /// <summary>그날 대회가 열리는 맵: 한강 → 서천 앞바다(원작 대회 장소) → 홍현 앞바다 순서로 돈다.</summary>
-        public static string MapOf(int day) => (day % 3) switch { 1 => "hangang", 2 => "seocheon", _ => "honghyeon" };
+        /// <summary>지역 대회가 도는 해안 낚시터 (입장 레벨 순).</summary>
+        public static readonly string[] RegionalMaps = { "yeongheung", "taean", "samcheok", "deungdae", "heonhwa", "yokji", "jeju", "cheongjin", "geomun" };
+
+        /// <summary>
+        /// 그날 대회가 열리는 맵. 6일 주기: 앞 3일은 한강 → 서천 앞바다(원작 대회 장소) → 홍현 앞바다,
+        /// 뒤 3일은 플레이어가 입장할 수 있는 해안 낚시터를 돌아가며 연다(지역 대회). 갈 수 있는 해안 낚시터가 없으면(또는 level 0) 앞 3일 규칙대로.
+        /// </summary>
+        public static string MapOf(int day, int level = 0)
+        {
+            string classic = (day % 3) switch { 1 => "hangang", 2 => "seocheon", _ => "honghyeon" };
+            int slot = (day - 1) % 6;
+            if (slot < 3 || level <= 0) return classic;
+            var open = RegionalMaps.Where(id => FishingAreas.EntryLevel(id) <= level).ToArray();
+            if (open.Length == 0) return classic;
+            int round = (day - 1) / 6 * 3 + (slot - 3);
+            return open[round % open.Length];
+        }
 
         public static string MapShortName(string mapId) => Fishing.World.Maps.Get(mapId).ShortName;
 
-        public static string Title(int day) => $"제{day}회 {MapShortName(MapOf(day))} 조합 낚시 대회";
+        public static string Title(int day, string mapId) => $"제{day}회 {MapShortName(mapId)} 조합 낚시 대회";
 
         public static string TimeText => "09:00 ~ 15:00 (참가 신청 08:00부터)";
 

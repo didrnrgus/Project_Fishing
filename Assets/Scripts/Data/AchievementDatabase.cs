@@ -99,7 +99,7 @@ namespace Fishing.Data
                 Done = p => p.Data.level >= 25, Progress = p => (p.Data.level, 25) },
 
             // ---- 전국 낚시터 (영흥도·태안·삼척·등대섬·헌화로·욕지도·청진포구·거문도) ----
-            new AchievementDef { Id = "allmaps", Name = "전국 일주", Desc = "국내 낚시터 11곳에 모두 가 보기", Title = "전국구 조사", Conch = 10,
+            new AchievementDef { Id = "allmaps", Name = "전국 일주", Desc = "국내 낚시터 12곳에 모두 가 보기", Title = "전국구 조사", Conch = 10,
                 Done = p => AllMapIds.All(id => p.Data.visitedMaps.Contains(id)),
                 Progress = p => (AllMapIds.Count(id => p.Data.visitedMaps.Contains(id)), AllMapIds.Count()) },
             new AchievementDef { Id = "dexeast", Name = "동해 박사", Desc = "동해(헌화로·삼척·등대섬·청진포구)의 모든 어종을 도감에 기록", Title = "동해 박사", Conch = 10,
@@ -114,6 +114,9 @@ namespace Fishing.Data
                 Done = p => p.Dex("giantoctopus") != null },
             new AchievementDef { Id = "squid20", Name = "집어등 아래에서", Desc = "오징어 20마리 낚기", Conch = 3,
                 Done = p => (p.Dex("squid")?.count ?? 0) >= 20, Progress = p => (p.Dex("squid")?.count ?? 0, 20) },
+            new AchievementDef { Id = "tamna", Name = "탐라의 맛", Desc = "제주에서 자리돔·옥돔·무늬오징어를 모두 낚기", Title = "제주 조사", Conch = 5,
+                Done = p => p.Dex("damselfish") != null && p.Dex("tilefish") != null && p.Dex("bigfinsquid") != null,
+                Progress = p => ((p.Dex("damselfish") != null ? 1 : 0) + (p.Dex("tilefish") != null ? 1 : 0) + (p.Dex("bigfinsquid") != null ? 1 : 0), 3) },
             new AchievementDef { Id = "hairtail", Name = "5지 갈치", Desc = "110cm가 넘는 갈치 낚기", Conch = 5,
                 Done = p => Dex(p, "hairtail", 110f) },
         };

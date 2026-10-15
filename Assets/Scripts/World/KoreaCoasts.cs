@@ -431,6 +431,66 @@ namespace Fishing.World
             },
         };
 
+        /// <summary>
+        /// 제주 서귀포 (Lv.21, 원작 이벤트 지역): 서귀포항 두 방파제, 검은 현무암 갯바위, 바다에 선 외돌개, 앞바다의 범섬,
+        /// 주상절리 곶, 뒤로 한라산과 오름, 돌담 두른 귤밭, 돌하르방, 해녀 할망. 맑은 쪽빛 물, 자리돔·옥돔·무늬오징어, 밤 먼바다엔 다금바리 어군.
+        /// </summary>
+        public static CoastSpec Jeju() => new CoastSpec
+        {
+            Id = "jeju", MapName = "제주 서귀포 · 남해", ShortName = "제주", ShopName = "서귀포 낚시점", UnionContact = "서귀포항의 어촌계 고계장",
+            LandName = "서귀포 마을", SeaName = "서귀포 앞바다", Seed = 21, DarkRock = true,
+            WaterDeep = new Color(0.02f, 0.14f, 0.26f), WaterShallow = new Color(0.04f, 0.45f, 0.5f),
+            Shores = new[] { new ShoreSeg(-999f, -150f, ShoreKind.Rock), new ShoreSeg(-150f, -112f, ShoreKind.Beach), new ShoreSeg(-112f, -12f, ShoreKind.Rock),
+                             new ShoreSeg(-12f, 82f, ShoreKind.Quay), new ShoreSeg(82f, 999f, ShoreKind.Rock) },
+            NearDepth = 5f, DepthSlope = 0.09f, FlatWidth = 40f, CliffHeight = 16f, CliffWidth = 50f, RoadOffset = 22f, VillageDensity = 0.7f,
+            Breakwaters = new[]
+            {
+                new BreakwaterSpec { Name = "서귀포항 방파제", Stem = new Rect(74f, -40f, 7f, 58f), Arm = new Rect(42f, 12f, 39f, 6f), Light = new Color(0.85f, 0.15f, 0.12f) },
+                new BreakwaterSpec { Name = "서귀포항 흰 등대", Stem = new Rect(-4f, -40f, 6f, 36f), Light = new Color(0.95f, 0.95f, 0.93f), ParapetWest = true },
+            },
+            Capes = new[] { new CapeSpec { Base = new Vector2(-70f, -72f), Tip = new Vector2(-82f, -6f), WidthBase = 30f, WidthTip = 16f, Height = 14f, Forest = true, Name = "주상절리" } },
+            Stacks = new[] { new StackSpec { Pos = new Vector3(-40f, 0f, 16f), Radius = 3.6f, Height = 20f, Pines = true, Name = "외돌개" } },
+            Islets = new[] { new IsletSpec { Center = new Vector3(118f, 0f, 160f), Radius = 30f, Height = 26f, Walkable = true, Trees = true, Name = "범섬" } },
+            Features = CoastFeature.Hallasan | CoastFeature.DolHareubang | CoastFeature.Tangerines | CoastFeature.Columnar,
+            Grid = new[,]
+            {
+                { R, R, R, W, S, S, R, R },
+                { R, W, R, R, D, D, R, R },
+                { W, R, D, D, D, D, D, R },
+                { R, D, D, D, D, D, R, D },
+                { D, D, D, D, R, D, D, D },
+                { D, D, D, D, D, D, R, R },
+                { D, D, D, D, D, D, R, R },
+                { D, D, D, D, D, D, D, D },
+            },
+            Spawn = new Vector3(26f, 1.1f, -47f), ShopPos = new Vector3(10f, 1f, -52f),
+            ShopRoof = new Color(0.9f, 0.5f, 0.15f),
+            ShopOwner = Owner("서귀포 낚시점 오사장", "서귀포 낚시점", new Color(0.95f, 0.6f, 0.2f)),
+            Npcs = new[]
+            {
+                Npc(50f, -47f, 200f, Union("어촌계 고계장", "한국 낚시 조합 제주 지부", true, new Color(0.95f, 0.5f, 0.12f)), NpcAngler.Role.Talker, "union"),
+                Npc(-30f, -46f, 20f, new CharacterLook
+                {
+                    Name = "해녀 할망", Title = "물질 50년", Female = true, TopModel = "Top_Rash", BottomModel = "Pants_Wader", ShoeModel = "Shoes_Boots", Hair = "Hair_Buns",
+                    HairColor = new Color(0.8f, 0.8f, 0.78f), Shirt = new Color(0.08f, 0.08f, 0.1f), Vest = false, Pants = new Color(0.08f, 0.08f, 0.1f), Hat = false
+                }, NpcAngler.Role.Talker),
+                Npc(60f, 16.8f, 0f, Angler("벵에돔 꾼", "크릴 밑밥 장인", new Color(0.1f, 0.35f, 0.5f), 1), NpcAngler.Role.Angler, y: 1f),
+                Npc(-82f, -4f, 0f, Angler("무늬오징어 에깅러", "가을엔 서귀포", new Color(0.9f, 0.85f, 0.75f), 0, true), NpcAngler.Role.Angler),
+            },
+            Signs = new[] { ("서귀포항", new Vector3(26f, 6.5f, -60f), SignBlue), ("외돌개", new Vector3(-40f, 5.5f, -60f), SignGold), ("주상절리대", new Vector3(-70f, 9f, -78f), SignGold) },
+            FarIslands = new[] { new Vector4(-200f, 330f, 60f, 26f), new Vector4(-90f, 380f, 40f, 18f), new Vector4(260f, 520f, 120f, 30f) },
+            Schools = () => new List<FishSchool>
+            {
+                School("자리돔 떼", 2, 0, 2, new[] { TimeBand.Morning, TimeBand.Day, TimeBand.Evening }, "damselfish", "opaleye"),
+                School("벵에돔·감성돔", 5, 0, 2, DawnEve, "opaleye", "blackseabream", "beakfish"),
+                School("무늬오징어", 1, 1, 3, new[] { TimeBand.Dawn, TimeBand.Evening, TimeBand.Night }, "bigfinsquid", "rockfish"),
+                School("옥돔 밭", 3, 3, 6, MornDay, "tilefish", "redseabream"),
+                School("갈치·방어", 6, 3, 7, EveNight, "hairtail", "yellowtail", "amberjack"),
+                // 제주 다금바리: 저녁 G6, 밤 D7 (먼바다)
+                Special("다금바리 어군", "dageumbari", (TimeBand.Evening, 6, 5), (TimeBand.Night, 3, 6)),
+            },
+        };
+
         /// <summary>거문도 (Lv.24): 남해 먼 섬. 수월산 끝 거문도 등대(1905)와 동백숲, 거문항, 바위섬들, 수평선의 백도. 부시리·갈치·돌돔, 먼바다엔 다금바리·돗돔.</summary>
         public static CoastSpec Geomun() => new CoastSpec
         {

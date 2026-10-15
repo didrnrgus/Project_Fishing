@@ -24,7 +24,17 @@ namespace Fishing.Core
         bool _slowed;
 
         public int Day => Game.Clock.Day;
-        public string MapId => TournamentRules.MapOf(Day);
+        /// <summary>오늘 대회 맵. 하루 안에서는 레벨이 올라도 바뀌지 않게 그날 처음 정한 것을 쓴다.</summary>
+        public string MapId
+        {
+            get
+            {
+                if (_mapDay != Day) { _mapDay = Day; _mapId = TournamentRules.MapOf(Day, Game.Profile != null ? Game.Profile.Data.level : 0); }
+                return _mapId;
+            }
+        }
+        int _mapDay = -1;
+        string _mapId;
         public TournamentRules.Phase Phase => TournamentRules.PhaseAt(Game.Clock.Minutes);
         /// <summary>오늘 대회에 참가했는지.</summary>
         public bool Joined => S.day == Day;
@@ -67,12 +77,12 @@ namespace Fishing.Core
             switch (phase)
             {
                 case TournamentRules.Phase.Registration:
-                    Game.Toast($"오늘 {TournamentRules.Title(Day)}가 09:00에 열립니다! {World.Maps.Get(MapId).UnionContact}이나 대기실에서 참가 신청하세요.", ToastKind.Great);
+                    Game.Toast($"오늘 {TournamentRules.Title(Day, MapId)}가 09:00에 열립니다! {World.Maps.Get(MapId).UnionContact}이나 대기실에서 참가 신청하세요.", ToastKind.Great);
                     break;
                 case TournamentRules.Phase.Running:
                     if (Joined)
                     {
-                        Game.Toast($"{TournamentRules.Title(Day)} 시작! 15:00까지 많이 · 길게 · 길이 합계로 겨룹니다.", ToastKind.Great);
+                        Game.Toast($"{TournamentRules.Title(Day, MapId)} 시작! 15:00까지 많이 · 길게 · 길이 합계로 겨룹니다.", ToastKind.Great);
                         if (Game.Sound != null) Game.Sound.LevelUp();
                     }
                     break;
@@ -107,8 +117,8 @@ namespace Fishing.Core
             s.longestFish = null;
             s.total = 0f;
             Game.Toast(Phase == TournamentRules.Phase.Running
-                ? $"{TournamentRules.Title(Day)}에 참가했습니다! 이미 시작했으니 서두르세요 ({TournamentRules.MapShortName(MapId)})."
-                : $"{TournamentRules.Title(Day)}에 참가 신청했습니다. 09:00에 {TournamentRules.MapShortName(MapId)}에서 시작합니다.", ToastKind.Great);
+                ? $"{TournamentRules.Title(Day, MapId)}에 참가했습니다! 이미 시작했으니 서두르세요 ({TournamentRules.MapShortName(MapId)})."
+                : $"{TournamentRules.Title(Day, MapId)}에 참가 신청했습니다. 09:00에 {TournamentRules.MapShortName(MapId)}에서 시작합니다.", ToastKind.Great);
             Profile.NotifyChanged();
             return true;
         }
@@ -177,7 +187,7 @@ namespace Fishing.Core
             if (me.Rank <= 3 && string.IsNullOrEmpty(extra)) Profile.AddItem(RodUpgrade.StarSandId, 1);
 
             string winner = entries[0].IsPlayer ? "우승!" : $"우승은 {entries[0].Name}";
-            Game.Toast($"{TournamentRules.Title(s.day)} 종료 — 나는 {me.Rank}위 ({me.Points}점, {me.Count}마리 · 최장 {me.Longest:0.0}cm). {winner}",
+            Game.Toast($"{TournamentRules.Title(s.day, s.mapId)} 종료 — 나는 {me.Rank}위 ({me.Points}점, {me.Count}마리 · 최장 {me.Longest:0.0}cm). {winner}",
                 me.Rank <= 3 ? ToastKind.Great : ToastKind.Info);
             Game.Toast($"대회 보상: {gold:N0}골드" + (conch > 0 ? $" · 소라고동 {conch}" : "") + extra + $" · 대회 포인트 +{gained}",
                 ToastKind.Good);

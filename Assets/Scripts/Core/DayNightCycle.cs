@@ -18,6 +18,10 @@ namespace Fishing.Core
         ReflectionProbe _skyProbe;
         Fishing.World.SkyDecor _decor;
         float _nextProbeAt;
+        // 흐린 날·비 오는 날 하늘을 덮는 큐브맵 돔 (AllSky Free "Overcast Low")
+        Transform _overcastDome;
+        Material _overcastMat;
+        float _overcast;
 
         /// <summary>낚시터가 바뀌면 그 맵의 가로등으로 바꾼다.</summary>
         public void SetLampSet(List<Light> lamps, List<Renderer> bulbs)
@@ -52,6 +56,7 @@ namespace Fishing.Core
 
             _decor = new GameObject("SkyDecor").AddComponent<Fishing.World.SkyDecor>();
             _decor.transform.SetParent(transform, false);
+            BuildOvercastDome();
 
             // 기본 반사는 시작할 때의 하늘로 고정되므로, 하늘만 찍는 실시간 프로브를 주기적으로 갱신한다
             var probeGo = new GameObject("SkyReflection");
@@ -65,6 +70,43 @@ namespace Fishing.Core
             _skyProbe.cullingMask = 0;
             _skyProbe.clearFlags = UnityEngine.Rendering.ReflectionProbeClearFlags.Skybox;
             _skyProbe.importance = 0;
+        }
+
+        void BuildOvercastDome()
+        {
+            var cube = Resources.Load<Cubemap>("Sky/Overcast");
+            var shader = Shader.Find("Fishing/SkyCube");
+            if (cube == null || shader == null) return;
+            _overcastMat = new Material(shader);
+            _overcastMat.SetTexture("_Cube", cube);
+            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            go.name = "OvercastDome";
+            Object.Destroy(go.GetComponent<Collider>());
+            go.transform.SetParent(transform, false);
+            go.transform.localScale = Vector3.one * 2300f; // 반지름 1150m (카메라 far 1200m 안, 먼 섬·한라산보다 바깥)
+            var r = go.GetComponent<MeshRenderer>();
+            r.sharedMaterial = _overcastMat;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            _overcastDome = go.transform;
+            go.SetActive(false);
+        }
+
+        /// <summary>흐림 0.75, 비 0.95만큼 큐브맵 하늘을 덮는다. 낮 밝기·노을색에 맞춰 어둡게, 밤엔 거의 검게.</summary>
+        void UpdateOvercast(float day, float warm)
+        {
+            if (_overcastDome == null) return;
+            float target = Game.Weather.Current switch { Weather.Cloudy => 0.75f, Weather.Rain => 0.95f, _ => 0f };
+            _overcast = Mathf.MoveTowards(_overcast, target, Time.deltaTime * 0.15f);
+            bool show = _overcast > 0.01f && Game.Mode == GameMode.Field && Game.CameraRig != null;
+            _overcastDome.gameObject.SetActive(show);
+            if (!show) return;
+            _overcastDome.position = Game.CameraRig.Cam.transform.position;
+            var tint = Color.Lerp(new Color(0.06f, 0.07f, 0.1f), Color.white, day) * Mathf.Lerp(0.75f, 1f, _weatherDim);
+            tint = Color.Lerp(tint, tint * new Color(1.15f, 0.85f, 0.7f), warm * day * 0.6f);
+            _overcastMat.SetColor("_Tint", tint);
+            _overcastMat.SetFloat("_Blend", _overcast * Mathf.Lerp(0.6f, 1f, day));
+            _overcastMat.SetFloat("_Yaw", Game.Clock.TotalMinutes * 0.02f); // 구름이 아주 천천히 흘러간다
         }
 
         Light CreateLight(string name, Color color, LightShadows shadows)
@@ -145,6 +187,7 @@ namespace Fishing.Core
                 _skyProbe.RenderProbe();
             }
 
+            UpdateOvercast(day, warm);
             Fishing.World.KenneyProps.SetNightGlow(1f - day);
             bool wantLamps = day < 0.45f || _weatherDim < 0.45f;
             Fishing.World.WaterGlints.SetNight(Mathf.Clamp01((0.55f - day) / 0.35f));

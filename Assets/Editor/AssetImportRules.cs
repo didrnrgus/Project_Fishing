@@ -133,6 +133,7 @@ namespace Fishing.EditorTools
             ("FishingCast", "Fishing_Reel_Loop", 207, 238), // 릴 감기 한 바퀴 (포즈 차 2cm 구간)
             ("FishingCast", "Fishing_Sequence", 0, 263),    // 전체 (NPC가 가끔 통째로)
             ("Cheering", "Cheer_ArmsUp", 0, 87),            // 랜딩 환호: 두 팔 들고 흔들기
+            ("Clapping", "Clap_Loop", 0, 35),               // 박수 (근처에서 대물을 낚으면 NPC가 친다)
         };
 
         /// <summary>
@@ -145,6 +146,9 @@ namespace Fishing.EditorTools
             ("Walk", "Basic_Walk_Loop"),     // Walk01_Forward: 0.8초 한 걸음 쌍, 원래 2.0m/s
             ("Run", "Basic_Run_Loop"),       // Run01_Forward: 0.6초, 원래 4.0m/s (게임 걷기 4.5m/s)
             ("Sprint", "Basic_Sprint_Loop"), // Sprint01_Forward: 0.52초, 원래 6.0m/s (게임 달리기 7.5m/s)
+            ("Talk", "Basic_Talk_Loop"),     // Talk01: 손짓하며 말하기 (NPC 대화 상대)
+            ("JumpBegin", "Basic_JumpBegin"),// Jump01 - Begin: 웅크렸다 뛰어오르기 (한 번)
+            ("Fall", "Basic_Fall_Loop"),     // Fall01: 공중에서 떨어지는 자세
         };
 
         void OnPreprocessAnimation()
@@ -191,8 +195,9 @@ namespace Fishing.EditorTools
                 if (f != kind) continue;
                 var c = defaults[0];
                 c.name = name + gender;
-                c.loopTime = true;
-                c.loopPose = true;
+                bool loop = name.Contains("Loop");
+                c.loopTime = loop;
+                c.loopPose = loop;
                 c.lockRootRotation = true;
                 c.lockRootHeightY = true;
                 c.lockRootPositionXZ = true;

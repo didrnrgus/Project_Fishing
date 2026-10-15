@@ -129,7 +129,7 @@ namespace Fishing.UI
         {
             var t = Game.Tournament;
             var s = Game.Profile.Data.tournament;
-            string head = $"오늘은 [{TournamentRules.Title(t.Day)}]가 {TournamentRules.TimeText}에 열립니다.\n" +
+            string head = $"오늘은 [{TournamentRules.Title(t.Day, t.MapId)}]가 {TournamentRules.TimeText}에 열립니다.\n" +
                           "가장 많이, 가장 길게, 길이 합계 — 세 미션 점수로 순위를 매기고, 1위는 거거 낚시대, 2위는 나팔고둥 릴을 드려요.\n" +
                           $"지금 계급은 {TournamentRules.EmblemColored(s.points)} (누적 {s.points}점)이시네요.";
             if (t.Joined && !s.settled)

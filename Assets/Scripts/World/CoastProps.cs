@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Fishing.Characters;
 using Fishing.Core;
+using Fishing.UI;
 using UnityEngine;
 
 namespace Fishing.World
@@ -233,6 +234,99 @@ namespace Fishing.World
             npc.NpcId = "shop";
             WorldBuilder.AddSign(shop, sign, new Vector3(0f, 3.9f, 2.3f), new Color(0.6f, 0.85f, 1f));
             return npc;
+        }
+
+        static readonly Color[] RoofColors =
+        {
+            new Color(0.2f, 0.38f, 0.68f), new Color(0.72f, 0.22f, 0.16f), new Color(0.22f, 0.5f, 0.36f),
+            new Color(0.85f, 0.45f, 0.15f), new Color(0.35f, 0.55f, 0.75f), new Color(0.55f, 0.18f, 0.2f),
+        };
+        static readonly Color[] WallColors =
+        {
+            new Color(0.94f, 0.93f, 0.9f), new Color(0.92f, 0.88f, 0.78f), new Color(0.85f, 0.86f, 0.84f), new Color(0.9f, 0.84f, 0.74f),
+        };
+        static readonly string[] ShopSigns = { "횟집", "민박", "수산", "슈퍼", "식당", "낚시민박", "회센터", "카페" };
+        static Mesh _gable;
+
+        /// <summary>
+        /// 바닷가 마을 집: 단층 박공지붕 집(파랑·빨강·초록 지붕) 또는 2층 상가(평지붕, 옥상 물탱크, 1층 간판).
+        /// 앞(+Z)이 길·바다 쪽. 몸 콜라이더를 붙인다. sign이면 1층 위에 간판 (바다 쪽에서 읽힌다).
+        /// </summary>
+        public Transform KoreanHouse(Vector3 at, float yaw, bool sign)
+        {
+            var h = new GameObject("KoreanHouse").transform;
+            h.SetParent(_root, false);
+            h.localPosition = at;
+            h.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            var wall = Mats.Lit(WallColors[_rng.Next(WallColors.Length)], 0.15f);
+            var roof = Mats.Lit(RoofColors[_rng.Next(RoofColors.Length)], 0.35f);
+            var glass = Mats.Lit(new Color(0.16f, 0.22f, 0.28f), 0.8f);
+            var frame = Mats.Lit(new Color(0.75f, 0.75f, 0.73f), 0.3f);
+            var door = Mats.Lit(new Color(0.42f, 0.32f, 0.24f), 0.3f);
+            bool twoStory = _rng.NextDouble() < 0.35;
+            float w = R(7f, 11f), d = R(5.5f, 8f), floorH = 2.9f;
+            float wallH = twoStory ? floorH * 2f : floorH;
+            Mats.Prim(PrimitiveType.Cube, "Wall", h, new Vector3(0f, wallH * 0.5f - 0.2f, 0f), new Vector3(w, wallH + 0.4f, d), wall, false);
+            // 창문·문 (앞면)
+            int windows = Mathf.Max(1, Mathf.RoundToInt(w / 3.2f));
+            for (int f = 0; f < (twoStory ? 2 : 1); f++)
+            for (int i = 0; i < windows; i++)
+            {
+                float x = -w * 0.5f + (i + 0.5f) * w / windows;
+                bool isDoor = f == 0 && i == windows / 2;
+                var size = isDoor ? new Vector3(1.1f, 2.1f, 0.06f) : new Vector3(1.4f, 1.1f, 0.06f);
+                float y = f * floorH + (isDoor ? 1.05f : 1.55f);
+                Mats.Prim(PrimitiveType.Cube, "Frame", h, new Vector3(x, y, d * 0.5f + 0.02f), size + new Vector3(0.16f, 0.16f, -0.02f), frame, false);
+                Mats.Prim(PrimitiveType.Cube, isDoor ? "Door" : "Window", h, new Vector3(x, y, d * 0.5f + 0.05f), size, isDoor ? door : glass, false);
+            }
+            if (twoStory)
+            {
+                // 평지붕 + 난간 턱 + 옥상 물탱크 (한국 바닷가 상가)
+                Mats.Prim(PrimitiveType.Cube, "RoofSlab", h, new Vector3(0f, wallH + 0.1f, 0f), new Vector3(w + 0.3f, 0.2f, d + 0.3f), frame, false);
+                Mats.Prim(PrimitiveType.Cube, "Parapet", h, new Vector3(0f, wallH + 0.45f, d * 0.5f), new Vector3(w + 0.3f, 0.5f, 0.2f), wall, false);
+                var tank = Mats.Lit(_rng.NextDouble() < 0.5 ? new Color(0.25f, 0.45f, 0.8f) : new Color(0.8f, 0.25f, 0.2f), 0.4f);
+                Mats.Prim(PrimitiveType.Cylinder, "WaterTank", h, new Vector3(R(-w * 0.25f, w * 0.25f), wallH + 1f, -d * 0.2f), new Vector3(1.4f, 0.75f, 1.4f), tank, false);
+            }
+            else
+            {
+                // 박공지붕 (용마루가 앞뒤 방향 → 처마가 길·바다 쪽)
+                var go = new GameObject("Roof");
+                go.transform.SetParent(h, false);
+                go.transform.localPosition = new Vector3(0f, wallH, 0f);
+                go.transform.localScale = new Vector3(w + 0.8f, R(1.6f, 2.3f), d + 0.9f);
+                go.AddComponent<MeshFilter>().sharedMesh = Gable();
+                go.AddComponent<MeshRenderer>().sharedMaterial = roof;
+            }
+            if (sign)
+            {
+                string text = ShopSigns[_rng.Next(ShopSigns.Length)];
+                var board = Mats.Lit(new Color(0.95f, 0.95f, 0.92f), 0.3f);
+                float sy = twoStory ? floorH + 0.1f : floorH - 0.35f;
+                Mats.Prim(PrimitiveType.Cube, "SignBoard", h, new Vector3(0f, sy, d * 0.5f + 0.12f), new Vector3(Mathf.Min(w - 1f, 4.5f), 0.7f, 0.12f), board, false);
+                var t = UIFactory.WorldText(h, text, new Vector3(0f, sy, d * 0.5f + 0.2f), new Color(0.75f, 0.12f, 0.1f), 5f, "Sign");
+                UIFactory.OneSided(t);
+                t.transform.localScale = Vector3.one * 0.85f;
+                t.transform.localRotation = Quaternion.Euler(0f, 180f, 0f); // 앞(+Z, 바다 쪽)에서 읽힌다
+            }
+            var col = h.gameObject.AddComponent<BoxCollider>();
+            col.center = new Vector3(0f, wallH * 0.5f, 0f);
+            col.size = new Vector3(w, wallH + 1f, d);
+            return h;
+        }
+
+        /// <summary>박공지붕 단위 메쉬: 바닥 x -0.5~0.5, z -0.5~0.5, 용마루 높이 1 (용마루가 x 방향). 면마다 법선이 따로.</summary>
+        static Mesh Gable()
+        {
+            if (_gable != null) return _gable;
+            var a = new Vector3(-0.5f, 0f, -0.5f); var b = new Vector3(0.5f, 0f, -0.5f);
+            var c = new Vector3(0.5f, 0f, 0.5f); var e = new Vector3(-0.5f, 0f, 0.5f);
+            var r0 = new Vector3(-0.5f, 1f, 0f); var r1 = new Vector3(0.5f, 1f, 0f);
+            var v = new[] { a, b, r1, r0,   e, r0, r1, c,   a, r0, e,   b, c, r1,   a, e, c, b };
+            var t = new[] { 0, 2, 1, 0, 3, 2,   4, 6, 5, 4, 7, 6,   8, 10, 9,   11, 13, 12,   14, 15, 16, 14, 16, 17 };
+            _gable = new Mesh { name = "GableRoof", vertices = v, triangles = t };
+            _gable.RecalculateNormals();
+            _gable.RecalculateBounds();
+            return _gable;
         }
 
         /// <summary>갯바위 덩어리 (텍스처 바위 구를 찌그러뜨려 눕힌다).</summary>
