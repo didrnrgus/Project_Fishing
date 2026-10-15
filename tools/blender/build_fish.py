@@ -37,7 +37,7 @@ import cephalopod as CP  # noqa: E402
 import fish_species as FS  # noqa: E402
 import fish_tex  # noqa: E402
 
-NR, NA = 44, 28   # 몸 고리 수, 고리 둘레 버텍스 수
+NR, NA = 64, 40   # 몸 고리 수, 고리 둘레 버텍스 수 (+ 아가미 뚜껑 근처에 고리 몇 개 더)
 FPS = 30
 
 
@@ -127,20 +127,39 @@ def body_uv(d, s, a):
     return (u, v)
 
 
+def fish_tex_smooth(e0, e1, x):
+    t = min(1.0, max(0.0, (x - e0) / (e1 - e0 + 1e-9)))
+    return t * t * (3 - 2 * t)
+
+
 def build_body_mesh(d, B):
     verts, faces, uvs = [], [], []
     ss = [0.006 + (1 - 0.006) * (0.5 - 0.5 * math.cos(math.pi * i / (NR - 1))) for i in range(NR)]
+    he = fish_tex.head_end_of(d)
+    flat = d.get('flat')
+    if not flat:
+        # 아가미 뚜껑 턱이 뭉개지지 않게 그 근처에 고리를 더 넣는다
+        ss = sorted(set(round(x, 5) for x in ss + [he - 0.06 + 0.008 * i for i in range(10)]))
+    nr = len(ss)
     for s in ss:
         for k in range(NA):
             a = 2 * math.pi * k / NA
-            verts.append(B.ring_point(s, a))
+            x, y, z = B.ring_point(s, a)
+            if not flat:
+                # 아가미 뚜껑 판이 몸 위로 살짝 덮인다: 뒤 가장자리 바로 앞이 볼록하고 그 뒤로 턱이 진다
+                v = body_uv(d, s, a)[1]
+                ge = fish_tex.gill_edge(d, v)
+                bump = fish_tex_smooth(ge - 0.07, ge - 0.006, s) * fish_tex_smooth(ge + 0.014, ge + 0.002, s)
+                side = fish_tex_smooth(0.05, 0.25, v) * fish_tex_smooth(0.98, 0.8, v)
+                x *= 1 + 0.06 * bump * side
+            verts.append((x, y, z))
     # 주둥이 끝 점, 꼬리자루 끝 점
     nose = len(verts)
     verts.append((0.0, B.y(0.0), B.zc(0.0)))
     tail = len(verts)
     verts.append((0.0, B.y(1.0) + 0.002, B.zc(1.0)))
     loops_uv = []
-    for i in range(NR - 1):
+    for i in range(nr - 1):
         for k in range(NA):
             k2 = (k + 1) % NA
             f = (i * NA + k, i * NA + k2, (i + 1) * NA + k2, (i + 1) * NA + k)
@@ -152,7 +171,7 @@ def build_body_mesh(d, B):
         a1, a2 = 2 * math.pi * k / NA, 2 * math.pi * (k + 1) / NA
         faces.append((nose, k2, k))
         loops_uv.append([(0.0, 0.5), body_uv(d, ss[0], a2), body_uv(d, ss[0], a1)])
-        base = (NR - 1) * NA
+        base = (nr - 1) * NA
         faces.append((tail, base + k, base + k2))
         loops_uv.append([(0.75, 0.5), body_uv(d, 1.0, a1), body_uv(d, 1.0, a2)])
     return verts, faces, loops_uv
@@ -300,10 +319,15 @@ def make_eye(d, B, side):
         zr = 0.35 if side > 0 else -0.05
         s = e['s'] if side > 0 else e['s'] + 0.025
         side = eside
-    x = B.surface_x(s, zr) - r * 0.35
+    # 진짜 물고기 눈처럼 머리에 묻힌 납작한 돔: 겉으로는 반지름의 0.4만 나오고, 옆(x)으로 눌러서
+    # 머리가 얇은 어종(빙어·갈치·전갱이 …)도 안쪽 끝이 몸 가운데를 넘지 않게 한다 (넘으면 반대편 머리로 뚫고 나온다).
+    sx = B.surface_x(s, zr)
+    kx = min(r * 0.8, (sx + r * 0.25) / 2)
+    x = sx + r * 0.4 - kx
     c = mathutils.Vector((side * x, B.y(s), B.z_at(s, zr)))
     bm = bmesh.new()
-    bmesh.ops.create_uvsphere(bm, u_segments=14, v_segments=9, radius=r)
+    bmesh.ops.create_uvsphere(bm, u_segments=20, v_segments=12, radius=r)
+    bmesh.ops.scale(bm, vec=(kx / r, 1.0, 1.0), verts=bm.verts)
     uvl = bm.loops.layers.uv.new('UV')
     for f in bm.faces:
         for l in f.loops:
@@ -355,7 +379,7 @@ def make_barbels(d, B):
                 t = i / 8
                 p = start + d0 * L * t + mathutils.Vector((0, 0.55, -0.15)) * L * t * t
                 pts.append(tuple(p))
-            out.append(make_tube(pts, th, th * 0.3, (0.875, 0.25, 0.9375, 0.375)))
+            out.append(make_tube(pts, th * 0.7, th * 0.2, (0.875, 0.25, 0.9375, 0.375)))   # 가늘고 끝이 뾰족한 살 수염
     if d.get('beak'):
         L = d['beak']
         z0 = B.zc(0.02) - B.bot(0.02) * 0.4
@@ -425,6 +449,19 @@ def solidify(ob, thick):
     m.use_rim = True
     bpy.context.view_layer.objects.active = ob
     bpy.ops.object.modifier_apply(modifier=m.name)
+    outward_normals(ob)
+
+
+def outward_normals(ob):
+    """면 방향을 바깥으로 맞춘다. 몸통 고리를 만드는 순서 때문에 면이 안쪽을 보고 있었다 — Blender 렌더는 뒷면도 그려서
+    티가 안 났지만 Unity는 뒷면을 버려서, 가까운 쪽 몸통이 사라지고 반대편 눈이 비쳐 '한쪽에 눈 두 개'가 됐다.
+    눈·수염처럼 떨어진 조각도 조각마다 따로 맞춘다."""
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    bm.to_mesh(ob.data)
+    bm.free()
+    ob.data.update()
 
 
 # =====================================================================
@@ -635,6 +672,7 @@ def build(sid):
     extras = [make_eye(d, B, 1), make_eye(d, B, -1)] + make_barbels(d, B)
     ex = bm_to_obj('Extras', extras)
     body = join([body, ex], 'Body')
+    outward_normals(body)
     fins = []
     for name, fv, ff, fu, kind in make_fins(d, B):
         fins.append(mesh_from(name, fv, ff, fu))
@@ -651,7 +689,7 @@ def build(sid):
     arm = build_rig(d, B, body, fins)
     # LOD1 (수족관에 여러 마리): 몸·지느러미를 줄인 복사본
     lods = []
-    for ob, ratio in ((body, 0.28), (fins, 0.35)):
+    for ob, ratio in ((body, 0.14), (fins, 0.35)):
         c = ob.copy()
         c.data = ob.data.copy()
         c.name = ob.name + '_LOD1'
@@ -670,7 +708,7 @@ def build(sid):
 
 def make_lods(body, fins):
     lods = []
-    for ob, ratio in ((body, 0.28), (fins, 0.35)):
+    for ob, ratio in ((body, 0.14), (fins, 0.35)):
         c = ob.copy()
         c.data = ob.data.copy()
         c.name = ob.name + '_LOD1'
@@ -688,6 +726,7 @@ def make_lods(body, fins):
 def build_cephalopod(d, B):
     """주꾸미·갑오징어 (cephalopod.py): 몸통 사슬 + 다리 뼈."""
     body, fins, paths, arm_idx = CP.build(d)
+    outward_normals(body)
     solidify(fins, 0.002)
     arm = build_rig(d, B, body, fins)
     CP.add_arm_bones(arm, paths)
@@ -730,9 +769,13 @@ def write_textures(d):
 # =====================================================================
 
 def apply_preview_materials(d, body, fins, tex_path):
+    """Unity Fishing/Fish 셰이더와 같은 입력: 알베도(A = 지느러미 잘라내기), 노멀, 금속성(R)·매끈함(A)."""
     img = bpy.data.images.load(tex_path)
     nimg = bpy.data.images.load(tex_path.replace('.png', '_n.png'))
     nimg.colorspace_settings.name = 'Non-Color'
+    mimg = bpy.data.images.load(tex_path.replace('.png', '_m.png'))
+    mimg.colorspace_settings.name = 'Non-Color'
+    mimg.alpha_mode = 'CHANNEL_PACKED'
     for ob, cut in ((body, False), (fins, True)):
         m = bpy.data.materials.new(ob.name + 'Mat')
         m.use_nodes = True
@@ -742,14 +785,28 @@ def apply_preview_materials(d, body, fins, tex_path):
         t.image = img
         nt.links.new(t.outputs['Color'], bsdf.inputs['Base Color'])
         if cut:
-            nt.links.new(t.outputs['Alpha'], bsdf.inputs['Alpha'])
+            # Unity: _Cutoff 0.45로 잘라내고 남은 막은 불투명 (얇은 막이라 뒤에서 빛이 비친다)
+            gt = nt.nodes.new('ShaderNodeMath')
+            gt.operation = 'GREATER_THAN'
+            gt.inputs[1].default_value = 0.45
+            nt.links.new(t.outputs['Alpha'], gt.inputs[0])
+            nt.links.new(gt.outputs[0], bsdf.inputs['Alpha'])
+            bsdf.inputs['Transmission Weight'].default_value = 0.25
         nm = nt.nodes.new('ShaderNodeNormalMap')
         nt2 = nt.nodes.new('ShaderNodeTexImage')
         nt2.image = nimg
         nt.links.new(nt2.outputs['Color'], nm.inputs['Color'])
         nt.links.new(nm.outputs['Normal'], bsdf.inputs['Normal'])
-        bsdf.inputs['Roughness'].default_value = 0.35
-        bsdf.inputs['Metallic'].default_value = d['colors'].get('metallic', 0.0) * 0.5 + d['colors'].get('silver', 0) * 0.25
+        mt = nt.nodes.new('ShaderNodeTexImage')
+        mt.image = mimg
+        sep = nt.nodes.new('ShaderNodeSeparateColor')
+        nt.links.new(mt.outputs['Color'], sep.inputs['Color'])
+        nt.links.new(sep.outputs['Red'], bsdf.inputs['Metallic'])
+        inv = nt.nodes.new('ShaderNodeMath')
+        inv.operation = 'SUBTRACT'
+        inv.inputs[0].default_value = 1.0
+        nt.links.new(mt.outputs['Alpha'], inv.inputs[1])
+        nt.links.new(inv.outputs[0], bsdf.inputs['Roughness'])
         ob.data.materials.clear()
         ob.data.materials.append(m)
 
@@ -823,10 +880,12 @@ def render_icon(d, arm, body, fins, out):
 def render_preview(d, arm, out_dir):
     cam = render_setup((900, 520), False, samples=32)
     os.makedirs(out_dir, exist_ok=True)
-    views = {'side': ((2.2, 0, 0.05), None), 'top': ((0.001, 0, 2.4), None), 'three_q': ((1.5, -1.5, 0.7), None)}
+    # front_q: 도감 미리보기가 돌다가 앞쪽에서 비스듬히 볼 때, head: 머리 근접 (눈이 반대편으로 비치지 않는지)
+    views = {'side': ((2.2, 0, 0.05), (0, 0, 0)), 'top': ((0.001, 0, 2.4), (0, 0, 0)), 'three_q': ((1.5, -1.5, 0.7), (0, 0, 0)),
+             'front_q': ((1.6, -1.6, 0.25), (0, 0, 0)), 'head': ((0.55, -0.75, 0.12), (0, -0.38, 0.02))}
     pose_frame(arm, 'Swim_Slow', 12)
-    for name, (pos, _) in views.items():
-        look(cam, pos, (0, 0, 0))
+    for name, (pos, target) in views.items():
+        look(cam, pos, target)
         bpy.context.scene.render.filepath = os.path.join(out_dir, f'{d["id"]}_{name}.png')
         bpy.ops.render.render(write_still=True)
 
