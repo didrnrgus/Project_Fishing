@@ -79,6 +79,13 @@ namespace Fishing.Angling
         public int FishSide => FishX > 0.05f ? 1 : FishX < -0.05f ? -1 : _dir;
 
         public const float LandingTapDistance = 0.32f;
+        /// <summary>
+        /// 랜딩에서 버틴 시간(여러 번 합산)이 이만큼 쌓이면 물고기가 끌고 가는 힘이 LandingFatigueMin까지 줄어든다.
+        /// 체력 페널티(연타 ×0.45·×0.15)를 받아도 큰 물고기를 끝내 올릴 수 있게 한다 — 없으면 랜딩·파이팅만 끝없이 오간다.
+        /// </summary>
+        public const float LandingFatigueTime = 12f;
+        public const float LandingFatigueMin = 0.25f;
+        float _landingTime;
 
         public bool HpLow => HP <= MaxHP * LandHpRatio;
         public bool LandingChance => Outcome == FightOutcome.None && !Landing && HpLow && Distance <= LandDistance;
@@ -232,7 +239,9 @@ namespace Fishing.Angling
         void TickLanding(float dt)
         {
             // 지친 물고기도 마지막까지 버틴다. 5m 밖으로 밀려나면 다시 파이팅
-            float pullBack = 0.5f + _basePull * Mathf.Lerp(0.3f, 1f, HP / MaxHP) * 1.2f;
+            _landingTime += dt;
+            float pullBack = (0.5f + _basePull * Mathf.Lerp(0.3f, 1f, HP / MaxHP) * 1.2f)
+                * Mathf.Lerp(1f, LandingFatigueMin, _landingTime / LandingFatigueTime);
             LandingDistance += pullBack * dt;
             Tension = Mathf.Lerp(Tension, 0.5f, dt * 4f);
             FishX = Mathf.Lerp(FishX, 0f, dt * 2f);

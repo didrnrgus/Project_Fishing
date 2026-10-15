@@ -1,0 +1,4 @@
+bin/
+obj/
+# 루트 .gitignore가 Unity용으로 *.csproj를 빼서, 이 도구의 프로젝트 파일은 다시 넣는다
+!fightsim.csproj
