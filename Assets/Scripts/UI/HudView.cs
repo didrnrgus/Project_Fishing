@@ -899,6 +899,8 @@ namespace Fishing.UI
                 }
                 group.alpha = Mathf.Clamp01(left / 0.6f);
             }
+            // 알림은 늘 창보다 위에 (창을 열면 창이 맨 뒤 형제로 올라와 알림을 덮었다)
+            if (_toastRoot.parent != null && _toastRoot.GetSiblingIndex() != _toastRoot.parent.childCount - 1) _toastRoot.SetAsLastSibling();
             // 자리: 결과 화면 = 오른쪽 위(대물 배지·물고기와 안 겹치게), 창이 열림 = 맨 위 가운데, 파이팅 = 조금 아래
             bool result = Game.UI.Result != null && Game.UI.Result.IsOpen;
             bool fight = Game.Fishing.State == FishingState.Fighting || Game.Fishing.Cheering;
@@ -908,11 +910,15 @@ namespace Fishing.UI
                 : fight ? new Vector2(-30, -200)
                 : Game.UI.BlockingPanelOpen ? new Vector2(0, -16)
                 : new Vector2(0, -284); // 캐스팅 비거리 숫자(위 180~260) 아래
-            // 최근 것이 맨 위, 아래로 쌓는다 (두 줄 알림은 그만큼 더 내려간다)
+            // 최근 것이 맨 위, 아래로 쌓는다 (두 줄 알림은 그만큼 더 내려간다).
+            // 창이 열려 있으면 최신 하나만 화면 맨 위 가장자리에 (여러 개를 쌓으면 창 제목·탭을 덮는다)
+            bool panelOpen = !result && !fight && Game.UI.BlockingPanelOpen;
+            if (panelOpen) _toastRoot.anchoredPosition = new Vector2(0, -6);
             float y = 0f;
             for (int i = _toasts.Count - 1; i >= 0; i--)
             {
                 var rt = _toasts[i].root;
+                if (panelOpen && i < _toasts.Count - 1) { _toasts[i].group.alpha = 0f; continue; }
                 rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(ax, 1f);
                 rt.anchoredPosition = new Vector2(0, -y);
                 y += rt.sizeDelta.y + 8f;

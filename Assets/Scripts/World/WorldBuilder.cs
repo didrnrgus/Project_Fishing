@@ -397,8 +397,10 @@ namespace Fishing.World
             for (int bx = 0; bx < 4; bx++)
             for (int bz = 0; bz < 2; bz++)
                 Mats.Prim(PrimitiveType.Cylinder, "Barrel", raft, new Vector3(-2.4f + bx * 1.6f, 0.2f, -0.8f + bz * 1.6f),
-                    new Vector3(1.1f, 0.75f, 1.1f), barrel, false, Quaternion.Euler(90f, 0f, 0f));
-            Mats.Prim(PrimitiveType.Cube, "Deck", raft, new Vector3(0f, 0.75f, 0f), new Vector3(6.4f, 0.12f, 3.4f), Mats.Lit(Wood), false);
+                    new Vector3(1.1f, 0.75f, 1.1f), barrel, true, Quaternion.Euler(90f, 0f, 0f));
+            // 갑판·드럼통에 몸(콜라이더): 없으면 겨울에 얼음 위로 걸어 들어온 플레이어가 갑판 밑 얼음(0.6m 아래)에 서서
+            // 무릎까지 갑판에 파묻혀 보였다 (NPC는 갑판 높이에 바로 놓여 멀쩡했다). 배도 뗏목을 뚫지 않는다
+            Mats.Prim(PrimitiveType.Cube, "Deck", raft, new Vector3(0f, 0.75f, 0f), new Vector3(6.4f, 0.12f, 3.4f), Mats.Lit(Wood), true);
             // 뗏목 위의 다른 낚시꾼들 (원작 영상의 "월척대소녀", "낚자마자회친다" 같은 유저들 느낌)
             NpcAngler.Spawn(raft, new Vector3(-1.4f, 0.81f, 0.6f), 0f, new CharacterLook
             {

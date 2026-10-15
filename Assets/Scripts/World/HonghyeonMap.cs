@@ -237,16 +237,8 @@ namespace Fishing.World
             var lighthouse = new GameObject("Lighthouse").transform;
             lighthouse.SetParent(bw, false);
             lighthouse.localPosition = new Vector3(b.center.x, _map.LandY, b.yMax - 2.5f);
-            var red = Mats.Lit(new Color(0.85f, 0.15f, 0.12f), 0.5f);
-            var white = Mats.Lit(new Color(0.95f, 0.95f, 0.93f), 0.5f);
-            Mats.Prim(PrimitiveType.Cylinder, "Base", lighthouse, new Vector3(0f, 0.4f, 0f), new Vector3(2.6f, 0.4f, 2.6f), white);
-            Mats.Prim(PrimitiveType.Cylinder, "Tower", lighthouse, new Vector3(0f, 4.4f, 0f), new Vector3(1.7f, 3.6f, 1.7f), red);
-            Mats.Prim(PrimitiveType.Cylinder, "Band", lighthouse, new Vector3(0f, 6f, 0f), new Vector3(1.75f, 0.35f, 1.75f), white, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Balcony", lighthouse, new Vector3(0f, 8.1f, 0f), new Vector3(2.2f, 0.12f, 2.2f), white, false);
-            var lamp = Mats.Prim(PrimitiveType.Sphere, "Lamp", lighthouse, new Vector3(0f, 8.8f, 0f), Vector3.one * 1.1f, white, false);
-            _bulbs.Add(lamp.GetComponent<Renderer>());
-            Mats.Prim(PrimitiveType.Cylinder, "Cap", lighthouse, new Vector3(0f, 9.5f, 0f), new Vector3(1.4f, 0.3f, 1.4f), red, false);
-            AddLamp(lighthouse.position + Vector3.up * 8.8f, new Color(1f, 0.55f, 0.45f), 26f, 2.2f);
+            _bulbs.Add(LighthouseBuilder.Small(lighthouse, new Color(0.85f, 0.15f, 0.12f)));
+            AddLamp(lighthouse.position + Vector3.up * LighthouseBuilder.SmallLampY, new Color(1f, 0.55f, 0.45f), 26f, 2.2f);
         }
 
         void BuildIslands()

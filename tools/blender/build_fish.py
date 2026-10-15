@@ -58,6 +58,8 @@ class Body:
         self.W = d['width']
         self.be = d['body_end']
         self.y0 = -0.5
+        # 주둥이를 둥글고 뭉툭하게 (지수가 클수록 뾰족한 원뿔 끝이 된다). 장어형(G)은 원래대로
+        self.blunt = 1.0 if d['type'] == 'G' else d.get('blunt', 0.8)
 
     def y(self, s):
         return self.y0 + s * self.be
@@ -65,7 +67,7 @@ class Body:
     def depth(self, s):
         d, H = self.d, self.H
         tm = d['tmax']
-        en = 0.2 + d['snout'] * 0.7
+        en = (0.2 + d['snout'] * 0.7) * self.blunt
         if s < tm:
             return H * math.sin(math.pi / 2 * s / tm) ** en
         t = (s - tm) / (1 - tm)
@@ -74,7 +76,7 @@ class Body:
     def width(self, s):
         d = self.d
         tm = d['tmax'] * 0.8
-        en = (0.2 + d['snout'] * 0.7) * 0.85
+        en = (0.2 + d['snout'] * 0.7) * 0.85 * self.blunt
         if s < tm:
             w = self.W * math.sin(math.pi / 2 * s / tm) ** en
         else:
@@ -146,12 +148,20 @@ def build_body_mesh(d, B):
             a = 2 * math.pi * k / NA
             x, y, z = B.ring_point(s, a)
             if not flat:
-                # 아가미 뚜껑 판이 몸 위로 살짝 덮인다: 뒤 가장자리 바로 앞이 볼록하고 그 뒤로 턱이 진다
+                # 아가미 뚜껑 판이 몸 위로 살짝 덮인다: 뒤 가장자리 바로 앞이 볼록하고 그 뒤로 턱이 진다.
+                # 옆면 가운데만 (예전에는 등·배까지 둘러서 머리가 따로 붙은 헬멧처럼 보였다)
                 v = body_uv(d, s, a)[1]
                 ge = fish_tex.gill_edge(d, v)
                 bump = fish_tex_smooth(ge - 0.07, ge - 0.006, s) * fish_tex_smooth(ge + 0.014, ge + 0.002, s)
-                side = fish_tex_smooth(0.05, 0.25, v) * fish_tex_smooth(0.98, 0.8, v)
-                x *= 1 + 0.06 * bump * side
+                side = fish_tex_smooth(0.12, 0.35, v) * fish_tex_smooth(0.88, 0.62, v)
+                x *= 1 + 0.035 * bump * side
+                # 입: 입술 사이가 실제로 파인 홈 (텍스처 입 선과 같은 자리: v = mouth_v + 0.6 s, 주둥이 끝에서 mlen까지)
+                if not d.get('ceph'):
+                    mouth_v = 0.5 + 0.35 * d.get('mouth', 0) * 0.3
+                    mlen = 0.035 + 0.03 * max(0, d.get('mouth', 0)) + (0.03 if d['type'] == 'C' else 0.0)
+                    groove = math.exp(-((v - mouth_v - 0.6 * s) ** 2) / (2 * 0.035 ** 2)) * fish_tex_smooth(mlen * 1.1, mlen * 0.5, s)
+                    x *= 1 - 0.32 * groove
+                    z = B.zc(s) + (z - B.zc(s)) * (1 - 0.12 * groove)
             verts.append((x, y, z))
     # 주둥이 끝 점, 꼬리자루 끝 점
     nose = len(verts)
@@ -245,7 +255,11 @@ def make_fins(d, B):
                     L *= max(0.0, (1.0 - s) / 0.03) * 0.5 + 0.5
                 bz = B.zc(s) + (B.top(s) if up else -B.bot(s))
                 return (0.0, B.y(s) + L * math.sin(sweep), bz + (L if up else -L) * math.cos(sweep))
-            v, fc, uv = fin_grid(base, tip, nu, 4, grp)
+            # 가시살 사이 막이 아코디언처럼 접힌 주름 (평평한 판이 아니게): 끝으로 갈수록 크게
+            pleats = max(3, nu // 3)
+            def curl(fu, fv, pleats=pleats, h=h):
+                return (h * 0.035 * math.sin(fu * pleats * math.pi) * fv ** 1.3, 0.0, 0.0)
+            v, fc, uv = fin_grid(base, tip, nu, 4, grp, curl if kind != 'adipose' else None)
             out.append((f'{kind}{idx}', v, fc, uv, kind))
         elif kind == 'caudal':
             yb = B.y(1.0) - 0.004
@@ -267,7 +281,10 @@ def make_fins(d, B):
             def tip(u, yb=yb, zb=zb):
                 vc = u * 2 - 1
                 return (0.0, yb + cl(vc), zb + ctz(vc))
-            v, fc, uv = fin_grid(base, tip, 18, 5, grp)
+            # 꼬리지느러미: 살 사이 잔주름 + 위아래 끝이 살짝 한쪽으로 휜다
+            def ccurl(fu, fv, hc=hc):
+                return (hc * (0.03 * math.sin(fu * 9 * math.pi) * fv + 0.05 * (fu - 0.5) ** 2 * fv ** 2), 0.0, 0.0)
+            v, fc, uv = fin_grid(base, tip, 18, 5, grp, ccurl)
             out.append(('caudal', v, fc, uv, kind))
         elif kind in ('pectoral', 'pelvic'):
             s = f['s'][0]
@@ -291,12 +308,14 @@ def make_fins(d, B):
                         b = mathutils.Vector(base(u))
                         return tuple(b + dvec * L)
                 else:
+                    # 배지느러미: 밑동이 몸을 따라 넓고(옆에서 막대 다리처럼 보이지 않게), 앞 가시가 가장 긴 삼각 부채꼴을
+                    # 몸에 붙여 뒤로 눕힌다
                     def base(u, s=s, side=side):
-                        ss = s + 0.03 * (u - 0.5)
-                        return (side * B.width(ss) * (0.08 + 0.12 * u), B.y(ss), B.zc(ss) - B.bot(ss) + 0.002)
+                        ss = s + 0.07 * (u - 0.5)
+                        return (side * B.width(ss) * (0.1 + 0.1 * u), B.y(ss), B.zc(ss) - B.bot(ss) + 0.002)
                     def tip(u, s=s, side=side, h=h):
-                        L = h * (0.6 + 0.4 * math.sin(math.pi * u))
-                        dvec = mathutils.Vector((0.35 * side, 1.0, -0.55)).normalized()
+                        L = h * (1.0 - 0.55 * u ** 1.2)
+                        dvec = mathutils.Vector((0.3 * side, 1.0, -0.42 + 0.2 * u)).normalized()
                         b = mathutils.Vector(base(u))
                         return tuple(b + dvec * L)
                 v, fc, uv = fin_grid(base, tip, 8, 4, grp)
@@ -785,12 +804,8 @@ def apply_preview_materials(d, body, fins, tex_path):
         t.image = img
         nt.links.new(t.outputs['Color'], bsdf.inputs['Base Color'])
         if cut:
-            # Unity: _Cutoff 0.45로 잘라내고 남은 막은 불투명 (얇은 막이라 뒤에서 빛이 비친다)
-            gt = nt.nodes.new('ShaderNodeMath')
-            gt.operation = 'GREATER_THAN'
-            gt.inputs[1].default_value = 0.45
-            nt.links.new(t.outputs['Alpha'], gt.inputs[0])
-            nt.links.new(gt.outputs[0], bsdf.inputs['Alpha'])
+            # Unity Fishing/FishFin: 알파만큼 반투명한 막 (얇은 막이라 뒤에서 빛이 비친다)
+            nt.links.new(t.outputs['Alpha'], bsdf.inputs['Alpha'])
             bsdf.inputs['Transmission Weight'].default_value = 0.25
         nm = nt.nodes.new('ShaderNodeNormalMap')
         nt2 = nt.nodes.new('ShaderNodeTexImage')

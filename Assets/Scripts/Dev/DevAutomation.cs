@@ -593,7 +593,7 @@ namespace Fishing.Dev
             Game.UI.EnterField(Fishing.Data.FishingAreas.Korea.Find(a => a.Id == "hangang"), 1);
             Game.UI.Help.Close();
             yield return new WaitForSeconds(1.5f);
-            Game.Player.Teleport(new Vector3(-30f, 0.5f, -48f), 0f);
+            Game.Player.Teleport(new Vector3(-30f, 0.5f, -53.5f), 0f); // 뗏목(콜라이더) 바로 앞 얼음 위
             Game.CameraRig.Yaw = 20f;
             Game.CameraRig.Pitch = 18f;
             Game.CameraRig.Distance = 7f;

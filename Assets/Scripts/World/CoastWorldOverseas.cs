@@ -310,8 +310,12 @@ namespace Fishing.World
         /// <summary>하롱베이 수평선: 녹음 덮인 석회암 봉우리 수십 개 (먼 것은 안개에 묻힌다).</summary>
         void KarstHorizon()
         {
-            var near = Mats.Lit(new Color(0.24f, 0.32f, 0.26f), 0.05f);
-            var far = Mats.Lit(new Color(0.42f, 0.5f, 0.5f), 0.02f);
+            // 회백색 석회암 절벽 + 젖은 아랫단 + 턱·꼭대기를 덮은 짙은 숲 (먼 것은 안개에 묻히게 엷게)
+            var limestone = Mats.Textured("rock", new Color(0.72f, 0.72f, 0.66f), 1f, 0.15f);
+            var wet = Mats.Textured("rock", new Color(0.3f, 0.32f, 0.3f), 1f, 0.6f);
+            var jungle = Mats.Textured("grass", new Color(0.32f, 0.45f, 0.3f), 2f, 0.05f);
+            var near = new[] { limestone, wet, jungle };
+            var far = new[] { Mats.Lit(new Color(0.5f, 0.56f, 0.55f), 0.02f), Mats.Lit(new Color(0.42f, 0.48f, 0.48f), 0.02f), Mats.Lit(new Color(0.4f, 0.5f, 0.46f), 0.02f) };
             for (int i = 0; i < 46; i++)
             {
                 float x = R(-650f, 650f), z = R(300f, 900f);
@@ -319,8 +323,8 @@ namespace Fishing.World
                 var go = new GameObject("Karst");
                 go.transform.SetParent(_root, false);
                 go.transform.localPosition = new Vector3(x, _map.BaseWaterY - 2f, z);
-                go.AddComponent<MeshFilter>().sharedMesh = StackMesh(r, h, _rng.Next(1000));
-                go.AddComponent<MeshRenderer>().sharedMaterial = z > 600f ? far : near;
+                go.AddComponent<MeshFilter>().sharedMesh = StackMesh(r, h, _rng.Next(1000), true, 4f);
+                go.AddComponent<MeshRenderer>().sharedMaterials = z > 600f ? far : near;
             }
         }
 

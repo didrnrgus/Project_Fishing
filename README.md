@@ -21,6 +21,12 @@
 | ![deungdae](docs/images/46_deungdae_lighthouse.png) | ![cheongjin](docs/images/49b_cheongjin_racks.png) |
 | **제주 서귀포 (돌하르방·한라산)** | **제주 주상절리·외돌개** |
 | ![jeju](docs/images/54_jeju_harbor.png) | ![columnar](docs/images/54b_jeju_oedolgae.png) |
+| **낚시터 목록 (한국·동남아·지중해·아프리카 거점 탭)** | **하롱베이 (석회암 봉우리·수상 마을)** |
+| ![areas_world](docs/images/53_area_list_all.png) | ![halong](docs/images/55_halong_bay.png) |
+| **산토리니 (칼데라·방파제 테트라포드)** | **나일강 하류 (피라미드 노을)** |
+| ![santorini](docs/images/56b_santorini_caldera.png) | ![nile](docs/images/57b_nile_sunset.png) |
+| **거문도 등대** | **홍현 갯바위 섬 (반복 없는 지형 텍스처)** |
+| ![geomun](docs/images/50_geomun_lighthouse.png) | ![islet](docs/images/22c_honghyeon_island.png) |
 
 | 캐스팅 (당겼다 밀기) | 챔질 (찌 게이지) |
 |---|---|
@@ -31,6 +37,12 @@
 | ![result](docs/images/10_result.png) | ![dex](docs/images/11b_dex_detail.png) |
 | **조합 낚시 대회** | **수족관** |
 | ![tournament](docs/images/30_tournament_hud.png) | ![aquarium](docs/images/28_aquarium.png) |
+| **나일농어 158cm 파이팅** | **조합 퀘스트 (이야기 45개, 스크롤)** |
+| ![nile_fight](docs/images/58_nile_fight.png) | ![quest](docs/images/13_quest.png) |
+
+**물고기 77종** (Blender 스크립트로 만든 어종별 모델·텍스처, 반투명 지느러미)
+
+![fish](docs/images/32_fish_models.png)
 
 ## 특징
 
@@ -55,7 +67,7 @@
 - **성장·수집**: 레벨 1~40(레벨 보상 장비), 장비(낚싯대·릴·줄·배) 강화 +15, 미끼 + 해체 미끼 5등급, 도감, 살림망, 이야기 퀘스트 45개(낚시터마다), **일일 의뢰**, **대물 도전**, **업적**·칭호, **빙고 5×5**, **출석 체크**, 낚시 일지, 소라고동 교환소, **의상**(6부위 25벌, 부위별 능력치), 대기실 **수족관**.
 - **조합 낚시 대회**: 매일 09~15시, AI 낚시꾼 7명과 마릿수·최장·길이 합계로 겨룬다. 계급 엠블럼, 우승 상품 거거 낚시대·나팔고둥 릴.
 - **손맛**: 마디를 펼치는 뽑기대가 줄 방향으로 휘고 출렁인다. 장비별 릴이 돌고, 릴·드랙·카운터 소리, 게임패드 진동.
-- **화면**: 다크 유리 UI(Translucent Image + Paraform), EasyChart 차트, 후처리(블룸·톤매핑·AO), 낮밤·노을·해달별, 날씨(흐린 날 층구름·비·겨울 눈), 물결 셰이더, 새벽 물안개.
+- **화면**: 다크 유리 UI(Translucent Image + Paraform), EasyChart 차트, 후처리(블룸·톤매핑·AO), 낮밤·노을·해달별, 날씨(흐린 날 층구름·비·겨울 눈), 물결 셰이더, 새벽 물안개. 바닥·지형은 반복 무늬를 깨는 셰이더(`Fishing/Ground`·`Fishing/Terrain`), 바위·테트라포드·등대·바위기둥은 절차적 메쉬.
 - **사람과 물고기는 직접 만든 3D 모델**: headless Blender 스크립트(`tools/blender`)로 Quaternius CC0 몸을 보통 체형으로 다듬고 진짜 옷 메쉬(체크 남방 깃·조끼·웨이더·운동화·반장갑…)를 입힌다. 물고기 77종도 어종별 모델·텍스처·헤엄 애니메이션(오징어·문어·갑오징어는 다리마다 뼈), 아이템 아이콘도 렌더.
 - **편의**: 옵션(O) — 음량·감도·해상도·그림자·후처리·진동·**키 설정**.
 

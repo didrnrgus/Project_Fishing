@@ -230,7 +230,7 @@ SPECIES = {
     'blackseabream': dict(type='D', name='감성돔', depth=0.4,
                           colors=P('#2e3438', '#8a9298', '#dcdfe0', silver=0.65, fin_up=('#3a4044', '#2a3034', 0.85), fin_low=('#4a5054', '#3a4044', 0.8),
                                    patterns=[('bands', dict(n=6, u=(0.25, 0.8), w=0.05, color='#3a4248', v=(0.3, 1.0), a=0.25)),
-                                             ('hstripes', dict(n=8, v=(0.25, 0.8), w=0.01, color='#5a6268', a=0.4))]),
+                                             ('hstripes', dict(n=8, v=(0.25, 0.8), w=0.008, color='#5a6268', a=0.22))]),
                           eye=dict(iris='#c0b080')),
     'redseabream': dict(type='D', name='참돔', depth=0.38, width=0.12, mouth=-0.15,
                         colors=P('#c0464a', '#e88a86', '#f6e4dc', silver=0.4, fin_up=('#d06a6a', '#e89090', 0.75), fin_low=('#e8a0a0', '#f0c0c0', 0.7),

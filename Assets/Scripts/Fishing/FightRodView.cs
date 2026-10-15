@@ -59,10 +59,11 @@ namespace Fishing.Angling
 
             BuildRod();
             // 오른손은 릴 시트를 쥐고(릴 다리를 손가락 사이에 끼움), 왼손은 릴 손잡이를 돌린다
-            _armL = Mats.Prim(PrimitiveType.Capsule, "ArmL", transform, Vector3.zero, Vector3.one * 0.07f, _foreMat, false).transform;
-            _armR = Mats.Prim(PrimitiveType.Capsule, "ArmR", transform, Vector3.zero, Vector3.one * 0.07f, _foreMat, false).transform;
-            _sleeveL = Mats.Prim(PrimitiveType.Capsule, "SleeveL", transform, Vector3.zero, Vector3.one * 0.08f, _sleeveMat, false).transform;
-            _sleeveR = Mats.Prim(PrimitiveType.Capsule, "SleeveR", transform, Vector3.zero, Vector3.one * 0.08f, _sleeveMat, false).transform;
+            // 팔: 캡슐(통나무 같았다) 대신 손목 쪽이 가늘어지는 팔 메쉬
+            _armL = LimbPart("ArmL", _foreMat, 0.62f);
+            _armR = LimbPart("ArmR", _foreMat, 0.62f);
+            _sleeveL = LimbPart("SleeveL", _sleeveMat, 0.85f);
+            _sleeveR = LimbPart("SleeveR", _sleeveMat, 0.85f);
 
             // 밤에도 손과 릴이 보이도록 아주 약한 보조광 (원작 1인칭도 손 주변이 밝다)
             var fill = new GameObject("HandFill").AddComponent<Light>();
@@ -97,37 +98,112 @@ namespace Fishing.Angling
 
             if (_leftHand != null) Destroy(_leftHand.gameObject);
             if (_rightHand != null) Destroy(_rightHand.gameObject);
-            var glove = Mats.Lit(new Color(0.12f, 0.12f, 0.14f), 0.3f);
-            var cuff = Mats.Lit(new Color(0.95f, 0.55f, 0.15f), 0.4f);
-            // 왼손: 릴 손잡이를 쥐고 같이 돈다 / 오른손: 릴 시트 위 앞손잡이를 쥔다
-            var knob = _rod.HandleKnob;
-            if (knob != null)
-            {
-                _leftHand = new GameObject("HandLeft").transform;
-                _leftHand.SetParent(knob, false);
-                _leftHand.localPosition = new Vector3(-0.5f, 0f, 0f);
-                Mats.Prim(PrimitiveType.Sphere, "Glove", _leftHand, Vector3.zero, new Vector3(4.2f, 3.4f, 4.2f), glove, false);
-                Mats.Prim(PrimitiveType.Cylinder, "Cuff", _leftHand, new Vector3(-2.2f, 0f, 0f), new Vector3(3.6f, 1.2f, 3.6f), cuff, false,
-                    Quaternion.Euler(0f, 0f, 90f));
-            }
-            _rightHand = new GameObject("HandRight").transform;
-            _rightHand.SetParent(_rod.transform, false);
+            // 손가락 끝이 트인 낚시용 반장갑 (짙은 회색 천 + 손등 고무 덧댐), 끝마디는 맨살.
+            // 예전 손목의 주황 원통(장갑 밴드)은 릴 크기로 커져 정체 모를 노란 원통처럼 보여 없앴다
+            var glove = Mats.Lit(new Color(0.34f, 0.38f, 0.44f), 0.15f);   // 회청색 천 (짙은 검정은 밤에 덩어리로만 보였다)
+            var pad = Mats.Lit(new Color(0.16f, 0.17f, 0.19f), 0.4f);      // 손등·마디 고무 덧댐
+            var skin = Mats.Lit(new Color(0.93f, 0.76f, 0.64f), 0.3f);
+            // 왼손: 릴 손잡이(노브)를 감싸 쥐고 손잡이와 같이 돈다 (자리는 LateUpdate에서 노브를 따라간다)
+            // 오른손: 릴 다리를 손가락 사이에 끼우고 손잡이를 쥔다
+            if (_rod.HandleKnob != null)
+                _leftHand = Fist("HandLeft", transform, glove, pad, skin, -1f);
+            _rightHand = Fist("HandRight", _rod.transform, glove, pad, skin, 1f);
             _rightHand.localPosition = new Vector3(0.012f, 0.1f, -0.02f);
-            // 주먹: 손등 + 낚싯대를 감싼 손가락 네 개 + 엄지 (손가락 끝 없는 반장갑이라 끝마디는 살색)
-            Mats.Prim(PrimitiveType.Sphere, "Glove", _rightHand, new Vector3(0.006f, 0f, -0.012f), new Vector3(0.07f, 0.088f, 0.058f), glove, false);
-            var skinTip = Mats.Lit(new Color(0.98f, 0.82f, 0.7f));
+        }
+
+        /// <summary>
+        /// 쥔 주먹: 손바닥·손등 + 쥔 막대(로컬 Y)를 감싸는 손가락 네 개(장갑 마디 + 맨살 끝마디) + 엄지 + 손목.
+        /// 로컬 좌표: Y = 쥔 막대 방향, +Z = 손가락이 감아 도는 앞쪽, side 쪽 X = 손등. side -1이면 왼손(거울).
+        /// </summary>
+        static Transform Fist(string name, Transform parent, Material glove, Material pad, Material skin, float side)
+        {
+            var h = new GameObject(name).transform;
+            h.SetParent(parent, false);
+            h.localScale = Vector3.one * 1.2f;
+            float sx = side;
+            Mats.Prim(PrimitiveType.Sphere, "Palm", h, new Vector3(0.022f * sx, -0.004f, -0.006f), new Vector3(0.05f, 0.088f, 0.062f), glove, false);
+            Mats.Prim(PrimitiveType.Sphere, "BackPad", h, new Vector3(0.036f * sx, 0.004f, -0.004f), new Vector3(0.02f, 0.06f, 0.044f), pad, false);
             for (int i = 0; i < 4; i++)
             {
                 float y = 0.03f - i * 0.02f;
-                var finger = Mats.Prim(PrimitiveType.Capsule, "Finger" + i, _rightHand, new Vector3(-0.008f, y, 0.02f), new Vector3(0.021f, 0.022f, 0.021f), glove, false,
-                    Quaternion.Euler(0f, 0f, 90f)).transform;
-                Mats.Prim(PrimitiveType.Sphere, "Tip", finger, new Vector3(0f, 0.9f, 0f), new Vector3(0.95f, 0.6f, 0.95f), skinTip, false);
+                float len = i == 3 ? 0.8f : i == 0 ? 0.95f : 1f;
+                // 첫 마디는 손바닥에서 앞으로, 끝마디(맨살)는 막대 앞을 지나 안쪽으로 굽는다
+                Mats.Prim(PrimitiveType.Capsule, "Finger" + i, h, new Vector3(0.012f * sx, y, 0.022f), new Vector3(0.019f, 0.016f * len, 0.019f), glove, false,
+                    Quaternion.Euler(90f, 0f, 0f));
+                Mats.Prim(PrimitiveType.Capsule, "FingerTip" + i, h, new Vector3(-0.008f * sx, y, 0.03f), new Vector3(0.017f, 0.014f * len, 0.017f), skin, false,
+                    Quaternion.Euler(0f, 0f, 90f) * Quaternion.Euler(0f, 0f, -25f * sx));
             }
-            var thumb = Mats.Prim(PrimitiveType.Capsule, "Thumb", _rightHand, new Vector3(-0.026f, 0.035f, -0.004f), new Vector3(0.022f, 0.026f, 0.022f), glove, false,
-                Quaternion.Euler(0f, 0f, -20f)).transform;
-            Mats.Prim(PrimitiveType.Sphere, "Tip", thumb, new Vector3(0f, 0.9f, 0f), new Vector3(0.95f, 0.6f, 0.95f), skinTip, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Cuff", _rightHand, new Vector3(0.02f, -0.06f, -0.03f), new Vector3(0.07f, 0.02f, 0.07f), cuff, false,
-                Quaternion.Euler(30f, 0f, 0f));
+            // 손등 쪽 손가락 마디 줄 (주먹을 쥔 모양이 보이게)
+            for (int i = 0; i < 4; i++)
+                Mats.Prim(PrimitiveType.Sphere, "Knuckle" + i, h, new Vector3(0.03f * sx, 0.03f - i * 0.02f, 0.016f), new Vector3(0.022f, 0.019f, 0.022f), pad, false);
+            Mats.Prim(PrimitiveType.Capsule, "Thumb", h, new Vector3(-0.004f * sx, 0.04f, 0.012f), new Vector3(0.02f, 0.022f, 0.02f), glove, false,
+                Quaternion.Euler(0f, 0f, 70f * sx));
+            Mats.Prim(PrimitiveType.Sphere, "ThumbTip", h, new Vector3(-0.022f * sx, 0.047f, 0.014f), new Vector3(0.017f, 0.02f, 0.017f), skin, false);
+            Mats.Prim(PrimitiveType.Capsule, "Wrist", h, new Vector3(0.03f * sx, -0.012f, -0.05f), new Vector3(0.046f, 0.03f, 0.042f), glove, false,
+                Quaternion.Euler(90f, 0f, 0f));
+            return h;
+        }
+
+        static readonly System.Collections.Generic.Dictionary<float, Mesh> LimbMeshes = new System.Collections.Generic.Dictionary<float, Mesh>();
+
+        /// <summary>
+        /// 팔 토막: 캡슐 프리미티브와 같은 크기 규칙(지름 1, 높이 2, Y축)인데 +Y 끝이 taper배로 가늘다 (손목·팔꿈치 쪽).
+        /// 단면은 살짝 납작한 타원이라 통나무처럼 안 보인다.
+        /// </summary>
+        Transform LimbPart(string name, Material mat, float taper)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(transform, false);
+            if (!LimbMeshes.TryGetValue(taper, out var mesh))
+                LimbMeshes[taper] = mesh = TaperedCapsule(taper);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = mat;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return go.transform;
+        }
+
+        static Mesh TaperedCapsule(float taper)
+        {
+            const int seg = 16, rings = 14;
+            var v = new System.Collections.Generic.List<Vector3>();
+            var tri = new System.Collections.Generic.List<int>();
+            for (int r = 0; r <= rings; r++)
+            {
+                float t = r / (float)rings;
+                float rad = Mathf.Lerp(0.5f, 0.5f * taper, t);
+                rad *= 1f + 0.08f * Mathf.Sin(Mathf.Clamp01(t * 1.6f) * Mathf.PI); // 팔꿈치 쪽 근육이 살짝 불룩
+                float cap = Mathf.Min(Mathf.Clamp01(t / 0.12f), Mathf.Clamp01((1f - t) / 0.12f));
+                rad *= Mathf.Sqrt(1f - (1f - cap) * (1f - cap));                      // 양 끝은 둥글게 닫힌다
+                for (int k = 0; k <= seg; k++)
+                {
+                    float a = k / (float)seg * Mathf.PI * 2f;
+                    v.Add(new Vector3(Mathf.Cos(a) * rad, -1f + 2f * t, Mathf.Sin(a) * rad * 0.85f));
+                }
+            }
+            for (int r = 0; r < rings; r++)
+            for (int k = 0; k < seg; k++)
+            {
+                int a = r * (seg + 1) + k, b = a + seg + 1;
+                tri.AddRange(new[] { a, b, a + 1, a + 1, b, b + 1 });
+            }
+            var m = new Mesh { name = "Limb" };
+            m.SetVertices(v);
+            m.SetTriangles(tri, 0);
+            m.RecalculateNormals();
+            m.RecalculateBounds();
+            return m;
+        }
+
+        /// <summary>왼손을 릴 노브에 맞춘다: 노브 축을 감싸 쥐고, 손등은 어깨 쪽을 향한다.</summary>
+        void PoseLeftHand()
+        {
+            var knob = _rod.HandleKnob;
+            if (_leftHand == null || knob == null) return;
+            var axis = knob.up; // 캡슐 노브의 길이 방향
+            var fwd = Vector3.ProjectOnPlane(knob.position - transform.TransformPoint(ShoulderL), axis);
+            if (fwd.sqrMagnitude < 1e-6f) fwd = transform.forward;
+            _leftHand.SetPositionAndRotation(knob.position - fwd.normalized * 0.026f, Quaternion.LookRotation(fwd, axis));
         }
 
         /// <summary>입은 상의 색으로 소매를 칠한다 (긴팔이면 아래팔까지 소매).</summary>
@@ -277,8 +353,10 @@ namespace Fishing.Angling
             var fishPos = FishWorldPos(f);
             BendRod(f, fishPos);
             _rod.SpinReel(_reelTurns, _lineOut, Time.deltaTime);
-            if (_leftHand != null) Arm(_sleeveL, _armL, transform.TransformPoint(ShoulderL), _leftHand.position);
-            Arm(_sleeveR, _armR, transform.TransformPoint(ShoulderR), _rightHand.position);
+            PoseLeftHand();
+            // 팔은 손목(손 뒤쪽)까지
+            if (_leftHand != null) Arm(_sleeveL, _armL, transform.TransformPoint(ShoulderL), _leftHand.TransformPoint(new Vector3(-0.03f, -0.012f, -0.06f)));
+            Arm(_sleeveR, _armR, transform.TransformPoint(ShoulderR), _rightHand.TransformPoint(new Vector3(0.03f, -0.012f, -0.06f)));
 
             var tipPos = _rod.Tip.position;
             float sag = Mathf.Lerp(0.8f, 0.02f, Mathf.Clamp01(f.Tension * 1.5f));

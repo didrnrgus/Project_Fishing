@@ -257,3 +257,20 @@ GameBootstrap.Start → GameUI.EnterLobby (Mode=Lobby, 카메라 고정)
 - **월드 글자**: 간판은 `UIFactory.OneSided`로 단면(뒤에서 거울 글씨가 안 보이게), 길가 간판은 `WorldBuilder.AddSignBothSides`(앞뒤 두 장). 내 이름표는 NPC 곁에서 숨긴다(NPC 이름표와 겹친다).
 - **부딪히는 몸**: `KenneyProps.Spawn`이 건물·바위·배경 배는 상자, 나무는 줄기, 가로등은 기둥 콜라이더를 붙인다(`solid: false`면 안 붙임 — 내 배). NPC는 캡슐. 캐스팅 궤적 검사(`FishingController.CastBlocked`)와 배 이동(`BoatController.HullClear`)이 이 콜라이더를 본다. 자동 스크린샷은 낚시 장면마다 `CheckClear`로 앞이 막혔는지 로그(`[Dev] 캐스팅 막힘`)를 남긴다.
 - 낚싯대·릴: `TelescopicRod.StyleFor`(낚싯대 색·길이·마디 수)와 `BuildReel`(릴 모양)에서 장비 id별로 고른다. 좌표 규약은 +Y가 낚싯대 방향, 원점이 릴 시트, +Z가 릴 쪽. 휨은 `Drive(목표각, 줄 방향, 떨림, dt)`, 펼치기는 `SetExtension(0~1)`, 릴은 `SpinReel(감기 바퀴/s, 줄 풀림 m/s, dt)`.
+
+## 화면 퀄리티 도구 (2026-10-15)
+
+| 파일 | 하는 일 |
+|---|---|
+| `Shaders/Ground.shader` (`Fishing/Ground`) | `Mats.Textured`가 쓰는 바닥·바위·콘크리트·데크 셰이더. 같은 텍스처를 회전·0.73배로 한 번 더 읽어 노이즈로 섞고, 월드 좌표 큰 얼룩으로 밝기·채도·광택을 흔들어 반복 무늬를 없앤다. 월드 좌표라 정적 배칭해도 같다 (`WorldBatcher`가 Standard와 함께 묶는다) |
+| `Shaders/Terrain.shader` + `Terrain-AddPass.shader` (`FishingTerrain.cginc`, `FishingNoise.cginc`) | Unity Terrain(홍현·서천·해안 맵 틀) 셰이더. 내장 지형과 같은 엔진 속성을 받아 층마다 같은 방법으로 반복을 깬다. 5번째 층부터는 추가 패스. `TerrainBuilder`가 `materialTemplate`로 쓰고 인스턴싱은 끈다 |
+| `Shaders/FishFin.shader` (`Fishing/FishFin`) | 물고기 지느러미 반투명 막 (09 문서 3-16) |
+| `World/Rocks.cs` | 절차적 바위 메쉬 8종 (`Rocks.Prim`이 `Mats.Prim(Sphere)` 자리) |
+| `World/LighthouseBuilder.cs` | 방파제 등대·큰 유인 등대 회전체 메쉬 (`CoastProps.Lighthouse`·`GrandLighthouse`, 홍현) |
+| `CoastProps.TetrapodMesh`·`TetrapodBank` | 테트라포드 메쉬와 방파제 바깥 3줄 더미 |
+| `CoastMap.StackMesh` | 바위기둥·석회암 봉우리 (서브메쉬: 절벽 / 젖은 아랫단 / 위를 보는 턱) |
+| `Characters/SitSeat.cs` | 앉은 동작일 때 골반 높이에 맞춘 아이스박스 의자 |
+| `KenneyProps.SpawnBush` | Nature Starter Kit 2 덤불·나무 + 잎 겉면 꽃·열매 (동백·귤·진달래·당산나무). Kenney 나무는 모두 NSK2로 돌린다 |
+| `UIPanel.RowCursor` | 창 목록을 쌓으면 자동으로 잘라내기 + 휠 스크롤 + 스크롤바 (key로 스크롤 위치 기억) |
+
+새 셰이더는 코드에서 `Shader.Find`로 찾으므로 `ProjectSettings/GraphicsSettings.asset` Always Included와 `ProjectTools.RuntimeShaders`에 넣었다 (meta의 guid를 고정해 두었다).

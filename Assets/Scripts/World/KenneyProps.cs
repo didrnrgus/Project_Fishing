@@ -34,8 +34,14 @@ namespace Fishing.World
         /// <summary>
         /// 모델을 만든다. height > 0이면 높이를, length > 0이면 가장 긴 수평 길이를 그 값에 맞춘다.
         /// </summary>
-        // Kenney의 단순한 활엽수 자리에 쓰는 Nature Starter Kit 2 나무 (Tree Creator, Resources/NatureKit). 소나무는 Kenney 그대로
-        static readonly string[] BroadleafKenney = { "tree_default", "tree_oak", "tree_fat", "tree_detailed" };
+        // Kenney 나무(원뿔·공을 쌓은 도형 나무) 자리에 쓰는 Nature Starter Kit 2 나무 (Tree Creator, Resources/NatureKit).
+        // 예전에는 활엽수만 바꾸고 소나무는 Kenney 그대로였는데, 원뿔을 쌓은 소나무가 "도형 올려놓은 것" 같다는 지적으로 모두 바꾼다.
+        // 실사 소나무 에셋(WORK-IN-PROGRESS "사용자가 해야 할 일")이 들어오면 소나무 자리만 그쪽으로 돌린다
+        static readonly string[] BroadleafKenney =
+        {
+            "tree_default", "tree_oak", "tree_fat", "tree_detailed", "tree_simple", "tree_tall", "tree_plateau",
+            "tree_pineRoundA", "tree_pineRoundB", "tree_pineRoundC", "tree_pineTallA", "tree_pineTallB", "tree_pineDefaultA", "tree_pineDefaultB",
+        };
         // Tree Creator 나무는 빌드에서 메쉬가 빠지므로 에디터가 구워 둔 것(Editor/NatureKitBake → Resources/NatureKit/Baked)을 쓴다
         static readonly string[] NatureKitTrees = { "NatureKit/Baked/tree01", "NatureKit/Baked/tree02", "NatureKit/Baked/tree03", "NatureKit/Baked/tree04" };
         static bool? _natureKit;
@@ -79,6 +85,50 @@ namespace Fishing.World
         }
 
         /// <summary>Nature Starter Kit 2 활엽수 (위치로 종류를 고른다). 높이를 맞추고 줄기 콜라이더를 붙인다.</summary>
+        static readonly string[] NatureKitBushes = { "bush01", "bush02", "bush03", "bush04", "bush05", "bush06" };
+
+        /// <summary>
+        /// Nature Starter Kit 2 덤불(tree면 나무)을 높이에 맞춰 놓는다 (구 프리미티브 덤불·나무 자리). 없으면 null.
+        /// blossoms > 0이면 잎 덩어리 겉면에 작은 꽃·열매(blossom 재질, 지름 size m)를 흩어 붙인다 (진달래·동백·귤).
+        /// </summary>
+        public static GameObject SpawnBush(Transform parent, Vector3 localPos, float yaw, float height, int blossoms = 0, Material blossom = null, float size = 0.2f, bool tree = false)
+        {
+            if (!NatureKitAvailable) return null;
+            var list = tree ? NatureKitTrees : System.Array.ConvertAll(NatureKitBushes, n => "NatureKit/Baked/" + n);
+            int k = Mathf.Abs(Mathf.RoundToInt(localPos.x * 5.13f + localPos.z * 2.71f)) % list.Length;
+            var prefab = Resources.Load<GameObject>(list[k]);
+            if (prefab == null) return null;
+            var go = Object.Instantiate(prefab, parent, false);
+            go.name = tree ? "NatureTree" : "NatureBush";
+            go.transform.localRotation = Quaternion.identity;
+            go.transform.localScale = Vector3.one;
+            var b = LocalBounds(go);
+            float s = b.size.y > 0.01f ? height / b.size.y : 1f;
+            go.transform.localScale = Vector3.one * s;
+            go.transform.localPosition = localPos;
+            go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            if (blossoms > 0 && blossom != null)
+            {
+                // 잎 덩어리(나무면 위쪽)를 타원체로 보고 겉면 조금 안쪽에 꽃을 붙인다
+                var c = b.center;
+                var e = b.extents;
+                if (tree) { c.y = b.min.y + b.size.y * 0.68f; e.y = b.size.y * 0.3f; }
+                var rng = new System.Random(Mathf.RoundToInt(localPos.x * 31f + localPos.z * 17f));
+                for (int i = 0; i < blossoms; i++)
+                {
+                    var d = new Vector3((float)rng.NextDouble() * 2f - 1f, (float)rng.NextDouble() * 1.4f - 0.4f, (float)rng.NextDouble() * 2f - 1f).normalized;
+                    var f = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    Object.Destroy(f.GetComponent<Collider>());
+                    f.name = "Blossom";
+                    f.transform.SetParent(go.transform, false);
+                    f.transform.localPosition = c + Vector3.Scale(d, e) * 0.88f;
+                    f.transform.localScale = Vector3.one * (size / s) * (0.8f + 0.4f * (float)rng.NextDouble());
+                    f.GetComponent<Renderer>().sharedMaterial = blossom;
+                }
+            }
+            return go;
+        }
+
         static GameObject SpawnNatureKitTree(Transform parent, Vector3 localPos, float yaw, float height, bool solid)
         {
             int k = Mathf.Abs(Mathf.RoundToInt(localPos.x * 7.31f + localPos.z * 3.17f)) % NatureKitTrees.Length;

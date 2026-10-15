@@ -258,23 +258,24 @@ namespace Fishing.UI
                     continue;
                 }
 
+                // 카드에는 요약만 (예전에는 미끼·시간·장소까지 넣어 두 줄로 감기면 아래 카드로 넘쳤다).
+                // 미끼·시간·장소는 카드를 누르면 나오는 자세히 보기에. 그래도 길면 글자를 줄이고 끝을 말줄임한다
                 bool trophy = s.IsTrophy(entry.maxLength);
-                var lines = $"<b><size={body + 7}>{s.Name}</size></b>  <color=#ffd060><size={body - 2}>{new string('★', s.Rarity)}</size></color>\n" +
-                            $"<size={body - 3}><i><color=#8fa3b5>{s.Latin}</color></i></size>\n" +
-                            $"<color=#a0b0c0>{s.Temper}</color>\n" +
-                            $"낚은 수  {entry.count}마리\n" +
-                            $"최대  {entry.maxLength:0.0}cm" + (trophy ? $" <color=#ff7090>{s.TrophyName}</color>" : "") + "\n" +
-                            $"길이  {s.MinLen:0}~{s.MaxLen:0}cm\n";
-                lines += entry.count >= BaitUnlock
-                    ? $"미끼  {string.Join(", ", s.Baits.Select(Names.Of))}\n"
-                    : $"<color=#607080>미끼  {BaitUnlock}마리 낚으면 공개</color>\n";
-                lines += entry.count >= HabitatUnlock
-                    ? $"시간  {string.Join(", ", s.Times.Select(Names.Of))}\n장소  {string.Join(", ", s.Habitats.Select(Names.Of))}"
-                    : $"<color=#607080>시간/장소  {HabitatUnlock}마리 낚으면 공개</color>";
+                int perLine = Mathf.Max(6, Mathf.FloorToInt((w - 28f) / (body * 0.98f)));
+                string temper = s.Temper.Length > perLine ? s.Temper.Substring(0, perLine - 1) + "…" : s.Temper;
+                var lines = $"<b><size=150%>{s.Name}</size></b>  <color=#ffd060><size=85%>{new string('★', s.Rarity)}</size></color>\n" +
+                            $"<size=78%><i><color=#8fa3b5>{s.Latin}</color></i></size>\n" +
+                            $"<color=#a0b0c0>{temper}</color>\n" +
+                            $"낚은 수 {entry.count}마리 · 최대 {entry.maxLength:0.0}cm\n" +
+                            (trophy ? $"<color=#ff7090>{s.TrophyName}</color> · " : "") + $"<color=#a0b0c0>길이 {s.MinLen:0}~{s.MaxLen:0}cm</color>";
 
                 var text = UIFactory.Text(card, lines, body, UIFactory.TextMain, TextAnchor.UpperLeft);
                 text.rectTransform.Fill(14, 12, icon != null ? 80 : 28, 8);
                 text.lineSpacing = 2f;
+                text.enableAutoSizing = true;
+                text.fontSizeMin = body - 4;
+                text.fontSizeMax = body;
+                text.overflowMode = TMPro.TextOverflowModes.Ellipsis;
             }
         }
 

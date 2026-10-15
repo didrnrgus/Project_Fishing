@@ -60,7 +60,7 @@ def head_end_of(d):
 
 def gill_edge(d, v):
     """v(0 배 ~ 1 등)에서 아가미 뚜껑 뒤 가장자리의 s. 위아래 끝이 앞으로 휘는 곡선."""
-    return head_end_of(d) - 0.05 * (v - 0.5) ** 2 * 4
+    return head_end_of(d) - 0.08 * (v - 0.5) ** 2 * 4
 
 
 def paint(d, seed=0):
@@ -130,8 +130,16 @@ def paint(d, seed=0):
         sv = max(sv, 5.0)
         # 겹친 비늘: 앞(머리 쪽) 비늘이 뒤 비늘을 덮는다. 픽셀마다 덮고 있는 가장 앞쪽 원을 고르고,
         # 그 원의 뒤 가장자리(꼬리 쪽 호)를 진하게 그린다
-        X = xx / su
-        Y = yy / sv
+        # 비늘 크기는 고르지 않다: 옆구리 가운데가 가장 크고 등·배·꼬리자루·머리 쪽으로 작아진다.
+        # 픽셀마다 크기 비율 f로 나눈 값을 누적해(적분) 비늘 좌표를 만든다 → 원은 원대로, 줄 간격만 자연스럽게 바뀐다
+        ucol = (np.arange(BW, dtype=np.float32) + 0.5) / BW
+        fu = (1 - 0.3 * smooth(0.7, 1.0, ucol)) * (1 - 0.2 * smooth(0.42, 0.22, ucol))
+        vrow = 1.0 - (np.arange(H, dtype=np.float32) + 0.5) / H
+        if flat:
+            vrow = np.where(vrow < 0.5, vrow * 2, (1 - vrow) * 2)
+        fv = np.clip(1 - 0.42 * (np.abs(vrow - 0.55) * 2) ** 2, 0.5, 1.0)
+        X = np.broadcast_to((np.cumsum(1.0 / fu) / su)[None, :], xx.shape)
+        Y = np.broadcast_to((np.cumsum(1.0 / fv) / sv)[:, None], yy.shape)
         R = 0.78
         best_t = np.full(X.shape, 2.0, np.float32)
         best_dx = np.zeros_like(X)
@@ -149,8 +157,8 @@ def paint(d, seed=0):
             for dyc in (0.0, 1.0, -1.0):
                 yy_c = yc + dyc
                 # 비늘마다 자리를 조금씩 흐트러뜨린다 (도장 찍은 듯한 격자가 안 보이게)
-                cx = jc + (h01(jc, yy_c, 1) - 0.5) * 0.12
-                cy = yy_c + (h01(jc, yy_c, 2) - 0.5) * 0.12
+                cx = jc + (h01(jc, yy_c, 1) - 0.5) * 0.16
+                cy = yy_c + (h01(jc, yy_c, 2) - 0.5) * 0.16
                 dist = np.sqrt((X - cx) ** 2 + (Y - cy) ** 2) / R
                 take = (~found) & (dist <= 1.0)
                 best_t = np.where(take, dist, best_t)
@@ -163,8 +171,10 @@ def paint(d, seed=0):
         for p in d['colors'].get('patterns', []):
             if p[0] == 'scale_edge':
                 strength = p[1]
+        # 비늘이 잘수록(수가 많을수록) 테두리가 덜 보인다: 잔 비늘을 굵은 선으로 그리면 그물·자처럼 보인다
+        strength *= min(1.0, max(0.5, (40.0 / nsc) ** 0.8))
         # 머리(아가미 뚜껑까지)에는 비늘이 없다. 경계는 아가미 뚜껑 곡선을 따른다
-        gx0 = head_end - 0.05 * (vside - 0.5) ** 2 * 4
+        gx0 = head_end - 0.08 * (vside - 0.5) ** 2 * 4
         fade = smooth(gx0 + 0.004, gx0 + 0.03, u) * smooth(1.02, 0.9, u)
         # 드러난 쪽(꼬리 쪽 호) 가장자리에 짙은 색소 띠, 덮인 밑동은 살짝 어둡게, 가운데는 은빛으로 볼록
         post = smooth(-0.15, 0.4, best_dx)
@@ -176,9 +186,10 @@ def paint(d, seed=0):
         ang = np.arctan2(best_dy, best_dx)
         radii = smooth(0.85, 1.0, 0.5 + 0.5 * np.cos(ang * 9.0)) * smooth(0.0, 0.3, -best_dx)
         var = (best_id - 0.5) * 2.0   # 비늘마다 -1 ~ 1
-        body *= (1 - strength * 0.55 * rim * fade)[..., None]
-        body *= (1 - strength * 0.18 * pocket * fade)[..., None]
-        body *= (1 + (0.07 * var + 0.1 * dome * silver) * fade)[..., None]
+        # 테두리 대비는 낮추고(자로 그은 격자처럼 보였다) 비늘마다 밝기 차이(빛을 받는 각도가 조금씩 다름)는 키운다
+        body *= (1 - strength * 0.42 * rim * fade)[..., None]
+        body *= (1 - strength * 0.15 * pocket * fade)[..., None]
+        body *= (1 + (0.11 * var + 0.1 * dome * silver) * fade)[..., None]
         # 비늘 가운데는 옆구리 색이 밝게 비친다 (잉어·붕어의 황동빛, 은빛 고기는 은색)
         blend(body, np.minimum(side * 1.25, 1.0), dome * fade * smooth(0.15, 0.6, vside) * (0.12 + 0.2 * strength))
         h_b += (dome * 0.7 - rim * 0.7 + circ * 0.06 + radii * 0.08) * fade
@@ -204,21 +215,24 @@ def paint(d, seed=0):
             h_b -= pore * 0.6
 
     # ---- 아가미 뚜껑 ----
-    gx = head_end - 0.05 * (vside - 0.5) ** 2 * 4
+    gx = head_end - 0.08 * (vside - 0.5) ** 2 * 4
     not_ceph = 0.0 if d.get('ceph') else 1.0
     gband = smooth(0.05, 0.25, vside) * smooth(0.98, 0.8, vside) * eyed * not_ceph
     # 아가미 뚜껑 뒤 가장자리: 뼈판 끝은 밝은 턱, 바로 뒤 아가미 틈은 짙은 그늘
     edge = np.exp(-((u - gx + 0.004) ** 2) / (2 * 0.0035 ** 2)) * gband
     slit = smooth(gx - 0.002, gx + 0.004, u) * smooth(gx + 0.022, gx + 0.006, u) * gband
-    blend(body, back * 0.45, slit * 0.55)
-    body *= (1 + 0.12 * edge)[..., None]
+    blend(body, back * 0.45, slit * 0.35)
+    body *= (1 + 0.05 * edge)[..., None]
     h_b += edge * 1.0 - slit * 0.8
     if not d.get('ceph'):
         head = smooth(gx + 0.002, gx - 0.01, u) * eyed
         # 머리 피부: 비늘 없이 가는 주름·모공 결, 더 매끈하고 살짝 진함
         wr = noise(BW, H, 120, rng.integers(1 << 30), 2)
         h_b += (wr - 0.5) * 0.25 * head
-        smooth_b += 0.12 * head
+        smooth_b += 0.05 * head
+        # 머리도 몸처럼 얼룩·색소가 이어진다 (비늘 없는 매끈한 판이 따로 붙은 헬멧처럼 보이지 않게)
+        hm = noise(BW, H, 24, rng.integers(1 << 30), 3)
+        body *= (1 + (hm - 0.5) * 0.16 * head)[..., None]
         blend(body, back * 0.9, head * 0.15 * smooth(0.4, 0.9, vside))
         # 아가미 뚜껑 판(전새개골 곡선 ~ 뒤 가장자리): 은빛이 돌고, 뒤쪽 위 관절에서 퍼지는 방사 줄
         pre = gx - 0.055 - 0.02 * (vside - 0.5)
@@ -226,7 +240,7 @@ def paint(d, seed=0):
         hinge_u, hinge_v = gx - 0.01, 0.72
         pang = np.arctan2((v - hinge_v) * 0.5, (u - hinge_u))
         stri = 0.5 + 0.5 * np.cos(pang * 70.0)
-        body *= (1 + 0.08 * plate)[..., None]
+        body *= (1 + 0.035 * plate)[..., None]
         metal_b += plate * (0.15 + 0.35 * silver)
         h_b += plate * stri * 0.12
         groove = np.exp(-((u - pre) ** 2) / (2 * 0.002 ** 2)) * gband * smooth(0.25, 0.45, vside)
@@ -295,13 +309,14 @@ def paint(d, seed=0):
             draw_spots(arg['n'], arg['r'], arg['color'], arg.get('v', (0, 1)), (0.04, 0.97), 0.85, irregular=1.0)
             draw_spots(arg['n'] // 2, (3, 6), arg['color'], (0.4, 1.0), (0.0, 0.2), 0.8)
         elif kind == 'bands':
+            bandn = noise(BW, H, 18, rng.integers(1 << 30), 2)   # 띠 가장자리가 고르지 않게
             nb, (u0, u1), bw = arg['n'], arg['u'], arg['w']
             c = hexrgb(arg['color'])
             vr = arg.get('v', (0, 1))
             for k in range(nb):
                 cu = u0 + (u1 - u0) * k / max(1, nb - 1)
                 w = bw * (0.55 if arg.get('taper') and k >= 4 else 1.0)
-                wob = 0.01 * np.sin(v * 9 + k)
+                wob = 0.01 * np.sin(v * 9 + k) + 0.012 * (bandn - 0.5)
                 m = smooth(w * 0.5, w * 0.35, np.abs(u - cu - wob)) * smooth(vr[0], vr[0] + 0.12, vside) * smooth(vr[1] + 0.05, vr[1] - 0.05, vside)
                 blend(body, c, m * arg.get('a', 0.6) * eyed)
         elif kind == 'obliquebands':
@@ -356,8 +371,13 @@ def paint(d, seed=0):
             blend(body, hexrgb(arg), m * 0.6)
         elif kind == 'waves':
             c = hexrgb(arg['color'])
-            wv = np.sin(u * 90 + np.sin(v * 25) * 2.5 + v * 30) * 0.5 + 0.5
-            m = smooth(0.75, 0.9, wv) * smooth(arg['v'][0], arg['v'][0] + 0.08, v) * smooth(0.12, 0.2, u)
+            # 고등어 물결 무늬: 자로 그린 사인파가 아니라 노이즈로 휘고, 굵기가 들쭉날쭉하고, 군데군데 끊긴다
+            warp = noise(BW, H, 14, rng.integers(1 << 30), 2)
+            thick = noise(BW, H, 22, rng.integers(1 << 30), 2)
+            wv = np.sin(u * 90 + np.sin(v * 25) * 2.5 + v * 30 + (warp - 0.5) * 7.0) * 0.5 + 0.5
+            th = 0.74 + 0.12 * (thick - 0.5) * 2
+            m = smooth(th, th + 0.14, wv) * smooth(arg['v'][0], arg['v'][0] + 0.08, v) * smooth(0.12, 0.2, u)
+            m *= smooth(0.25, 0.45, thick * 0.6 + warp * 0.4)
             blend(body, c, m * arg['a'])
         elif kind == 'scutes':
             line = np.exp(-((v - ll_v + 0.06 * smooth(0.3, 0.55, u)) ** 2) / (2 * 0.02 ** 2)) * smooth(0.2, 0.25, u)
@@ -412,11 +432,12 @@ def paint(d, seed=0):
             fs = hexrgb(next(p for p in col['patterns'] if p[0] == 'finspots')[1])
             nn = noise(FWb, FHb, 8, rng.integers(1 << 30), 2)
             blend(c, fs, smooth(0.55, 0.65, nn) * 0.8)
-        # 알파: 밑동·줄기는 불투명, 막은 끝으로 갈수록 얇아진다 (잘라내기 0.45 밑은 구멍 → 끝이 해진 모양)
-        a = 1.0 - (1.0 - ta) * smooth(0.2, 1.0, fv) * (0.4 + 0.6 * membrane)
-        fray = noise(FWb, FHb, 20, rng.integers(1 << 30), 2)
-        notch = smooth(0.6, 0.95, membrane) * smooth(0.88, 0.97, fv)
-        a = np.where((fv > 0.94 + 0.05 * fray) | ((notch > 0.5) & (fray > 0.62)), 0.0, a)
+        # 알파 (Fishing/FishFin이 반투명으로 섞는다): 밑동·줄기는 거의 불투명, 막은 끝으로 갈수록 얇아져 비친다.
+        # 가장자리는 줄기 끝이 조금 더 나오고 줄기 사이 막이 살짝 들어간 물결 모양 (예전: 노이즈 구멍으로 해진 종이 같았다)
+        mem_a = 0.82 - (0.82 - ta * 0.75) * smooth(0.05, 1.0, fv)
+        a = np.maximum(mem_a, rays * (0.95 - 0.25 * fv))
+        edge_v = 0.975 - 0.045 * membrane
+        a *= smooth(edge_v, edge_v - 0.035, fv)
         alb[0:FHb, x0:x0 + FWb, :3] = np.clip(c, 0, 1)
         alb[0:FHb, x0:x0 + FWb, 3] = np.clip(a, 0, 1)
         height[0:FHb, x0:x0 + FWb] = rays * 0.7 * (1 - fv * 0.4) + rays * seg * 0.2

@@ -49,16 +49,17 @@ namespace Fishing.Angling
         {
             if (MatCache.TryGetValue(id, out var m)) return m;
             var shader = Shader.Find("Fishing/Fish") ?? Shader.Find("Standard");
+            var finShader = Shader.Find("Fishing/FishFin") ?? shader; // 지느러미는 반투명 막
             var albedo = Resources.Load<Texture2D>("Fish/Textures/" + id);
             var normal = Resources.Load<Texture2D>("Fish/Textures/" + id + "_n");
             var metal = Resources.Load<Texture2D>("Fish/Textures/" + id + "_m");
             Material Make(bool fin)
             {
-                var mat = new Material(shader) { name = $"Fish_{id}_{(fin ? "Fin" : "Body")}" };
+                var mat = new Material(fin ? finShader : shader) { name = $"Fish_{id}_{(fin ? "Fin" : "Body")}" };
                 if (albedo != null) mat.SetTexture("_MainTex", albedo);
                 if (normal != null) mat.SetTexture("_BumpMap", normal);
                 if (metal != null) mat.SetTexture("_MetalTex", metal);
-                mat.SetFloat("_Cutoff", fin ? 0.45f : 0f);
+                mat.SetFloat("_Cutoff", fin ? 0.5f : 0f); // 지느러미: 그림자만 잘라내기
                 mat.SetFloat("_Translucency", fin ? 0.6f : 0f);
                 mat.SetFloat("_Sheen", 0.6f);
                 return mat;

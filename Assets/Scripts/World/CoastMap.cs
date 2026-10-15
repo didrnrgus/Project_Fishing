@@ -803,8 +803,12 @@ namespace Fishing.World
             for (int i = 0; i < 9; i++)
                 Mats.Prim(PrimitiveType.Sphere, "Cairn", t, new Vector3(R(-0.8f, 0.8f), 0.3f + i * 0.12f, R(-0.8f, 0.8f)) + new Vector3(2.5f, 0f, 0f),
                     Vector3.one * R(0.5f, 0.9f), stone, false);
-            Mats.Prim(PrimitiveType.Cylinder, "SacredTree", t, new Vector3(-2f, 2.5f, 0f), new Vector3(0.7f, 2.5f, 0.7f), Mats.Lit(new Color(0.35f, 0.28f, 0.22f)), false);
-            Mats.Prim(PrimitiveType.Sphere, "Crown", t, new Vector3(-2f, 5.6f, 0f), new Vector3(5f, 3.6f, 5f), Mats.Lit(new Color(0.18f, 0.34f, 0.18f)), false);
+            // 당산나무: 큰 활엽수 (없으면 예전 원기둥 + 구)
+            if (KenneyProps.SpawnBush(t, new Vector3(-2f, 0f, 0f), 0f, 8.5f, 0, null, 0f, true) == null)
+            {
+                Mats.Prim(PrimitiveType.Cylinder, "SacredTree", t, new Vector3(-2f, 2.5f, 0f), new Vector3(0.7f, 2.5f, 0.7f), Mats.Lit(new Color(0.35f, 0.28f, 0.22f)), false);
+                Mats.Prim(PrimitiveType.Sphere, "Crown", t, new Vector3(-2f, 5.6f, 0f), new Vector3(5f, 3.6f, 5f), Mats.Lit(new Color(0.18f, 0.34f, 0.18f)), false);
+            }
             var ribbons = new[] { new Color(0.9f, 0.2f, 0.2f), new Color(0.95f, 0.85f, 0.2f), new Color(0.2f, 0.45f, 0.85f), new Color(0.95f, 0.95f, 0.95f), new Color(0.2f, 0.65f, 0.3f) };
             for (int i = 0; i < 5; i++)
                 Mats.Prim(PrimitiveType.Cylinder, "Ribbon", t, new Vector3(-2f, 1.5f + i * 0.18f, 0f), new Vector3(0.78f, 0.05f, 0.78f), Mats.Lit(ribbons[i]), false);
@@ -830,17 +834,15 @@ namespace Fishing.World
                 if (y < _map.LandY + 0.3f) continue;
                 if (camellia && _rng.NextDouble() < 0.5)
                 {
-                    var tree = new GameObject("Camellia").transform;
-                    tree.SetParent(_root, false);
-                    tree.localPosition = new Vector3(x, y, z);
+                    // 동백나무: 잎이 짙은 작은 나무 + 잎 사이 붉은 꽃 (예전: 구 세 개를 얹은 도형 나무)
                     float s = R(0.8f, 1.3f);
-                    Mats.Prim(PrimitiveType.Cylinder, "Trunk", tree, new Vector3(0f, 1.2f * s, 0f), new Vector3(0.35f * s, 1.2f * s, 0.35f * s), trunk, false);
-                    for (int k = 0; k < 3; k++)
-                        Mats.Prim(PrimitiveType.Sphere, "Leaves", tree, new Vector3(R(-1f, 1f), 2.6f + R(0f, 1.2f), R(-1f, 1f)) * s, Vector3.one * R(2.2f, 3f) * s, leaf, false);
-                    for (int k = 0; k < 5; k++)
+                    if (KenneyProps.SpawnBush(_root, new Vector3(x, y - 0.05f, z), R(0f, 360f), 4.2f * s, 14, flower, 0.22f, true) == null)
                     {
-                        var dir = new Vector3(R(-1f, 1f), R(0.2f, 0.9f), R(-1f, 1f)).normalized;
-                        Mats.Prim(PrimitiveType.Sphere, "Flower", tree, new Vector3(0f, 3.1f * s, 0f) + dir * 1.5f * s, Vector3.one * 0.3f, flower, false);
+                        var tree = new GameObject("Camellia").transform;
+                        tree.SetParent(_root, false);
+                        tree.localPosition = new Vector3(x, y, z);
+                        Mats.Prim(PrimitiveType.Cylinder, "Trunk", tree, new Vector3(0f, 1.2f * s, 0f), new Vector3(0.35f * s, 1.2f * s, 0.35f * s), trunk, false);
+                        Mats.Prim(PrimitiveType.Sphere, "Leaves", tree, new Vector3(0f, 2.9f, 0f) * s, Vector3.one * 2.8f * s, leaf, false);
                     }
                 }
                 else if (KenneyProps.Available)
@@ -914,11 +916,14 @@ namespace Fishing.World
                 // 파도에 깎인 울퉁불퉁한 바위기둥 (아래가 넓고 위로 갈수록 가늘다)
                 var go = new GameObject("StackRock");
                 go.transform.SetParent(t, false);
-                go.AddComponent<MeshFilter>().sharedMesh = StackMesh(st.Radius, st.Height + 2f, _rng.Next(1000));
-                go.AddComponent<MeshRenderer>().sharedMaterial = S.DarkRock ? Mats.Textured("rock", new Color(0.36f, 0.34f, 0.33f), 1f, 0.3f) : Mats.Textured("rock", new Color(0.78f, 0.74f, 0.68f), 1f, 0.25f);
-                // 아랫단: 파도에 젖은 짙은 띠
-                Mats.Prim(PrimitiveType.Cylinder, "StackWet", t, new Vector3(0f, 2.4f, 0f), new Vector3(st.Radius * 2.32f, 0.7f, st.Radius * 2.32f),
-                    Mats.Lit(new Color(0.18f, 0.17f, 0.16f), 0.6f), false);
+                go.AddComponent<MeshFilter>().sharedMesh = StackMesh(st.Radius, st.Height + 2f, _rng.Next(1000), (S.Features & CoastFeature.Karst) != 0);
+                // 재질 3개: 옆 절벽 / 파도에 젖은 아랫단(짙고 번들) / 위를 보는 턱·꼭대기(풀·이끼)
+                var cliff = S.DarkRock ? Mats.Textured("rock", new Color(0.36f, 0.34f, 0.33f), 1f, 0.3f) : Mats.Textured("rock", new Color(0.78f, 0.74f, 0.68f), 1f, 0.25f);
+                go.AddComponent<MeshRenderer>().sharedMaterials = new[]
+                {
+                    cliff, Mats.Textured("rock", new Color(0.22f, 0.21f, 0.2f), 1f, 0.75f),
+                    st.Pines ? Mats.Textured("grass", new Color(0.55f, 0.62f, 0.45f), 1f, 0.1f) : cliff,
+                };
                 if (st.Pines && KenneyProps.Available)
                     for (int k = 0; k < 3; k++)
                         KenneyProps.Spawn("Kenney/Nature/tree_pineRoundB", t, new Vector3(R(-st.Radius, st.Radius) * 0.3f, st.Height + 1.6f, R(-st.Radius, st.Radius) * 0.3f), R(0f, 360f), R(3f, 5f));
@@ -931,30 +936,41 @@ namespace Fishing.World
         }
 
         /// <summary>
-        /// 바위기둥 메쉬: 높이에 따라 가늘어지는 원기둥에 각도·높이 노이즈로 울퉁불퉁한 면, 꼭대기는 둥글게 닫는다.
-        /// UV는 둘레·높이 m 단위(텍스처 한 장 = 4m).
+        /// 바위기둥 메쉬 (해안 바위기둥·하롱베이 석회암 봉우리): 높이에 따라 가늘어지는 기둥을 큰 굴곡 + 잔 굴곡 + 세로 균열 홈 +
+        /// 층층이 튀어나온 퇴적층 턱으로 깎고, 꼭대기는 울퉁불퉁하게 닫는다. 예전(둘레 20칸, 굴곡 한 겹)은 매끈한 탄두처럼 보였다.
+        /// 서브메쉬 0 = 옆 절벽, 1 = 물에 젖는 아랫단(wetH m까지), 2 = 위를 보는 면(턱·꼭대기, 풀·이끼). UV는 둘레·높이 m 단위(한 장 = 4m).
+        /// karst면 옆이 더 곧게 서고(석회암 탑) 꼭대기가 넓다.
         /// </summary>
-        static Mesh StackMesh(float radius, float height, int seed)
+        public static Mesh StackMesh(float radius, float height, int seed, bool karst = false, float wetH = 3.1f)
         {
-            const int seg = 20, rings = 16;
+            const int seg = 40, rings = 40;
             var verts = new List<Vector3>();
             var uvs = new List<Vector2>();
-            var tris = new List<int>();
+            var quads = new List<int>();
             float circ = Mathf.PI * 2f * radius;
+            float sd = seed * 0.37f;
+            int layers = 5 + seed % 5;
             for (int r = 0; r <= rings; r++)
             {
                 float f = r / (float)rings;
-                float y = f * height;
-                // 꼭대기 15%는 둥글게 오므린다
-                float cap = f > 0.85f ? Mathf.Sqrt(Mathf.Max(0f, 1f - Mathf.Pow((f - 0.85f) / 0.15f, 2f))) : 1f;
-                float taper = Mathf.Lerp(1.12f, 0.62f, Mathf.Pow(f, 1.3f)) * Mathf.Max(0.05f, cap);
+                float capStart = karst ? 0.9f : 0.85f;
+                float cap = f > capStart ? Mathf.Sqrt(Mathf.Max(0f, 1f - Mathf.Pow((f - capStart) / (1f - capStart), 2f))) : 1f;
+                float taper = karst ? Mathf.Lerp(1.05f, 0.82f, Mathf.Pow(f, 1.6f)) : Mathf.Lerp(1.12f, 0.62f, Mathf.Pow(f, 1.3f));
+                taper *= Mathf.Max(0.04f, cap);
+                // 퇴적층 턱: 높이를 층으로 나눠 층 위쪽이 살짝 튀어나온다 (층 경계도 노이즈로 기울어진다)
                 for (int i = 0; i <= seg; i++)
                 {
                     float a = i / (float)seg * Mathf.PI * 2f;
-                    float n = Mathf.PerlinNoise(seed * 0.37f + Mathf.Cos(a) * 1.3f + 5f, f * 3.2f + Mathf.Sin(a) * 1.3f) - 0.5f;
-                    float ledge = Mathf.PerlinNoise(seed * 0.11f, f * 9f) - 0.5f; // 층층이 깎인 결
-                    float rr = radius * taper * (1f + n * 0.45f + ledge * 0.12f);
-                    verts.Add(new Vector3(Mathf.Cos(a) * rr, y, Mathf.Sin(a) * rr));
+                    float ca = Mathf.Cos(a), sa = Mathf.Sin(a);
+                    float big = Mathf.PerlinNoise(sd + ca * 1.3f + 5f, f * 3.2f + sa * 1.3f) - 0.5f;
+                    float fine = Mathf.PerlinNoise(sd * 2.1f + ca * 4f + 11f, f * 14f + sa * 4f) - 0.5f;
+                    float layer = f * layers + (Mathf.PerlinNoise(sd + ca * 0.8f, sa * 0.8f + 3f) - 0.5f) * 0.8f;
+                    float ledge = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.72f, 0.98f, layer - Mathf.Floor(layer)));
+                    float crack = Mathf.Pow(Mathf.Abs(Mathf.Sin(a * (7f + seed % 4) + big * 3f)), 10f);
+                    float rr = radius * taper * (1f + big * (karst ? 0.32f : 0.45f) + fine * 0.1f + ledge * 0.07f - crack * 0.07f);
+                    float y = f * height;
+                    if (f > capStart) y += height * 0.035f * (Mathf.PerlinNoise(sd + ca * 2f + 20f, sa * 2f) - 0.5f) * 2f; // 울퉁불퉁한 꼭대기
+                    verts.Add(new Vector3(ca * rr, y, sa * rr));
                     uvs.Add(new Vector2(i / (float)seg * circ / 4f, y / 4f));
                 }
             }
@@ -962,19 +978,34 @@ namespace Fishing.World
             for (int i = 0; i < seg; i++)
             {
                 int a = r * (seg + 1) + i, b = a + 1, c = a + seg + 1, d = c + 1;
-                tris.AddRange(new[] { a, c, b, b, c, d });
+                quads.AddRange(new[] { a, c, b, b, c, d });
             }
-            // 꼭대기 마개
             int top = verts.Count;
             verts.Add(new Vector3(0f, height + radius * 0.05f, 0f));
             uvs.Add(new Vector2(0.5f, height / 4f));
             int last = rings * (seg + 1);
-            for (int i = 0; i < seg; i++) tris.AddRange(new[] { last + i, top, last + i + 1 });
-            var mesh = new Mesh { name = "SeaStack" };
+            for (int i = 0; i < seg; i++) quads.AddRange(new[] { last + i, top, last + i + 1 });
+            // 면 방향·높이로 서브메쉬를 나눈다
+            var side = new List<int>();
+            var wet = new List<int>();
+            var up = new List<int>();
+            for (int k = 0; k < quads.Count; k += 3)
+            {
+                Vector3 p0 = verts[quads[k]], p1 = verts[quads[k + 1]], p2 = verts[quads[k + 2]];
+                var n = Vector3.Cross(p1 - p0, p2 - p0).normalized;
+                float cy = (p0.y + p1.y + p2.y) / 3f;
+                var list = cy < wetH ? wet : n.y > 0.55f ? up : side;
+                list.Add(quads[k]); list.Add(quads[k + 1]); list.Add(quads[k + 2]);
+            }
+            var mesh = new Mesh { name = karst ? "Karst" : "SeaStack" };
             mesh.SetVertices(verts);
             mesh.SetUVs(0, uvs);
-            mesh.SetTriangles(tris, 0);
+            mesh.subMeshCount = 3;
+            mesh.SetTriangles(side, 0);
+            mesh.SetTriangles(wet, 1);
+            mesh.SetTriangles(up, 2);
             mesh.RecalculateNormals();
+            mesh.RecalculateTangents();
             mesh.RecalculateBounds();
             return mesh;
         }
@@ -1319,16 +1350,15 @@ namespace Fishing.World
                 for (float z = -half + 2.5f; z < half - 1f; z += 3.2f)
                 {
                     float tx = cx + x + R(-0.4f, 0.4f), tz = cz + z + R(-0.4f, 0.4f);
-                    var tree = new GameObject("TangerineTree").transform;
-                    tree.SetParent(_root, false);
-                    tree.localPosition = new Vector3(tx, H(tx, tz), tz);
+                    // 귤나무: 덤불 모양 낮은 나무 + 잎 겉면에 귤 (예전: 구 하나에 귤 구슬)
                     float s = R(0.8f, 1.1f);
-                    Mats.Prim(PrimitiveType.Cylinder, "Trunk", tree, new Vector3(0f, 0.4f * s, 0f), new Vector3(0.18f, 0.4f * s, 0.18f), trunk, false);
-                    Mats.Prim(PrimitiveType.Sphere, "Leaves", tree, new Vector3(0f, 1.3f * s, 0f), new Vector3(2f, 1.6f, 2f) * s, leaf, false);
-                    for (int k = 0; k < 7; k++)
+                    if (KenneyProps.SpawnBush(_root, new Vector3(tx, H(tx, tz), tz), R(0f, 360f), 2.1f * s, 12, fruit, 0.15f) == null)
                     {
-                        var d = new Vector3(R(-1f, 1f), R(-0.4f, 0.8f), R(-1f, 1f)).normalized;
-                        Mats.Prim(PrimitiveType.Sphere, "Tangerine", tree, new Vector3(0f, 1.3f * s, 0f) + Vector3.Scale(d, new Vector3(0.95f, 0.75f, 0.95f)) * s, Vector3.one * 0.16f, fruit, false);
+                        var tree = new GameObject("TangerineTree").transform;
+                        tree.SetParent(_root, false);
+                        tree.localPosition = new Vector3(tx, H(tx, tz), tz);
+                        Mats.Prim(PrimitiveType.Cylinder, "Trunk", tree, new Vector3(0f, 0.4f * s, 0f), new Vector3(0.18f, 0.4f * s, 0.18f), trunk, false);
+                        Mats.Prim(PrimitiveType.Sphere, "Leaves", tree, new Vector3(0f, 1.3f * s, 0f), new Vector3(2f, 1.6f, 2f) * s, leaf, false);
                     }
                 }
             }
@@ -1421,12 +1451,15 @@ namespace Fishing.World
                 // 경사 50° 넘는 절벽 면은 건너뛴다 (덤불이 공중에 뜬 것처럼 보인다)
                 float slope = Mathf.Max(Mathf.Abs(H(x, z + 1.5f) - H(x, z - 1.5f)), Mathf.Abs(H(x + 1.5f, z) - H(x - 1.5f, z))) / 3f;
                 if (slope > 1.2f) continue;
-                var b = new GameObject("Azalea").transform;
-                b.SetParent(_root, false);
-                b.localPosition = new Vector3(x, y - 0.35f, z);
-                Mats.Prim(PrimitiveType.Sphere, "Bush", b, new Vector3(0f, 0.5f, 0f), new Vector3(1.7f, 1.4f, 1.7f) * R(0.7f, 1.3f), leaf, false);
-                for (int k = 0; k < 6; k++)
-                    Mats.Prim(PrimitiveType.Sphere, "Bloom", b, new Vector3(R(-0.9f, 0.9f), R(0.7f, 1.2f), R(-0.9f, 0.9f)), Vector3.one * R(0.4f, 0.7f), k % 2 == 0 ? pink : pink2, false);
+                // 진달래 덤불: 덤불 모델 + 겉면에 분홍 꽃 (예전: 구 덤불에 큰 분홍 구슬)
+                float bs = R(0.7f, 1.3f);
+                if (KenneyProps.SpawnBush(_root, new Vector3(x, y - 0.1f, z), R(0f, 360f), 1.4f * bs, 16, _rng.NextDouble() < 0.5 ? pink : pink2, 0.16f) == null)
+                {
+                    var b = new GameObject("Azalea").transform;
+                    b.SetParent(_root, false);
+                    b.localPosition = new Vector3(x, y - 0.35f, z);
+                    Mats.Prim(PrimitiveType.Sphere, "Bush", b, new Vector3(0f, 0.5f, 0f), new Vector3(1.7f, 1.4f, 1.7f) * bs, leaf, false);
+                }
             }
         }
 

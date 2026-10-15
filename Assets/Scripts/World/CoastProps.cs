@@ -131,24 +131,15 @@ namespace Fishing.World
             return _tetrapod;
         }
 
-        /// <summary>등대: 몸통 색, 밤 불빛 색 (항구 입구 오른쪽 빨강·왼쪽 흰색 — 실제 항로 표지 규칙). scale로 크기를 키운다.</summary>
+        /// <summary>등대: 몸통 색, 밤 불빛 색 (항구 입구 오른쪽 빨강·왼쪽 흰색 — 실제 항로 표지 규칙). scale로 크기를 키운다. 모양은 <see cref="LighthouseBuilder"/>.</summary>
         public Transform Lighthouse(Vector3 at, Color body, Color lightColor, float scale = 1f)
         {
             var lh = new GameObject("Lighthouse").transform;
             lh.SetParent(_root, false);
             lh.localPosition = at;
             lh.localScale = Vector3.one * scale;
-            var bodyMat = Mats.Lit(body, 0.5f);
-            var white = Mats.Lit(new Color(0.95f, 0.95f, 0.93f), 0.5f);
-            var dark = Mats.Lit(new Color(0.2f, 0.22f, 0.25f), 0.4f, 0.4f);
-            Mats.Prim(PrimitiveType.Cylinder, "Base", lh, new Vector3(0f, 0.4f, 0f), new Vector3(2.6f, 0.4f, 2.6f), white);
-            Mats.Prim(PrimitiveType.Cylinder, "Tower", lh, new Vector3(0f, 4.2f, 0f), new Vector3(1.6f, 3.4f, 1.6f), bodyMat);
-            Mats.Prim(PrimitiveType.Cylinder, "Band", lh, new Vector3(0f, 5.6f, 0f), new Vector3(1.65f, 0.3f, 1.65f), body.r > 0.9f && body.g > 0.9f ? dark : white, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Balcony", lh, new Vector3(0f, 7.7f, 0f), new Vector3(2.2f, 0.12f, 2.2f), dark, false);
-            var lamp = Mats.Prim(PrimitiveType.Sphere, "Lamp", lh, new Vector3(0f, 8.4f, 0f), Vector3.one * 1.05f, white, false);
-            _bulbs.Add(lamp.GetComponent<Renderer>());
-            Mats.Prim(PrimitiveType.Cylinder, "Cap", lh, new Vector3(0f, 9.1f, 0f), new Vector3(1.3f, 0.3f, 1.3f), bodyMat, false);
-            AddLamp(lh.position + Vector3.up * 8.4f * scale, lightColor, 24f * scale, 2f);
+            _bulbs.Add(LighthouseBuilder.Small(lh, body));
+            AddLamp(lh.position + Vector3.up * LighthouseBuilder.SmallLampY * scale, lightColor, 24f * scale, 2f);
             return lh;
         }
 
@@ -161,22 +152,8 @@ namespace Fishing.World
             lh.SetParent(_root, false);
             lh.localPosition = at;
             lh.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            var white = Mats.Lit(new Color(0.96f, 0.96f, 0.94f), 0.45f);
-            var red = Mats.Lit(new Color(0.75f, 0.14f, 0.12f), 0.5f);
-            var dark = Mats.Lit(new Color(0.18f, 0.2f, 0.22f), 0.4f, 0.5f);
-            var glass = Mats.Lit(new Color(0.75f, 0.85f, 0.9f), 0.9f, 0.2f);
-            Mats.Prim(PrimitiveType.Cylinder, "Base", lh, new Vector3(0f, 0.5f, 0f), new Vector3(6f, 0.5f, 6f), Mats.Textured("concrete", new Color(0.85f, 0.84f, 0.8f), 1f, 0.2f));
-            Mats.Prim(PrimitiveType.Cylinder, "Tower", lh, new Vector3(0f, 8f, 0f), new Vector3(3.2f, 7f, 3.2f), white);
-            Mats.Prim(PrimitiveType.Cylinder, "Gallery", lh, new Vector3(0f, 15.2f, 0f), new Vector3(4.4f, 0.25f, 4.4f), dark, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Lantern", lh, new Vector3(0f, 16.4f, 0f), new Vector3(2.2f, 1f, 2.2f), glass, false);
-            var lamp = Mats.Prim(PrimitiveType.Sphere, "Lamp", lh, new Vector3(0f, 16.4f, 0f), Vector3.one * 1.5f, white, false);
-            _bulbs.Add(lamp.GetComponent<Renderer>());
-            Mats.Prim(PrimitiveType.Sphere, "Dome", lh, new Vector3(0f, 17.5f, 0f), new Vector3(2.5f, 1.4f, 2.5f), red, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Vane", lh, new Vector3(0f, 18.6f, 0f), new Vector3(0.12f, 0.6f, 0.12f), dark, false);
-            // 등대지기 숙소
-            Mats.Prim(PrimitiveType.Cube, "Keeper", lh, new Vector3(6.5f, 1.8f, 0f), new Vector3(7f, 3.2f, 5f), white);
-            Mats.Prim(PrimitiveType.Cube, "KeeperRoof", lh, new Vector3(6.5f, 3.6f, 0f), new Vector3(7.6f, 0.4f, 5.6f), red, false);
-            AddLamp(lh.position + Vector3.up * 16.4f, new Color(1f, 0.95f, 0.75f), 60f, 2.6f);
+            _bulbs.Add(LighthouseBuilder.Grand(lh));
+            AddLamp(lh.position + Vector3.up * LighthouseBuilder.GrandLampY, new Color(1f, 0.95f, 0.75f), 60f, 2.6f);
             return lh;
         }
 
@@ -403,6 +380,8 @@ namespace Fishing.World
             col.size = new Vector3(w, wallH + 1f, d);
             return h;
         }
+
+        public static Mesh GableMesh() => Gable();
 
         /// <summary>박공지붕 단위 메쉬: 바닥 x -0.5~0.5, z -0.5~0.5, 용마루 높이 1 (용마루가 x 방향). 면마다 법선이 따로.</summary>
         static Mesh Gable()
