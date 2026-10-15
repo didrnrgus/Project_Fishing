@@ -68,6 +68,7 @@ Assets/
       Aquarium.cs                대기실 수족관 (헤엄치는 물고기, 장식, 배고픔)
       WaterSurface.cs            격자 수면 메쉬 + Fishing/Water 머티리얼 (맵마다 색), 해저 높이 텍스처 굽기(SetSeabed → 물가 거품)
       WaterGlints.cs             밤 물 위에 길게 비치는 불빛 (가로등·다리·도시)
+      WorldBatcher.cs            맵을 지은 뒤 움직이지 않는 Standard 소품을 정적 배칭으로 묶기 (아래 "정적 배칭")
       SkyDecor.cs                달·별·구름 돔 (카메라를 따라다님)
       KenneyProps.cs             Kenney CC0 모델 배치 헬퍼
       ProceduralTextures.cs      물 노멀맵, 구름 노이즈, 달 텍스처
@@ -132,11 +133,12 @@ Assets/
     FontSetup.cs                 Jalnan2 TMP 폰트 에셋 생성
     NatureKitBake.cs             Tree Creator 나무 → 일반 메쉬 프리팹 굽기 (빌드 전 자동, 메뉴 Fishing > Bake Nature Kit Trees)
     BalanceSim.cs                파이팅 밸런스 시뮬레이션 → docs/balance-report.md
-    Tests/GameRulesTests.cs      EditMode 단위 테스트 25개 (sh tools/test.sh)
+    Tests/GameRulesTests.cs      EditMode 단위 테스트 26개 (sh tools/test.sh)
     Tests/CoastMapTests.cs       낚시터 정의 검사 5개 (+ GameRulesTests의 대회 지역 순환) (물때마다 걸을 수 있는 곳, 어종이 사는 곳에서 낚이는지, 가두리 통로, 모래톱, 강 맵 맞은편 둑)
 tools/
   build.sh, autoshot.sh, test.sh, balance.sh    배치모드 빌드 / 자동 스크린샷 / 테스트 / 밸런스
   fish_table.py                  FishDatabase.cs → 02 문서 11장 어종 표 (--write)
+  fightsim/                      Unity 없이 파이팅 밸런스 재기 (.NET 8, 게임 소스 + UnityEngine 대체 Stubs.cs) — 04 문서
   blender/                       headless Blender(bpy) 파이프라인: 캐릭터 옷(garments.py), 물고기(build_fish.py), 아이콘(build_icons.py), 해외 소품(build_props.py)
 ```
 
@@ -146,7 +148,7 @@ tools/
 GameBootstrap.Awake
  ├─ SaveSystem.Load → PlayerProfile, QuestSystem
  ├─ GameClock, WeatherSystem, Tide, SeasonFx, TournamentSystem, Settings.Load, PostFx
- ├─ MapLoader → (한강) WorldBuilder.Build / (홍현·서천) 맵 월드 빌더 / (해안 8곳) CoastWorldBuilder → DayNightCycle.Init(가로등)
+ ├─ MapLoader → (한강) WorldBuilder.Build / (홍현·서천) 맵 월드 빌더 / (해안·해외 12곳) CoastWorldBuilder → WorldBatcher.Batch → DayNightCycle.Init(가로등)
  ├─ FishSchoolManager
  ├─ PlayerController (+ 모델), CameraRig (+ AudioListener, SoundFx)
  ├─ FishingController (Start에서 찌, 1인칭 낚싯대, 낚싯줄, 착지 링 생성)
@@ -165,6 +167,20 @@ GameBootstrap.Start → GameUI.EnterLobby (Mode=Lobby, 카메라 고정)
 - `FishingController.Update`가 상태 머신을 진행한다. 파이팅 중에는 `FishFight.Tick(dt, input, 체력계수, 힘계수(내구도×의상×목장갑), 릴계수)`를 부르고, Q를 누르면 `FishFight.Focus()`(포커싱).
 - `GameUI.Update`가 `HudView.Update`와 `FightHudView.Update`를 부른다. 둘 다 상태를 **폴링해서** 그리고, 창은 `PlayerProfile.Changed` 이벤트가 오면 다시 그린다.
 - `Game.Toast()`가 게임 어디서든 화면 위쪽에 메시지를 띄운다.
+
+## 정적 배칭 (`WorldBatcher`, 2026-10-15)
+
+맵 빌더는 프리미티브 수백~수천 개로 월드를 짓는다(다리 아치·데크 장선·방파제 이음매까지). 같은 재질도 하나씩 그리면 드로우 콜이 많아서, `MapLoader.Load`가 `BuildWorld` 직후 `WorldBatcher.Batch(Game.World)`로 움직이지 않는 것을 `StaticBatchingUtility.Combine`한다.
+
+| 묶는 것 | 안 묶는 것 (이유) |
+|---|---|
+| Standard 셰이더 MeshRenderer, 읽을 수 있는 메쉬(프리미티브·절차적 메쉬), 켜져 있는 것 | 스크립트(MonoBehaviour)·Animator·Rigidbody가 자기나 조상에 있는 것 — NPC 낚시꾼, 어군, 수족관, 잔물결, 배처럼 런타임에 움직인다. 묶인 메쉬는 월드 좌표로 굳는다 |
+| | Standard가 아닌 셰이더 — 물(`Fishing/Water`), 하늘, 물고기, 파티클은 오브젝트 좌표·버텍스 애니메이션을 써서 묶으면 깨진다 |
+| | 읽을 수 없는 메쉬 (Read/Write를 끈 FBX) — Combine이 못 읽는다 |
+
+- 재질 색을 나중에 바꾸는 것(`SeasonFx`의 눈 덮인 둔치, 밤 가로등 전구)은 묶여도 동작한다. 나중에 생기는 것(얼음판·얼음 구멍)은 안 묶인다.
+- **새 소품을 움직이게 만들 때**: 스크립트를 그 물체(또는 부모)에 붙이면 자동으로 빠진다. 스크립트 없이 다른 곳에서 `transform`을 움직이면 안 된다.
+- 자동 촬영 로그에 스크린샷마다 `(NN FPS, 맵, 정적 배칭 N개)`가 찍히고, `tools/autoshot.sh`가 맵별 평균 FPS를 출력한다.
 
 ## 연출 (원작 튜토리얼 영상 분석)
 

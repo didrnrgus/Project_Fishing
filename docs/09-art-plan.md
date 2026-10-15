@@ -1,6 +1,6 @@
 # 09. 물고기 모델 · 아이템 이미지 계획
 
-> 상태 (2026-10-14): **3장 물고기, 4장 아이템 아이콘 완료** — 처음 32종, 이후 맵·계절과 함께 9종(서천 6종, 빙어, 다금바리·돗돔)을 더해 41종, 2026-10-15 해안 낚시터와 함께 16종(3-12)을 더해 **57종** 모델·텍스처·애니메이션 5종·도감 3D 미리보기·아이콘, 아이템 아이콘 37종 + 잡동사니 6종(아이콘·3D 모델)이 게임에 들어갔다.
+> 상태 (2026-10-14): **3장 물고기, 4장 아이템 아이콘 완료** — 처음 32종, 이후 맵·계절과 함께 9종(서천 6종, 빙어, 다금바리·돗돔)을 더해 41종, 2026-10-15 해안 낚시터와 함께 16종(3-12), 원작 자료집·해외 거점과 함께 20종(3-13)을 더해 **77종** 모델·텍스처·애니메이션 5종·도감 3D 미리보기·아이콘, 아이템 아이콘 37종 + 잡동사니 6종(아이콘·3D 모델)이 게임에 들어갔다.
 > 사용자가 도감 자료를 주기 전에 진행해 달라고 해서, 웹 자료(부록 출처)를 바탕으로 만들었다. 잉어 시제품 확인 단계는 건너뛰었다.
 > 순서: 3장(물고기) → 4장(아이템 이미지).
 
@@ -254,7 +254,7 @@
 | 확인 | `Fishing/Check Fish Models` 메뉴 → `Logs/fish-check.txt` (렌더러·크기·머리 방향 +Z·클립 길이), autoshot `10_result`, `11_dex`, `11b_dex_detail`, `28_aquarium` |
 
 ```bash
-bpyenv/Scripts/python -I tools/blender/build_fish.py                       # 57종 FBX · 텍스처 · 아이콘
+bpyenv/Scripts/python -I tools/blender/build_fish.py                       # 77종 FBX · 텍스처 · 아이콘
 bpyenv/Scripts/python -I tools/blender/build_fish.py --only carp --preview --anim   # 옆·위·비스듬히 + 클립별 4프레임
 bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.png
 ```
@@ -290,6 +290,40 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish
 bpyenv/Scripts/python -I tools/blender/build_fish.py --only atkamackerel,sandfish,flatfish,squid,giantoctopus,cod,pollock,redrockfish,yellowtail,amberjack,hairtail,spanishmackerel,spottedseabass
 ```
 
+### 3-13. 한강 2종 · 괴물 어종 4종 · 해외 어종 14종 (2026-10-15)
+
+원작 2013 공략(07 문서)의 한강 어종·이벤트 몬스터와 해외 거점 3곳(02 문서) 어종. 같은 파이프라인, 몸 틀은 그대로 쓰고 수치·무늬만 맞췄다. 새 무늬 종류: `scale_edge`(비늘 금빛 테), `scutes`(꼬리자루 비늘판), `obliquebands`(비스듬한 줄), 황새치의 `bill`(칼 같은 위턱).
+
+| 어종 | 틀 | 특징 (모델에 넣은 것) |
+|---|---|---|
+| 은어 | B | 날씬한 몸, 올리브색 등, 아가미 뒤 노란 점, 노란 배지느러미 |
+| 떡붕어 | A | 붕어보다 체고가 높고 은빛이 강함 |
+| **괴물잉어** | A | 이끼 낀 듯 검푸른 등, 큰 비늘마다 금빛 테, 붉은 지느러미, 금빛 눈 |
+| **괴물가물치** | H | 거의 검은 몸에 더 짙은 얼룩 줄, 붉은 눈 |
+| **폭군삼치** | E | 삼치보다 굵고 등이 검푸름, 큰 점, 토막지느러미, 붉은 홍채 |
+| **황새치** | E | 칼 같은 위턱, 높은 낫 모양 등지느러미, 초승달 꼬리, 보랏빛 검은 등 |
+| 바라문디 | C | 오목한 이마, 큰 입, 은회색 몸, 붉게 빛나는 눈, 둥근 꼬리 |
+| 얼룩바리 | C | 두툼한 몸에 주황 갈색 점이 빽빽, 둥근 꼬리 |
+| 맹그로브잭 | D | 구릿빛 붉은 도미형 몸 |
+| 자이언트 트레발리 | D | 가파른 이마, 높고 납작한 몸, 꼬리자루 비늘판, 낫 모양 꼬리 |
+| 꼬치고기 | E | 아주 길쭉한 몸, 튀어나온 아래턱, 비스듬한 검은 줄 18개 |
+| 귀족도미 | D | 은회색 도미형, 눈 사이 금빛 띠, 아가미 뚜껑 끝 검은 점 |
+| 유럽농어 | C | 농어와 비슷한 은빛 몸 |
+| 유럽대구 | C | 길쭉한 몸, 큰 입, 등지느러미 둘, 회청색 등 |
+| 지중해곰치 | G | 장어형, 짙은 갈색 바탕에 노란 얼룩 점 |
+| 참다랑어 | E | 굵은 방추형, 짙은 남색 등, 은빛 배, 노란 토막지느러미, 초승달 꼬리 |
+| 나일농어 | C | 바라문디를 닮은 큰 몸, 은회색, 오목한 이마 |
+| 나일틸라피아 | D | 붕어 닮은 높은 몸, 희미한 세로 띠, 꼬리에 가는 줄무늬 |
+| 아프리카메기 | H | 넓적한 뼈판 머리, 긴 등·뒷지느러미, 수염 네 쌍, 얼룩 회갈색 |
+| 타이거피시 | B | 은빛 몸에 검은 가로줄, 붉은 지느러미, 드러난 송곳니(입 테두리) |
+
+```bash
+bpyenv/Scripts/python -I tools/blender/build_fish.py --only sweetfish,gengorobuna,monstercarp,monstersnakehead,tyrantmackerel,swordfish
+bpyenv/Scripts/python -I tools/blender/build_fish.py --only barramundi,orangegrouper,mangrovejack,gianttrevally,barracuda,giltheadbream,europeanseabass,hake,moray,bluefintuna,nileperch,tilapia,africancatfish,tigerfish
+```
+
+- 확인 전: 자동 촬영 `58_nile_fight`·`58b_nile_result`와 도감 해외 탭으로 크기·방향 확인 ([WORK-IN-PROGRESS.md](WORK-IN-PROGRESS.md)).
+
 ## 4-7. 만든 결과 (2026-10-14)
 
 ![아이템 아이콘](images/33_item_icons.png)
@@ -310,6 +344,23 @@ bpyenv/Scripts/python -I tools/blender/build_icons.py --sheet docs/images/33_ite
 ```
 - 함정: 여러 물체를 합치면(join) 첫 물체의 회전을 이어받는다. 합친 뒤 회전·크기를 굳혀야(`transform_apply`) 나중에 돌려도 모양이 안 바뀐다.
 - 남은 개선: 의상 아이콘(의상 창에는 3D 미리보기가 있어 생략), 수족관 장식 아이콘.
+
+## 6. 해외 낚시터 소품 (`tools/blender/build_props.py`, 2026-10-15)
+
+해외 거점 3곳의 분위기를 만드는 소품. 물고기·아이콘과 같은 bpy 도구(`build_icons`의 mat·cyl·box·join)를 쓴다. 결과는 `Assets/Resources/Props/<id>.fbx` — 정적 모델이고 머티리얼은 FBX 색 그대로(`AssetImportRules`에서 Junk·Kenney와 같은 규칙). 길이는 실제 미터.
+
+| id | 쓰는 곳 | 모양 |
+|---|---|---|
+| `palm_a` / `palm_b` | 하롱베이·나일강 | 야자수 (8.5m·6.5m, 줄기가 휘고 잎 9~11장, 코코넛 송이) |
+| `felucca` | 나일강 | 펠루카: 흰 나무배(7m) + 비스듬한 긴 활대에 큰 삼각돛 |
+| `junk` | 하롱베이 | 정크선: 갈색 나무배(12m), 높은 고물, 대나무 살을 댄 주황 돛 세 장 |
+
+```bash
+bpyenv/Scripts/python -I tools/blender/build_props.py                                         # 모두
+bpyenv/Scripts/python -I tools/blender/build_props.py --only palm_a --preview Screenshots/props  # 미리보기
+```
+
+- 다리·데크·방파제는 Blender 모델이 아니라 맵 빌더(한강 `WorldBuilder`, 해안 `CoastMap`)에서 프리미티브를 더 잘게 짰다: 동작대교 파란 아치·쌍기둥 교각·난간, 데크·잔교의 장선·가새·젖은 말뚝·계류 말뚝, 방파제 이음매·노란 선·비트·사다리·젖은 띠. 소품 수가 늘어 맵을 지은 뒤 `WorldBatcher`가 정적 배칭으로 묶는다(03 문서).
 
 ## 부록: 어종별 설계 시트 (조사 기록)
 
