@@ -462,6 +462,49 @@ SPECIES = {
                            colors=P('#4a5a62', '#b8c4c8', '#f0f2f0', silver=0.6, fin_up=('#5a686e', '#3a484e', 0.8), fin_low=('#c8ccc8', '#d8dcd8', 0.6),
                                     patterns=[('spots', dict(n=150, r=(4, 8), color='#1a2024', v=(0.45, 1.0), a=0.9))]),
                            eye=dict(iris='#d0c8a0')),
+    # ===== 한강 추가 (원작 2013 공략: 은어·떡붕어) =====
+    # 은어 (Plecoglossus altivelis): 날씬한 몸, 기름지느러미, 올리브색 등에 아가미 뒤 노란 점
+    'sweetfish': dict(type='B', name='은어', depth=0.18, width=0.1, tmax=0.42, snout=0.8, mouth=0.1, scales=70,
+                      fins=[_fin('dorsal', (0.42, 0.54), 0.7, prof=[(0, 0.6), (0.2, 1.0), (1, 0.4)]), _fin('adipose', (0.73, 0.77), 0.2),
+                            _fin('anal', (0.62, 0.78), 0.5), _fin('caudal', h=0.24, shape='deepfork'),
+                            _fin('pectoral', s=(0.22, 0.22), h=0.11), _fin('pelvic', s=(0.48, 0.48), h=0.08)],
+                      colors=P('#5a6a3a', '#b8b890', '#f2f0e0', silver=0.6, fin_up=('#7a7a50', '#a09a60', 0.7), fin_low=('#d8c060', '#e8d080', 0.75),
+                               patterns=[('spots', dict(n=1, r=(10, 10), u=(0.26, 0.26), v=(0.62, 0.62), color='#f0d040', a=0.85)), ('sheen', 0.5)]),
+                      eye=dict(iris='#d8d0a0'), anim=dict(amp=1.1, freq=1.3)),
+    # 떡붕어 (Carassius cuvieri): 붕어보다 체고가 높고 은빛이 강하다
+    'gengorobuna': dict(type='A', name='떡붕어', depth=0.38, tmax=0.42, scales=30, mouth=0.05,
+                        colors=P('#4a5448', '#b8b8a0', '#ecead8', silver=0.55, fin_up=('#5a5e50', '#3e4238', 0.8), fin_low=('#8a8a74', '#6a6a58', 0.75),
+                                 patterns=[('scale_edge', 0.45), ('sheen', 0.4)]),
+                        eye=dict(iris='#c8b060')),
+    # ===== 괴물 어종 (원작 이벤트 몬스터: 괴물잉어 · 괴물가물치 · 폭군삼치 · 황새치) =====
+    # 괴물잉어: 이끼 낀 듯 검푸른 등, 큰 비늘마다 금빛 테, 붉은 지느러미
+    'monstercarp': dict(type='A', name='괴물잉어', depth=0.3, scales=30,
+                        barbels=[(0.03, -0.25, 0.06, 0.006, 'down'), (0.05, -0.15, 0.04, 0.004, 'side')],
+                        colors=P('#1e2618', '#6a5a2a', '#c8b47a', silver=0.2, metallic=0.25, fin_up=('#2a2618', '#1a1810', 0.9), fin_low=('#a83a1a', '#d8401a', 0.9),
+                                 patterns=[('scale_edge', 1.0), ('mottle', dict(color='#0e140a', a=0.5, scale=0.08))]),
+                        eye=dict(r=0.022, iris='#e8b020')),
+    # 괴물가물치: 거의 검은 몸에 더 짙은 얼룩, 붉은 눈
+    'monstersnakehead': dict(type='H', name='괴물가물치', depth=0.16, width=0.14, head_w=1.05, tmax=0.4, body_end=0.83, ped=0.75, snout=0.6, mouth=0.1, scales=70,
+                             fins=[_fin('dorsal', (0.3, 0.98), 0.34, prof=[(0, 0.6), (0.2, 1.0), (1, 0.9)]),
+                                   _fin('anal', (0.55, 0.98), 0.32, prof=[(0, 0.6), (0.2, 1.0), (1, 0.9)]),
+                                   _fin('caudal', h=0.16, shape='round'), _fin('pectoral', s=(0.24, 0.24), h=0.11), _fin('pelvic', s=(0.33, 0.33), h=0.07)],
+                             colors=P('#121410', '#3a3a28', '#8a8670', silver=0.0, fin_up=('#1a1c14', '#2a2c20', 0.95), fin_low=('#2a2c20', '#3a3c2c', 0.95),
+                                      patterns=[('blotchrows', dict(color='#050604', a=0.9)), ('eyeline', dict(color='#050604', w=0.03, n=2))]),
+                             eye=dict(s=0.07, z=0.4, r=0.014, iris='#d02018')),
+    # 폭군삼치: 삼치보다 굵고 등이 검푸르며 점이 크다, 붉은 홍채
+    'tyrantmackerel': dict(type='E', name='폭군삼치', depth=0.17, width=0.11, tmax=0.42, ped=0.16, snout=0.8, mouth=0.12,
+                           colors=P('#14243a', '#7a8ea0', '#e8ecee', silver=0.85, metallic=0.45, fin_up=('#1e2e44', '#34465a', 0.8), fin_low=('#9aa4ac', '#c0c8cc', 0.6),
+                                    patterns=[('spots', dict(n=70, r=(7, 11), color='#0a1420', v=(0.5, 0.9), a=0.85)), ('finlets', True)]),
+                           eye=dict(r=0.026, iris='#c83020'), anim=dict(amp=1.1, freq=1.5)),
+    # 황새치 (Xiphias gladius): 칼 같은 위턱, 높은 낫 모양 등지느러미, 초승달 꼬리, 보랏빛 검은 등
+    'swordfish': dict(type='E', name='황새치', depth=0.15, width=0.12, tmax=0.33, body_end=0.82, ped=0.1, snout=0.9, mouth=0.0, bill=0.3,
+                      fins=[_fin('dorsal', (0.16, 0.3), 1.6, prof=[(0, 1.0), (0.25, 0.85), (1, 0.08)]),
+                            _fin('anal', (0.6, 0.68), 0.4, prof=[(0, 1.0), (1, 0.2)]),
+                            _fin('caudal', h=0.42, shape='deepfork'),
+                            _fin('pectoral', s=(0.24, 0.24), h=0.18, long=True)],
+                      colors=P('#22182e', '#5a5068', '#d0ccd4', silver=0.4, metallic=0.4, fin_up=('#241a30', '#1a1222', 0.95), fin_low=('#3a3048', '#2a2234', 0.9),
+                               patterns=[('sheen', 0.4)]),
+                      eye=dict(s=0.1, z=0.2, r=0.02, iris='#28385a'), anim=dict(amp=1.0, freq=1.2)),
 }
 
 # 잡동사니 (Unity에서 모양을 코드로 만드는 대신 여기서 같이 모델링한다)
@@ -484,4 +527,5 @@ def resolve(sid):
     d.setdefault('bones', 6)
     d.setdefault('flat', None)
     d.setdefault('beak', 0.0)
+    d.setdefault('bill', 0.0)
     return d

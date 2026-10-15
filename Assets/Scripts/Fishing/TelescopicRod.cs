@@ -45,6 +45,18 @@ namespace Fishing.Angling
                     // 대회 보상: 거거(대왕조개) 껍데기처럼 진줏빛 흰 몸통에 금색 링
                     return new Style { Blank = new Color(0.9f, 0.88f, 0.82f), Ferrule = new Color(0.92f, 0.72f, 0.3f), Grip = new Color(0.32f, 0.2f, 0.12f),
                         Length = 3.3f, Sections = 5, ButtDiameter = 0.034f, TipDiameter = 0.006f, Flex = rod.Flex };
+                case "rod_goldgege":
+                    // 빙고 보상: 금빛 블랭크에 진주색 링
+                    return new Style { Blank = new Color(0.86f, 0.66f, 0.22f), Ferrule = new Color(0.92f, 0.9f, 0.84f), Grip = new Color(0.3f, 0.18f, 0.1f),
+                        Length = 3.3f, Sections = 5, ButtDiameter = 0.034f, TipDiameter = 0.006f, Flex = rod.Flex };
+                case "rod_pungrim":
+                    // 풍림화산: 검은 옻칠 블랭크, 붉은 링(띠), 금빛 손잡이
+                    return new Style { Blank = new Color(0.05f, 0.04f, 0.04f), Ferrule = new Color(0.75f, 0.1f, 0.08f), Grip = new Color(0.78f, 0.6f, 0.2f),
+                        Length = 3.4f, Sections = 5, ButtDiameter = 0.036f, TipDiameter = 0.007f, Flex = rod.Flex };
+                case "rod_gangbaram":
+                    // Lv.5 보상: 강바람처럼 시원한 하늘색 블랭크, 은색 링, 검은 EVA 손잡이
+                    return new Style { Blank = new Color(0.16f, 0.48f, 0.7f), Ferrule = new Color(0.82f, 0.84f, 0.88f), Grip = new Color(0.1f, 0.1f, 0.11f),
+                        Length = 3.1f, Sections = 4, ButtDiameter = 0.032f, TipDiameter = 0.006f, Flex = rod.Flex };
                 default:
                     return new Style { Blank = new Color(0.75f, 0.13f, 0.2f), Ferrule = new Color(0.8f, 0.8f, 0.84f), Grip = new Color(0.13f, 0.13f, 0.13f),
                         Length = 3.0f, Sections = 4, ButtDiameter = 0.032f, TipDiameter = 0.006f, Flex = rod?.Flex ?? 0.8f };
@@ -190,6 +202,12 @@ namespace Fishing.Angling
                 case "reel_napal":
                     // 대회 보상: 나팔고둥 껍데기 색 (크림색 몸통, 주황 갈색 무늬)
                     body = new Color(0.93f, 0.85f, 0.7f); accent = new Color(0.72f, 0.36f, 0.16f); spoolCol = new Color(0.85f, 0.55f, 0.3f); size = 1.15f; break;
+                case "reel_pungrim":
+                    // 풍림화산: 검은 옻칠 몸통, 붉은 테, 금빛 스풀
+                    body = new Color(0.05f, 0.04f, 0.04f); accent = new Color(0.78f, 0.1f, 0.08f); spoolCol = new Color(0.85f, 0.66f, 0.22f); size = 1.2f; doubleKnob = true; break;
+                case "reel_victory5":
+                    // Lv.4 보상: 빨간 몸통에 은색 테
+                    body = new Color(0.78f, 0.12f, 0.16f); accent = new Color(0.9f, 0.9f, 0.93f); spoolCol = new Color(0.7f, 0.72f, 0.76f); size = 1.05f; break;
                 default:
                     body = new Color(0.7f, 0.71f, 0.74f); accent = new Color(0.2f, 0.2f, 0.22f); spoolCol = new Color(0.62f, 0.63f, 0.66f); size = 1f; break;
             }

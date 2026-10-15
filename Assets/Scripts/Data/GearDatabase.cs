@@ -6,6 +6,18 @@ namespace Fishing.Data
 {
     public enum GearSlot { Rod, Reel, Line, Boat }
 
+    /// <summary>음식: 즉시 회복(Instant) + 분당 회복(PerMinute × Minutes, 게임 분).</summary>
+    public sealed class FoodDef
+    {
+        public string Id, Name, Desc;
+        public int Price;
+        public float Instant;
+        public float PerMinute;
+        public float Minutes;
+        public string EffectText => (Instant > 0f ? $"즉시 +{Instant:0}" : "") + (Instant > 0f && PerMinute > 0f ? " · " : "") +
+                                    (PerMinute > 0f ? $"{Minutes / 60f:0.#}시간 동안 +{PerMinute * Minutes:0}" : "");
+    }
+
     public sealed class GearDef
     {
         public string Id;
@@ -72,6 +84,24 @@ namespace Fishing.Data
         public bool NotSold;
     }
 
+    /// <summary>
+    /// 레벨 보상 (원작 2013 공략: Lv.4 Victory5 릴, Lv.5 강바람 낚시대, Lv.6 미끄러지지 않는 목장갑).
+    /// Lv.5 고무보트는 GameBootstrap이 따로 준다. 음식·미끼 꾸러미는 솔로판에서 더한 것.
+    /// </summary>
+    public static class LevelRewards
+    {
+        public static readonly (int level, string id, int count, string text)[] All =
+        {
+            (2, "bait_worm", 20, "지렁이 20마리"),
+            (3, "food_fishcake", 2, "살살녹는어묵 2개"),
+            (4, "reel_victory5", 1, "Victory5 릴"),
+            (5, "rod_gangbaram", 1, "강바람 낚시대"),
+            (6, Fishing.Core.PlayerProfile.CottonGlovesId, 1, "미끄러지지 않는 목장갑 (파이팅 힘 +5% · 릴 속도 +5%)"),
+            (8, "food_dosirak", 3, "바다 도시락 3개"),
+            (10, "bait_lure", 10, "루어 10개"),
+        };
+    }
+
     public static class GearDatabase
     {
         public static readonly List<GearDef> Gear = new List<GearDef>
@@ -90,8 +120,21 @@ namespace Fishing.Data
             new GearDef { Id = "rod_gege", Name = "거거 낚시대", Slot = GearSlot.Rod, Price = 0, Level = 10, NotSold = true,
                 Power = 1.85f, Flex = 0.6f, CastRange = 28f, Desc = "조합 낚시 대회 우승 상품. 가볍고 질겨서 손맛과 힘을 모두 잡았다." },
 
+            // 원작 레벨 보상 (2013 공략: Lv.5 「강바람 낚시대」, Lv.4 「Victory5 릴」). 상점에서 팔지 않는다
+            new GearDef { Id = "rod_gangbaram", Name = "강바람 낚시대", Slot = GearSlot.Rod, Price = 0, Level = 5, NotSold = true,
+                Power = 1.25f, Flex = 0.65f, CastRange = 21f, Desc = "Lv.5 달성 보상. 강바람에도 흔들리지 않는 중경질대. 카본대보다 장력이 덜 튄다." },
+
+            // 빙고 3줄 보상 (원작: 빙고 보상 「황금거거」)
+            new GearDef { Id = "rod_goldgege", Name = "황금거거 낚싯대", Slot = GearSlot.Rod, Price = 0, Level = 10, NotSold = true,
+                Power = 2.0f, Flex = 0.62f, CastRange = 29f, Desc = "빙고 3줄 보상. 거거 낚시대를 금빛으로 다시 칠하고 블랭크를 보강했다." },
+            // 괴물 어종 대물 코인으로 바꾸는 이벤트 채비 (원작: 이벤트 코인 → 풍림화산 채비)
+            new GearDef { Id = "rod_pungrim", Name = "풍림화산 낚싯대", Slot = GearSlot.Rod, Price = 0, Level = 12, NotSold = true,
+                Power = 2.3f, Flex = 0.55f, CastRange = 31f, Desc = "대물 코인 교환품. 검은 옻칠에 붉은 띠와 금박 — 바람처럼 빠르고 산처럼 버틴다." },
+
             new GearDef { Id = "reel_basic", Name = "기본 스피닝 릴", Slot = GearSlot.Reel, Price = 0, Level = 1,
                 ReelSpeed = 3f, Capacity = 60f, Desc = "무난한 입문용 릴." },
+            new GearDef { Id = "reel_victory5", Name = "Victory5 릴", Slot = GearSlot.Reel, Price = 0, Level = 4, NotSold = true,
+                ReelSpeed = 3.7f, Capacity = 80f, Desc = "Lv.4 달성 보상. 가볍고 잘 감기는 입문 다음 단계 릴." },
             new GearDef { Id = "reel_power", Name = "파워 릴", Slot = GearSlot.Reel, Price = 5000, Level = 5,
                 ReelSpeed = 4.2f, Capacity = 90f, Desc = "감는 힘이 좋다." },
             new GearDef { Id = "reel_hispeed", Name = "하이기어 릴", Slot = GearSlot.Reel, Price = 15000, Level = 10,
@@ -99,6 +142,9 @@ namespace Fishing.Data
             // 원작 대회 보상 「나팔고둥」 (나팔고둥 껍데기 같은 무늬의 릴)
             new GearDef { Id = "reel_napal", Name = "나팔고둥 릴", Slot = GearSlot.Reel, Price = 0, Level = 10, NotSold = true,
                 ReelSpeed = 5.0f, Capacity = 140f, Desc = "조합 낚시 대회 입상 상품. 권사량이 넉넉하고 드랙이 부드럽다." },
+
+            new GearDef { Id = "reel_pungrim", Name = "풍림화산 릴", Slot = GearSlot.Reel, Price = 0, Level = 12, NotSold = true,
+                ReelSpeed = 6.0f, Capacity = 160f, Desc = "대물 코인 교환품. 옻칠한 검은 몸통에 붉은 핸들 — 괴물 어종도 끌어낸다." },
 
             new GearDef { Id = "line_nylon", Name = "나일론 2호", Slot = GearSlot.Line, Price = 0, Level = 1,
                 Strength = 1.0f, Desc = "기본 원줄." },
@@ -115,6 +161,10 @@ namespace Fishing.Data
                 Desc = "바람을 받아 달리는 작은 요트. 연료가 필요 없지만 바람을 거슬러서는 느리다 (옆바람이 가장 빠르다)." },
             new GearDef { Id = "boat_speed", Name = "고속보트", Slot = GearSlot.Boat, Price = 30000, Level = 10,
                 BoatSpeed = 14f, FuelCapacity = 40f, FuelPerKm = 20f, Stability = 0.55f, Desc = "물보라를 가르며 달리는 FRP 고속보트." },
+            // 출석 7일 보상 (원작: 출석 이벤트 특수 배 「블랙스피어」)
+            new GearDef { Id = "boat_blackspear", Name = "블랙스피어", Slot = GearSlot.Boat, Price = 0, Level = 5, NotSold = true,
+                BoatSpeed = 15f, FuelCapacity = 45f, FuelPerKm = 16f, Stability = 0.6f,
+                Desc = "출석 7일 보상. 창끝처럼 날렵한 검은 고속정. 고속보트보다 빠르고 연료를 덜 먹는다." },
             new GearDef { Id = "boat_cruiser", Name = "낚시 크루저", Slot = GearSlot.Boat, Price = 60000, Level = 14,
                 BoatSpeed = 11f, FuelCapacity = 80f, FuelPerKm = 25f, Stability = 0.9f,
                 Desc = "선장과 동행 꾼이 함께 타는 큰 낚싯배 (원작: 최대 10명 승선). 파도에도 거의 흔들리지 않아 먼바다 대물 포인트까지 간다." },
@@ -148,6 +198,22 @@ namespace Fishing.Data
         public static BaitDef CutBaitFor(int rarity) => GetBait("bait_cut" + UnityEngine.Mathf.Clamp(rarity, 1, 5));
 
         public const string KimbapId = "food_kimbap";
+
+        /// <summary>
+        /// 음식 (원작: 상점 F12에서 산다. 즉시 회복형과 분당 회복형(10분간 회복량 증가)이 있었다).
+        /// 분당 회복형은 게임 시간(1초 = 2분) 기준이라 솔로판은 1시간(현실 30초)으로 늘렸다.
+        /// "살살녹는어묵"은 원작 유저 영상 제목에 나온 이름.
+        /// </summary>
+        public static readonly List<FoodDef> Foods = new List<FoodDef>
+        {
+            new FoodDef { Id = KimbapId, Name = "김밥", Price = 500, Instant = 40f, Desc = "출조의 든든한 동반자. 바로 체력 +40." },
+            new FoodDef { Id = "food_ramen", Name = "컵라면", Price = 250, Instant = 20f, Desc = "물만 부으면 끝. 바로 체력 +20." },
+            new FoodDef { Id = "food_fishcake", Name = "살살녹는어묵", Price = 400, PerMinute = 1f, Minutes = 60f, Desc = "뜨끈한 어묵 국물. 게임 1시간 동안 분마다 체력 +1 (모두 +60)." },
+            new FoodDef { Id = "food_coffee", Name = "보온병 믹스커피", Price = 300, PerMinute = 0.5f, Minutes = 120f, Desc = "새벽 출조의 필수품. 게임 2시간 동안 분마다 체력 +0.5 (모두 +60)." },
+            new FoodDef { Id = "food_dosirak", Name = "바다 도시락", Price = 900, Instant = 30f, PerMinute = 0.6f, Minutes = 60f, Desc = "회와 매운탕이 든 도시락. 바로 +30, 게임 1시간 동안 분마다 +0.6." },
+        };
+
+        public static FoodDef GetFood(string id) => Foods.FirstOrDefault(f => f.Id == id);
         public const int FuelPricePerLiter = 30;
         public const int KimbapPrice = 500;
         public const float KimbapStamina = 40f;

@@ -81,12 +81,16 @@ namespace Fishing.UI
                 RowButton(row, $"{b.Price:N0}골드", () => BuyItem(b.Id, b.Name, b.PackSize, b.Price), 400, 200,
                     UIFactory.BtnGold, p.Data.gold >= b.Price);
             }
-            var kimbap = rows.Next(44, 4);
-            UIFactory.RowBg(kimbap);
-            float kx = ItemIcons.Place(kimbap, GearDatabase.KimbapId, 6, 40);
-            Cell(kimbap, $"김밥  <size=14><color=#a0b0c0>체력 +{GearDatabase.KimbapStamina:0} · 보유 {p.Count(GearDatabase.KimbapId)}</color></size>", 10 + kx, 380 - kx, 18);
-            RowButton(kimbap, $"{GearDatabase.KimbapPrice:N0}골드", () => BuyItem(GearDatabase.KimbapId, "김밥", 1, GearDatabase.KimbapPrice), 400, 200,
-                UIFactory.BtnGold, p.Data.gold >= GearDatabase.KimbapPrice);
+            // 음식: 즉시 회복형 · 분당 회복형 (원작 F12 상점)
+            foreach (var food in GearDatabase.Foods)
+            {
+                var fr = rows.Next(44, 4);
+                UIFactory.RowBg(fr);
+                float fx = ItemIcons.Place(fr, food.Id, 6, 40);
+                Cell(fr, $"{food.Name}  <size=14><color=#a0b0c0>{food.EffectText} · 보유 {p.Count(food.Id)}</color></size>", 10 + fx, 380 - fx, 18);
+                var fd = food;
+                RowButton(fr, $"{food.Price:N0}골드", () => BuyItem(fd.Id, fd.Name, 1, fd.Price), 400, 200, UIFactory.BtnGold, p.Data.gold >= food.Price);
+            }
 
             rows.Next(10);
             UIFactory.SectionTitle(rows.Next(30), "서비스", 4, 22);

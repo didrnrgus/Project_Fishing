@@ -45,9 +45,9 @@ namespace Fishing.UI
                         RowButton(row, b != null && b.Level > p.Data.level ? $"Lv.{b.Level}" : equipped ? "장착 중" : "장착", () => p.SelectBait(id),
                             720, 120, null, ok && Game.Fishing.State == Fishing.Angling.FishingState.Idle, 16);
                     }
-                    else if (it.id == GearDatabase.KimbapId)
+                    else if (GearDatabase.GetFood(it.id) is { } food)
                     {
-                        RowButton(row, "먹기", EatKimbap, 720, 120, UIFactory.BtnGood, true, 16);
+                        RowButton(row, "먹기", () => Eat(food), 720, 120, UIFactory.BtnGood, true, 16);
                     }
                 }
                 rows.Next(8);
@@ -60,16 +60,25 @@ namespace Fishing.UI
             float bx = boat != null ? ItemIcons.Place(boatRow, boat.Id, 6, 48) : 0f;
             Cell(boatRow, boat == null ? "없음 (Lv.5에 조합이 고무보트를 지급합니다)"
                 : $"{boat.Name}  연료 {p.Data.boatFuel:0.0}/{boat.FuelCapacity:0}L  ·  물가에서 B로 꺼내 타기", 14 + bx, 800 - bx, 17, boat == null ? UIFactory.TextDim : UIFactory.TextMain);
+
+            // 장신구 (레벨 보상: 늘 끼고 있는 셈)
+            rows.Next(8);
+            UIFactory.SectionTitle(rows.Next(30), "장신구", 4, 20);
+            var accRow = rows.Next(46);
+            float ax = p.HasCottonGloves ? ItemIcons.Place(accRow, PlayerProfile.CottonGlovesId, 6, 40) : 0f;
+            Cell(accRow, p.HasCottonGloves ? "<b>미끄러지지 않는 목장갑</b>  <color=#70e070>착용 중</color>  <size=14><color=#a0b0c0>파이팅 힘 +5% · 릴 속도 +5%</color></size>"
+                : "없음 (Lv.6 보상: 미끄러지지 않는 목장갑)", 14 + ax, 800 - ax, 17, p.HasCottonGloves ? UIFactory.TextMain : UIFactory.TextDim);
+
+            // 분당 회복 중인 음식
+            if (p.Regenerating(Game.Clock.TotalMinutes))
+                Cell(rows.Next(30), $"음식 효과: 게임 1분마다 체력 +{p.Data.regenPerMin:0.#} (게임 {p.Data.regenUntil - Game.Clock.TotalMinutes:0}분 남음)", 14, 800, 15, new Color(0.5f, 0.9f, 0.55f));
         }
 
-        void EatKimbap()
+        void Eat(FoodDef food)
         {
             var p = Game.Profile;
-            if (p.Data.stamina >= p.StaminaCap - 0.5f) { Game.Toast("배가 부릅니다.", ToastKind.Warn); return; }
-            if (!p.ConsumeItem(GearDatabase.KimbapId)) return;
-            p.ChangeStamina(GearDatabase.KimbapStamina);
-            Game.Toast($"김밥을 먹었습니다. 체력 +{GearDatabase.KimbapStamina:0}", ToastKind.Good);
-            p.NotifyChanged();
+            if (!p.Eat(food, Game.Clock.TotalMinutes)) { Game.Toast("배가 부릅니다.", ToastKind.Warn); return; }
+            Game.Toast($"{food.Name}을(를) 먹었습니다. {food.EffectText}", ToastKind.Good);
         }
     }
 }

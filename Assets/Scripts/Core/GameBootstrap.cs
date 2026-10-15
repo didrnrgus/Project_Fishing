@@ -80,6 +80,7 @@ namespace Fishing.Core
             Game.Profile.LeveledUp += level =>
             {
                 Game.Toast($"레벨 업! Lv.{level}  체력이 회복되었습니다.", ToastKind.Great);
+                Game.Profile.Log($"레벨 업 — Lv.{level}");
                 Game.Quests.CheckAchievements();
                 foreach (var (lv, t) in AchievementDatabase.LevelTitles)
                     if (lv == level) Game.Toast($"새 칭호: 「{t}」 (퀘스트 창 [업적·칭호]에서 바꿀 수 있어요)", ToastKind.Good);
@@ -91,6 +92,7 @@ namespace Fishing.Core
                     if (string.IsNullOrEmpty(Game.Profile.Data.boatId)) Game.Profile.Equip(GearDatabase.GetGear("boat_rubber"));
                     Game.Toast("한국 낚시 조합이 고무보트를 지급했습니다! 물가에서 B로 꺼내 타세요.", ToastKind.Great);
                 }
+                foreach (var msg in Game.Profile.GrantLevelRewards()) Game.Toast(msg + " (가방·장비에서 확인)", ToastKind.Great);
                 foreach (var area in FishingAreas.Korea)
                     if (area.Open && area.Level == level && area.Level > 1)
                         Game.Toast($"새 낚시터가 열렸습니다: {area.Name}. 대기실 [낚시터 선택하기]에서 입장하세요.", ToastKind.Great);
@@ -106,12 +108,19 @@ namespace Fishing.Core
             Game.Toast($"한국 낚시 조합에 오신 걸 환영합니다! [낚시터 선택하기]에서 {Fishing.World.FieldMap.ShortName}에 입장하세요.", ToastKind.Great);
             if (q != null) Game.Toast($"조합 퀘스트: {q.Title} - {q.GoalText}");
             _nextAutoSave = Time.time + AutoSaveInterval;
+            foreach (var msg in Game.Profile.GrantLevelRewards()) Game.Toast(msg, ToastKind.Good);
+            // 출석 체크 (실제 날짜로 하루 한 번)
+            var attend = Attendance.CheckIn();
+            if (attend != null) Game.Toast(attend + "  · 퀘스트 창(L) [빙고·출석]", ToastKind.Great);
+            Bingo.EnsureCard();
         }
 
         void Update()
         {
             // 체력은 시간이 흐르면 조금씩 줄어든다 (게임 1시간에 약 1)
             Game.Profile.ChangeStamina(-Time.deltaTime * GameClock.GameMinutesPerSecond / 60f);
+            Game.Profile.TickRegen(Game.Clock.TotalMinutes, Time.deltaTime * GameClock.GameMinutesPerSecond);
+            Game.Profile.TickFocus(Time.unscaledDeltaTime);
 
             if (Time.time >= _nextAutoSave)
             {

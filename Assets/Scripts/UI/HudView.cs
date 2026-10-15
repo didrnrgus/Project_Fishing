@@ -622,8 +622,8 @@ namespace Fishing.UI
             _levelText.text = $"Lv.{d.level}";
             _nameText.text = $"강태공  <size=13><color=#7fd8ff>{p.CurrentTitle}</color></size>";
             _staminaFill.fillAmount = d.stamina / p.StaminaCap;
-            _staminaFill.color = d.stamina < 30f ? UIFactory.Danger : new Color(0.4f, 0.8f, 1f);
-            _staminaText.text = $"{d.stamina:0.0} %";
+            _staminaFill.color = p.StaminaTier > 0 ? UIFactory.Danger : p.Regenerating(Game.Clock.TotalMinutes) ? new Color(0.5f, 0.9f, 0.55f) : new Color(0.4f, 0.8f, 1f);
+            _staminaText.text = $"{d.stamina:0.0} %" + (p.Regenerating(Game.Clock.TotalMinutes) ? " ▲" : "");
             bool maxLevel = d.level >= PlayerProfile.MaxLevel;
             _expFill.fillAmount = maxLevel ? 1f : d.exp / (float)PlayerProfile.ExpToNext(d.level);
             _expText.text = maxLevel ? "MAX" : $"{_expFill.fillAmount * 100f:0} %";
@@ -694,7 +694,8 @@ namespace Fishing.UI
             {
                 var c = schools[i].Spot;
                 _schoolMarks[i].anchoredPosition = MapPos(c.x, c.z) + new Vector2(Mathf.Sin(Time.time * 1.5f + i) * 3f, 0f);
-                _schoolMarks[i].localScale = Vector3.one * (schools[i].Special ? 1.6f : schools[i].Big ? 1.15f : 0.65f);
+                _schoolMarks[i].localScale = Vector3.one * (schools[i].Special || schools[i].Kind != Fishing.World.SchoolKind.Normal ? 1.6f : schools[i].Big ? 1.15f : 0.65f);
+                _schoolMarks[i].GetComponent<TMPro.TMP_Text>().color = schools[i].Kind == Fishing.World.SchoolKind.Normal ? new Color(1f, 0.75f, 0.3f) : schools[i].Tint;
                 _schoolMarks[i].gameObject.SetActive(!schools[i].Hidden);
             }
         }
@@ -874,8 +875,8 @@ namespace Fishing.UI
             if (Game.UI.BlockingPanelOpen) { _prompt.text = ""; _promptPill.gameObject.SetActive(false); return; }
             _prompt.text = npc != null ? $"<color=#ffd060>[F]</color> {npc.Look.Name}{GameUI.Josa(npc.Look.Name, "과", "와")} 대화" + (npc.NpcId == "union" && Game.Quests.Ready ? "  <color=#70e070>· 퀘스트 보고</color>" : "")
                 : nearShop && f.State == FishingState.Idle ? $"{FieldMap.ShopName}  [F12] 상점 이용" : "";
-            if (Game.Profile.Data.stamina < 30f && f.State == FishingState.Idle)
-                _prompt.text = "지쳤습니다... 살림망(Z)에서 요리하거나 김밥을 드세요";
+            if (Game.Profile.StaminaTier > 0 && f.State == FishingState.Idle)
+                _prompt.text = "지쳤습니다... 살림망(Z)에서 요리하거나 음식을 드세요 (가방 I)";
             if (f.State == FishingState.Bite && f.BigBite)
                 _prompt.text = "<color=#ff7090>♥ 두근두근 ♥</color>";
             FitPill(_promptPill, _prompt, 48f);

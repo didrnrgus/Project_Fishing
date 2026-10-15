@@ -281,6 +281,10 @@ namespace Fishing.Angling
                 FlyingDistance = 0f;
                 Casted?.Invoke(CastDistance);
                 State = FishingState.Casting;
+                // 원작: 체력이 낮으면 "체력이 부족하여 능력치가 감소합니다" 경고
+                if (Game.Profile.StaminaTier > 0)
+                    Game.Toast(Game.Profile.StaminaTier == 2 ? "체력이 바닥나 능력치가 크게 떨어집니다! 음식을 드세요. (가방 I)"
+                        : "체력이 부족하여 능력치가 감소합니다. 음식을 드세요. (가방 I)", ToastKind.Warn);
             }
         }
 
@@ -1001,7 +1005,7 @@ namespace Fishing.Angling
                     Game.Sound.ReelClick(0.8f);
                     _lastTapAt = Time.time;
                 }
-                f.Tick(Time.deltaTime, default, p.StaminaFactor, p.DurabilityFactor * (1f + p.Costume.Damage));
+                f.Tick(Time.deltaTime, default, p.StaminaFactor, p.FightPower, p.ReelFactor);
                 // 연타할 때마다 릴을 힘차게 돌린다
                 float tapTurns = Time.time - _lastTapAt < 0.18f ? 4.5f : 0f;
                 _rodView.SetReel(tapTurns, 0f);
@@ -1015,12 +1019,25 @@ namespace Fishing.Angling
                     Releasing = Input.GetMouseButton(1),
                     MouseDX = Input.GetAxis("Mouse X") * Settings.FightSensitivity,
                 };
-                f.Tick(Time.deltaTime, input, p.StaminaFactor, p.DurabilityFactor * (1f + p.Costume.Damage));
+                // 포커싱 (Q): 원작 파이팅 스킬, 접속 20분마다 1회
+                if (Settings.Down(KeyAction.Focus) && !f.Focused)
+                {
+                    if (p.FocusReady)
+                    {
+                        f.Focus();
+                        p.UseFocus();
+                        Game.Sound.Counter(3);
+                        Game.CameraRig.Punch(-4f);
+                        Game.Toast($"포커싱! {FishFight.FocusDuration:0}초 동안 장력이 천천히 변하고 데미지가 커집니다.", ToastKind.Great);
+                    }
+                    else Game.Toast($"포커싱은 {Mathf.CeilToInt(p.Data.focusCooldown / 60f)}분 뒤에 다시 쓸 수 있습니다.", ToastKind.Warn);
+                }
+                f.Tick(Time.deltaTime, input, p.StaminaFactor, p.FightPower, p.ReelFactor);
 
                 // 릴: 감으면 손잡이가 돌고(드르르륵), 줄이 풀려 나가면 스풀이 거꾸로 돌며 드랙이 운다(지이이익)
                 float lineOut = Mathf.Max(0f, (f.Distance - _lastDistance) / Mathf.Max(Time.deltaTime, 1e-4f));
                 _lastDistance = f.Distance;
-                float turns = input.Reeling ? f.Reel.ReelSpeed * 0.9f * p.StaminaFactor * Mathf.Lerp(1f, 0.55f, Mathf.Clamp01(f.Tension)) : 0f;
+                float turns = input.Reeling ? f.Reel.ReelSpeed * 0.9f * p.ReelFactor * Mathf.Lerp(1f, 0.55f, Mathf.Clamp01(f.Tension)) : 0f;
                 _rodView.SetReel(turns, lineOut);
                 Game.Sound.SetReel(turns, f.Tension);
                 Game.Sound.SetDrag(lineOut);
@@ -1120,15 +1137,15 @@ namespace Fishing.Angling
 
             State = FishingState.Result;
             Fight = null;
-            StartCoroutine(ShowResultAfterCheer(caught, exp, record, prevBest, prevBestDay, species, p));
+            StartCoroutine(ShowResultAfterCheer(caught, exp, record, prevBest, prevBestDay, species, p, newSpecies));
         }
 
         System.Collections.IEnumerator ShowResultAfterCheer(CaughtFish caught, int exp, bool record, float prevBest, int prevBestDay,
-            FishSpecies species, PlayerProfile p)
+            FishSpecies species, PlayerProfile p, bool firstGet)
         {
             yield return new WaitForSecondsRealtime(1.1f);
             _cheering = false;
-            Game.UI.Result.Show(caught, exp, record, prevBest, prevBestDay, keep =>
+            Game.UI.Result.Show(caught, exp, record, prevBest, prevBestDay, firstGet, keep =>
             {
                 if (keep && !species.IsJunk)
                 {
@@ -1142,6 +1159,7 @@ namespace Fishing.Angling
                     int bonus = Mathf.Max(1, Mathf.RoundToInt(exp * 0.3f));
                     p.AddExp(bonus);
                     Game.Toast($"방생했습니다. 경험치 +{bonus}", ToastKind.Good);
+                    Bingo.OnAction("release");
                 }
                 p.NotifyChanged();
                 ToIdle();

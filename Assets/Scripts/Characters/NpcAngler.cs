@@ -162,7 +162,33 @@ namespace Fishing.Characters
                 bool near = (cam - _nameTag.position).sqrMagnitude < 45f * 45f && _faceTarget == null;
                 _nameTag.gameObject.SetActive(near);
                 if (near) _nameTag.rotation = Quaternion.LookRotation(_nameTag.position - cam);
+                if (near && NpcId == "union") UpdateQuestMarker();
             }
+        }
+
+        TMPro.TextMeshPro _questMark;
+
+        /// <summary>
+        /// 원작 NPC 퀘스트 표시: 노란 ? = 목표 달성(보고하면 보상), 회색 ? = 진행 중, 노란 ! = 받을 일일 의뢰가 남음.
+        /// 이름표 위에 떠서 위아래로 살짝 흔들린다.
+        /// </summary>
+        void UpdateQuestMarker()
+        {
+            if (_questMark == null)
+            {
+                _questMark = Fishing.UI.UIFactory.WorldText(_nameTag, "", new Vector3(0f, 0.62f, 0f), Color.white, 5f, "QuestMark");
+                _questMark.fontStyle = TMPro.FontStyles.Bold;
+                _questMark.outlineWidth = 0.2f;
+                _questMark.outlineColor = new Color32(30, 20, 0, 255);
+            }
+            var q = Game.Quests;
+            bool ready = q != null && q.Ready;
+            bool working = q != null && q.Current != null;
+            bool daily = Game.Profile != null && Game.Profile.Data.daily.Exists(d => !d.done);
+            _questMark.text = ready ? "?" : working ? "?" : daily ? "!" : "";
+            _questMark.color = ready ? new Color(1f, 0.82f, 0.2f) : working ? new Color(0.7f, 0.72f, 0.75f) : new Color(1f, 0.82f, 0.2f);
+            _questMark.transform.localPosition = new Vector3(0f, 0.62f + (ready ? Mathf.Sin(Time.time * 4f) * 0.08f : 0f), 0f);
+            _questMark.transform.localScale = Vector3.one * (ready ? 1.15f : 0.9f);
         }
 
         /// <summary>대기실처럼 낚싯대를 접어 들고 있게 한다 (빗자루 길이).</summary>

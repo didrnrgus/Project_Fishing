@@ -361,6 +361,12 @@ def make_barbels(d, B):
         z0 = B.zc(0.02) - B.bot(0.02) * 0.4
         pts = [(0.0, B.y(0.03) - L * t, z0 - 0.004 * t) for t in np.linspace(0, 1, 6)]
         out.append(make_tube(pts, B.depth(0.03) * 0.18, 0.0015, (0.9375, 0.25, 1.0, 0.375), sides=5))
+    if d.get('bill'):
+        # 황새치: 위턱이 칼처럼 길게 뻗는다 (납작한 칼날 대신 끝으로 가늘어지는 관)
+        L = d['bill']
+        z0 = B.zc(0.02) + B.top(0.02) * 0.15
+        pts = [(0.0, B.y(0.04) - L * t, z0 + 0.01 * t) for t in np.linspace(0, 1, 8)]
+        out.append(make_tube(pts, B.depth(0.12) * 0.16, 0.004, (0.875, 0.25, 0.9375, 0.375), sides=8))
     return out
 
 

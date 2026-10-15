@@ -176,6 +176,12 @@ namespace Fishing.Dev
             yield return Shot("06c_speedlines");
             Fishing.UI.FightHudView.DebugForceCounterChance = false;
 
+            // 포커싱 (Q): 장력이 느리게 변하고 데미지가 커진다. 콤보 칸 위 금색 막대
+            fight.Focus();
+            p.UseFocus();
+            yield return new WaitForSeconds(0.6f);
+            yield return Shot("06d_focus");
+
             bool countered = false, chanceShot = false;
             fight.Countered += () => countered = true;
             Game.Fishing.AutoplayCounterChance = 0f;
@@ -248,6 +254,15 @@ namespace Fishing.Dev
             yield return Shot("13b_daily");
             Game.UI.Quest.ShowTab(3);
             yield return Shot("13c_achievements");
+            // 빙고: 첫 줄과 대각선 몇 칸을 채운 상태
+            Bingo.EnsureCard();
+            foreach (int i in new[] { 0, 1, 2, 3, 6, 18, 24 }) p.Data.bingo.done[i] = true;
+            Game.UI.Quest.ShowTab(5);
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("13e_bingo");
+            p.Log("자동 촬영: 일지 예시 — 한강 둔치에서 첫 출조");
+            Game.UI.Quest.ShowTab(6);
+            yield return Shot("13f_journal");
             Game.UI.Quest.ShowTab(0);
             Game.UI.OpenExclusive(Game.UI.Exchange);
             yield return Shot("13d_exchange");
@@ -339,6 +354,14 @@ namespace Fishing.Dev
             Game.UI.OpenExclusive(Game.UI.AreaMap);
             yield return new WaitForSeconds(0.3f);
             yield return Shot("17_area_map");
+            // 히든 어군(금빛) · 포식자 어군(붉은빛)
+            var hiddenSchool = Game.Schools.DebugAppear(Fishing.World.SchoolKind.Hidden);
+            var predatorSchool = Game.Schools.DebugAppear(Fishing.World.SchoolKind.Predator);
+            Game.UI.AreaMap.Refresh();
+            yield return new WaitForSeconds(0.4f);
+            yield return Shot("17b_hidden_predator");
+            if (hiddenSchool != null) hiddenSchool.Hidden = true;
+            if (predatorSchool != null) predatorSchool.Hidden = true;
             Game.UI.AreaMap.Close();
 
             // 배: 낚시 데크 끝에서 고무보트를 꺼내 노을 진 강으로
