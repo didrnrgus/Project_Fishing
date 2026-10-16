@@ -119,7 +119,7 @@ Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.ex
 | 16_help, 16b_options | 도움말, 옵션(키 설정) |
 | 05c_lure_action | 루어 감기·저킹 액션 표시 |
 | 30_tournament_hud, 31_tournament_rank | 대회 진행 HUD 순위표, 대회 탭 |
-| 20_npc_dialog, 21_rod_upgrade, 21b_inventory, 21c_costume | NPC 대화, 강화, 가방, 의상(체크 남방·구명조끼) |
+| 20_npc_dialog, 21_rod_upgrade, 21b_inventory, 21c_costume | NPC 대화, 강화, 가방, 내 캐릭터 아바타 슬롯(체크 남방·구명조끼) |
 | 17_area_map | 지역 지도(M), 작은 어군 |
 | 18_boat_drive, 19_boat_stop | 노을 고무보트 운전, 멈춘 배 뱃머리 |
 | 15b_cloudy_day, 15_night_rain | 흐린 낮(층구름), 비 오는 밤 |

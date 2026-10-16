@@ -23,7 +23,7 @@ namespace Fishing.UI
         public DialogPanel Dialog { get; private set; }
         public UpgradePanel Upgrade { get; private set; }
         public InventoryPanel Inventory { get; private set; }
-        public CostumePanel Costume { get; private set; }
+        public CharacterPanel Character { get; private set; }
         public ExchangePanel Exchange { get; private set; }
         public AquariumPanel Aquarium { get; private set; }
         public OptionsPanel Options { get; private set; }
@@ -75,11 +75,11 @@ namespace Fishing.UI
             Dialog = new DialogPanel(canvas);
             Upgrade = new UpgradePanel(canvas);
             Inventory = new InventoryPanel(canvas);
-            Costume = new CostumePanel(canvas);
+            Character = new CharacterPanel(canvas);
             Exchange = new ExchangePanel(canvas);
             Aquarium = new AquariumPanel(canvas);
             Options = new OptionsPanel(canvas);
-            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, Upgrade, Inventory, Costume, Exchange, Aquarium, Options };
+            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, Upgrade, Inventory, Character, Exchange, Aquarium, Options };
             LobbyHud.Root.transform.SetAsFirstSibling();
             // 토스트는 모든 창 위에
             Hud.ToastLayer.SetParent(canvas, false);
@@ -237,7 +237,7 @@ namespace Fishing.UI
                 if (Settings.Down(KeyAction.Dex)) OpenExclusive(Dex);
                 if (Settings.Down(KeyAction.KeepNet)) OpenExclusive(KeepNet);
                 if (Settings.Down(KeyAction.Inventory)) OpenExclusive(Inventory);
-                if (Settings.Down(KeyAction.Costume)) OpenExclusive(Costume);
+                if (Settings.Down(KeyAction.Costume)) OpenExclusive(Character);
                 if (Settings.Down(KeyAction.Help)) OpenExclusive(Help);
                 return;
             }
@@ -250,7 +250,7 @@ namespace Fishing.UI
             if (Settings.Down(KeyAction.Help)) OpenExclusive(Help);
             if (Settings.Down(KeyAction.AreaMap)) OpenExclusive(AreaMap);
             if (Settings.Down(KeyAction.Inventory)) OpenExclusive(Inventory);
-            if (Settings.Down(KeyAction.Costume)) OpenExclusive(Costume);
+            if (Settings.Down(KeyAction.Costume)) OpenExclusive(Character);
             if (Settings.Down(KeyAction.Talk) && NearbyNpc != null && idle && !BlockingPanelOpen) TalkTo(NearbyNpc);
             if (Settings.Down(KeyAction.Boat) && !BlockingPanelOpen) Game.Boat.Toggle();
             if (Settings.Down(KeyAction.Dex)) OpenExclusive(Dex);

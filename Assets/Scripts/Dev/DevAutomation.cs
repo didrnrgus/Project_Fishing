@@ -447,11 +447,13 @@ namespace Fishing.Dev
                 p.GiveCostume(id);
                 p.Wear(CostumeDatabase.Get(id));
             }
-            Game.UI.OpenExclusive(Game.UI.Costume);
+            Game.UI.Character.ShowTab(true);
+            Game.UI.OpenExclusive(Game.UI.Character);
             Fishing.UI.PortraitCamera.FullBody.Spin = 25f;
             yield return new WaitForSeconds(0.8f);
             yield return Shot("21c_costume");
-            Game.UI.Costume.Close();
+            Game.UI.Character.Close();
+            Game.UI.Character.ShowTab(false);
 
             // 지역 지도(M): 어군 하나는 3마리를 낚아 작은 어군으로 만든다
             var shrink = Game.Schools.Schools[1];

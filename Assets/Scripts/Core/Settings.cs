@@ -53,7 +53,7 @@ namespace Fishing.Core
             (KeyAction.MoveForward, "앞으로"), (KeyAction.MoveBack, "뒤로"), (KeyAction.MoveLeft, "왼쪽"), (KeyAction.MoveRight, "오른쪽"),
             (KeyAction.Run, "달리기"), (KeyAction.Jump, "점프"), (KeyAction.Talk, "대화"), (KeyAction.Boat, "배 꺼내기/내리기"),
             (KeyAction.Retrieve, "찌 회수"), (KeyAction.Quest, "퀘스트"), (KeyAction.Dex, "도감"), (KeyAction.KeepNet, "살림망"),
-            (KeyAction.Inventory, "가방"), (KeyAction.Costume, "의상"), (KeyAction.AreaMap, "지역 지도"), (KeyAction.Shop, "상점"),
+            (KeyAction.Inventory, "가방"), (KeyAction.Costume, "내 캐릭터"), (KeyAction.AreaMap, "지역 지도"), (KeyAction.Shop, "상점"),
             (KeyAction.Tips, "설명 켜기/끄기"), (KeyAction.Help, "도움말"), (KeyAction.Save, "저장"), (KeyAction.Options, "옵션"),
             (KeyAction.Focus, "포커싱 (파이팅)"),
         };

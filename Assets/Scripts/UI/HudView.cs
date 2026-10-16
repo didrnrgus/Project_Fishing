@@ -291,7 +291,7 @@ namespace Fishing.UI
                 (KeyAction.Dex, "도감", () => Game.UI.OpenExclusive(Game.UI.Dex)),
                 (KeyAction.KeepNet, "살림망", () => Game.UI.OpenExclusive(Game.UI.KeepNet)),
                 (KeyAction.Inventory, "가방", () => Game.UI.OpenExclusive(Game.UI.Inventory)),
-                (KeyAction.Costume, "의상", () => Game.UI.OpenExclusive(Game.UI.Costume)),
+                (KeyAction.Costume, "캐릭터", () => Game.UI.OpenExclusive(Game.UI.Character)),
                 (KeyAction.Shop, "상점", () => Game.UI.OpenShop()),
                 (KeyAction.Tips, "설명", () => Game.UI.ToggleTips()),
                 (KeyAction.Help, "도움말", () => Game.UI.OpenExclusive(Game.UI.Help)),
