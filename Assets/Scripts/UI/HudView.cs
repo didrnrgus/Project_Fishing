@@ -55,6 +55,7 @@ namespace Fishing.UI
         RectTransform _shakeTip;
         TMP_Text _gradePopup;
         RectTransform _biteAlert;
+        Image _biteMist, _gaugeGlow;
 
         readonly List<(RectTransform root, CanvasGroup group, float until)> _toasts = new List<(RectTransform, CanvasGroup, float)>();
         RectTransform _toastRoot;
@@ -490,45 +491,57 @@ namespace Fishing.UI
 
         void BuildHookGauge()
         {
-            // 찌 클로즈업: 물(하늘색) 위로 찌톱이 떠 있고, 잠길수록 등급이 오른다
-            _hookGauge = UIFactory.Node("HookGauge", _root).At(new Vector2(0.5f, 0.5f), new Vector2(330, 20), new Vector2(320, GaugeHeight + 40));
-            UIFactory.Glass(_hookGauge, "Card", 20f, null, 0.45f, true, false).rectTransform.Fill(-16, -44, -16, -16);
-            var water = UIFactory.Shape(_hookGauge, new Color(0.25f, 0.75f, 0.95f, 0.42f), 12f, "Water", 0f);
-            water.paraformConfig.CornerRadii = new Vector4(0f, 12f, 0f, 12f);
-            water.rectTransform.At(new Vector2(0, 0), new Vector2(0, 0), new Vector2(200, GaugeHeight * 0.5f));
-            UIFactory.Image(_hookGauge, new Color(0.7f, 0.95f, 1f, 0.9f), null, "Surface").rectTransform
-                .At(new Vector2(0, 0), new Vector2(0, GaugeHeight * 0.5f), new Vector2(200, 2));
+            // 원작 챔질 클로즈업 (2013 홍현 영상 0:39.5~0:42.8): 화면 오른쪽에 카드 없이 가는 찌톱 막대가 떠 있고,
+            // 오른쪽에 BAD~PERFECT 글자, 아래로는 물빛처럼 하늘색 빛기둥이 번진다. 찌가 잠길수록 등급이 내려간다(PERFECT가 맨 아래).
+            // 화면 가장자리는 하얀 안개(물보라)처럼 번진다
+            _biteMist = UIFactory.Image(_root, new Color(0.85f, 0.92f, 1f, 0f), UIFactory.Vignette, "BiteMist");
+            _biteMist.rectTransform.Fill(-40, -40, -40, -40);
 
-            _gaugeBobber = UIFactory.Node("Bobber", _hookGauge).At(new Vector2(0, 0), new Vector2(100, GaugeHeight * 0.5f), new Vector2(14, 160), new Vector2(0.5f, 0f));
+            _hookGauge = UIFactory.Node("HookGauge", _root).At(new Vector2(0.5f, 0.5f), new Vector2(330, 60), new Vector2(320, GaugeHeight + 40));
+            var glow = UIFactory.Image(_hookGauge, new Color(0.3f, 0.85f, 1f, 0.75f), UIFactory.Glow, "WaterGlow");
+            glow.rectTransform.At(new Vector2(0, 0), new Vector2(100, GaugeHeight * 0.5f - 70f), new Vector2(150, 190));
+            _gaugeGlow = glow;
+            var core = UIFactory.Image(_hookGauge, new Color(0.75f, 0.97f, 1f, 0.85f), UIFactory.Glow, "WaterCore");
+            core.rectTransform.At(new Vector2(0, 0), new Vector2(100, GaugeHeight * 0.5f - 40f), new Vector2(54, 120));
+            UIFactory.Image(_hookGauge, new Color(0.8f, 0.97f, 1f, 0.8f), null, "Surface").rectTransform
+                .At(new Vector2(0, 0), new Vector2(100, GaugeHeight * 0.5f), new Vector2(90, 2));
+
+            _gaugeBobber = UIFactory.Node("Bobber", _hookGauge).At(new Vector2(0, 0), new Vector2(100, GaugeHeight * 0.5f), new Vector2(8, 160), new Vector2(0.5f, 0f));
             Color[] stripes = { new Color(0.1f, 0.1f, 0.1f), new Color(0.2f, 0.75f, 0.3f), new Color(1f, 0.85f, 0.1f), new Color(0.95f, 0.25f, 0.2f), new Color(0.2f, 0.75f, 0.3f), new Color(1f, 0.85f, 0.1f), new Color(0.95f, 0.25f, 0.2f) };
             for (int i = 0; i < stripes.Length; i++)
                 UIFactory.Image(_gaugeBobber, stripes[i], null, "Stripe").rectTransform
-                    .At(new Vector2(0.5f, 0), new Vector2(0, i * 160f / stripes.Length), new Vector2(10, 160f / stripes.Length - 2));
+                    .At(new Vector2(0.5f, 0), new Vector2(0, i * 160f / stripes.Length), new Vector2(6, 160f / stripes.Length - 2));
 
             string[] names = { "BAD", "SO SO", "GOOD", "GREAT", "PERFECT" };
             for (int i = 0; i < names.Length; i++)
             {
-                var t = UIFactory.Text(_hookGauge, names[i], 16 + i * 2, UIFactory.TextDim, TextAnchor.MiddleLeft, FontStyle.Bold);
-                t.rectTransform.At(new Vector2(0, 0), new Vector2(210, GaugeHeight * 0.5f + 140 - i * 36), new Vector2(120, 30));
+                var t = UIFactory.Text(_hookGauge, names[i], 14 + i, UIFactory.TextDim, TextAnchor.MiddleLeft, FontStyle.Bold);
+                t.rectTransform.At(new Vector2(0, 0), new Vector2(150, GaugeHeight * 0.5f + 140 - i * 36), new Vector2(120, 30));
                 _gradeLabels[i] = t;
             }
 
-            _shakeTip = UIFactory.Node("ShakeTip", _root).At(new Vector2(0.5f, 0.5f), new Vector2(250, -230), new Vector2(260, 120));
-            UIFactory.Image(_shakeTip, new Color(0.3f, 0.85f, 1f, 0.9f), UIFactory.Arrow, "L").rectTransform
-                .At(new Vector2(0.5f, 0.5f), new Vector2(-80, 0), new Vector2(60, 34)).localScale = new Vector3(-1, 1, 1);
-            UIFactory.Image(_shakeTip, Color.white, UIFactory.Mouse(true), "Mouse").rectTransform.At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(70, 105));
-            UIFactory.Image(_shakeTip, new Color(0.3f, 0.85f, 1f, 0.9f), UIFactory.Arrow, "R").rectTransform
-                .At(new Vector2(0.5f, 0.5f), new Vector2(80, 0), new Vector2(60, 34));
+            // 마우스 + 네 방향 화살표 (원작: 가운데 위에서 깜빡인다)
+            _shakeTip = UIFactory.Node("ShakeTip", _root).At(new Vector2(0.5f, 0.5f), new Vector2(0, 230), new Vector2(200, 200));
+            for (int i = 0; i < 4; i++)
+            {
+                var a = UIFactory.Image(_shakeTip, new Color(0.3f, 0.85f, 1f, i < 2 ? 0.95f : 0.55f), UIFactory.Arrow, "Arrow" + i);
+                float ang = i switch { 0 => 0f, 1 => 180f, 2 => 90f, _ => 270f };
+                var dir = new Vector2(Mathf.Cos(ang * Mathf.Deg2Rad), Mathf.Sin(ang * Mathf.Deg2Rad));
+                a.rectTransform.At(new Vector2(0.5f, 0.5f), dir * 58f, new Vector2(46, 26));
+                a.rectTransform.localRotation = Quaternion.Euler(0, 0, ang);
+            }
+            UIFactory.Image(_shakeTip, Color.white, UIFactory.Mouse(true), "Mouse").rectTransform.At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(50, 76));
 
             _gradePopup = UIFactory.Text(_root, "", 80, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.BoldAndItalic);
             _gradePopup.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 40), new Vector2(900, 120));
             UIFactory.Outline(_gradePopup, new Color(0.2f, 0.1f, 0f, 0.85f), 2f);
 
-            // 본신 경보: 낚싯대 끝 근처의 빨간 느낌표
-            _biteAlert = UIFactory.Node("BiteAlert", _root).At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(90, 90));
-            UIFactory.Image(_biteAlert, new Color(1f, 0.2f, 0.15f, 0.35f), UIFactory.Ring, "Rays").rectTransform.Fill(-20, -20, -20, -20);
-            UIFactory.Image(_biteAlert, new Color(0.9f, 0.1f, 0.08f, 0.95f), UIFactory.Circle, "Dot").rectTransform.Fill(14, 14, 14, 14);
-            UIFactory.Text(_biteAlert, "!", 48, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold).rectTransform.Fill();
+            // 본신 경보 (원작 0:36.5~0:37.1): 캐릭터 머리 위에 빨간 느낌표가 팍 튀어나와 떨린다
+            _biteAlert = UIFactory.Node("BiteAlert", _root).At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(90, 120));
+            UIFactory.Image(_biteAlert, new Color(1f, 0.2f, 0.12f, 0.45f), UIFactory.Glow, "Burst").rectTransform.Fill(-10, -10, -10, -10);
+            var bang = UIFactory.Text(_biteAlert, "!", 96, new Color(0.95f, 0.08f, 0.06f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            bang.rectTransform.Fill();
+            UIFactory.Outline(bang, new Color(0.25f, 0f, 0f, 0.95f), 3f);
         }
 
         void BuildCenter()
@@ -563,6 +576,32 @@ namespace Fishing.UI
         }
 
         const int MaxToasts = 3;
+
+        GameObject _warningCard;
+
+        /// <summary>
+        /// 원작 실패 경고 (2013 홍현 영상 0:54.5, 3:20, 6:24): 화면 위쪽 가운데에 흰 카드, 위에 빨간 삼각형 WARNING 표지,
+        /// 카드 안에 검은 글씨로 사유. 3초 뒤 사라진다.
+        /// </summary>
+        public void ShowWarning(string message)
+        {
+            if (_warningCard != null) Object.Destroy(_warningCard);
+            var card = UIFactory.Shape(_root, new Color(0.97f, 0.96f, 0.94f, 0.97f), 14f, "WarningCard", 4f);
+            UIFactory.AddBorder(card, new Color(0.85f, 0.15f, 0.12f, 0.95f), 4f);
+            UIFactory.AddShadow(card, 20f, new Vector2(0, -6), 0.55f);
+            var rt = card.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -250), new Vector2(560, 104));
+            var sign = UIFactory.Text(rt, "▲", 78, new Color(0.88f, 0.12f, 0.1f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            sign.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, 22), new Vector2(110, 90));
+            UIFactory.Outline(sign, new Color(1f, 1f, 1f, 0.95f), 3f);
+            var bang = UIFactory.Text(rt, "!", 40, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            bang.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, 12), new Vector2(60, 60));
+            var label = UIFactory.Text(rt, "WARNING", 13, new Color(0.88f, 0.12f, 0.1f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            label.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -14), new Vector2(160, 18));
+            var text = UIFactory.Text(rt, message, 19, new Color(0.12f, 0.1f, 0.1f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            text.rectTransform.Fill(24, 24, 30, 10);
+            _warningCard = card.gameObject;
+            Object.Destroy(_warningCard, 3f);
+        }
 
         public void Toast(string message, ToastKind kind)
         {
@@ -612,14 +651,26 @@ namespace Fishing.UI
             bool fighting = fishing.State == FishingState.Fighting || fishing.State == FishingState.Result || fishing.Hooking || Game.Mode == GameMode.Lobby
                 || (Game.UI.Result != null && Game.UI.Result.IsOpen);
 
-            // 파이팅 중에는 필드 HUD를 숨기고 토스트만 남긴다
+            // 파이팅 중에는 필드 HUD를 숨기고 토스트만 남긴다.
+            // 본신(챔질)이 오면 원작처럼(0:37.8) 미니맵·퀘스트·메뉴를 걷어 내고 찌 게이지와 안내문만 남긴다
+            bool biteMode = !fighting && fishing.State == FishingState.Bite;
             foreach (Transform child in _root)
-                if (child != _toastRoot && child != _gradePopup.transform) child.gameObject.SetActive(!fighting);
+            {
+                if (child == _toastRoot || child == _gradePopup.transform) continue;
+                bool keep = child == _hookGauge || child == _shakeTip || child == _biteAlert || child == _biteMist.transform
+                            || child == _tipTitle.transform || child == _tipText.transform;
+                child.gameObject.SetActive(!fighting && (!biteMode || keep));
+            }
 
             UpdateToasts();
             if (fighting)
             {
                 UpdateGradePopup();
+                return;
+            }
+            if (biteMode)
+            {
+                UpdateHookGauge();
                 return;
             }
 
@@ -748,7 +799,6 @@ namespace Fishing.UI
             // 루어 대기 중에는 찌가 없으니 찌 게이지도 없다 (입질이 오면 나온다)
             bool waiting = (f.State == FishingState.Waiting && !f.LureMode && !f.Trolling) || f.State == FishingState.Bite;
             _hookGauge.gameObject.SetActive(waiting);
-            _shakeTip.gameObject.SetActive(f.State == FishingState.Bite && tips);
             if (waiting)
             {
                 float sink = f.BobberSink;
@@ -765,15 +815,31 @@ namespace Fishing.UI
 
             UpdateGradePopup();
 
-            // 본신이 오면 낚싯대 끝에 빨간 느낌표
+            // 본신이 오면 캐릭터 머리 위에 빨간 느낌표 (원작 0:36.5: 0.6초쯤 떨다가 클로즈업으로 넘어간다)
             bool bite = f.State == FishingState.Bite;
-            _biteAlert.gameObject.SetActive(bite);
-            if (bite)
+            bool bang = bite && f.BiteTime < FishingController.BiteCutDelay;
+            _biteAlert.gameObject.SetActive(bang);
+            if (bang)
             {
-                var screen = Game.CameraRig.Cam.WorldToScreenPoint(Game.Player.RodTip.position + Vector3.up * 0.6f);
+                var head = Game.Player.Head != null ? Game.Player.Head.position : Game.Player.transform.position + Vector3.up * 1.7f;
+                var screen = Game.CameraRig.Cam.WorldToScreenPoint(head + Vector3.up * 0.75f);
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(_root, screen, null, out var local);
-                _biteAlert.anchoredPosition = local;
-                _biteAlert.localScale = Vector3.one * (1f + Mathf.Abs(Mathf.Sin(Time.time * 14f)) * 0.2f);
+                float k = f.BiteTime / 0.12f;
+                _biteAlert.anchoredPosition = local + new Vector2(Mathf.Sin(Time.time * 60f) * 3f, 0f);
+                _biteAlert.localScale = Vector3.one * (k < 1f ? Mathf.Lerp(2.2f, 1f, k) : 1f + Mathf.Abs(Mathf.Sin(Time.time * 16f)) * 0.12f);
+            }
+
+            // 챔질 클로즈업: 가장자리 하얀 안개, 마우스 아이콘은 0.5초마다 깜빡, 찌 물빛은 일렁인다
+            float mist = bite && !bang ? 0.55f : 0f;
+            var mc = _biteMist.color;
+            mc.a = Mathf.MoveTowards(mc.a, mist, Time.deltaTime * 3f);
+            _biteMist.color = mc;
+            _shakeTip.gameObject.SetActive(bite && !bang && tips && Mathf.Repeat(Time.time, 1f) < 0.6f);
+            if (waiting && _gaugeGlow != null)
+            {
+                var gc = _gaugeGlow.color;
+                gc.a = 0.6f + Mathf.Sin(Time.time * 3f) * 0.15f + (bite ? 0.2f : 0f);
+                _gaugeGlow.color = gc;
             }
 
             UpdateTips();
@@ -783,7 +849,8 @@ namespace Fishing.UI
         {
             var f = Game.Fishing;
             float age = Time.time - f.LastGradeAt;
-            bool showGrade = age < 1.1f && f.LastGrade != HookGrade.None;
+            // 성공 등급은 파이팅 화면이 HIT 다음에 크게 띄운다 (원작 0:43). 여기서는 실패(BAD)만
+            bool showGrade = age < 1.1f && f.LastGrade == HookGrade.Bad;
             _gradePopup.gameObject.SetActive(showGrade);
             if (showGrade)
             {
@@ -844,6 +911,7 @@ namespace Fishing.UI
                 FishingState.Charging => "왼쪽 버튼을 누르고 당긴 다음 빠르게 밀면서 버튼을 놓으면 캐스팅 됩니다.",
                 FishingState.Waiting when f.Trolling => "트롤링 중: 천천히 몰면 줄이 배 뒤로 끌려간다. 입질이 오면 배가 서고, 좌우로 흔들어 챔질!",
                 FishingState.Waiting when f.LureMode => "루어: 왼쪽 버튼을 꾹 눌러 감고, 감으면서 마우스를 위로 툭 치면 액션! 가만히 두면 잘 안 문다. 입질이 오면 좌우로 흔들어 챔질",
+                FishingState.Waiting when f.Trembling => "손 끝으로부터 미세한 떨림이 느껴집니다.",
                 FishingState.Waiting => "왼쪽 버튼을 누른 상태로 좌우로 흔들어 챔질하세요. 찌가 깔짝이는 건 예신이니 조심!",
                 FishingState.Bite => "왼쪽 버튼을 누른 상태로 좌우로 흔들어 챔질하세요. 물에 완전히 잠겼을 때 흔들면 퍼펙트",
                 FishingState.Idle => "왼쪽 버튼을 누르고 당긴 다음 빠르게 밀면서 버튼을 놓으면 캐스팅 됩니다.",

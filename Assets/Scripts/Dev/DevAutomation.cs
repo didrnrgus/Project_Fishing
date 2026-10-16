@@ -236,7 +236,10 @@ namespace Fishing.Dev
 
             // 본신: 찌가 잠기는 챔질 게이지
             Game.Fishing.DebugForceBite("carp", 82f);
-            yield return new WaitForSeconds(0.85f);
+            // 원작 0:36.5: 머리 위 빨간 느낌표 → 0:39.5 어깨 뒤 낮은 챔질 클로즈업
+            yield return new WaitForSeconds(0.2f);
+            yield return Shot("04a_bite_alert");
+            yield return new WaitForSeconds(0.65f);
             yield return Shot("04_bite_gauge");
 
             // 자동 조작: 찌가 완전히 잠기면 흔들어 PERFECT 챔질 → 파이팅
@@ -307,20 +310,40 @@ namespace Fishing.Dev
                 yield return null;
             }
             Debug.Log($"[Dev] 파이팅 종료: 어종={fight.Species.Name} {fight.Length:0.0}cm, 상태={Game.Fishing.State}, 경과={fight.Elapsed:0.0}s, HP={fight.HP:0}/{fight.MaxHP:0}, 결과={fight.Outcome}");
-            if (Game.Fishing.Cheering)
+            if (Game.Fishing.State == FishingState.Result)
             {
-                yield return new WaitForSecondsRealtime(0.7f);
-                yield return Shot("09b_cheer");
+                // 원작 1:53~1:55: 1인칭으로 낚싯대를 들어 올리고 → 3인칭 옆모습, 줄 끝에 매단 고기
+                yield return new WaitForSecondsRealtime(0.6f);
+                yield return Shot("09c_lift");
+                yield return new WaitForSecondsRealtime(1.3f);
+                yield return Shot("09d_catch");
             }
             yield return WaitResult();
+            yield return new WaitForSecondsRealtime(0.5f);
             yield return Shot("10_result");
+            yield return CloseResult();
+
+            // 작은 고기: 결과 화면에서 캐릭터가 왼손에 들어 보인다 (원작 1:56~1:58)
+            CheckClear("DebugStartFight");
+            Game.Fishing.Autoplay = true;
+            Game.Fishing.DebugStartFight("crucian", 30f, 7f);
+            timeout = Time.time + 60f;
+            while (Game.Fishing.State == FishingState.Fighting && Time.time < timeout) yield return null;
+            if (Game.Fishing.State == FishingState.Result)
+            {
+                yield return new WaitForSecondsRealtime(2.1f);
+                yield return Shot("09e_catch_small");
+            }
+            yield return WaitResult();
+            yield return new WaitForSecondsRealtime(0.8f);
+            yield return Shot("10b_result_held");
             yield return CloseResult();
             Game.Fishing.Autoplay = false;
             // 길쭉한 고기·잡동사니 결과 화면 (뱀장어는 몸이 S자로 꿈틀, 운동화는 3D 모델이 화면 안에)
             foreach (var (id, len, shot) in new[] { ("eel", 92f, "10c_result_eel"), ("shoe", 27f, "10d_result_shoe"), ("trap", 45f, "10e_result_trap") })
             {
                 var s = FishDatabase.Get(id);
-                Game.UI.Result.Show(new CaughtFish { speciesId = id, length = len, weight = Mathf.Round(s.WeightGrams(len)), day = 1, zone = "B1" }, s.Exp, false, 0f, 1, false, _ => { });
+                Game.UI.Result.Show(new CaughtFish { speciesId = id, length = len, weight = Mathf.Round(s.WeightGrams(len)), day = 1, zone = "B1" }, s.Exp, false, 0f, 1, false, false, _ => { });
                 yield return new WaitForSecondsRealtime(1.2f);
                 yield return Shot(shot);
                 yield return CloseResult();

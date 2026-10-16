@@ -108,10 +108,11 @@ Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.ex
 | 00a_lobby, 00b_area_list | 대기실(한국 낚시 조합) → 낚시터 목록 → 한강 CH.1 입장 |
 | 01_field_morning, 00c_rod_extend, 00_character | 시작 위치(새벽), 낚싯대 펼치기, 한낮 캐릭터 정면(옷·반장갑·운동화) |
 | 01b_fish_school | 데크 앞 수면의 어군 소용돌이 |
-| 02_casting, 02b_cast_flight, 03_waiting, 04_bite_gauge | 밤 데크 캐스팅, 날아가는 찌, 찌 대기, 본신 |
-| 05_hook_perfect | PERFECT 챔질 → HIT |
+| 02_casting, 02b_cast_flight, 03_waiting, 04a_bite_alert, 04_bite_gauge | 밤 데크 캐스팅, 날아가는 찌, 찌 대기(원작 구도), 본신 머리 위 `!`, 어깨 뒤 챔질 클로즈업 |
+| 05_hook_perfect | PERFECT 챔질 → HIT → PERFECT!!! |
 | 06_fight, 06b_tension_danger, 06c_speedlines | 82cm 잉어 파이팅(1인칭 팔·장갑), 장력 위험 테두리, 카운터 집중선 |
-| 07_counter_chance, 08_counter, 09_landing, 09b_cheer, 10_result | 카운터 찬스·성공, 랜딩 찬스, 환호, RESULT |
+| 07_counter_chance, 08_counter, 09_landing, 09c_lift, 09d_catch, 10_result | 카운터 찬스·성공(먹 글씨 COUNTER), 랜딩 찬스(릴 줌), 1인칭 들어 올리기, 3인칭 옆모습 줄 끝 고기, RESULT(82cm 잉어: 튀어 오르는 고기) |
+| 09e_catch_small, 10b_result_held | 30cm 붕어: 왼손으로 잡기, RESULT에서 고기를 들어 보인다 |
 | 10c_result_eel, 10d_result_shoe, 10e_result_trap | 긴 고기(뱀장어, S자 꿈틀)·잡동사니(운동화·통발, 비스듬히 돈다) RESULT — 결과 창을 바로 연다 |
 | 00h_idol_greeting, 00i_idol_stage, 00l_park_chat, 00o_doctor_walk(_b), 00p_pier_entrance | 버스킹 무대 아이돌(인사·멀리서), 벤치 수다, 산책하는 의사 0.25초 간격 두 장(걸음), 데크와 둔치·석축 경계 |
 | 11_dex, 11b_dex_detail, 12_keepnet | 도감(아이콘), 도감 상세(3D 물고기), 살림망 |

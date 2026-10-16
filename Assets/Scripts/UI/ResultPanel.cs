@@ -9,12 +9,15 @@ using UnityEngine.UI;
 namespace Fishing.UI
 {
     /// <summary>
-    /// 원작 RESULT 화면: 위쪽 기록 바(WR/MR), 물 위로 튀어 오르는 물고기, 오른쪽 아래 이름·EXP·cm·kg,
-    /// 엠블럼, 대물 배지, [살림망에 넣기] [방생하기].
+    /// 원작 RESULT 화면 (2013 홍현 영상 1:55.5~1:58, 5:24, 7:48): 화면을 어둡게 덮지 않고 3D 장면 위에 글자만 얹는다.
+    /// 왼쪽 위 RESULT, 오른쪽에 동그란 월척·대물 도장(EXP+%), 오른쪽 아래 이름·cm·kg·EXP, [살림망에 넣기] [방생하기].
+    /// 작은 고기는 캐릭터가 손에 들어 보이고(FishingController.LandedSequence), 큰 고기는 물 위로 튀어 오르는 3D 물고기.
     /// </summary>
     public class ResultPanel : UIPanel
     {
         TMP_Text _recordBar, _name, _exp, _length, _weight, _badge, _newRecord, _zone;
+        RectTransform _stamp;
+        bool _held;
         Image _fish, _emblem, _emblemFish;
         RectTransform _fishRoot;
         ResultFishStage _stage;
@@ -26,7 +29,8 @@ namespace Fishing.UI
 
         public ResultPanel(Transform canvas)
         {
-            var dim = UIFactory.Dim(canvas, "ResultPanel", 0.6f);
+            // 원작: 화면을 어둡게 덮지 않는다 (3D 장면이 그대로 보인다). 아래쪽 글자만 읽히게 옅은 그늘
+            var dim = UIFactory.Dim(canvas, "ResultPanel", 0f);
             dim.rectTransform.Fill();
             SetRoot(dim.gameObject);
             var root = dim.rectTransform;
@@ -37,11 +41,17 @@ namespace Fishing.UI
             _recordBar = UIFactory.Text(bar.transform, "", 17, UIFactory.TextMain, TextAnchor.MiddleCenter);
             _recordBar.rectTransform.Fill();
 
-            var title = UIFactory.Text(root, "RESULT", 120, new Color(0.95f, 0.95f, 0.95f), TextAnchor.MiddleLeft, FontStyle.BoldAndItalic);
-            title.rectTransform.At(new Vector2(0, 1), new Vector2(60, -50), new Vector2(700, 150));
-            UIFactory.Outline(title, new Color(0, 0, 0, 0.8f), 2.5f);
-            UIFactory.Shape(root, new Color(0.36f, 0.88f, 0.8f, 0.55f), UIFactory.Pill, "TitleBrush", 0f).rectTransform
-                .At(new Vector2(0, 1), new Vector2(64, -170), new Vector2(420, 6));
+            // 아래쪽 그늘: 오른쪽 아래 글자가 밝은 장면 위에서도 읽히게
+            var shade = UIFactory.Image(root, new Color(0f, 0f, 0f, 0.55f), UIFactory.Vignette, "BottomShade");
+            shade.rectTransform.Fill(-200, -200, -200, -200);
+            // 붓글씨처럼 비스듬한 흰 RESULT (원작은 붓으로 쓴 로고)
+            var title = UIFactory.Text(root, "RESULT", 104, new Color(0.97f, 0.97f, 0.97f), TextAnchor.MiddleLeft, FontStyle.BoldAndItalic);
+            title.rectTransform.At(new Vector2(0, 1), new Vector2(40, -40), new Vector2(700, 140));
+            title.rectTransform.localRotation = Quaternion.Euler(0, 0, 3f);
+            title.characterSpacing = -6f;
+            UIFactory.Outline(title, new Color(0.05f, 0.05f, 0.07f, 0.95f), 3.5f);
+            UIFactory.Shape(root, new Color(0.05f, 0.05f, 0.07f, 0.85f), UIFactory.Pill, "TitleBrush", 0f).rectTransform
+                .At(new Vector2(0, 1), new Vector2(46, -150), new Vector2(380, 9));
 
             // 튀어 오르는 물고기
             _fishRoot = UIFactory.Node("FishRoot", root).At(new Vector2(0.5f, 0.5f), new Vector2(-80, 40), new Vector2(10, 10));
@@ -77,9 +87,14 @@ namespace Fishing.UI
             _weight = UIFactory.Text(root, "", 36, new Color(0.75f, 0.9f, 1f), TextAnchor.MiddleRight, FontStyle.BoldAndItalic);
             _weight.rectTransform.At(new Vector2(1, 0), new Vector2(-50, 116), new Vector2(560, 46));
 
-            _badge = UIFactory.Text(root, "", 72, new Color(1f, 0.85f, 0.4f), TextAnchor.MiddleCenter, FontStyle.BoldAndItalic);
-            _badge.rectTransform.At(new Vector2(1, 0.5f), new Vector2(-270, 96), new Vector2(520, 180));
-            _badge.rectTransform.localRotation = Quaternion.Euler(0, 0, -8f);
+            // 원작 월척·대물 도장: 오른쪽에 동그란 구릿빛 도장이 굴러 들어와 찍힌다
+            _stamp = UIFactory.Shape(root, new Color(0.16f, 0.1f, 0.06f, 0.95f), UIFactory.Pill, "Stamp", 6f).rectTransform;
+            _stamp.At(new Vector2(1, 0.5f), new Vector2(-150, 70), new Vector2(190, 190));
+            UIFactory.AddBorder((LeTai.Asset.TranslucentImage.TranslucentImage)_stamp.GetComponent<Image>(), new Color(0.85f, 0.6f, 0.3f, 0.9f), 5f);
+            UIFactory.AddShadow((LeTai.Asset.TranslucentImage.TranslucentImage)_stamp.GetComponent<Image>(), 24f, new Vector2(0, -6), 0.6f);
+            _badge = UIFactory.Text(_stamp, "", 58, new Color(1f, 0.85f, 0.45f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            _badge.rectTransform.Fill(8, 8, 8, 8);
+            _badge.rectTransform.localRotation = Quaternion.Euler(0, 0, -10f);
             UIFactory.Outline(_badge, new Color(0.25f, 0.1f, 0f, 0.9f), 2f);
 
             _newRecord = UIFactory.Text(root, "", 30, new Color(1f, 0.5f, 0.6f), TextAnchor.MiddleLeft, FontStyle.Bold);
@@ -170,8 +185,10 @@ namespace Fishing.UI
             _reportStats.text = $"최고 장력 <color=#ffc850>{peak:0}%</color>   ·   위험 구간 {danger * FightHudView.LogInterval:0.0}초";
         }
 
-        public void Show(CaughtFish fish, int exp, bool record, float prevBest, int prevBestDay, bool firstGet, Action<bool> onChoose)
+        /// <param name="held">캐릭터가 고기를 손에 들어 보이는 중: 3D·그림 물고기와 물방울을 띄우지 않는다.</param>
+        public void Show(CaughtFish fish, int exp, bool record, float prevBest, int prevBestDay, bool firstGet, bool held, Action<bool> onChoose)
         {
+            _held = held;
             var s = FishDatabase.Get(fish.speciesId);
             _onChoose = onChoose;
             _shownAt = Time.unscaledTime;
@@ -190,7 +207,8 @@ namespace Fishing.UI
             _length.text = s.IsJunk ? "" : $"{fish.length:0.00}cm";
             _weight.text = s.IsJunk ? "" : $"{fish.weight / 1000f:0.00}kg";
             _zone.text = s.IsJunk ? s.Temper : $"{s.Latin}  ·  {fish.zone}";
-            _badge.text = trophy ? $"{s.TrophyName}\n<size=34>EXP+100%</size>" : "";
+            _badge.text = trophy ? $"{s.TrophyName}\n<size=40%>EXP+100%</size>" : "";
+            _stamp.gameObject.SetActive(trophy);
             // 원작: 처음 낚은 어종이면 결과 화면에 "First Get" 표시
             _newRecord.text = s.IsJunk ? "" : firstGet ? "<color=#7fe8ff>★ FIRST GET!</color>  <size=20>도감에 새로 올랐습니다</size>"
                 : record ? "★ 개인 신기록!" : "";
@@ -217,16 +235,19 @@ namespace Fishing.UI
             _fish.color = s.Id == "goldkoi" ? new Color(1f, 0.78f, 0.25f) : s.IsJunk ? (ItemIcons.Get(s.Id) != null ? Color.white : new Color(0.5f, 0.5f, 0.55f)) : FishColor(s.Id);
             float size = Mathf.Lerp(380f, 900f, Mathf.Clamp01(fish.length / 100f));
             _fish.rectTransform.sizeDelta = s.IsJunk ? new Vector2(360, 360) : new Vector2(size, size * 0.5f);
-            bool model = _stage.Show(s, fish.length);
-            _fish.enabled = !model;
+            bool model = !held && _stage.Show(s, fish.length);
+            if (held) _stage.Hide();
+            _fish.enabled = !model && !held;
             _fish3d.enabled = model;
 
             _keepBtn.gameObject.SetActive(!s.IsJunk);
             _keepBtn.GetComponentInChildren<TMP_Text>().text = $"살림망에 넣기 ({PlayerProfile.SellPrice(fish):N0}G)";
             _releaseBtn.GetComponentInChildren<TMP_Text>().text = s.IsJunk ? "버리기" : "방생하기 (EXP+30%)";
 
-            SpawnDrops();
-            UpdateFightReport();
+            if (!held) SpawnDrops();
+            else ClearDrops();
+            // 원작 결과 화면에는 파이팅 기록 차트가 없다
+            _report.gameObject.SetActive(false);
             Open();
         }
 
@@ -244,10 +265,15 @@ namespace Fishing.UI
             _ => new Color(0.65f, 0.6f, 0.5f)
         };
 
-        void SpawnDrops()
+        void ClearDrops()
         {
             foreach (var d in _drops) UnityEngine.Object.Destroy(d.rt.gameObject);
             _drops.Clear();
+        }
+
+        void SpawnDrops()
+        {
+            ClearDrops();
             for (int i = 0; i < 70; i++)
             {
                 var img = UIFactory.Image(Root.transform, new Color(0.85f, 0.93f, 1f, 0.8f), UIFactory.Circle, "Drop");
@@ -268,6 +294,14 @@ namespace Fishing.UI
             _fishRoot.anchoredPosition = new Vector2(-80f, y);
             _fishRoot.localRotation = _fish3d.enabled ? Quaternion.identity : Quaternion.Euler(0, 0, 18f + Mathf.Sin(t * 3f) * 4f);
             _stage.Pose(t);
+            // 도장: 오른쪽에서 굴러 들어와 쾅 (0.35초)
+            if (_stamp.gameObject.activeSelf)
+            {
+                float k = Mathf.Clamp01((t - 0.15f) / 0.35f);
+                _stamp.anchoredPosition = new Vector2(Mathf.Lerp(260f, -150f, 1f - (1f - k) * (1f - k)), 70f);
+                _stamp.localRotation = Quaternion.Euler(0, 0, Mathf.Lerp(-200f, 0f, k));
+                _stamp.localScale = Vector3.one * (k < 1f ? 1f : 1f + Mathf.Max(0f, 0.65f - t) * 0.6f);
+            }
 
             for (int i = 0; i < _drops.Count; i++)
             {

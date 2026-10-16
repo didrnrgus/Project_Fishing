@@ -94,7 +94,7 @@ namespace Fishing.Angling
             _reelId = p?.Reel.Id;
             if (_rod != null) Destroy(_rod.gameObject);
             _rodRenderers = null;
-            _rod = TelescopicRod.Create(_root, p?.Rod, p?.Reel, FirstPersonLength, 1.8f);
+            _rod = TelescopicRod.Create(_root, p?.Rod, p?.Reel, FirstPersonLength, 2.1f);
 
             if (_leftHand != null) Destroy(_leftHand.gameObject);
             if (_rightHand != null) Destroy(_rightHand.gameObject);
@@ -262,6 +262,8 @@ namespace Fishing.Angling
         public void Hide()
         {
             _fight = null;
+            Lift = 0f;
+            _landK = 0f;
             gameObject.SetActive(false);
             _fish.SetActive(false);
         }
@@ -286,28 +288,56 @@ namespace Fishing.Angling
         }
 
         Renderer[] _rodRenderers;
-        MaterialPropertyBlock _glowBlock;
+        Material[][] _rodMats;
+        Material _goldMat;
+        bool _goldOn;
         float _glow;
 
-        /// <summary>원작 0:35: 장력이 HIGH 쪽이면 낚싯대가 금빛으로 달아오른다 (데미지가 커지는 구간이라는 신호).</summary>
+        /// <summary>
+        /// 원작(2013 홍현 영상 0:52, 1:44~1:52): 장력이 HIGH 쪽이면 낚싯대와 릴 전체가 노랗게 달아올라 빛난다
+        /// (데미지가 커지는 구간이라는 신호). 밤에도 빛나 보여야 해서 조명을 받지 않는 금색 머티리얼로 통째로 바꾼다
+        /// (Standard의 Emission은 빌드에서 셰이더 변형이 빠져 켜지지 않았다). 장력 60%부터 차올라 80%면 완전히, 위험(90%~)이면 깜빡.
+        /// </summary>
         void UpdateGlow(FishFight f)
         {
             if (_rodRenderers == null || _rodRenderers.Length == 0 || _rodRenderers[0] == null)
-                _rodRenderers = System.Array.FindAll(_rod.GetComponentsInChildren<Renderer>(),
-                    r => (_leftHand == null || !r.transform.IsChildOf(_leftHand)) && (_rightHand == null || !r.transform.IsChildOf(_rightHand)));
-            _glowBlock ??= new MaterialPropertyBlock();
-            float target = f.IsDanger ? 0.85f : f.IsHighTension ? 0.6f + Mathf.Sin(Time.time * 10f) * 0.15f : 0f;
-            _glow = Mathf.MoveTowards(_glow, target, Time.deltaTime * 4f);
-            var hot = f.IsDanger ? new Color(1f, 0.45f, 0.3f) : new Color(1f, 0.82f, 0.35f);
-            foreach (var r in _rodRenderers)
             {
-                if (r == null || r.sharedMaterial == null || !r.sharedMaterial.HasProperty("_Color")) continue;
-                if (_glow < 0.01f) { r.SetPropertyBlock(null); continue; }
-                var baseColor = r.sharedMaterial.color;
-                _glowBlock.SetColor("_Color", Color.Lerp(baseColor, hot * 1.6f, _glow));
-                r.SetPropertyBlock(_glowBlock);
+                _rodRenderers = System.Array.FindAll(_rod.GetComponentsInChildren<Renderer>(),
+                    r => !(r is LineRenderer) && (_leftHand == null || !r.transform.IsChildOf(_leftHand)) && (_rightHand == null || !r.transform.IsChildOf(_rightHand)));
+                _rodMats = System.Array.ConvertAll(_rodRenderers, r => r.sharedMaterials);
+                _goldOn = false;
             }
+            _goldMat ??= new Material(Shader.Find("Unlit/Color"));
+            float heat = Mathf.InverseLerp(FishFight.HighTension, 0.8f, f.Tension);
+            float target = f.IsDanger ? 0.8f + Mathf.Abs(Mathf.Sin(Time.time * 14f)) * 0.2f : heat * (0.88f + Mathf.Sin(Time.time * 8f) * 0.08f);
+            _glow = Mathf.MoveTowards(_glow, target, Time.deltaTime * 5f);
+            bool on = _glow > 0.08f;
+            if (on != _goldOn)
+            {
+                _goldOn = on;
+                for (int i = 0; i < _rodRenderers.Length; i++)
+                {
+                    if (_rodRenderers[i] == null) continue;
+                    if (on)
+                    {
+                        var mats = new Material[_rodMats[i].Length];
+                        for (int k = 0; k < mats.Length; k++) mats[k] = _goldMat;
+                        _rodRenderers[i].sharedMaterials = mats;
+                    }
+                    else _rodRenderers[i].sharedMaterials = _rodMats[i];
+                }
+            }
+            if (on) _goldMat.color = Color.Lerp(new Color(0.6f, 0.45f, 0.12f), new Color(1f, 0.9f, 0.32f), _glow);
         }
+
+        /// <summary>
+        /// 낚싯대가 화면 어느 쪽에 있는지 (-1 왼쪽 ~ 1 오른쪽). 원작 1인칭은 낚싯대를 트는 쪽으로 낚싯대 전체가 화면 끝까지 옮겨 간다:
+        /// 왼쪽으로 당기면 낚싯대·릴이 화면 왼쪽 아래, 초릿대는 물고기(오른쪽) 쪽으로 활처럼 휜다 (0:44 ↔ 0:48).
+        /// </summary>
+        float _side;
+        float _landK;
+        /// <summary>랜딩 뒤 들어 올리기 0~1 (FishingController가 올린다). 0이면 평소 파이팅.</summary>
+        public float Lift;
 
         /// <summary>
         /// 물고기의 월드 위치. 거리와 좌우 위치(FishX)로 계산한다.
@@ -343,7 +373,24 @@ namespace Fishing.Angling
             bool reeling = _reelTurns > 0.1f;
             float pump = reeling ? Mathf.Sin(Time.time * 9f) * 3f : 0f;
             float tug = f.Mood == FishMood.Burst ? Mathf.Sin(Time.time * 23f) * 2.5f : 0f;
-            _root.localRotation = Quaternion.Euler(44f + t * 10f + pump + tug, 10f + f.RodX * 28f + f.FishX * 16f, -8f - f.RodX * 10f - f.FishX * 6f);
+            // 원작: 낚싯대는 거의 세워 들고(초릿대가 화면 위쪽까지), 트는 쪽 화면 끝으로 통째로 옮겨 간다
+            float wantSide = Mathf.Abs(f.RodX) > 0.12f ? Mathf.Sign(f.RodX) * Mathf.Lerp(0.55f, 1f, Mathf.InverseLerp(0.12f, 0.7f, Mathf.Abs(f.RodX))) : _side * 0.98f;
+            _side = Mathf.Lerp(_side, wantSide, 1f - Mathf.Exp(-4f * Time.deltaTime));
+            var pos = new Vector3(-0.02f + _side * 0.36f, -0.2f, 0.56f);
+            var euler = new Vector3(26f + t * 8f + pump + tug, _side * -14f + f.FishX * 10f, -_side * 18f - f.FishX * 5f);
+            // 랜딩 찬스 (원작 1:52): 릴이 화면 가운데로 크게 다가온다
+            _landK = Mathf.Lerp(_landK, f.Landing && Lift <= 0f ? 1f : 0f, 1f - Mathf.Exp(-6f * Time.deltaTime));
+            pos = Vector3.Lerp(pos, new Vector3(-0.06f, -0.13f, 0.36f), _landK);
+            euler = Vector3.Lerp(euler, new Vector3(16f + pump, 6f, -6f), _landK);
+            // 랜딩 성공 (원작 1:53~1:54.8): 낚싯대를 세워 들어 올린다
+            if (Lift > 0f)
+            {
+                float k = Mathf.SmoothStep(0f, 1f, Lift);
+                pos = Vector3.Lerp(pos, new Vector3(0.12f, -0.2f, 0.42f), k);
+                euler = Vector3.Lerp(euler, new Vector3(-6f, 4f, -10f), k);
+            }
+            _root.localPosition = pos;
+            _root.localRotation = Quaternion.Euler(euler);
             UpdateGlow(f);
             var fishPos = FishWorldPos(f);
             BendRod(f, fishPos);
@@ -355,22 +402,25 @@ namespace Fishing.Angling
             Arm(_sleeveR, _armR, transform.TransformPoint(ShoulderR), _rightWrist.position);
 
             var tipPos = _rod.Tip.position;
+            var lineEnd = Lift > 0f ? Vector3.Lerp(fishPos, transform.position + transform.forward * 2.2f + Vector3.up * 0.9f, Mathf.SmoothStep(0f, 1f, Lift) * 0.85f) : fishPos;
             float sag = Mathf.Lerp(0.8f, 0.02f, Mathf.Clamp01(f.Tension * 1.5f));
             for (int i = 0; i < _line.positionCount; i++)
             {
                 float u = i / (float)(_line.positionCount - 1);
-                var pos = Vector3.Lerp(tipPos, fishPos, u);
-                pos.y -= Mathf.Sin(u * Mathf.PI) * sag;
-                _line.SetPosition(i, pos);
+                var lp = Vector3.Lerp(tipPos, lineEnd, u);
+                lp.y -= Mathf.Sin(u * Mathf.PI) * sag;
+                _line.SetPosition(i, lp);
             }
-            _line.startColor = _line.endColor = f.IsDanger ? new Color(1f, 0.4f, 0.35f) : new Color(0.85f, 0.95f, 0.85f);
+            // 원작: 평소 줄은 하늘색, HIGH 구간이면 분홍빛 붉은 줄
+            _line.startColor = _line.endColor = f.IsDanger ? new Color(1f, 0.3f, 0.3f) : f.IsHighTension ? new Color(1f, 0.45f, 0.6f) : new Color(0.6f, 0.85f, 1f);
 
-            if (Time.time >= _nextSplash)
+            // 원작: 물고기는 안 보이고, 그 자리에 하얀 물보라 기둥이 쉬지 않고 솟는다 (질주·폭주면 더 크게)
+            if (Time.time >= _nextSplash && Lift <= 0f)
             {
-                float intensity = f.Mood == FishMood.Burst ? 1.4f : f.Mood == FishMood.Run ? 0.9f : 0.4f;
-                _nextSplash = Time.time + Mathf.Lerp(0.5f, 0.12f, intensity / 1.4f);
-                Effects.Splash(fishPos, Mathf.RoundToInt(4 + 8 * intensity), 0.5f + intensity * 0.5f);
-                if (intensity > 0.8f) Effects.Ripple(fishPos, 1.2f + intensity, 0.9f);
+                float intensity = f.Mood == FishMood.Burst ? 1.4f : f.Mood == FishMood.Run ? 1f : f.HpLow ? 0.35f : 0.6f;
+                _nextSplash = Time.time + Mathf.Lerp(0.16f, 0.07f, intensity / 1.4f);
+                Effects.FightSpray(fishPos, intensity);
+                if (Random.value < 0.25f) Effects.Ripple(fishPos, 1.6f + intensity * 1.4f, 1.1f);
             }
 
             bool near = f.Distance < 9f;
@@ -378,13 +428,15 @@ namespace Fishing.Angling
             if (near)
             {
                 float surface = f.HpLow ? 0.05f : -0.12f;
-                _fish.transform.position = fishPos + Vector3.up * surface;
+                // 들어 올리면 물 밖으로 끌려 나와 카메라 앞으로 날아든다
+                float lifted = Mathf.SmoothStep(0f, 1f, Lift);
+                _fish.transform.position = Vector3.Lerp(fishPos + Vector3.up * surface, transform.position + transform.forward * 2.2f + Vector3.up * 0.9f, lifted * 0.85f);
                 var look = (_origin - fishPos);
                 look.y = 0f;
                 float wiggle = Mathf.Sin(Time.time * (f.HpLow ? 6f : 14f)) * (f.HpLow ? 10f : 25f);
                 _fish.transform.rotation = Quaternion.LookRotation(look.normalized) * Quaternion.Euler(0f, 90f + wiggle * 0.4f, 0f);
                 // 질주·폭주하면 몸부림, 지치면 천천히, 그 밖에는 빠르게 헤엄
-                string clip = f.HpLow ? FishModels.SwimSlow : f.Mood == FishMood.Burst ? FishModels.Thrash : FishModels.SwimFast;
+                string clip = Lift > 0f ? FishModels.Thrash : f.HpLow ? FishModels.SwimSlow : f.Mood == FishMood.Burst ? FishModels.Thrash : FishModels.SwimFast;
                 if (clip != _fishClip && _fishBody != null)
                 {
                     _fishClip = clip;

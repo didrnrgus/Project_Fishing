@@ -47,6 +47,97 @@ namespace Fishing.World
             }
         }
 
+        static ParticleSystem _spray;
+
+        /// <summary>파이팅 물보라: 크고 부드러운 흰 물방울 덩어리. 커지면서 옅어지고, 천천히 떨어진다.</summary>
+        static ParticleSystem SpraySystem
+        {
+            get
+            {
+                if (_spray != null) return _spray;
+                var go = new GameObject("FightSprayFx");
+                _spray = go.AddComponent<ParticleSystem>();
+                _spray.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                var main = _spray.main;
+                main.loop = false;
+                main.playOnAwake = false;
+                main.simulationSpace = ParticleSystemSimulationSpace.World;
+                main.gravityModifier = 0.9f;
+                main.maxParticles = 3000;
+                var emission = _spray.emission;
+                emission.rateOverTime = 0f;
+                var size = _spray.sizeOverLifetime;
+                size.enabled = true;
+                size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 0.55f), new Keyframe(0.35f, 1f), new Keyframe(1f, 1.5f)));
+                var col = _spray.colorOverLifetime;
+                col.enabled = true;
+                var grad = new Gradient();
+                grad.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                    new[] { new GradientAlphaKey(0.95f, 0f), new GradientAlphaKey(0.75f, 0.45f), new GradientAlphaKey(0f, 1f) });
+                col.color = grad;
+                var rot = _spray.rotationOverLifetime;
+                rot.enabled = true;
+                rot.z = new ParticleSystem.MinMaxCurve(-1.5f, 1.5f);
+                var renderer = go.GetComponent<ParticleSystemRenderer>();
+                renderer.sharedMaterial = Mats.Particle(new Color(0.46f, 0.48f, 0.5f, 0.3f)); // 레거시 파티클 셰이더는 색을 2배로 곱한다
+                return _spray;
+            }
+        }
+
+        /// <summary>
+        /// 원작 1인칭 파이팅의 물보라 (2013 홍현 영상 0:44~): 물고기 자리에서 하얀 물보라가 돔처럼 솟고 바닥에 거품 고리.
+        /// FightRodView가 0.07~0.16초마다 부른다. intensity 0.35(지침) ~ 1.4(폭주).
+        /// </summary>
+        public static void FightSpray(Vector3 pos, float intensity)
+        {
+            var ps = SpraySystem;
+            var p = new ParticleSystem.EmitParams();
+            int count = Mathf.RoundToInt(7 + 12 * intensity);
+            for (int i = 0; i < count; i++)
+            {
+                var dir = Random.insideUnitCircle;
+                float up = Random.value;
+                p.position = pos + new Vector3(dir.x * 0.35f, 0.1f, dir.y * 0.35f);
+                // 가운데는 높이, 가장자리는 옆으로 퍼진다 (돔 모양)
+                p.velocity = new Vector3(dir.x * Mathf.Lerp(2.6f, 0.6f, up), Mathf.Lerp(1.2f, 5.2f, up) * (0.6f + intensity * 0.5f), dir.y * Mathf.Lerp(2.6f, 0.6f, up));
+                p.startSize = Random.Range(0.18f, 0.6f) * (0.7f + intensity * 0.35f);
+                p.startLifetime = Random.Range(0.55f, 1.05f);
+                p.rotation = Random.Range(0f, 360f);
+                ps.Emit(p, 1);
+            }
+            // 바닥의 낮고 넓은 물안개
+            for (int i = 0; i < 2; i++)
+            {
+                var dir = Random.insideUnitCircle;
+                p.position = pos + new Vector3(dir.x * 0.6f, 0.15f, dir.y * 0.6f);
+                p.velocity = new Vector3(dir.x * 1.2f, 0.6f, dir.y * 1.2f);
+                p.startSize = Random.Range(1.1f, 1.9f) * (0.7f + intensity * 0.3f);
+                p.startLifetime = Random.Range(0.7f, 1.1f);
+                ps.Emit(p, 1);
+            }
+            Splash(pos, Mathf.RoundToInt(3 + 5 * intensity), 0.8f + intensity * 0.5f);
+        }
+
+        /// <summary>랜딩 성공·결과 화면의 큰 물보라 (한 번에 크게 터진다).</summary>
+        public static void BigSplash(Vector3 pos, float scale = 1f)
+        {
+            var ps = SpraySystem;
+            var p = new ParticleSystem.EmitParams();
+            for (int i = 0; i < 70; i++)
+            {
+                var dir = Random.insideUnitCircle;
+                float up = Random.value;
+                p.position = pos + new Vector3(dir.x * 0.4f, 0.1f, dir.y * 0.4f) * scale;
+                p.velocity = new Vector3(dir.x * Mathf.Lerp(4.5f, 1f, up), Mathf.Lerp(2f, 8f, up), dir.y * Mathf.Lerp(4.5f, 1f, up)) * Mathf.Sqrt(scale);
+                p.startSize = Random.Range(0.4f, 1.1f) * scale;
+                p.startLifetime = Random.Range(0.7f, 1.4f);
+                p.rotation = Random.Range(0f, 360f);
+                ps.Emit(p, 1);
+            }
+            Splash(pos, 60, 1.8f * scale);
+            Ripple(pos, 4f * scale, 1.6f);
+        }
+
         public static void Ripple(Vector3 pos, float size = 1.5f, float duration = 1.4f)
         {
             var go = Mats.Prim(PrimitiveType.Cylinder, "Ripple", null,

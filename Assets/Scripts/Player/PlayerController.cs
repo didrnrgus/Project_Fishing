@@ -138,6 +138,84 @@ namespace Fishing.PlayerSystems
                 t.gameObject.layer = Fishing.UI.PortraitCamera.Layer;
             }
             if (Head == null) Head = Model;
+            FindLeftArm();
+        }
+
+        // ---------------- 낚은 고기 들어 보이기 (원작 결과 화면 1:55~1:58) ----------------
+
+        Transform _upperArmL, _lowerArmL, _handL;
+        Transform _heldFish;
+        float _holdWeight, _holdTarget;
+        /// <summary>왼손을 올릴 자리 (월드). 없으면 왼쪽 어깨 앞 위.</summary>
+        public Vector3? HoldPoint;
+
+        void FindLeftArm()
+        {
+            _upperArmL = _lowerArmL = _handL = null;
+            if (_character == null) return;
+            var all = _character.GetComponentsInChildren<Transform>(true);
+            Transform Bone(string n) => System.Array.Find(all, t => t.name == n);
+            _upperArmL = Bone("upperarm_l");
+            _lowerArmL = Bone("lowerarm_l");
+            _handL = Bone("hand_l");
+            if (_upperArmL != null && _lowerArmL != null && _handL != null) return;
+            var an = _character.GetComponentInChildren<Animator>();
+            if (an == null || !an.isHuman) return;
+            _upperArmL = an.GetBoneTransform(HumanBodyBones.LeftUpperArm);
+            _lowerArmL = an.GetBoneTransform(HumanBodyBones.LeftLowerArm);
+            _handL = an.GetBoneTransform(HumanBodyBones.LeftHand);
+        }
+
+        /// <summary>
+        /// 낚은 고기를 왼손에 쥐고 들어 보인다. 오른손은 그대로 낚싯대를 든다.
+        /// 팔은 애니메이션 위에 2관절 IK로 덧입힌다 (LateUpdate). fish = null이면 내려놓는다.
+        /// </summary>
+        public void HoldFish(Transform fish)
+        {
+            _heldFish = fish;
+            _holdTarget = fish != null ? 1f : 0f;
+        }
+
+        public Transform HeldFish => _heldFish;
+
+        /// <summary>왼손 자리 (IK를 풀기 전 손의 실제 위치). 손이 없으면 모델 앞.</summary>
+        public Vector3 LeftHandPos => _handL != null ? _handL.position : Model.position + Vector3.up * 1.2f + Model.forward * 0.3f;
+
+        void UpdateHold()
+        {
+            _holdWeight = Mathf.MoveTowards(_holdWeight, _holdTarget, Time.deltaTime * 2.5f);
+            if (_holdWeight <= 0.001f || _upperArmL == null) return;
+            var fwd = Model.forward;
+            var left = -Model.right;
+            var shoulder = _upperArmL.position;
+            var want = HoldPoint ?? shoulder + fwd * 0.32f + left * 0.28f + Vector3.up * 0.18f;
+            var target = Vector3.Lerp(_handL.position, want, Mathf.SmoothStep(0f, 1f, _holdWeight));
+            SolveTwoBone(_upperArmL, _lowerArmL, _handL, target);
+            if (_heldFish != null)
+            {
+                // 손에 쥔 고기: 머리를 위로, 배는 카메라 쪽으로 (옆모습이 보이게)
+                _heldFish.position = _handL.position + Vector3.down * 0.04f;
+            }
+        }
+
+        /// <summary>2관절 IK: 위팔·아래팔 길이는 그대로 두고 손이 target에 닿게 돌린다 (팔꿈치는 지금 굽은 면 그대로).</summary>
+        static void SolveTwoBone(Transform a, Transform b, Transform c, Vector3 target)
+        {
+            var pa = a.position;
+            var pb = b.position;
+            var pc = c.position;
+            float lab = (pb - pa).magnitude, lcb = (pc - pb).magnitude;
+            float lat = Mathf.Clamp((target - pa).magnitude, 0.01f, lab + lcb - 0.002f);
+            float acab0 = Mathf.Acos(Mathf.Clamp(Vector3.Dot((pc - pa).normalized, (pb - pa).normalized), -1f, 1f));
+            float babc0 = Mathf.Acos(Mathf.Clamp(Vector3.Dot((pa - pb).normalized, (pc - pb).normalized), -1f, 1f));
+            float acab1 = Mathf.Acos(Mathf.Clamp((lcb * lcb - lab * lab - lat * lat) / (-2f * lab * lat), -1f, 1f));
+            float babc1 = Mathf.Acos(Mathf.Clamp((lat * lat - lab * lab - lcb * lcb) / (-2f * lab * lcb), -1f, 1f));
+            var axis = Vector3.Cross(pc - pa, pb - pa);
+            if (axis.sqrMagnitude < 1e-8f) axis = Vector3.Cross(pc - pa, Vector3.up);
+            axis.Normalize();
+            a.rotation = Quaternion.AngleAxis((acab1 - acab0) * Mathf.Rad2Deg, axis) * a.rotation;
+            b.rotation = Quaternion.AngleAxis((babc1 - babc0) * Mathf.Rad2Deg, axis) * b.rotation;
+            a.rotation = Quaternion.FromToRotation(c.position - pa, target - pa) * a.rotation;
         }
 
         /// <summary>의상을 바꾸면 캐릭터를 다시 입힌다 (초상화도 따라 바뀐다).</summary>
@@ -437,6 +515,7 @@ namespace Fishing.PlayerSystems
             }
             Rod.Drive(RodBendTarget, RodPullDir.sqrMagnitude > 0f ? RodPullDir : Model.forward, 0f, Time.deltaTime);
             RodBendTarget = 0f;
+            UpdateHold();
         }
     }
 }

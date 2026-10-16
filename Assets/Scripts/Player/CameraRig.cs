@@ -14,7 +14,10 @@ namespace Fishing.PlayerSystems
     /// </summary>
     public class CameraRig : MonoBehaviour
     {
-        public enum ShotKind { Follow, Cast, Bite, Cheer }
+        public enum ShotKind { Follow, Cast, Bite, Cheer, Catch, Show, Wait }
+
+        /// <summary>랜딩 직후 1인칭에서 낚싯대를 들어 올리며 시선이 위로 따라간다 (원작 1:53~1:54.8). 0~1.</summary>
+        public float FightLift;
 
         public Camera Cam { get; private set; }
         public float Yaw;
@@ -38,11 +41,12 @@ namespace Fishing.PlayerSystems
         Vector3 _fightDir;
         float _fightLook;
         float _fightRoll;
+        float _landingZoom;
         float _shake;
         float _fovPunch;
         Vector3 _kick;
         float _shotBlend;          // 0 = 평소 추적, 1 = 연출 구도
-        ShotKind _lastShot;
+        ShotKind _lastShot, _prevShot;
         Vector3 _shotPos;
         Quaternion _shotRot;
 
@@ -125,9 +129,13 @@ namespace Fishing.PlayerSystems
                 _fightRoll = Mathf.Lerp(_fightRoll, targetRoll, dt * 4f);
                 // 릴을 감을 때 몸이 앞뒤로 들썩인다
                 float pump = fight != null && Input.GetMouseButton(0) ? Mathf.Sin(Time.time * 9f) * 0.012f : 0f;
-                var rot = Quaternion.LookRotation(_fightDir) * Quaternion.Euler(9f, _fightLook, _fightRoll);
-                transform.SetPositionAndRotation(_fightPos + shakeOffset + _kick + Vector3.up * pump, rot);
-                Cam.fieldOfView = BaseFov + _fovPunch;
+                float lift = Mathf.SmoothStep(0f, 1f, FightLift);
+                var rot = Quaternion.LookRotation(_fightDir) * Quaternion.Euler(9f - 34f * lift, _fightLook * (1f - lift), _fightRoll * (1f - lift));
+                // 랜딩 찬스: 릴 쪽으로 다가가듯 화각을 좁힌다 (원작 1:52)
+                bool landing = fight != null && fight.Landing;
+                _landingZoom = Mathf.Lerp(_landingZoom, landing ? 1f : 0f, dt * 5f);
+                transform.SetPositionAndRotation(_fightPos + shakeOffset + _kick + Vector3.up * (pump + lift * 0.3f), rot);
+                Cam.fieldOfView = BaseFov - _landingZoom * 9f + _fovPunch;
                 return;
             }
 
@@ -162,7 +170,15 @@ namespace Fishing.PlayerSystems
             var followRot = Quaternion.LookRotation(target - followPos);
 
             // 연출 구도 섞기: 들어갈 때는 빠르게, 빠질 때는 천천히
+            // 챔질 클로즈업·고기 잡기·들어 보이기는 원작처럼 끊어서(컷) 들어간다 (0:39.5, 1:55, 1:55.5)
+            bool cutIn = (Shot == ShotKind.Bite || Shot == ShotKind.Catch || Shot == ShotKind.Show) && _prevShot != Shot;
+            _prevShot = Shot;
             if (Shot != ShotKind.Follow) _lastShot = Shot;
+            if (cutIn)
+            {
+                ComputeShot(Shot, out _shotPos, out _shotRot, out _);
+                _shotBlend = 1f;
+            }
             _shotBlend = Mathf.MoveTowards(_shotBlend, Shot != ShotKind.Follow ? 1f : 0f, dt * (Shot != ShotKind.Follow ? 3.2f : 1.4f));
             float fov = BaseFov;
             if (_shotBlend > 0.001f)
@@ -206,11 +222,43 @@ namespace Fishing.PlayerSystems
                 }
                 case ShotKind.Bite:
                 {
-                    // 원작 0:30: 캐릭터 오른쪽 뒤 가까이, 낚싯대와 찌가 함께 보인다
-                    pos = root + Vector3.up * 1.55f - fwd * 1.15f + right * 1.25f;
-                    var look = Vector3.Lerp(root + Vector3.up * 1.3f + fwd * 2f, BiteLookAt, 0.35f);
+                    // 원작 챔질 클로즈업 (2013 홍현 영상 0:39.5~0:42.8): 엉덩이 높이에서 오른쪽 등 뒤에 바짝 붙어 올려다본다.
+                    // 화면 왼쪽 아래를 캐릭터 등·어깨가 크게 채우고, 낚싯대는 오른쪽 앞 물로, 위 절반은 밤하늘
+                    pos = root + Vector3.up * 1.25f - fwd * 1.6f + right * 1.0f;
+                    var look = root + fwd * 10f + right * 2.0f + Vector3.up * 2.4f;
                     rot = Quaternion.LookRotation(look - pos);
-                    fov = 44f;
+                    fov = 56f;
+                    break;
+                }
+                case ShotKind.Wait:
+                {
+                    // 원작 찌 대기 (2013 홍현 영상 0:24~0:36): 캐릭터 왼쪽 뒤에서 무릎 위로 잡아 화면 왼쪽 1/3에 세우고,
+                    // 오른쪽으로 뻗은 낚싯줄 끝 찌까지 한 화면에
+                    pos = root + Vector3.up * 1.95f - fwd * 3.3f - right * 1.05f;
+                    var look = Vector3.Lerp(root + Vector3.up * 1.25f, BiteLookAt, 0.42f);
+                    var dir = look - pos;
+                    dir.y = Mathf.Clamp(dir.y, -dir.magnitude * 0.3f, dir.magnitude * 0.05f);
+                    rot = Quaternion.LookRotation(dir);
+                    fov = 50f;
+                    break;
+                }
+                case ShotKind.Catch:
+                {
+                    // 원작 1:55: 낚싯대를 치켜든 캐릭터를 앞쪽 왼편에서 옆모습으로, 줄 끝에 고기가 대롱대롱
+                    pos = root + Vector3.up * 1.5f + fwd * 1.5f - right * 2.7f;
+                    var look = root + Vector3.up * 1.7f + fwd * 1.2f;
+                    rot = Quaternion.LookRotation(look - pos);
+                    fov = 50f;
+                    break;
+                }
+                case ShotKind.Show:
+                {
+                    // 원작 1:56~1:58 RESULT: 정면 가까이, 얼굴과 왼손에 든 고기가 한 화면에 (고기는 화면 오른쪽)
+                    var head = player.Head != null ? player.Head.position : root + Vector3.up * 1.65f;
+                    pos = head + fwd * 1.75f + right * 0.15f - Vector3.up * 0.12f;
+                    var look = head - Vector3.up * 0.22f - right * 0.32f;
+                    rot = Quaternion.LookRotation(look - pos);
+                    fov = 42f;
                     break;
                 }
                 default: // Cheer

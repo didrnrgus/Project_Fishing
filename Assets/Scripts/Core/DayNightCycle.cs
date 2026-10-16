@@ -187,10 +187,11 @@ namespace Fishing.Core
             _sun.enabled = _sun.intensity > 0.01f;
 
             _moon.transform.rotation = Quaternion.Euler(sunAngle + 180f, -35f, 0f);
-            _moon.intensity = Mathf.Clamp01(-elevation * 3f) * 0.28f * Mathf.Lerp(0.5f, 1f, _weatherDim);
+            // 원작 밤(2013 홍현 영상): 검지 않고 보랏빛 남색으로 밝다. 바위·물결·캐릭터가 또렷하게 보이는 "달빛 낮"
+            _moon.intensity = Mathf.Clamp01(-elevation * 3f) * 0.5f * Mathf.Lerp(0.5f, 1f, _weatherDim);
             _moon.enabled = _moon.intensity > 0.01f;
 
-            var nightSky = new Color(0.04f, 0.06f, 0.13f);
+            var nightSky = new Color(0.12f, 0.13f, 0.26f);
             var daySky = Color.Lerp(new Color(0.36f, 0.38f, 0.42f), new Color(0.42f, 0.5f, 0.62f), _weatherDim);
             var sunsetSky = new Color(0.75f, 0.48f, 0.38f);
             var sky = Color.Lerp(nightSky, daySky, day);
@@ -208,7 +209,7 @@ namespace Fishing.Core
                                         + (Game.Clock.Band == TimeBand.Dawn ? 0.004f : 0f) // 새벽 물안개
                                         + seaFog;
 
-            _sky.SetFloat("_Exposure", Mathf.Lerp(0.12f, 1.25f, day) * Mathf.Lerp(0.55f, 1f, _weatherDim));
+            _sky.SetFloat("_Exposure", Mathf.Lerp(0.3f, 1.25f, day) * Mathf.Lerp(0.55f, 1f, _weatherDim));
             _sky.SetFloat("_AtmosphereThickness", Mathf.Lerp(0.9f, 1.6f, warm));
             _sky.SetColor("_SkyTint", Color.Lerp(new Color(0.55f, 0.55f, 0.55f), new Color(0.5f, 0.55f, 0.65f), _weatherDim));
             _sky.SetColor("_GroundColor", Color.Lerp(new Color(0.12f, 0.12f, 0.14f), new Color(0.37f, 0.35f, 0.34f), day));
@@ -217,7 +218,7 @@ namespace Fishing.Core
             float coverage = Game.Weather.Current switch { Weather.Cloudy => 0.78f, Weather.Rain => 0.95f, _ => 0.4f };
             var cloudDay = Color.Lerp(new Color(0.62f, 0.64f, 0.68f), Color.white, _weatherDim);
             var cloudSunset = new Color(1f, 0.62f, 0.45f);
-            var cloudNight = new Color(0.12f, 0.14f, 0.2f);
+            var cloudNight = new Color(0.24f, 0.25f, 0.38f);
             var cloudColor = Color.Lerp(cloudNight, Color.Lerp(cloudDay, cloudSunset, warm * 0.8f), day);
             cloudColor.a = Mathf.Lerp(0.55f, 0.95f, day);
             if (Game.CameraRig != null)

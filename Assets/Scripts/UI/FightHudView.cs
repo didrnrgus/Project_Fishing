@@ -44,7 +44,8 @@ namespace Fishing.UI
         RectTransform _slackHint;
         TMP_Text _slackHintText;
         readonly Image[] _pips = new Image[5];
-        TMP_Text _counterText, _warnText, _staminaText, _hitText, _focusText;
+        TMP_Text _counterText, _warnText, _staminaText, _hitText, _focusText, _gradeText;
+        Image _gradeGlow;
         Image _focusFill;
         FishFight _hitShownFor;
         float _hitAt;
@@ -219,10 +220,23 @@ namespace Fishing.UI
 
         void BuildCenter()
         {
-            _counterText = UIFactory.Text(_root, "COUNTER", 120, new Color(1f, 0.82f, 0.45f), TextAnchor.MiddleCenter, FontStyle.BoldAndItalic);
-            _counterText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 80), new Vector2(1000, 170));
-            UIFactory.Outline(_counterText, new Color(0.35f, 0.15f, 0.02f, 0.9f), 2.5f);
+            _counterText = UIFactory.Text(_root, "COUNTER", 124, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            _counterText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 110), new Vector2(1400, 190));
+            _counterText.enableVertexGradient = true;
+            _counterText.characterSpacing = -4f;
+            UIFactory.Outline(_counterText, new Color(0.18f, 0.08f, 0.02f, 0.95f), 3f);
             _counterText.gameObject.SetActive(false);
+
+            // 챔질 등급 (HIT 다음에 터지는 PERFECT!!!): 뒤에 주황 빛무리
+            _gradeGlow = UIFactory.Image(_root, new Color(1f, 0.55f, 0.2f, 0f), UIFactory.Glow, "GradeGlow");
+            _gradeGlow.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 40), new Vector2(560, 150));
+            _gradeGlow.gameObject.SetActive(false);
+            _gradeText = UIFactory.Text(_root, "", 76, Color.white, TextAnchor.MiddleCenter, FontStyle.BoldAndItalic);
+            _gradeText.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 40), new Vector2(900, 120));
+            _gradeText.enableVertexGradient = true;
+            _gradeText.colorGradient = new TMPro.VertexGradient(Color.white, Color.white, new Color(1f, 0.55f, 0.45f), new Color(1f, 0.55f, 0.45f));
+            UIFactory.Outline(_gradeText, new Color(0.35f, 0.05f, 0.03f, 0.9f), 2.5f);
+            _gradeText.gameObject.SetActive(false);
 
             // 원작 0:31: 챔질하면 금속 느낌의 큰 HIT가 쾅 찍힌다
             _hitText = UIFactory.Text(_root, "HIT", 150, new Color(0.93f, 0.95f, 0.98f), TextAnchor.MiddleCenter, FontStyle.BoldAndItalic);
@@ -283,11 +297,83 @@ namespace Fishing.UI
 
         // ---------------- 이벤트 ----------------
 
+        /// <summary>
+        /// 원작 카운터 (2013 홍현 영상 0:46.3~0:47.3, 프레임 단위): 집중선이 번쩍이고 화면을 가득 채운 검은 먹 글씨 COUNTER가
+        /// 0.2초 만에 제자리 크기로 쪼그라들며 흰 글씨 → 금색 글씨로 바뀐 뒤 1초쯤 머문다.
+        /// </summary>
         public void ShowCounter(int combo)
         {
-            _counterUntil = Time.time + 0.9f;
-            _counterText.text = combo > 1 ? $"COUNTER x{combo}" : "COUNTER";
+            _counterAt = Time.unscaledTime;
+            _counterUntil = Time.time + 1.6f;
+            _counterText.text = combo > 1 ? $"COUNTER<size=60%> x{combo}</size>" : "COUNTER";
             _counterText.gameObject.SetActive(true);
+            _speedBurstUntil = Time.unscaledTime + 0.45f;
+        }
+
+        float _counterAt, _speedBurstUntil;
+
+        void UpdateCounterText()
+        {
+            if (!_counterText.gameObject.activeSelf) return;
+            float age = Time.unscaledTime - _counterAt;
+            if (age > 1.6f) { _counterText.gameObject.SetActive(false); return; }
+            var ink = new Color(0.03f, 0.03f, 0.04f);
+            var goldTop = new Color(1f, 0.93f, 0.72f);
+            var goldBottom = new Color(0.86f, 0.52f, 0.16f);
+            Color top, bottom;
+            float scale;
+            if (age < 0.2f)
+            {
+                // 화면을 덮는 먹 글씨가 쪼그라든다
+                float k = age / 0.2f;
+                scale = Mathf.Lerp(3.4f, 1.08f, 1f - (1f - k) * (1f - k));
+                top = bottom = ink;
+            }
+            else if (age < 0.38f)
+            {
+                float k = (age - 0.2f) / 0.18f;
+                scale = Mathf.Lerp(1.08f, 1f, k);
+                top = Color.Lerp(ink, Color.white, k);
+                bottom = Color.Lerp(ink, new Color(0.8f, 0.82f, 0.86f), k);
+            }
+            else
+            {
+                float k = Mathf.Clamp01((age - 0.38f) / 0.2f);
+                scale = 1f;
+                top = Color.Lerp(Color.white, goldTop, k);
+                bottom = Color.Lerp(new Color(0.8f, 0.82f, 0.86f), goldBottom, k);
+            }
+            float alpha = age < 1.3f ? 1f : Mathf.Clamp01((1.6f - age) / 0.3f);
+            top.a = bottom.a = alpha;
+            _counterText.colorGradient = new TMPro.VertexGradient(top, top, bottom, bottom);
+            _counterText.rectTransform.localScale = Vector3.one * scale;
+        }
+
+        /// <summary>
+        /// 챔질 등급 (원작 0:43.0~0:43.8): HIT가 쾅 찍혀 작아지며 사라지면 그 자리에 PERFECT!!! 가 주황 빛무리와 함께 터진다.
+        /// </summary>
+        void UpdateGradeText()
+        {
+            var fishing = Game.Fishing;
+            float age = Time.unscaledTime - _hitAt - 0.42f;
+            bool show = age >= 0f && age < 1.3f && fishing.LastGrade > HookGrade.Bad;
+            _gradeText.gameObject.SetActive(show);
+            _gradeGlow.gameObject.SetActive(show && age < 0.5f);
+            if (!show) return;
+            _gradeText.text = fishing.LastGrade switch
+            {
+                HookGrade.SoSo => "SO SO~",
+                HookGrade.Good => "GOOD!",
+                HookGrade.Great => "GREAT!!",
+                _ => "PERFECT!!!",
+            };
+            float pop = age < 0.1f ? Mathf.Lerp(1.6f, 1f, age / 0.1f) : 1f;
+            _gradeText.rectTransform.localScale = Vector3.one * pop;
+            _gradeText.alpha = age < 1f ? 1f : (1.3f - age) / 0.3f;
+            var g = _gradeGlow.color;
+            g.a = age < 0.5f ? Mathf.Sin(age / 0.5f * Mathf.PI) * 0.85f : 0f;
+            _gradeGlow.color = g;
+            _gradeGlow.rectTransform.localScale = new Vector3(1f + age * 1.2f, 1f + age * 0.6f, 1f);
         }
 
         public void ShowEscape() => _escapeUntil = Time.time + 2.5f;
@@ -305,19 +391,20 @@ namespace Fishing.UI
                 _hitText.gameObject.SetActive(true);
             }
             if (!_hitText.gameObject.activeSelf) return;
+            // 원작 0:43.0~0:43.4: 크게 찍힌 HIT가 작아지며 0.45초 만에 사라지고 등급 글씨로 넘어간다
             float age = Time.unscaledTime - _hitAt;
-            if (age > 1.1f) { _hitText.gameObject.SetActive(false); return; }
-            float slam = age < 0.12f ? Mathf.Lerp(2.6f, 1f, age / 0.12f) : 1f + Mathf.Max(0f, 0.25f - age) * 0.3f;
+            if (age > 0.5f) { _hitText.gameObject.SetActive(false); return; }
+            float slam = age < 0.1f ? Mathf.Lerp(2.4f, 1f, age / 0.1f) : Mathf.Lerp(1f, 0.62f, (age - 0.1f) / 0.4f);
             _hitText.rectTransform.localScale = Vector3.one * slam;
-            _hitText.alpha = age < 0.75f ? 1f : Mathf.Clamp01((1.1f - age) / 0.35f);
+            _hitText.alpha = age < 0.3f ? 1f : Mathf.Clamp01((0.5f - age) / 0.2f);
         }
 
         public void PopDamage(Vector3 world, float amount, bool big)
         {
-            // 원작: 금색 숫자가 툭 튀어나왔다가 떠오른다
-            var t = UIFactory.Text(_root, Mathf.Max(1, Mathf.RoundToInt(amount)).ToString(), big ? 58 : 38,
-                big ? new Color(1f, 0.78f, 0.3f) : new Color(1f, 0.86f, 0.5f), TextAnchor.MiddleCenter, FontStyle.Bold);
-            UIFactory.Outline(t, new Color(0.3f, 0.15f, 0.02f, 0.85f), 1.5f);
+            // 원작: 물보라 아래쪽에 주황 숫자가 툭 튀어나왔다가 떠오른다 (카운터는 크게)
+            var t = UIFactory.Text(_root, Mathf.Max(1, Mathf.RoundToInt(amount)).ToString(), big ? 54 : 36,
+                big ? new Color(1f, 0.7f, 0.25f) : new Color(1f, 0.62f, 0.28f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            UIFactory.Outline(t, new Color(0.35f, 0.12f, 0.02f, 0.9f), 2f);
             t.rectTransform.At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(200, 70));
             _pops.Add((t, world + new Vector3(Random.Range(-0.6f, 0.6f), 0.3f, 0f), Time.time, big));
         }
@@ -411,8 +498,10 @@ namespace Fishing.UI
             // 카운터 찬스: 속도선 + 화살표
             bool counterChance = (f.CounterChance || DebugForceCounterChance) && !f.Landing;
             float pulse = 0.75f + Mathf.Sin(Time.time * 12f) * 0.25f;
-            _speedLines.gameObject.SetActive(counterChance);
-            if (counterChance)
+            // 집중선: 카운터 찬스 동안, 그리고 카운터가 터진 순간(원작 0:46.3~0:46.8), 랜딩 찬스 동안(1:52)
+            bool lines = counterChance || Time.unscaledTime < _speedBurstUntil || f.Landing;
+            _speedLines.gameObject.SetActive(lines);
+            if (lines)
             {
                 var size = _root.rect.size;
                 float side = Mathf.Sqrt(size.x * size.x + size.y * size.y) * 1.08f;
@@ -496,12 +585,8 @@ namespace Fishing.UI
                 _landingRoot.localScale = Vector3.one * s;
             }
 
-            if (_counterText.gameObject.activeSelf)
-            {
-                float left = _counterUntil - Time.time;
-                _counterText.rectTransform.localScale = Vector3.one * (1f + Mathf.Max(0f, left - 0.6f) * 1.5f);
-                if (left <= 0f) _counterText.gameObject.SetActive(false);
-            }
+            UpdateCounterText();
+            UpdateGradeText();
 
             UpdatePops();
 

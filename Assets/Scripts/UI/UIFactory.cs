@@ -52,6 +52,16 @@ namespace Fishing.UI
             return Mathf.Clamp01((1f - d) * 64f);
         });
 
+        /// <summary>가운데가 밝고 가장자리로 부드럽게 사라지는 빛무리 (챔질 물빛, PERFECT 빛무리).</summary>
+        public static Sprite Glow => _glow ??= MakeSprite(128, (x, y) =>
+        {
+            float d = Mathf.Sqrt(x * x + y * y);
+            float a = Mathf.Clamp01(1f - d);
+            return a * a * (3f - 2f * a);
+        });
+
+        static Sprite _glow;
+
         public static Sprite Ring => _ring ??= MakeSprite(128, (x, y) =>
         {
             float d = Mathf.Sqrt(x * x + y * y);

@@ -97,7 +97,7 @@ Assets/
       ResultPanel.cs, ResultFishStage.cs           결과 창, 3D 물고기(전용 카메라 → 투명 렌더 텍스처). 자세: 물고기는 옆모습으로 튀어 오름,
                                                    장어처럼 긴 고기(몸길이/몸높이 > 7)는 60° 굴려 S자 꿈틀이 보이게, 잡동사니는 비스듬히 내려다보며 천천히 돈다
       DexPanel.cs                도감 (아이콘·실루엣, 3D 상세 무대)
-      KeepNetPanel.cs, ShopPanel.cs, InventoryPanel.cs, UpgradePanel.cs, CharacterPanel.cs(내 캐릭터: 장비 칸·최종 능력치 / 의상 탭), ExchangePanel.cs, AquariumPanel.cs
+      KeepNetPanel.cs, ShopPanel.cs, InventoryPanel.cs, UpgradePanel.cs, CharacterPanel.cs(내 캐릭터: 장비 칸·최종 능력치 / 의상 탭), ScreenFlash.cs(장면 컷을 가리는 화면 번쩍임), ExchangePanel.cs, AquariumPanel.cs
       InfoPanels.cs              퀘스트 창 (이야기·일일 의뢰·대물 도전·빙고·출석·업적·대회·일지 탭), 도움말
       OptionsPanel.cs            옵션 (O)
       FishingAreaPanel.cs        낚시터 목록 (거점 탭, 거점 지도, MAP/FISH INFO)

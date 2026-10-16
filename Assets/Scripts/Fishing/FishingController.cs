@@ -46,6 +46,14 @@ namespace Fishing.Angling
         public float FlyingDistance { get; private set; }
         /// <summary>챔질에 성공해 파이팅으로 넘어가기 직전(낚싯대를 홱 채는 연출 중).</summary>
         public bool Hooking => _hookAt > 0f;
+        /// <summary>본신이 온 뒤 흐른 시간 (본신이 아니면 0).</summary>
+        public float BiteTime => State == FishingState.Bite ? _biteTimer : 0f;
+        /// <summary>원작 0:36.5~0:39.5: 본신 느낌표가 먼저 뜨고, 잠깐 뒤 챔질 클로즈업으로 끊어 넘어간다.</summary>
+        public const float BiteCutDelay = 0.45f;
+        /// <summary>예신(찌 깔짝임)이 한 번이라도 왔다: 원작 "손 끝으로부터 미세한 떨림이 느껴집니다."</summary>
+        public bool Trembling => State == FishingState.Waiting && _nibbleSeen;
+        bool _nibbleSeen;
+        bool _userOrbited;
         /// <summary>랜딩 직후 결과 화면 전 환호 컷.</summary>
         public bool Cheering => _cheering;
         /// <summary>대기 중 좌클릭으로 찌·루어를 감고 있다 (캐릭터 릴 감기 동작).</summary>
@@ -448,13 +456,24 @@ namespace Fishing.Angling
                     break;
                 case FishingState.Waiting:
                     if (Time.time < _castShotUntil) { shot = Fishing.PlayerSystems.CameraRig.ShotKind.Cast; rig.CastLookAt = _bobber.Position; }
+                    else
+                    {
+                        // 원작 구도로 찌를 기다린다. 오른쪽 버튼으로 시점을 돌리면 그때부터는 손으로 돌린 시점
+                        if (Input.GetMouseButton(1) && !UiBlocking) _userOrbited = true;
+                        if (!_userOrbited && !_lureMode && !Trolling)
+                        {
+                            shot = Fishing.PlayerSystems.CameraRig.ShotKind.Wait;
+                            rig.BiteLookAt = _bobber.Position;
+                        }
+                    }
                     break;
                 case FishingState.Bite:
-                    shot = Fishing.PlayerSystems.CameraRig.ShotKind.Bite;
+                    // 느낌표가 뜨는 동안은 그대로, 그다음 어깨 뒤 낮은 클로즈업으로 끊어 넘어간다
+                    if (_biteTimer >= BiteCutDelay || _hookAt > 0f) shot = Fishing.PlayerSystems.CameraRig.ShotKind.Bite;
                     rig.BiteLookAt = _bobber.Position;
                     break;
                 case FishingState.Result:
-                    if (_cheering) shot = Fishing.PlayerSystems.CameraRig.ShotKind.Cheer;
+                    if (_cheering) shot = _resultShot;
                     break;
             }
             rig.Shot = shot;
@@ -518,6 +537,9 @@ namespace Fishing.Angling
             }
             _nextNibbleAt = _waitTimer * Random.Range(0.3f, 0.7f);
             _nibbleActive = false;
+            _nibbleSeen = false;
+            _userOrbited = false;
+            Game.Player.BodyLean = 0f;
             _shake = 0f;
             _shakeSpent = Input.GetMouseButton(0);
             _bobber.ResetFloat();
@@ -584,6 +606,7 @@ namespace Fishing.Angling
             if (_nibblesLeft > 0 && _waitTimer <= _nextNibbleAt)
             {
                 _nibblesLeft--;
+                _nibbleSeen = true;
                 _bobber.Nibble();
                 Game.Sound.Tick();
                 Game.Player.Rod.Kick(70f); // 예신: 초릿대가 톡
@@ -596,6 +619,7 @@ namespace Fishing.Angling
             {
                 State = FishingState.Bite;
                 _biteTimer = 0f;
+                Game.Player.BodyLean = 12f;  // 원작 챔질 클로즈업: 무릎을 굽히고 앞으로 숙여 버틴다
                 Game.Player.Rod.Kick(160f); // 본신: 초릿대가 쭉 빨려 들어간다
                 BigBite = PendingBite.IsTrophy || PendingBite.Species.Rarity >= 4;
                 Game.Sound.Plop();
@@ -958,7 +982,7 @@ namespace Fishing.Angling
             HitStop(0.09f, 0.15f);
             _rodView.Kick(420f); // 낚싯대가 확 휘었다가 튕겨 돌아온다
             var pos = _rodView.FishWorldPos(Fight);
-            Effects.Splash(pos, 30, 1.6f);
+            Effects.BigSplash(pos, 0.8f);
             Game.UI.Fight.ShowCounter(Fight.Combo);
             Game.UI.Fight.PopDamage(pos, Fight.LastCounterDamage, true);
         }
@@ -969,7 +993,7 @@ namespace Fishing.Angling
             Rumble.Pulse(0.7f, 0.2f, 0.6f);   // 질주: 묵직하게 길게
             Game.Sound.Splash(1f);
             var pos = _rodView.FishWorldPos(Fight);
-            Effects.Splash(pos, 22, 1.3f);
+            Effects.BigSplash(pos, 0.6f);
             Effects.Ripple(pos, 2.2f, 1f);
             Game.CameraRig.Shake(0.55f);
             Game.CameraRig.Punch(2.5f);
@@ -1074,10 +1098,13 @@ namespace Fishing.Angling
             Cursor.lockState = _cursorWasLocked ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible = true;
             var fishPos = _rodView.FishWorldPos(f);
-            _rodView.Hide();
-            Game.CameraRig.ExitFight();
-            Game.Player.SetVisible(true);
-            Game.Player.RodPitch = 35f;
+            if (outcome != FightOutcome.Landed)
+            {
+                _rodView.Hide();
+                Game.CameraRig.ExitFight();
+                Game.Player.SetVisible(true);
+                Game.Player.RodPitch = 35f;
+            }
 
             float wear = Mathf.Lerp(0.5f, 3f, f.Length / 100f) * (f.Tension > 0.9f ? 1.5f : 1f);
             p.Data.rodDurability = Mathf.Max(0f, p.Data.rodDurability - wear);
@@ -1089,13 +1116,14 @@ namespace Fishing.Angling
             {
                 Game.Sound.Snap();
                 Rumble.Pulse(1f, 1f, 0.45f);   // 줄 끊김
-                Game.Toast(outcome switch
+                // 원작처럼 화면 위쪽 흰 경고 카드 (빨간 WARNING 표지)
+                Game.UI.Hud.ShowWarning(outcome switch
                 {
-                    FightOutcome.LineBroken => "툭! 줄이 끊어졌다... 장력을 조심하세요.",
-                    FightOutcome.HookOut => "바늘이 빠졌다... 줄을 너무 느슨하게 했어요.",
-                    FightOutcome.LineRunOut => "줄이 모두 풀려버렸다...",
-                    _ => "놓쳤다..."
-                }, ToastKind.Warn);
+                    FightOutcome.LineBroken => "낚싯줄이 끊어졌습니다! 장력이 HIGH를 넘지 않게 조심하세요.",
+                    FightOutcome.HookOut => "바늘이 빠졌습니다! 줄을 너무 느슨하게 두었어요.",
+                    FightOutcome.LineRunOut => "낚싯줄이 모두 풀려 버렸습니다! 거리를 좁히세요.",
+                    _ => "물고기를 놓쳤습니다."
+                });
                 Fight = null;
                 ToIdle();
                 // 줄이 툭 끊기면 움찔 (ToIdle이 낚싯대 자세를 돌린 뒤에 한 번짜리 동작)
@@ -1106,16 +1134,12 @@ namespace Fishing.Angling
 
             Game.Sound.Success();
             Rumble.Pulse(0.5f, 0.8f, 0.35f);   // 랜딩
-            if (f.Species.Boss || f.Species.Rarity >= 5) Game.Player.PlayExcited();
-            else Game.Player.PlayCheer();
             // 대물이면 근처 NPC가 돌아보며 박수
             if (f.Species.IsTrophy(f.Length) || f.Species.Rarity >= 4)
                 Fishing.Characters.NpcAngler.Applaud(Game.Player.transform.position, Game.Player.transform);
-            Effects.Splash(fishPos, 40, 1.8f);
-            // 원작 1:12: 결과 화면 전에 캐릭터 얼굴 클로즈업
-            _cheering = true;
-            Game.Player.RodPitch = 70f;
-            Game.Player.BodyLean = 8f;
+            // 원작 1:53: 물고기 자리에서 하얀 물보라가 화면 앞까지 터진다
+            Effects.BigSplash(fishPos, 1.2f);
+            Game.CameraRig.Shake(0.8f);
             var species = f.Species;
             var caught = new CaughtFish
             {
@@ -1140,16 +1164,131 @@ namespace Fishing.Angling
 
             State = FishingState.Result;
             Fight = null;
-            StartCoroutine(ShowResultAfterCheer(caught, exp, record, prevBest, prevBestDay, species, p, newSpecies));
+            StartCoroutine(LandedSequence(f, caught, exp, record, prevBest, prevBestDay, species, p, newSpecies));
         }
 
-        System.Collections.IEnumerator ShowResultAfterCheer(CaughtFish caught, int exp, bool record, float prevBest, int prevBestDay,
+        /// <summary>결과 화면에서 캐릭터가 손에 들어 보일 만한 크기인가 (원작: 작은 고기는 손에 들고, 큰 고기는 물 위로 튀어 오른다).</summary>
+        public static bool HoldableCatch(FishSpecies s, float length) => s != null && !s.IsJunk && length <= 55f;
+
+        /// <summary>결과 화면 구도: Catch(줄 끝에 매단 고기) → Show(손에 든 고기) 또는 Follow(큰 고기·잡동사니).</summary>
+        Fishing.PlayerSystems.CameraRig.ShotKind _resultShot;
+        GameObject _caughtFish;
+        Light _showLight;
+        /// <summary>3인칭 줄 끝 (줄 끝에 매단 고기). null이면 이 줄은 안 그린다.</summary>
+        Vector3? _catchLineEnd;
+
+        /// <summary>
+        /// 랜딩 성공 뒤 결과 화면까지 (원작 2013 홍현 영상 1:53.0~1:56.0, 프레임 단위로 맞춤):
+        ///  1. 1인칭 그대로 낚싯대를 세워 들어 올리고 시선이 위로 따라간다 (1.3초). 고기가 물 밖으로 끌려 나온다
+        ///  2. 하얗게 번쩍인 뒤 3인칭 옆모습으로 끊어 넘어간다: 치켜든 낚싯대 줄 끝에 고기가 대롱대롱, 왼손으로 낚아챈다 (1.25초)
+        ///  3. RESULT: 작은 고기는 얼굴 앞 정면 구도에서 왼손으로 들어 보이고, 큰 고기는 물 위로 튀어 오르는 모습 (결과 창의 3D 물고기)
+        /// </summary>
+        System.Collections.IEnumerator LandedSequence(FishFight f, CaughtFish caught, int exp, bool record, float prevBest, int prevBestDay,
             FishSpecies species, PlayerProfile p, bool firstGet)
         {
-            yield return new WaitForSecondsRealtime(1.1f);
-            _cheering = false;
-            Game.UI.Result.Show(caught, exp, record, prevBest, prevBestDay, firstGet, keep =>
+            var rig = Game.CameraRig;
+            // 1. 들어 올리기
+            const float liftTime = 1.3f;
+            for (float t = 0f; t < liftTime; t += Time.unscaledDeltaTime)
             {
+                float k = Mathf.Clamp01(t / (liftTime * 0.85f));
+                _rodView.Lift = k;
+                rig.FightLift = k;
+                yield return null;
+            }
+            Fishing.UI.ScreenFlash.Flash(new Color(1f, 1f, 1f, 0.95f), 0.05f, 0.35f);
+            _rodView.Hide();
+            rig.FightLift = 0f;
+            rig.ExitFight();
+            var player = Game.Player;
+            player.SetVisible(true);
+
+            bool holdable = HoldableCatch(species, f.Length);
+            // 2. 줄 끝에 매단 고기 (옆모습)
+            _caughtFish = species.IsJunk && !FishModels.HasJunkModel(species) ? null : FishModels.Create(species, f.Length, null);
+            if (_caughtFish != null) FishModels.Play(_caughtFish, species.IsJunk ? FishModels.IdleHover : FishModels.Flop, 1.2f, 0f);
+            player.RodPitch = 48f;
+            player.RodPitchSpeed = 30f;
+            player.BodyLean = -6f;
+            _resultShot = Fishing.PlayerSystems.CameraRig.ShotKind.Catch;
+            _cheering = true;
+            const float catchTime = 1.25f;
+            bool grabbed = false;
+            for (float t = 0f; t < catchTime; t += Time.unscaledDeltaTime)
+            {
+                if (_caughtFish != null)
+                {
+                    var tip = player.RodTip.position;
+                    float swing = Mathf.Sin(t * 7f) * 0.12f * (1f - t / catchTime);
+                    var hang = tip + Vector3.down * Mathf.Lerp(0.9f, 1.05f, t / catchTime) + player.Model.right * swing;
+                    // 0.55초쯤 왼손을 뻗어 고기를 잡고 몸 쪽으로 당긴다
+                    if (holdable && t > 0.55f && !grabbed)
+                    {
+                        grabbed = true;
+                        player.HoldPoint = null;
+                        player.HoldFish(_caughtFish.transform);
+                    }
+                    if (!grabbed)
+                    {
+                        _caughtFish.transform.position = hang;
+                        _caughtFish.transform.rotation = Quaternion.LookRotation(Vector3.up, player.Model.right) * Quaternion.Euler(0f, 0f, Mathf.Sin(t * 9f) * 20f);
+                    }
+                    _catchLineEnd = grabbed ? (Vector3?)null : hang + Vector3.up * (f.Length / 200f);
+                }
+                yield return null;
+            }
+            _catchLineEnd = null;
+
+            // 3. RESULT
+            bool held = holdable && _caughtFish != null;
+            if (held)
+            {
+                _resultShot = Fishing.PlayerSystems.CameraRig.ShotKind.Show;
+                // 왼손을 얼굴 옆으로 들어 고기를 보여 준다. 고기 머리는 위, 옆구리는 카메라 쪽
+                var m = player.Model;
+                player.HoldPoint = player.Head.position - m.right * 0.42f + m.forward * 0.35f - Vector3.up * 0.18f;
+                player.HoldFish(_caughtFish.transform);
+                _caughtFish.transform.rotation = Quaternion.LookRotation(Vector3.up, m.right); // 머리 위, 옆구리(+X)가 앞(카메라 쪽)
+                FishModels.Play(_caughtFish, FishModels.Flop, 0.6f, 0.2f);
+                // 낚싯대는 오른쪽으로 비켜 들어 얼굴을 가리지 않게 (원작 1:57)
+                player.RodPitch = 40f;
+                player.RodYaw = 38f;
+                // 밤에도 얼굴과 고기가 보이게 앞에서 비추는 보조광 (결과 창을 닫으면 끈다)
+                _showLight = new GameObject("ResultFill").AddComponent<Light>();
+                _showLight.type = LightType.Point;
+                _showLight.range = 4f;
+                _showLight.intensity = 1.6f;
+                _showLight.color = new Color(1f, 0.95f, 0.88f);
+                _showLight.shadows = LightShadows.None;
+                _showLight.transform.position = player.Head.position + m.forward * 1.3f + Vector3.up * 0.3f - m.right * 0.3f;
+            }
+            else
+            {
+                // 큰 고기·잡동사니: 결과 창의 3D 물고기가 물 위로 튀어 오른다. 캐릭터는 환호
+                if (_caughtFish != null) Destroy(_caughtFish);
+                _caughtFish = null;
+                if (_showLight != null) Destroy(_showLight.gameObject);
+                _showLight = null;
+                Game.Player.RodYaw = 0f;
+                _resultShot = Fishing.PlayerSystems.CameraRig.ShotKind.Follow;
+                player.RodPitch = 70f;
+                if (species.Boss || species.Rarity >= 5) player.PlayExcited();
+                else player.PlayCheer();
+            }
+            ShowResult(caught, exp, record, prevBest, prevBestDay, species, p, firstGet, held);
+        }
+
+        void ShowResult(CaughtFish caught, int exp, bool record, float prevBest, int prevBestDay,
+            FishSpecies species, PlayerProfile p, bool firstGet, bool held)
+        {
+            Game.UI.Result.Show(caught, exp, record, prevBest, prevBestDay, firstGet, held, keep =>
+            {
+                _cheering = false;
+                Game.Player.HoldFish(null);
+                Game.Player.HoldPoint = null;
+                if (_caughtFish != null) Destroy(_caughtFish);
+                _caughtFish = null;
+                _resultShot = Fishing.PlayerSystems.CameraRig.ShotKind.Follow;
                 if (keep && !species.IsJunk)
                 {
                     if (p.KeepNetFull)
@@ -1174,6 +1313,15 @@ namespace Fishing.Angling
 
         void UpdateLine()
         {
+            if (State == FishingState.Result && _catchLineEnd.HasValue)
+            {
+                // 줄 끝에 매단 고기까지 곧게
+                _line.enabled = true;
+                var tip = Game.Player.RodTip.position;
+                for (int i = 0; i < _line.positionCount; i++)
+                    _line.SetPosition(i, Vector3.Lerp(tip, _catchLineEnd.Value, i / (float)(_line.positionCount - 1)));
+                return;
+            }
             bool show = State == FishingState.Casting || State == FishingState.Waiting || State == FishingState.Bite;
             _line.enabled = show;
             if (!show) return;
