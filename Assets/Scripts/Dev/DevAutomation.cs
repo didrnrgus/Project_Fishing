@@ -111,6 +111,37 @@ namespace Fishing.Dev
             Game.CameraRig.Distance = 9f;
             yield return new WaitForSeconds(1f);
             yield return Shot("00g_park_trees");
+
+            // 받은 캐릭터 (ExtraNpcs): 낚시 아이돌 유니티짱·유니티짱 낚시꾼, 밤의 좀비·귀신
+            if (Fishing.Characters.CharacterLibrary.Lib != null)
+            {
+                float day0 = Game.Clock.Minutes;
+                Game.Player.Teleport(new Vector3(11f, 1.1f, -63.5f), 180f);
+                Game.CameraRig.Yaw = 150f;
+                Game.CameraRig.Pitch = 8f;
+                Game.CameraRig.Distance = 5f;
+                yield return new WaitForSeconds(2.2f);
+                yield return Shot("00h_idol_greeting");
+                Game.Player.Teleport(new Vector3(34f, 1.1f, -66f), -20f);
+                Game.CameraRig.Yaw = -30f;
+                Game.CameraRig.Distance = 6f;
+                yield return new WaitForSeconds(1.5f);
+                yield return Shot("00i_unitychan_angler");
+                Game.Clock.Set(Game.Clock.Day, 23 * 60);
+                Game.Player.Teleport(new Vector3(-4f, 1.1f, -64.5f), 200f);
+                Game.CameraRig.Yaw = 170f;
+                Game.CameraRig.Pitch = 10f;
+                Game.CameraRig.Distance = 6f;
+                yield return new WaitForSeconds(3f);
+                yield return Shot("00j_night_zombie");
+                Game.Player.Teleport(new Vector3(Fishing.World.HanRiverMap.BridgeX + 15f, 1.1f, Fishing.World.HanRiverMap.RiverMinZ - 10f), -34f);
+                Game.CameraRig.Yaw = -34f;
+                Game.CameraRig.Pitch = 6f;
+                Game.CameraRig.Distance = 5f;
+                yield return new WaitForSeconds(3.5f);
+                yield return Shot("00k_night_ghost");
+                Game.Clock.Set(Game.Clock.Day, day0);
+            }
             Game.CameraRig.Yaw = Game.Player.Yaw;
             Game.CameraRig.Distance = 7f;
 

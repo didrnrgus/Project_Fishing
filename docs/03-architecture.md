@@ -275,6 +275,7 @@ GameBootstrap.Start → GameUI.EnterLobby (Mode=Lobby, 카메라 고정)
 | `World/GrassField.cs` + `Shaders/Grass.shader` | 풀·들꽃 포기: 지형 풀 층·풀 텍스처 바닥을 레이캐스트로 훑어 심고 48m 칸 메쉬로 굽는다, 바람 흔들림, 130m 밖 칸은 끔(`GrassCuller`). `MapLoader`가 월드를 지은 직후 부른다 |
 | `Characters/RodGrip.cs` | 3인칭 오른손이 낚싯대를 쥔다: 릴 시트를 손바닥 가운데에, 손가락 마디를 낚싯대 축으로 감는다 (플레이어·NPC 낚시꾼) |
 | `Fishing/FpHand.cs` | 1인칭 주먹 메쉬: 손잡이(오른손)·릴 노브(왼손, 거울)를 감아 쥔 손가락 튜브·엄지·손등·손목 |
+| `Characters/CharacterLibrary.cs` · `ExternalCharacters.cs` · `ExtraNpcs.cs` + `Shaders/Ghost.shader` | 받은 휴머노이드 캐릭터(유니티짱·좀비·X Bot)를 같은 동작 시스템으로 움직인다. `CharacterLook.External`, 낚시 아이돌(`IdolRoutine`), 밤 손님(`NightVisitor`: 좀비·귀신) |
 | `UIPanel.RowCursor` | 창 목록을 쌓으면 자동으로 잘라내기 + 휠 스크롤 + 스크롤바 (key로 스크롤 위치 기억) |
 
 새 셰이더는 코드에서 `Shader.Find`로 찾으므로 `ProjectSettings/GraphicsSettings.asset` Always Included와 `ProjectTools.RuntimeShaders`에 넣었다 (meta의 guid를 고정해 두었다).

@@ -42,6 +42,23 @@ namespace Fishing.Characters
         public const string Excited = "Excited";
         public const string Rallying = "Rallying";
         public const string Scared = "Scared";
+        // 받은 Mixamo 동작 (Resources/Animations/MixamoExtra)
+        public const string Angry = "Angry";
+        public const string JoyfulJump = "JoyfulJump";
+        public const string Greeting = "Greeting";
+        public const string OldManIdle = "OldMan_Idle_Loop";
+        public const string PoseFemale = "Pose_Female_Loop";
+        public const string DanceHipHop = "Dance_HipHop_Loop";
+        public const string DanceRumba = "Dance_Rumba_Loop";
+        public const string DanceCapoeira = "Dance_Capoeira_Loop";
+        public const string Dig = "Dig_Loop";
+        public const string SitLaugh = "Sit_Laugh_Loop";
+        public const string ZombieWalk = "Zombie_Walk_Loop";
+        public const string ZombieIdle = "Zombie_Idle_Loop";
+        public const string ZombieScream = "Zombie_Scream";
+
+        /// <summary>그 이름의 클립이 있는지 (받은 에셋을 지운 프로젝트에서는 없을 수 있다).</summary>
+        public static bool Has(string clipName) => Clips.ContainsKey(clipName) || Clips.ContainsKey(clipName + "_M");
 
         static Dictionary<string, AnimationClip> _clips;
 
@@ -65,7 +82,7 @@ namespace Fishing.Characters
             {
                 if (_clips != null) return _clips;
                 _clips = new Dictionary<string, AnimationClip>();
-                foreach (var folder in new[] { "Animations/UAL1_Standard", "Animations/Mixamo", "Animations/KevinIglesias" })
+                foreach (var folder in new[] { "Animations/UAL1_Standard", "Animations/Mixamo", "Animations/KevinIglesias", "Animations/MixamoExtra" })
                     foreach (var c in Resources.LoadAll<AnimationClip>(folder))
                     {
                         var name = c.name.Contains("|") ? c.name.Substring(c.name.LastIndexOf('|') + 1) : c.name;

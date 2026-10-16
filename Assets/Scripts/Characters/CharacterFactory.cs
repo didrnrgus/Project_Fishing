@@ -35,6 +35,8 @@ namespace Fishing.Characters
         public string ShoeModel = "Shoes_Sneaker";
         public string Name;
         public string Title;
+        /// <summary>받은 휴머노이드 캐릭터 id ("unitychan", "zombie", "ghost"). 있으면 옷 조합 대신 그 모델을 쓴다 (ExternalCharacters).</summary>
+        public string External;
 
         public static CharacterLook Player => new CharacterLook { Name = "강태공", Title = "초보 조사", Gloves = true };
     }
@@ -68,6 +70,11 @@ namespace Fishing.Characters
         /// <summary>캐릭터를 만든다. 반환값의 루트에 Animator와 CharacterAnimator가 붙어 있다. 발이 원점.</summary>
         public static GameObject Create(CharacterLook look, Transform parent)
         {
+            if (!string.IsNullOrEmpty(look.External))
+            {
+                var ext = ExternalCharacters.Create(look.External, parent, look.Name);
+                if (ext != null) return ext;
+            }
             string model = ModelName(look.Female);
             var prefab = Resources.Load<GameObject>("Characters/" + model) ?? Resources.Load<GameObject>("Characters/" + ModelName(false));
             var go = Object.Instantiate(prefab, parent, false);

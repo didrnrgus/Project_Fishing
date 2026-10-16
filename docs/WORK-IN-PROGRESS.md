@@ -117,15 +117,18 @@
 
 `Editor/VegetationBake`가 빌드할 때 위 프리팹·텍스처를 `Resources/VegetationLibrary.asset`에 묶는다 (Resources 밖이라도 참조로 빌드에 들어간다). 에셋 폴더를 지우면 예전 방식(NSK2 나무·절차적 바위·풀 없음)으로 돌아간다.
 
-### 받은 캐릭터 에셋 (2026-10-15 임포트, 아직 게임에 연결 안 함 — 다음에 이어서)
+### 받은 캐릭터·동작 (2026-10-16 연결)
 
-| 에셋 | 폴더 | 쓸 곳 (계획) |
+| 에셋 | 폴더 | 쓰는 곳 |
 |---|---|---|
-| [Unity-Chan! Model](https://assetstore.unity.com/packages/3d/characters/unity-chan-model-18705) | `Assets/unity-chan!` | 서브컬처풍 NPC(조합 직원·낚시꾼)·플레이어 외형 후보. 유니티짱 라이선스: 라이선스 로고·크레딧 표시 필요 |
-| [Modern Zombie Free](https://assetstore.unity.com/packages/slug/58134) (Artalasky) | `Assets/Zombie` | 밤에만 나오는 이벤트 NPC |
+| [Unity-Chan! Model](https://assetstore.unity.com/packages/3d/characters/unity-chan-model-18705) | `Assets/unity-chan!` | 한강 데크 옆 낚시꾼 NPC "유니티짱"(낚싯대를 쥔다), 공원 "낚시 아이돌"(포즈·힙합·룸바·카포에이라를 돌아가며, 다가가면 바라보고 손 흔들어 인사). 유니티짱 라이선스 → README 크레딧 |
+| [Modern Zombie Free](https://assetstore.unity.com/packages/slug/58134) (Artalasky) | `Assets/Zombie` | 밤(21~04시)에만 한강 둔치·청진포구를 비틀비틀 오간다. 5m 안이면 멈춰 돌아보고 비명 (해치지 않음) |
+| Mixamo X Bot | `Assets/MixamoCharacters/XBot.fbx` | 귀신: 반투명 흰 몸(`Fishing/Ghost`: 가장자리 빛·발끝 사라짐·일렁임) + 발밑 푸른 빛. 밤에만 한강 다리 밑·둔치, 거문도·등대섬 등대 언덕, 제주 바닷가. 6m 안으로 다가가면 사라졌다가 40~90초 뒤 다른 곳에 |
+| Mixamo 동작 25개 (X Bot·Scary Zombie Pack) | `Assets/Resources/Animations/MixamoExtra` | 클립 이름은 `AssetImportRules.MixamoExtraClips`. 플레이어: 대물 환호 40%는 깡충 뛰기(Joyful Jump), 줄 끊김 35%는 발 구르며 화내기(Angry). 좀비 걷기·대기·비명, 아이돌 춤·포즈·인사 |
 
-- 더 받을 것: Mixamo(mixamo.com Characters 탭, FBX for Unity · T-pose) `swat`·`soldier`·`zombie`·`vampire`·`mutant` 검색 → `Assets/MixamoCharacters/`. 군인·특공대는 항구 순찰 NPC, 좀비·귀신(여성 캐릭터에 반투명 셰이더)은 밤 이벤트 NPC로.
-- 연결할 때: Mixamo 동작(대기·걷기·환호 등)을 Humanoid로 돌려 쓰려면 각 모델 임포트 설정을 Humanoid로, NpcAngler가 CharacterFactory 대신 외부 프리팹을 쓰는 경로를 만든다. 빌드에 넣으려면 VegetationLibrary처럼 참조 묶음 에셋.
+- 구조: `Characters/CharacterLibrary`(Resources 참조 묶음, 빌드 때 `Editor/CharacterLibraryBake`) → `ExternalCharacters.Create`(데모 스크립트 떼고 SpringBone·AutoBlink만, 뼈 높이로 키 맞춤, 180° 돌림, CharacterAnimator) → `CharacterLook.External`로 NpcAngler에도 쓴다. 손은 휴머노이드 매핑으로 찾아 `RodGrip`이 낚싯대를 쥐게 한다. 배치는 `Characters/ExtraNpcs`(MapLoader가 부름).
+- 아직 못 넣은 것: 군인·특공대 — 받은 파일은 동작뿐이고 모델이 없었다. Mixamo Characters 탭에서 `swat`·`soldier` 모델을 받아 `Assets/MixamoCharacters/`에 넣으면 항구 순찰 NPC로 연결. 노인 대기·밭일·앉아 웃기 동작은 받았지만 아직 쓰는 곳 없음 (귤밭 할망·대기실 손님 후보).
+- 자동 촬영 `00h_idol_greeting`·`00i_unitychan_angler`·`00j_night_zombie`·`00k_night_ghost`.
 
 ### 사용자가 해야 할 일 (계정 로그인이 필요해서 Claude가 못 한 것)
 

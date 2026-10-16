@@ -29,7 +29,7 @@ namespace Fishing.Characters
             var all = character.GetComponentsInChildren<Transform>(true);
             Transform Bone(string n) => System.Array.Find(all, t => t.name == n);
             var hand = Bone("hand_r");
-            if (hand == null) return null;
+            if (hand == null) return FindHumanoid(character);
             string[] names = { "index", "middle", "ring", "pinky" };
             var fingers = new Transform[4][];
             for (int f = 0; f < 4; f++)
@@ -39,6 +39,26 @@ namespace Fishing.Characters
             }
             var thumb = new[] { Bone("thumb_01_r"), Bone("thumb_02_r"), Bone("thumb_03_r") };
             if (System.Array.Exists(thumb, b => b == null)) thumb = null;
+            return new RodGrip(hand, fingers[1][0], fingers, thumb);
+        }
+
+        /// <summary>받은 휴머노이드 캐릭터 (뼈 이름이 다르다): Animator의 휴머노이드 매핑으로 오른손·손가락을 찾는다.</summary>
+        static RodGrip FindHumanoid(Transform character)
+        {
+            var an = character.GetComponentInChildren<Animator>();
+            if (an == null || !an.isHuman) return null;
+            Transform B(HumanBodyBones b) => an.GetBoneTransform(b);
+            var hand = B(HumanBodyBones.RightHand);
+            var fingers = new[]
+            {
+                new[] { B(HumanBodyBones.RightIndexProximal), B(HumanBodyBones.RightIndexIntermediate), B(HumanBodyBones.RightIndexDistal) },
+                new[] { B(HumanBodyBones.RightMiddleProximal), B(HumanBodyBones.RightMiddleIntermediate), B(HumanBodyBones.RightMiddleDistal) },
+                new[] { B(HumanBodyBones.RightRingProximal), B(HumanBodyBones.RightRingIntermediate), B(HumanBodyBones.RightRingDistal) },
+                new[] { B(HumanBodyBones.RightLittleProximal), B(HumanBodyBones.RightLittleIntermediate), B(HumanBodyBones.RightLittleDistal) },
+            };
+            if (hand == null || System.Array.Exists(fingers, f => System.Array.Exists(f, x => x == null))) return null;
+            var thumb = new[] { B(HumanBodyBones.RightThumbProximal), B(HumanBodyBones.RightThumbIntermediate), B(HumanBodyBones.RightThumbDistal) };
+            if (System.Array.Exists(thumb, x => x == null)) thumb = null;
             return new RodGrip(hand, fingers[1][0], fingers, thumb);
         }
 

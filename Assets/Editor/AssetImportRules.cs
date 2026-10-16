@@ -8,6 +8,8 @@ namespace Fishing.EditorTools
     ///  - Resources/Characters/Angler_*.fbx: tools/blender/build_characters.py가 만든 낚시꾼(몸 + 옷 메쉬)
     ///  - ThirdParty/Quaternius/Source: 그 원본 Superhero FBX. 런타임에는 안 쓰므로 가볍게(애니메이션·머티리얼 없음)
     ///  - Resources/Animations/Mixamo: Mixamo FBX를 MixamoClips 표대로 쪼갠다 (낚시 동작)
+    ///  - Resources/Animations/MixamoExtra: 받은 Mixamo 동작(파일 하나 = 클립 하나, MixamoExtraClips 표의 이름) — 춤·인사·노인 대기·좀비 동작 등
+    ///  - MixamoCharacters/XBot.fbx: Mixamo 마네킹 (귀신 NPC 몸), 휴머노이드
     ///  - Resources/Animations/KevinIglesias: Human Basic Motions FREE의 대기·걷기·뛰기 (남·녀). 아바타는 패키지 모델(HumanM/F_Model)에서 복사
     ///  - 이름에 "Loop"가 들어간 클립은 반복 재생
     ///  - Resources/Fish: 레거시 애니메이션 (Animation 컴포넌트). Fish/Species는 build_fish.py가 만든 어종별 모델(클립 5개)
@@ -38,6 +40,13 @@ namespace Fishing.EditorTools
                 importer.isReadable = false;
                 importer.materialImportMode = ModelImporterMaterialImportMode.None;
                 importer.importAnimation = assetPath.Contains("Resources/Animations/");
+            }
+            else if (assetPath.Contains("Assets/MixamoCharacters/"))
+            {
+                importer.animationType = ModelImporterAnimationType.Human;
+                importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+                importer.importAnimation = false;
+                importer.materialImportMode = ModelImporterMaterialImportMode.None;
             }
             else if (assetPath.Contains("Resources/Characters/Hair/"))
             {
@@ -158,6 +167,63 @@ namespace Fishing.EditorTools
             ("TurnRight", "Basic_TurnRight_Loop"), // Turn01_Right
         };
 
+        /// <summary>
+        /// 받은 Mixamo 동작(Resources/Animations/MixamoExtra, X Bot으로 받음) 파일 → 클립 이름. 이름에 Loop가 있으면 반복.
+        /// Z_ = Scary Zombie Pack.
+        /// </summary>
+        static readonly (string file, string clip)[] MixamoExtraClips =
+        {
+            ("Angry", "Angry"),                         // 발 구르며 화내기 (줄이 끊겼을 때 가끔)
+            ("Capoeira", "Dance_Capoeira_Loop"),
+            ("Crawling", "Crawl_Loop"),
+            ("DigAndPlantSeeds", "Dig_Loop"),           // 밭일 (귤밭 할망)
+            ("FemaleStandingPose", "Pose_Female_Loop"), // 짝다리 서기 (유니티짱 대기)
+            ("HipHopDancing", "Dance_HipHop_Loop"),
+            ("JoyfulJump", "JoyfulJump"),               // 깡충 뛰며 기뻐하기 (대물)
+            ("OldManIdle", "OldMan_Idle_Loop"),         // 허리 굽은 노인 대기
+            ("RumbaDancing", "Dance_Rumba_Loop"),
+            ("ShovedReactionWithSpin", "Shoved"),
+            ("SittingLaughing", "Sit_Laugh_Loop"),
+            ("StandingGreeting", "Greeting"),           // 손 흔들어 인사
+            ("ZombieIdle", "Zombie_Idle_Loop"),
+            ("Z_runningcrawl", "Zombie_RunCrawl_Loop"),
+            ("Z_zombieattack", "Zombie_Attack"),
+            ("Z_zombiebiting", "Zombie_Bite"),
+            ("Z_zombiebiting2", "Zombie_Bite2"),
+            ("Z_zombiecrawl", "Zombie_Crawl_Loop"),
+            ("Z_zombiedeath", "Zombie_Death"),
+            ("Z_zombiedying", "Zombie_Dying"),
+            ("Z_zombieidle", "Zombie_Idle2_Loop"),
+            ("Z_zombieneckbite", "Zombie_NeckBite"),
+            ("Z_zombierun", "Zombie_Run_Loop"),
+            ("Z_zombiescream", "Zombie_Scream"),
+            ("Z_zombiewalk", "Zombie_Walk_Loop"),
+        };
+
+        static void PreprocessMixamoExtra(ModelImporter importer)
+        {
+            var defaults = importer.defaultClipAnimations;
+            if (defaults.Length == 0) return;
+            string file = System.IO.Path.GetFileNameWithoutExtension(importer.assetPath);
+            foreach (var (f, name) in MixamoExtraClips)
+            {
+                if (f != file) continue;
+                var c = defaults[0];
+                c.name = name;
+                bool loop = name.Contains("Loop");
+                c.loopTime = loop;
+                c.loopPose = loop;
+                c.lockRootRotation = true;
+                c.lockRootHeightY = true;
+                c.lockRootPositionXZ = true;   // 걷기·뛰기도 제자리 (이동은 코드가)
+                c.keepOriginalOrientation = true;
+                c.keepOriginalPositionY = true;
+                c.keepOriginalPositionXZ = true;
+                c.rotationOffset = 180f;       // Mixamo +Z → UAL(-Z) 쪽에 맞춘다
+                importer.clipAnimations = new[] { c };
+            }
+        }
+
         void OnPreprocessAnimation()
         {
             if (!assetPath.Contains("Resources/Animations/") && !assetPath.Contains("Resources/Fish/")) return;
@@ -170,6 +236,11 @@ namespace Fishing.EditorTools
             if (assetPath.Contains("Resources/Animations/KevinIglesias/"))
             {
                 PreprocessKevin(importer);
+                return;
+            }
+            if (assetPath.Contains("Resources/Animations/MixamoExtra/"))
+            {
+                PreprocessMixamoExtra(importer);
                 return;
             }
             var clips = importer.defaultClipAnimations;

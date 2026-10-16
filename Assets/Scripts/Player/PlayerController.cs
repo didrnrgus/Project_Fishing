@@ -243,13 +243,23 @@ namespace Fishing.PlayerSystems
         public void PlayHook() => _anim?.PlayOnce(CharacterAnimator.Hook, 2f);
 
         /// <summary>낚아 올렸을 때 (두 팔 들고 환호).</summary>
-        public void PlayCheer() => _anim?.PlayOnce(CharacterAnimator.Cheer, 1.1f);
+        /// <summary>랜딩 환호: 두 팔 흔들기, 가끔(40%) 깡충 뛰며 기뻐하기 (받은 Mixamo Joyful Jump).</summary>
+        public void PlayCheer()
+        {
+            if (CharacterAnimator.Has(CharacterAnimator.JoyfulJump) && Random.value < 0.4f) _anim?.PlayOnce(CharacterAnimator.JoyfulJump, 1.1f);
+            else _anim?.PlayOnce(CharacterAnimator.Cheer, 1.1f);
+        }
 
         /// <summary>괴물·전설 어종을 낚았을 때: 펄쩍 뛰며 기뻐한다 (Mixamo Excited).</summary>
         public void PlayExcited() => _anim?.PlayOnce(CharacterAnimator.Excited, 1.2f, 0.7f);
 
         /// <summary>줄이 끊어졌을 때: 움찔 놀란다 (Mixamo Scared, 앞부분만).</summary>
-        public void PlayScared() => _anim?.PlayOnce(CharacterAnimator.Scared, 1.3f, 0.5f);
+        /// <summary>줄이 끊겼을 때: 움찔 놀라기, 가끔(35%) 발 구르며 화내기 (받은 Mixamo Angry).</summary>
+        public void PlayScared()
+        {
+            if (CharacterAnimator.Has(CharacterAnimator.Angry) && Random.value < 0.35f) _anim?.PlayOnce(CharacterAnimator.Angry, 1.2f, 0.6f);
+            else _anim?.PlayOnce(CharacterAnimator.Scared, 1.3f, 0.5f);
+        }
 
         public void Teleport(Vector3 pos, float yaw)
         {
