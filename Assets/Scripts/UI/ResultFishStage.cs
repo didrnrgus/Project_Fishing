@@ -15,6 +15,8 @@ namespace Fishing.UI
         public const int Layer = 9;
         static readonly Vector3 StagePos = new Vector3(0f, -800f, 0f);
         const float ShownLength = 1.6f;   // 화면에 보일 몸길이(유닛). 실제 cm과 상관없이 크게
+        const float JunkShownLength = 1.05f; // 잡동사니는 물건이라 조금 작게 (물고기 크기로 키우면 화면을 꽉 채웠다)
+        const float LongShownLength = 2.1f;  // 장어처럼 가는 고기는 길게 보여야 몸이 읽힌다
 
         public RenderTexture Target { get; private set; }
         /// <summary>지금 무대에 올린 물고기 (없으면 null).</summary>
@@ -22,6 +24,7 @@ namespace Fishing.UI
         Camera _cam;
         Transform _pivot;
         GameObject _fish;
+        bool _junk, _long;
 
         public static ResultFishStage Create() => Create(StagePos, "ResultFishStage");
 
@@ -90,13 +93,19 @@ namespace Fishing.UI
             // 잡동사니는 3D 모델(Resources/Junk)이 있을 때만
             if (species == null || (species.IsJunk && !FishModels.HasJunkModel(species))) { _cam.enabled = false; return false; }
 
+            _pivot.localRotation = Quaternion.identity;
             _fish = FishModels.Create(species, lengthCm, _pivot);
             foreach (var t in _fish.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = Layer;
             FishModels.Play(_fish, FishModels.Flop, 0.9f, 0f); // 물 밖에서 펄떡
             // 길이를 재서 화면 크기에 맞춘다 (가장 긴 축 = 몸길이)
             var b = FishModels.BakedBounds(_fish);
             float longest = Mathf.Max(b.size.x, Mathf.Max(b.size.y, b.size.z));
-            if (longest > 1e-4f) _fish.transform.localScale *= ShownLength / longest;
+            float shortest = Mathf.Min(b.size.x, Mathf.Min(b.size.y, b.size.z));
+            float middle = b.size.x + b.size.y + b.size.z - longest - shortest;
+            _junk = species.IsJunk;
+            // 장어·갈치처럼 아주 긴 고기 (몸길이가 몸높이의 7배 넘게)
+            _long = !_junk && middle > 1e-4f && longest / middle > 7f;
+            if (longest > 1e-4f) _fish.transform.localScale *= (_junk ? JunkShownLength : _long ? LongShownLength : ShownLength) / longest;
             b = FishModels.BakedBounds(_fish);
             _fish.transform.position -= b.center - _pivot.position;
             _cam.enabled = true;
@@ -114,9 +123,24 @@ namespace Fishing.UI
         public void Pose(float t)
         {
             if (_fish == null) return;
+            if (_junk)
+            {
+                // 잡동사니: 물고기처럼 옆으로 눕혀 들면 위에서 내려다본 모양이 됐다 → 비스듬히 내려다보며 천천히 돈다
+                _pivot.localRotation = Quaternion.Euler(-20f + Mathf.Sin(t * 1.3f) * 4f, 0f, Mathf.Sin(t * 1.7f) * 5f)
+                    * Quaternion.Euler(0f, 150f + t * 28f, 0f);
+                return;
+            }
             // 모델의 머리 방향은 +Z. 화면 왼쪽(-X)을 보게 돌리고 머리를 25° 든다
             float twist = Mathf.Sin(t * 3.1f) * 9f;
             float arch = Mathf.Sin(t * 2.2f) * 6f;
+            if (_long)
+            {
+                // 긴 고기의 꿈틀거림(좌우 S자)은 옆모습에서는 화면 앞뒤로 휘어 막대처럼 보인다 →
+                // 몸을 60° 굴려 등이 비스듬히 보이게 하고, 기울기는 작게 (길어서 화면을 대각선으로 가로질렀다)
+                _pivot.localRotation = Quaternion.Euler(0f, 0f, -8f + arch * 0.5f) * Quaternion.Euler(twist * 0.5f, -90f + Mathf.Sin(t * 1.7f) * 8f, 0f)
+                    * Quaternion.Euler(0f, 0f, 60f);
+                return;
+            }
             _pivot.localRotation = Quaternion.Euler(0f, 0f, -24f + arch) * Quaternion.Euler(twist, -90f + Mathf.Sin(t * 1.7f) * 12f, 0f);
         }
 

@@ -68,7 +68,12 @@ namespace Fishing.World
             Mats.Prim(PrimitiveType.Cube, "Walkway", _root, new Vector3(0f, HanRiverMap.LandY + 0.02f, -66f), new Vector3(600f, 0.08f, 4f), Mats.TexturedBox("concrete", new Color(0.95f, 0.92f, 0.86f), new Vector2(600f, 4f), 4f, 0.2f), false);
             Mats.Prim(PrimitiveType.Cube, "BikeRoad", _root, new Vector3(0f, HanRiverMap.LandY + 0.02f, -84f), new Vector3(600f, 0.08f, 6f), Mats.TexturedBox("asphalt", new Color(0.75f, 0.62f, 0.6f), new Vector2(600f, 6f), 6f, 0.15f), false);
             Mats.Prim(PrimitiveType.Cube, "BikeLine", _root, new Vector3(0f, HanRiverMap.LandY + 0.07f, -84f), new Vector3(600f, 0.02f, 0.15f), Mats.Lit(new Color(0.95f, 0.8f, 0.2f)), false);
-            Mats.Prim(PrimitiveType.Cube, "SouthEdge", _root, new Vector3(0f, HanRiverMap.LandY - 0.4f, HanRiverMap.RiverMinZ - 0.3f), new Vector3(600f, 1.2f, 0.8f), Mats.TexturedBox("concrete", new Color(0.8f, 0.8f, 0.78f), new Vector2(600f, 1.2f), 2f, 0.2f));
+            // 남쪽 석축: 낚시 데크 자리는 끊는다 (예전에는 석축 턱이 데크 판을 가로질러 데크 위로 20cm 솟아 있었다)
+            var pier = HanRiverMap.Pier;
+            var edgeMat = Mats.TexturedBox("concrete", new Color(0.8f, 0.8f, 0.78f), new Vector2(300f, 1.2f), 2f, 0.2f);
+            float w0 = pier.xMin + 300f, w1 = 300f - pier.xMax;
+            Mats.Prim(PrimitiveType.Cube, "SouthEdge", _root, new Vector3(pier.xMin - w0 * 0.5f, HanRiverMap.LandY - 0.4f, HanRiverMap.RiverMinZ - 0.3f), new Vector3(w0, 1.2f, 0.8f), edgeMat);
+            Mats.Prim(PrimitiveType.Cube, "SouthEdge", _root, new Vector3(pier.xMax + w1 * 0.5f, HanRiverMap.LandY - 0.4f, HanRiverMap.RiverMinZ - 0.3f), new Vector3(w1, 1.2f, 0.8f), edgeMat);
             Mats.Prim(PrimitiveType.Cube, "NorthEdge", _root, new Vector3(0f, HanRiverMap.LandY - 0.4f, HanRiverMap.RiverMaxZ + 0.3f), new Vector3(600f, 1.2f, 0.8f), Mats.TexturedBox("concrete", new Color(0.8f, 0.8f, 0.78f), new Vector2(600f, 1.2f), 2f, 0.2f));
 
             // 북쪽 강변북로
@@ -163,23 +168,30 @@ namespace Fishing.World
             }
         }
 
+        /// <summary>낚시 데크 윗면 높이.</summary>
+        public const float DeckTop = HanRiverMap.LandY + 0.06f;
+
         void BuildPier()
         {
             var r = HanRiverMap.Pier;
             var pier = new GameObject("FishingPier").transform;
             pier.SetParent(_root, false);
             var deck = Mats.TexturedBox("deck", new Color(1f, 0.92f, 0.85f), new Vector2(r.width, r.height), 3f, 0.3f);
-            Mats.Prim(PrimitiveType.Cube, "Deck", pier, new Vector3(r.center.x, HanRiverMap.LandY - 0.15f, r.center.y),
+            // 데크 윗면은 둔치보다 6cm 높게: 같은 높이면 둔치에 걸친 2m에서 풀밭과 판이 번갈아 깜빡였다(z-fighting)
+            Mats.Prim(PrimitiveType.Cube, "Deck", pier, new Vector3(r.center.x, DeckTop - 0.15f, r.center.y),
                 new Vector3(r.width, 0.3f, r.height), deck);
+            // 둔치 쪽 끝: 판 끝을 덮는 비스듬한 문턱 (6cm 턱이 걸려 보이지 않게)
+            Mats.Prim(PrimitiveType.Cube, "DeckRamp", pier, new Vector3(r.center.x, HanRiverMap.LandY + 0.02f, r.yMin - 0.18f),
+                new Vector3(r.width, 0.05f, 0.5f), deck, true, Quaternion.Euler(-7f, 0f, 0f));
             for (float z = r.yMin + 2f; z < r.yMax; z += 4f)
             {
                 Mats.Prim(PrimitiveType.Cylinder, "Post", pier, new Vector3(r.xMin + 0.2f, 0.3f, z), new Vector3(0.25f, 0.9f, 0.25f), deck, false);
                 Mats.Prim(PrimitiveType.Cylinder, "Post", pier, new Vector3(r.xMax - 0.2f, 0.3f, z), new Vector3(0.25f, 0.9f, 0.25f), deck, false);
             }
             var rail = Mats.Lit(new Color(0.9f, 0.9f, 0.88f));
-            Mats.Prim(PrimitiveType.Cube, "RailL", pier, new Vector3(r.xMin + 0.1f, HanRiverMap.LandY + 0.5f, r.center.y), new Vector3(0.08f, 0.08f, r.height), rail, false);
-            Mats.Prim(PrimitiveType.Cube, "RailR", pier, new Vector3(r.xMax - 0.1f, HanRiverMap.LandY + 0.5f, r.center.y), new Vector3(0.08f, 0.08f, r.height), rail, false);
-            Mats.Prim(PrimitiveType.Cube, "RailEnd", pier, new Vector3(r.center.x, HanRiverMap.LandY + 0.5f, r.yMax - 0.1f), new Vector3(r.width, 0.08f, 0.08f), rail, false);
+            Mats.Prim(PrimitiveType.Cube, "RailL", pier, new Vector3(r.xMin + 0.1f, DeckTop + 0.5f, r.center.y), new Vector3(0.08f, 0.08f, r.height), rail, false);
+            Mats.Prim(PrimitiveType.Cube, "RailR", pier, new Vector3(r.xMax - 0.1f, DeckTop + 0.5f, r.center.y), new Vector3(0.08f, 0.08f, r.height), rail, false);
+            Mats.Prim(PrimitiveType.Cube, "RailEnd", pier, new Vector3(r.center.x, DeckTop + 0.5f, r.yMax - 0.1f), new Vector3(r.width, 0.08f, 0.08f), rail, false);
         }
 
         void BuildShop()
@@ -323,6 +335,7 @@ namespace Fishing.World
                 float x = R(-155f, 155f);
                 float z = i % 3 == 0 ? R(-104f, -90f) : R(-80f, -70f);
                 if (Mathf.Abs(x - HanRiverMap.ShopPos.x) < 7f && z > -82f) continue;
+                if (Vector2.Distance(new Vector2(x, z), new Vector2(HanRiverMap.IdolStage.x, HanRiverMap.IdolStage.z)) < 5f) continue; // 버스킹 무대
                 PlaceTree(trees, new Vector3(x, HanRiverMap.LandY, z), trunk, leaves[i % leaves.Length]);
             }
             for (int i = 0; i < 50; i++)
@@ -397,11 +410,45 @@ namespace Fishing.World
             }
         }
 
+        /// <summary>버스킹 무대 높이 (낚시 아이돌이 이 위에 선다).</summary>
+        public const float IdolStageH = 0.24f;
+
+        /// <summary>
+        /// 공원 버스킹 무대: 낮은 나무 단 + 앞 분홍 띠 + 스피커 둘 + 마이크 스탠드. 풀밭에서 아이돌이 혼자 춤추면 어색했다.
+        /// 풀(GrassField)보다 먼저 지어야 무대 위에 풀이 안 난다.
+        /// </summary>
+        void BuildIdolStage(Transform parent)
+        {
+            var root = new GameObject("IdolStage").transform;
+            root.SetParent(parent, false);
+            root.localPosition = HanRiverMap.IdolStage;
+            root.localRotation = Quaternion.Euler(0f, HanRiverMap.IdolStageYaw, 0f);
+            const float h = IdolStageH;
+            var wood = Mats.TexturedBox("deck", new Color(1f, 0.9f, 0.8f), new Vector2(3.2f, 2.4f), 3f, 0.3f);
+            var trim = Mats.Lit(new Color(0.95f, 0.55f, 0.75f), 0.4f);
+            var black = Mats.Lit(new Color(0.08f, 0.08f, 0.09f), 0.45f);
+            var grill = Mats.Lit(new Color(0.22f, 0.22f, 0.24f), 0.2f);
+            var metal = Mats.Lit(new Color(0.7f, 0.72f, 0.75f), 0.6f, 0.8f);
+            Mats.Prim(PrimitiveType.Cube, "Stage", root, new Vector3(0f, h * 0.5f, 0f), new Vector3(3.2f, h, 2.4f), wood);
+            Mats.Prim(PrimitiveType.Cube, "StageTrim", root, new Vector3(0f, h * 0.5f, 1.21f), new Vector3(3.22f, h * 0.6f, 0.02f), trim, false);
+            foreach (float sx in new[] { -1.25f, 1.25f })
+            {
+                Mats.Prim(PrimitiveType.Cube, "Speaker", root, new Vector3(sx, h + 0.42f, -0.8f), new Vector3(0.5f, 0.84f, 0.42f), black);
+                Mats.Prim(PrimitiveType.Cylinder, "Woofer", root, new Vector3(sx, h + 0.3f, -0.585f), new Vector3(0.32f, 0.01f, 0.32f), grill, false, Quaternion.Euler(90f, 0f, 0f));
+                Mats.Prim(PrimitiveType.Cylinder, "Tweeter", root, new Vector3(sx, h + 0.66f, -0.585f), new Vector3(0.14f, 0.01f, 0.14f), grill, false, Quaternion.Euler(90f, 0f, 0f));
+            }
+            // 마이크 스탠드: 아이돌 앞 오른쪽 (춤출 때 몸에 겹치지 않게 비켜 둔다)
+            Mats.Prim(PrimitiveType.Cylinder, "MicBase", root, new Vector3(0.8f, h + 0.01f, 0.6f), new Vector3(0.3f, 0.01f, 0.3f), black, false);
+            Mats.Prim(PrimitiveType.Cylinder, "MicPole", root, new Vector3(0.8f, h + 0.72f, 0.6f), new Vector3(0.025f, 0.72f, 0.025f), metal, false);
+            Mats.Prim(PrimitiveType.Sphere, "Mic", root, new Vector3(0.8f, h + 1.47f, 0.57f), Vector3.one * 0.07f, black, false);
+        }
+
         /// <summary>원작 영상의 한강 소품: 계류 말뚝, 노란 부표, 드럼통 뗏목과 다른 낚시꾼, 요트, 다리 조명.</summary>
         void BuildProps()
         {
             var props = new GameObject("Props").transform;
             props.SetParent(_root, false);
+            BuildIdolStage(props);
 
             var bollard = Mats.Lit(new Color(0.18f, 0.19f, 0.2f), 0.4f, 0.5f);
             for (float x = -150f; x <= 150f; x += 14f)

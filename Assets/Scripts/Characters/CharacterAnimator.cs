@@ -17,6 +17,8 @@ namespace Fishing.Characters
     {
         public const string Idle = "Basic_Idle_Loop";
         public const string Walk = "Basic_Walk_Loop";
+        /// <summary>Walk 클립이 원래 가는 속도 (m/s, 10 문서 7장). 다른 속도로 걸릴 때 배속 = 속도 / 이 값.</summary>
+        public const float BasicWalkSpeed = 2f;
         public const string Jog = "Basic_Run_Loop";
         public const string Sprint = "Basic_Sprint_Loop";
 

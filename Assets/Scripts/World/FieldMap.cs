@@ -210,6 +210,10 @@ namespace Fishing.World
 
         // 겨울: 남쪽 둔치 앞 강물이 얼어 걸을 수 있고, 배·찌는 못 간다 (SeasonFx)
         public override bool IsWater(Vector3 p) => HanRiverMap.IsWater(p) && !SeasonFx.OnIce(p);
+
+        /// <summary>낚시 데크는 기둥 위에 뜬 잔교라 밑이 깊은 물이다 (땅으로 보면 데크 둘레에 해변 같은 흰 거품 띠가 생겼다).</summary>
+        public override float SeabedAt(float x, float z) =>
+            HanRiverMap.OnPier(new Vector3(x, LandY, z)) && z > HanRiverMap.RiverMinZ ? BaseWaterY - 3f : base.SeabedAt(x, z);
         public override bool IsWalkable(Vector3 p) => HanRiverMap.IsWalkable(p) || SeasonFx.OnIce(p);
         public override string AreaName(Vector3 p) => HanRiverMap.AreaName(p);
 

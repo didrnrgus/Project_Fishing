@@ -232,7 +232,36 @@ namespace Fishing.Characters
             if (!string.IsNullOrEmpty(title))
                 UIFactory.WorldText(tag, title, new Vector3(0f, 0.2f, 0f), new Color(0.55f, 0.85f, 1f), 1.5f);
             UIFactory.WorldText(tag, name, Vector3.zero, Color.white, 2f);
+            tag.gameObject.AddComponent<NameTagFade>();
             return tag;
+        }
+    }
+
+    /// <summary>
+    /// 이름표 마무리 (주인 스크립트의 LateUpdate 뒤에 돈다, 켜고 끄기는 주인이 정한다):
+    /// - 화면과 나란하게 세운다. 주인들은 카메라 '위치'를 보게 돌려서 화면 가장자리의 이름표가 비스듬히 기울어 커 보였다.
+    /// - 카메라가 가까우면 흐리게 → 숨긴다. 3인칭 카메라가 NPC 옆을 지나면 머리 위 글자가 화면 위쪽을 덮었다(낚시점 앞 항만 노동자 등).
+    /// </summary>
+    [DefaultExecutionOrder(100)]
+    public class NameTagFade : MonoBehaviour
+    {
+        const float Hide = 3f, Full = 6.5f;
+        TMPro.TMP_Text[] _texts;
+        float _alpha = -1f;
+
+        void Awake() => _texts = GetComponentsInChildren<TMPro.TMP_Text>(true);
+
+        void LateUpdate()
+        {
+            if (Fishing.Core.Game.CameraRig == null) return;
+            var cam = Fishing.Core.Game.CameraRig.transform;
+            transform.rotation = cam.rotation;
+            float d = Vector3.Distance(cam.position, transform.position);
+            float a = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(Hide, Full, d));
+            if (Mathf.Abs(a - _alpha) < 0.01f) return;
+            _alpha = a;
+            foreach (var t in _texts)
+                if (t != null) t.alpha = a;
         }
     }
 }

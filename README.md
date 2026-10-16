@@ -29,7 +29,7 @@
 | ![areas_world](docs/images/53_area_list_all.png) | ![halong](docs/images/55_halong_bay.png) |
 | **산토리니 (칼데라·방파제 테트라포드)** | **나일강 하류 (피라미드 노을)** |
 | ![santorini](docs/images/56b_santorini_caldera.png) | ![nile](docs/images/57b_nile_sunset.png) |
-| **낚시 아이돌 유니티짱 (다가가면 손 흔들어 인사)** | **밤의 한강 다리 밑 귀신** |
+| **버스킹 무대의 낚시 아이돌 유니티짱 (다가가면 손 흔들어 인사)** | **밤의 한강 다리 밑 귀신** |
 | ![idol](docs/images/00h_idol_greeting.png) | ![ghost](docs/images/00k_night_ghost.png) |
 | **한강 공원 벤치의 수다 (Mixamo 사람들)** | **밤 데크의 네온 댄서·좀비들** |
 | ![chat](docs/images/00l_park_chat.png) | ![dancer](docs/images/00m_night_dancer.png) |
@@ -91,7 +91,7 @@
 ```bash
 sh tools/build.sh      # Builds/Windows/ProjectFishing.exe
 sh tools/autoshot.sh   # 빌드를 자동 연출해 Screenshots/ 에 약 100장 + 맵별 FPS
-sh tools/test.sh       # 단위 테스트 31개
+sh tools/test.sh       # 단위 테스트 32개
 cd tools/fightsim && dotnet run -- report   # Unity 없이 파이팅 밸런스 (.NET 8)
 ```
 

@@ -609,7 +609,8 @@ namespace Fishing.UI
             var d = p.Data;
             var fishing = Game.Fishing;
             // 파이팅 중이거나 대기실이면 필드 HUD를 숨긴다 (토스트는 남긴다)
-            bool fighting = fishing.State == FishingState.Fighting || fishing.State == FishingState.Result || fishing.Hooking || Game.Mode == GameMode.Lobby;
+            bool fighting = fishing.State == FishingState.Fighting || fishing.State == FishingState.Result || fishing.Hooking || Game.Mode == GameMode.Lobby
+                || (Game.UI.Result != null && Game.UI.Result.IsOpen);
 
             // 파이팅 중에는 필드 HUD를 숨기고 토스트만 남긴다
             foreach (Transform child in _root)

@@ -109,7 +109,7 @@
 - [x] 옵션 창(O): 마우스 감도, 음량, 해상도, 전체 화면, 후처리, 그림자 (`Settings`, `OptionsPanel`, PlayerPrefs)
 - [x] 게임패드 진동 (원작 후기 요청 사항): 입질·챔질·질주·카운터·줄 끊김·랜딩, 장력이 높으면 계속 떨림 (`Rumble`, 새 Input System의 Gamepad만 사용)
 - [x] 키 리바인딩 (옵션 창 키 설정 20개, 겹치면 맞바꿈). 조작은 예전 Input Manager 그대로 두고 Active Input Handling = Both (패드 진동용)
-- [x] 단위 테스트 (EditMode 31개 — 랜딩 피로 회귀 테스트 포함: FishFight·BiteSelector·대회·강화·프로필·계절·키 설정 + 낚시터 정의 검사, `sh tools/test.sh`)
+- [x] 단위 테스트 (EditMode 32개 — 랜딩 피로·잡동사니 비율 회귀 테스트 포함: FishFight·BiteSelector·대회·강화·프로필·계절·키 설정 + 낚시터 정의 검사, `sh tools/test.sh`)
 - [x] 후처리(블룸·톤매핑·AO·SMAA·시간대 그레이딩), 흐림·비 층구름, 하늘 반사 프로브
 - [x] 자연스러운 대기·걷기·뛰기·질주 애니메이션 (Human Basic Motions FREE, 남·녀 따로, 이동 속도에 맞춘 재생 배속 → 10 문서)
 - [x] 사실성 (2026-10-15): 물가 거품·얕은 물, 장애물(등대·NPC·건물·나무)을 뚫고 던지지 못함, 사람·건물·나무에 몸(콜라이더), 배가 정박한 배·가두리를 뚫지 못함, NPC 낚시꾼의 낚싯줄·찌, 파이팅 물고기는 늘 물 위, 방파제 벽 0.8m, 긴 알림 줄바꿈, z-fighting(카메라 near·지형 LOD·판 높이), 간판 거울 글씨·이름표 겹침

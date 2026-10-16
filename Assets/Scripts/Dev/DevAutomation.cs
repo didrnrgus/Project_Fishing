@@ -125,21 +125,23 @@ namespace Fishing.Dev
             yield return new WaitForSeconds(1f);
             yield return Shot("00g_park_trees");
 
-            // 받은 캐릭터 (ExtraNpcs): 낚시 아이돌 유니티짱·유니티짱 낚시꾼, 밤의 좀비·귀신
+            // 받은 캐릭터 (ExtraNpcs): 버스킹 무대의 낚시 아이돌 유니티짱, 밤의 좀비·귀신
             if (Fishing.Characters.CharacterLibrary.Lib != null)
             {
                 float day0 = Game.Clock.Minutes;
-                Game.Player.Teleport(new Vector3(11f, 1.1f, -63.5f), 180f);
+                Game.Player.Teleport(new Vector3(10f, 1.1f, -65f), 180f);
                 Game.CameraRig.Yaw = 150f;
                 Game.CameraRig.Pitch = 8f;
                 Game.CameraRig.Distance = 5f;
                 yield return new WaitForSeconds(2.2f);
                 yield return Shot("00h_idol_greeting");
-                Game.Player.Teleport(new Vector3(34f, 1.1f, -66f), -20f);
-                Game.CameraRig.Yaw = -30f;
-                Game.CameraRig.Distance = 6f;
+                // 무대 멀리서 (인사하지 않고 춤·포즈 중)
+                Game.Player.Teleport(new Vector3(19f, 1.1f, -62f), -138f);
+                Game.CameraRig.Yaw = -138f;
+                Game.CameraRig.Pitch = 10f;
+                Game.CameraRig.Distance = 4f;
                 yield return new WaitForSeconds(1.5f);
-                yield return Shot("00i_unitychan_angler");
+                yield return Shot("00i_idol_stage");
                 // 공원 벤치(아이스박스)에서 수다 떠는 두 사람
                 Game.Player.Teleport(new Vector3(-46.5f, 1.1f, -80.2f), -90f);
                 Game.CameraRig.Yaw = -70f;
@@ -147,6 +149,27 @@ namespace Fishing.Dev
                 Game.CameraRig.Distance = 5f;
                 yield return new WaitForSeconds(2f);
                 yield return Shot("00l_park_chat");
+                // 산책하는 의사: 걷는 발이 미끄러지지 않는지 0.25초 간격 두 장
+                var doctor = GameObject.Find("Wanderer_doctor");
+                if (doctor != null)
+                {
+                    var dp = doctor.transform.position;
+                    Game.Player.Teleport(new Vector3(dp.x + 1.5f, 1.1f, dp.z - 5.5f), 0f);
+                    Game.CameraRig.Yaw = -12f;
+                    Game.CameraRig.Pitch = 6f;
+                    Game.CameraRig.Distance = 3.5f;
+                    yield return new WaitForSeconds(1.2f);
+                    yield return Shot("00o_doctor_walk");
+                    yield return new WaitForSeconds(0.25f);
+                    yield return Shot("00o_doctor_walk_b");
+                }
+                // 데크 입구: 데크 판과 둔치 땅·석축이 만나는 곳
+                Game.Player.Teleport(new Vector3(19.5f, 1.1f, -64.5f), 40f);
+                Game.CameraRig.Yaw = 40f;
+                Game.CameraRig.Pitch = 22f;
+                Game.CameraRig.Distance = 4f;
+                yield return new WaitForSeconds(1.2f);
+                yield return Shot("00p_pier_entrance");
                 Game.Clock.Set(Game.Clock.Day, 23 * 60);
                 Game.Player.Teleport(new Vector3(-4f, 1.1f, -64.5f), 200f);
                 Game.CameraRig.Yaw = 170f;
@@ -293,6 +316,15 @@ namespace Fishing.Dev
             yield return Shot("10_result");
             yield return CloseResult();
             Game.Fishing.Autoplay = false;
+            // 길쭉한 고기·잡동사니 결과 화면 (뱀장어는 몸이 S자로 꿈틀, 운동화는 3D 모델이 화면 안에)
+            foreach (var (id, len, shot) in new[] { ("eel", 92f, "10c_result_eel"), ("shoe", 27f, "10d_result_shoe"), ("trap", 45f, "10e_result_trap") })
+            {
+                var s = FishDatabase.Get(id);
+                Game.UI.Result.Show(new CaughtFish { speciesId = id, length = len, weight = Mathf.Round(s.WeightGrams(len)), day = 1, zone = "B1" }, s.Exp, false, 0f, 1, false, _ => { });
+                yield return new WaitForSecondsRealtime(1.2f);
+                yield return Shot(shot);
+                yield return CloseResult();
+            }
             yield return new WaitForSeconds(0.3f);
 
             // 도감/살림망/퀘스트/낚시점 화면을 채워서 찍는다

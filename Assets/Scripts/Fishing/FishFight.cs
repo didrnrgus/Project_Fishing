@@ -39,7 +39,7 @@ namespace Fishing.Angling
         const float FlickWindow = 0.15f;
         const float FlickThreshold = 12f;
         const float EdgeForCounter = 0.78f;
-        const float DragGain = 0.006f;   // 마우스 이동 1단위(Mouse X 축)당 장력
+        const float DragGain = 0.004f;   // 마우스 이동 1단위(Mouse X 축)당 장력 (0.006은 손이 조금만 떨려도 장력이 튀었다)
         const float DragDecay = 1.6f;    // 당긴 힘이 풀리는 속도(초당, 지수)
         const float DragMax = 0.6f;
         const float DragMin = -0.45f;
@@ -170,7 +170,9 @@ namespace Fishing.Angling
             if (input.Releasing) raw *= 0.45f;
             raw *= 1f - 0.2f * Rod.Flex; // 연조대는 충격을 흡수한다
             float target = Mathf.Max(0f, raw / Line.Strength + DragLoad * (1f - 0.25f * Rod.Flex));
-            float response = Mathf.Lerp(7f, 4f, Rod.Flex) * (Focused ? FocusTensionSlow : 1f); // 경조대일수록 장력이 빨리 튄다 (포커싱이면 느리게)
+            // 장력이 목표를 따라가는 속도. 경조대일수록 빨리 튄다 (포커싱이면 더 느리게).
+            // 예전 7~4(0.15~0.25초에 따라잡음)는 사람 반응보다 빨라 질주 한 번에 줄이 끊어졌다 → 0.3~0.45초
+            float response = Mathf.Lerp(3.4f, 2.3f, Rod.Flex) * (Focused ? FocusTensionSlow : 1f);
             Tension = Mathf.Lerp(Tension, target, 1f - Mathf.Exp(-response * dt));
 
             // 거리: 줄을 풀거나 드랙이 미끄러지면 멀어지고, 감으면 가까워진다
@@ -186,7 +188,7 @@ namespace Fishing.Angling
                     Escaping = true;
                     _dir = Random.value < 0.5f ? -1 : 1;
                     SetMood(FishMood.Burst, 1.2f);
-                    Tension += 0.25f;
+                    Tension += 0.12f;
                     EscapeRun?.Invoke();
                 }
                 Distance += 9f * dt;
@@ -194,7 +196,7 @@ namespace Fishing.Angling
             else if (Distance > LandDistance + 3f) Escaping = false;
 
             // 바늘 걸림: 줄이 느슨하면 빠지고, 적당히 팽팽하면 단단해진다
-            if (Tension < 0.12f) Hook -= 14f * dt;
+            if (Tension < 0.1f) Hook -= 9f * dt;
             else if (Tension < DangerTension) Hook = Mathf.Min(100f, Hook + 3f * dt);
             if (Mood == FishMood.Burst && Tension > DangerTension) Hook -= 5f * dt;
 
@@ -210,7 +212,8 @@ namespace Fishing.Angling
             // 실패 판정
             if (Tension > 1f) _overTimer += dt;
             else _overTimer = Mathf.Max(0f, _overTimer - dt * 2f);
-            if (_overTimer > 0.4f || Tension > 1.25f) Outcome = FightOutcome.LineBroken;
+            // 1.0을 넘어도 0.7초까지는 버틴다 (풀기로 대응할 시간)
+            if (_overTimer > 0.7f || Tension > 1.35f) Outcome = FightOutcome.LineBroken;
             else if (Hook <= 0f) Outcome = FightOutcome.HookOut;
             else if (Distance > Reel.Capacity) Outcome = FightOutcome.LineRunOut;
         }
@@ -274,8 +277,8 @@ namespace Fishing.Angling
             if (_moodTimer <= 0f) PickMood();
 
             float exhaustion = HP <= 0f ? 0.12f : Mathf.Lerp(0.3f, 1f, HP / MaxHP);
-            float moodPull = Mood switch { FishMood.Run => 1f, FishMood.Burst => 2.1f, _ => 0.3f };
-            float wobble = 1f + Mathf.Sin(Elapsed * 7.3f) * 0.08f;
+            float moodPull = Mood switch { FishMood.Run => 1f, FishMood.Burst => 1.85f, _ => 0.3f };
+            float wobble = 1f + Mathf.Sin(Elapsed * 7.3f) * 0.04f;
             Pull = _basePull * moodPull * exhaustion * wobble;
 
             float targetVX = Mood switch

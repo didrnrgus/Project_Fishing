@@ -879,56 +879,204 @@ def model_box(iid):
 
 
 def model_trap(iid):
-    net = mat('#3a5a4a', 0.6)
+    net = mat('#7fa08c', 0.55)  # 밝은 물 바랜 초록 (짙으면 밤 결과 화면에서 배경에 묻혔다)
     objs = []
     L, R = 0.45, 0.13
     for i in range(7):
-        objs.append(torus(R, 0.004, net, loc=(0, -L / 2 + L * i / 6, R), rot=(math.pi / 2, 0, 0), seg=28, mseg=6))
+        objs.append(torus(R, 0.0055, net, loc=(0, -L / 2 + L * i / 6, R), rot=(math.pi / 2, 0, 0), seg=28, mseg=6))
     for k in range(12):
         a = 2 * math.pi * k / 12
-        objs.append(cyl(0.003, 0.003, L, net, loc=(math.cos(a) * R, 0, R + math.sin(a) * R), rot=(math.pi / 2, 0, 0), seg=6))
-    # 입구 깔때기
-    objs.append(cyl(R, 0.03, 0.12, mat('#4a6a5a', 0.6, alpha=0.6), loc=(0, -L / 2 + 0.06, R), rot=(math.pi / 2, 0, 0), cap=False, seg=20))
+        objs.append(cyl(0.0045, 0.0045, L, net, loc=(math.cos(a) * R, 0, R + math.sin(a) * R), rot=(math.pi / 2, 0, 0), seg=6))
+    # 입구 깔때기: 그물로 된 원뿔 (예전 반투명 막은 FBX에서 불투명해져 회색 원뿔 덩어리로 보였다)
+    for k in range(10):
+        a = 2 * math.pi * k / 10
+        p0 = V((math.cos(a) * R, -L / 2, R + math.sin(a) * R))
+        p1 = V((math.cos(a) * 0.035, -L / 2 + 0.14, R + math.sin(a) * 0.035))
+        objs.append(tube([p0, p1], 0.0035, net, sides=6))
+    for f in (0.35, 0.7):
+        objs.append(torus(R + (0.035 - R) * f, 0.0035, net, loc=(0, -L / 2 + 0.14 * f, R), rot=(math.pi / 2, 0, 0), seg=24, mseg=6))
     objs.append(box((0.04, 0.1, 0.02), mat('#e8c020', 0.5), loc=(0, 0.1, 2 * R)))  # 부표 끈 매듭
     o = join(objs, 'Trap')
     o.rotation_euler = (0, 0, math.radians(30))
     return [o], 'item', 0.45
 
 
-def model_shoe(iid):
-    """낡은 운동화: 흰 밑창 + 남색 갑피(앞코 낮고 뒤꿈치 높게) + 신발끈 + 발목 구멍."""
-    sole, upper, lace, inner = mat('#e8e6dc', 0.7), mat('#34507a', 0.75), mat('#f0eee6', 0.6), mat('#1a1e28', 0.9)
+def _shoe_hw(t):
+    """운동화 발바닥 윤곽의 반폭 (t: 0 앞코 ~ 1 뒤꿈치). 앞볼이 넓고 장심(아치)이 잘록하고 뒤꿈치는 둥글다."""
+    env = math.sin(math.pi * min(1.0, max(0.0, t))) ** 0.42
+    return env * (0.047 - 0.009 * math.exp(-((t - 0.63) / 0.13) ** 2) - 0.004 * max(0.0, t - 0.75) / 0.25)
+
+
+def _shoe_zb(t):
+    """밑창 바닥 높이: 앞코가 들리고(토 스프링) 뒤꿈치도 살짝 둥글게."""
+    return 0.02 * max(0.0, (0.24 - t) / 0.24) ** 2 + 0.006 * max(0.0, (t - 0.88) / 0.12) ** 2
+
+
+SOLE_H = 0.026
+
+
+def _shoe_H(t):
+    """갑피 높이 (밑창 위에서): 앞코 낮고, 발등을 따라 오르고, 뒤꿈치 컵이 가장 높다."""
+    return 0.026 + 0.05 * fish_smooth(0.04, 0.6, t) + 0.008 * fish_smooth(0.8, 1.0, t)
+
+
+def _shoe_dip(t, xr):
+    """발목 구멍: 갑피 윗면을 아래로 파낸 깊이 (xr = x / 반폭)."""
+    w = fish_smooth(0.6, 0.68, t) * fish_smooth(0.97, 0.9, t)
+    return 0.05 * w * max(0.0, 1 - (xr / 0.74) ** 2) ** 0.55
+
+
+def fish_smooth(e0, e1, x):
+    k = min(1.0, max(0.0, (x - e0) / (e1 - e0)))
+    return k * k * (3 - 2 * k)
+
+
+def _loft(rings_fn, n, sides, mats, face_mat):
+    """t를 따라 닫힌 단면(sides개 점)을 이어 붙인 몸. 양 끝은 부채꼴로 막는다. face_mat(t, a) → 머티리얼 번호."""
     bm = bmesh.new()
-    n, sides = 28, 16
-    rings = []
-    for i in range(n):
-        t = i / (n - 1)                       # 0 앞코 ~ 1 뒤꿈치
-        y = -0.13 + 0.26 * t
-        w = 0.052 * math.sin(math.pi * (0.06 + 0.88 * t)) ** 0.45 * (1.05 - 0.1 * t)
-        h = 0.03 + 0.05 * min(1.0, t / 0.55) ** 0.8
-        ring = []
-        for q in range(sides):
-            a = math.pi * q / (sides - 1)     # 0 오른쪽 바닥 → π 왼쪽 바닥
-            ring.append(bm.verts.new((math.cos(a) * w, y, 0.022 + math.sin(a) ** 0.8 * h)))
-        rings.append(ring)
+    ts = [0.004 + 0.992 * (0.5 - 0.5 * math.cos(math.pi * i / (n - 1))) for i in range(n)]
+    rings = [[bm.verts.new(p) for p in rings_fn(t)] for t in ts]
     for i in range(n - 1):
-        for q in range(sides - 1):
-            bm.faces.new((rings[i][q], rings[i][q + 1], rings[i + 1][q + 1], rings[i + 1][q]))
-    objs = [obj_from_bm(bm, 'Upper', upper)]
-    bm = bmesh.new()
-    outline = []
-    for i in range(36):
-        a = 2 * math.pi * i / 36
-        outline.append(bm.verts.new((math.cos(a) * 0.056 * (1.0 + 0.1 * math.sin(a)), math.sin(a) * 0.14, 0)))
-    f = bm.faces.new(outline)
-    bmesh.ops.solidify(bm, geom=[f], thickness=0.024)
-    objs.append(obj_from_bm(bm, 'Sole', sole))
-    objs.append(sphere(0.034, inner, loc=(0, 0.075, 0.08), scale=(1.0, 1.5, 0.12)))     # 발목 구멍
-    objs.append(torus(0.036, 0.007, upper, loc=(0, 0.075, 0.08), rot=(0, 0, 0), seg=24, mseg=8))
+        for k in range(sides):
+            k2 = (k + 1) % sides
+            f = bm.faces.new((rings[i][k], rings[i][k2], rings[i + 1][k2], rings[i + 1][k]))
+            f.material_index = face_mat((ts[i] + ts[i + 1]) / 2, 2 * math.pi * (k + 0.5) / sides)
+    for ring, flip in ((rings[0], True), (rings[-1], False)):
+        c = bm.verts.new(sum((v.co for v in ring), V()) / sides)
+        for k in range(sides):
+            vs = (ring[k], ring[(k + 1) % sides], c)
+            f = bm.faces.new(vs[::-1] if flip else vs)
+            f.material_index = face_mat(0.0 if flip else 1.0, 2 * math.pi * (k + 0.5) / sides)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    me = bpy.data.meshes.new('Loft')
+    bm.to_mesh(me)
+    bm.free()
+    for p in me.polygons:
+        p.use_smooth = True
+    ob = link(bpy.data.objects.new('Loft', me))
+    for m in mats:
+        ob.data.materials.append(m)
+    return ob
+
+
+def model_shoe(iid):
+    """
+    강에서 건진 낡은 운동화 한 짝 (예전 모델은 밑창이 안 보이고 끈이 갑피에 묻혀 파란 민달팽이 같았고, 앞코에 구멍이 뚫려 있었다).
+    흰 밑창(앞코가 들림, 가운데 남색 줄, 바닥 고무) + 발 모양 갑피(앞볼 넓고 장심 잘록) + 파인 발목 구멍과 짙은 안감 +
+    혀 + X자로 엇갈린 신발끈과 구멍 + 옆면 흰 줄무늬 두 줄 + 앞코 고무 + 이끼 몇 점.
+    """
+    sole_w, sole_line, sole_gum = mat('#d9d2c0', 0.75), mat('#2b3a5a', 0.6), mat('#5a5048', 0.9)
+    upper, stripe, toe_rub = mat('#46658a', 0.85), mat('#e6e2d6', 0.7), mat('#d4cdbb', 0.7)
+    lining, lace, eyelet = mat('#26242a', 0.95), mat('#ece8dc', 0.65), mat('#8a8c90', 0.35, metal=0.8)
+    tongue_m, moss = mat('#52709a', 0.9), mat('#6b7a3a', 0.95)
+    sides = 48
+    L0, L = -0.13, 0.26
+
+    def y_of(t):
+        return L0 + L * t
+
+    def se(c, p):
+        return math.copysign(abs(c) ** (2 / p), c)
+
+    # ---- 밑창: 납작한 둥근 사각 단면 ----
+    def sole_ring(t):
+        hw, zb = _shoe_hw(t) + 0.003, _shoe_zb(t)
+        out = []
+        for k in range(sides):
+            a = 2 * math.pi * k / sides
+            out.append((hw * se(math.cos(a), 3.2), y_of(t), zb + SOLE_H * 0.5 * (1 + se(math.sin(a), 3.2))))
+        return out
+
+    def sole_mat(t, a):
+        zr = 0.5 * (1 + se(math.sin(a), 3.2))     # 0 바닥 ~ 1 윗면
+        if zr < 0.06:
+            return 2                               # 바닥 고무
+        return 1 if 0.42 < zr < 0.56 else 0        # 가운데 남색 줄
+    objs = [_loft(sole_ring, 56, sides, [sole_w, sole_line, sole_gum], sole_mat)]
+
+    # ---- 갑피: 아래는 밑창에 묻히고 위는 둥근 돔, 발목 쪽은 파여서 구멍 ----
+    def upper_z(t, xr, top=True):
+        zt = _shoe_zb(t) + SOLE_H - 0.004
+        if not top:
+            return zt - 0.004
+        H = _shoe_H(t)
+        return zt + H * (1 - abs(xr) ** 2.6) ** (1 / 2.6) - _shoe_dip(t, xr)
+
+    def upper_pt(t, a):
+        hw = _shoe_hw(t) - 0.001
+        xr = se(math.cos(a), 2.6)
+        s = math.sin(a)
+        z = upper_z(t, xr) if s >= 0 else upper_z(t, xr, False)
+        if s >= 0:
+            # 옆면은 위로 갈수록 살짝 안으로 (신발 볼이 위에서 좁아진다)
+            xr *= 1 - 0.12 * s ** 2
+        return V((hw * xr, y_of(t), z))
+
+    def upper_ring(t):
+        return [tuple(upper_pt(t, 2 * math.pi * k / sides)) for k in range(sides)]
+
+    def upper_mat(t, a):
+        xr = se(math.cos(a), 2.6)
+        s = math.sin(a)
+        if s >= 0 and _shoe_dip(t, xr) > 0.012:
+            return 1                                # 발목 구멍 안감
+        if t < 0.13 and s < 0.75:
+            return 3                                # 앞코 고무
+        return 0
+    objs.append(_loft(upper_ring, 72, sides, [upper, lining, stripe, toe_rub], upper_mat))
+
+    def surf(t, xr, lift=0.0):
+        return V((_shoe_hw(t) * xr, y_of(t), upper_z(t, xr) + lift))
+
+    # 옆면 흰 줄무늬 두 줄: 표면을 따라가는 얇은 띠 (면 색칠은 계단처럼 보였다). 아래에서 위로 갈수록 뒤로 눕는다
+    for side in (1, -1):
+        for t0 in (0.4, 0.5):
+            bm = bmesh.new()
+            rows = []
+            for j in range(13):
+                u = j / 12
+                a = math.asin(0.12 + 0.7 * u)
+                if side < 0:
+                    a = math.pi - a
+                tc = t0 + 0.15 * u
+                row = []
+                for dt in (-0.017, 0.017):
+                    q = upper_pt(tc + dt, a)
+                    ctr = V((0, q.y, _shoe_zb(tc) + SOLE_H + 0.02))
+                    row.append(bm.verts.new(q + (q - ctr).normalized() * 0.0012))
+                rows.append(row)
+            for j in range(12):
+                f = (rows[j][0], rows[j][1], rows[j + 1][1], rows[j + 1][0])
+                bm.faces.new(f if side > 0 else f[::-1])
+            bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+            objs.append(obj_from_bm(bm, 'Stripe', stripe))
+    # 혀: 발목 구멍 앞에서 끝만 살짝 나온다 (크게 세우면 뚜껑처럼 보였다). 둥근 판을 뒤로 눕힌다
+    p = surf(0.6, 0.0, 0.0)
+    objs.append(sphere(0.022, tongue_m, loc=(0, p.y + 0.006, p.z + 0.006), scale=(0.85, 0.28, 1.0), rot=(math.radians(-35), 0, 0), seg=20, rings=12))
+    # 신발끈 구멍 + X자 끈 (발등 경사를 따라)
     for i in range(5):
-        y = -0.06 + i * 0.022
-        objs.append(box((0.06, 0.007, 0.006), lace, loc=(0, y, 0.062 + i * 0.004), rot=(math.radians(-25), 0, 0)))
-    objs.append(box((0.002, 0.08, 0.02), mat('#f0f0f0', 0.4), loc=(0.05, 0.03, 0.05), rot=(0, 0, 0.05)))  # 옆 줄무늬
+        t0 = 0.31 + i * 0.06
+        pl, pr = surf(t0, -0.5, 0.001), surf(t0, 0.5, 0.001)
+        for q in (pl, pr):
+            objs.append(sphere(0.0042, eyelet, loc=tuple(q), scale=(1, 1, 0.45), seg=12, rings=8))
+        nl, nr = surf(t0 + 0.06, -0.5, 0.001), surf(t0 + 0.06, 0.5, 0.001)
+        for a0, b0 in ((pl, nr), (pr, nl)):
+            mid = (a0 + b0) / 2 + V((0, 0, 0.0035))
+            objs.append(tube([a0 + V((0, 0, 0.002)), mid, b0 + V((0, 0, 0.002))], 0.0024, lace, sides=8))
+    # 매듭과 늘어진 끈 두 가닥
+    k = surf(0.6, 0.0, 0.005)
+    objs.append(sphere(0.007, lace, loc=tuple(k), scale=(1.3, 1, 0.7), seg=12, rings=8))
+    for sgn in (-1, 1):
+        pts = [k + V((sgn * 0.004, 0, 0)), k + V((sgn * 0.02, -0.006, -0.004)), k + V((sgn * 0.036, -0.01, -0.02)),
+               k + V((sgn * 0.046, -0.004, -0.04))]
+        objs.append(tube(pts, 0.0026, lace, sides=8))
+    # 뒤꿈치 고리
+    h = surf(0.985, 0.0, 0.0)
+    objs.append(box((0.012, 0.004, 0.014), stripe, loc=(0, h.y + 0.003, h.z - 0.006), bevel=0.0015))
+    # 이끼·흙 몇 점 (밑창 가장자리)
+    for i, (t0, side) in enumerate(((0.2, 1), (0.48, -1), (0.75, 1), (0.9, -1))):
+        hw = _shoe_hw(t0) + 0.003
+        objs.append(lumpy(0.007, moss, loc=(side * (hw + 0.0005), y_of(t0), _shoe_zb(t0) + SOLE_H * 0.85), scale=(0.35, 1.8, 0.45), amp=0.2, seed=i))
     o = join(objs, 'Shoe')
     o.rotation_euler = (0, 0, math.radians(-35))
     return [o], 'item', 0.27

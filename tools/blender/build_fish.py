@@ -58,8 +58,9 @@ class Body:
         self.W = d['width']
         self.be = d['body_end']
         self.y0 = -0.5
-        # 주둥이를 둥글고 뭉툭하게 (지수가 클수록 뾰족한 원뿔 끝이 된다). 장어형(G)은 원래대로
-        self.blunt = 1.0 if d['type'] == 'G' else d.get('blunt', 0.8)
+        # 주둥이를 둥글고 뭉툭하게 (지수가 클수록 뾰족한 원뿔 끝이 된다).
+        # 장어형(G)도 머리가 둥글다 (예전 1.0은 바늘처럼 뾰족한 주둥이였다). 갈치는 어종 값으로 뾰족하게
+        self.blunt = d.get('blunt', 0.55 if d['type'] == 'G' else 0.8)
 
     def y(self, s):
         return self.y0 + s * self.be
@@ -71,6 +72,9 @@ class Body:
         if s < tm:
             return H * math.sin(math.pi / 2 * s / tm) ** en
         t = (s - tm) / (1 - tm)
+        # hold: 몸통 굵기를 그만큼 유지하다가 꼬리로 가늘어진다 (장어: 몸 대부분이 같은 굵기)
+        hold = d.get('hold', 0.0)
+        t = max(0.0, (t - hold) / (1 - hold))
         return H * (d['ped'] + (1 - d['ped']) * math.cos(math.pi / 2 * t) ** 1.5)
 
     def width(self, s):
@@ -81,7 +85,10 @@ class Body:
             w = self.W * math.sin(math.pi / 2 * s / tm) ** en
         else:
             t = (s - tm) / (1 - tm)
-            w = self.W * (0.32 + 0.68 * math.cos(math.pi / 2 * t) ** 1.3)
+            hold = d.get('hold', 0.0)
+            t = max(0.0, (t - hold) / (1 - hold))
+            tw = d.get('tail_w', 0.32)   # 꼬리 끝 폭 비율 (장어 꼬리는 옆으로 납작하다)
+            w = self.W * (tw + (1 - tw) * math.cos(math.pi / 2 * t) ** 1.3)
         hw = d.get('head_w', 1.0)
         if hw != 1.0 and s < 0.35:
             w *= 1 + (hw - 1) * (1 - s / 0.35) * min(1, s / 0.05)
@@ -154,7 +161,7 @@ def build_body_mesh(d, B):
                 ge = fish_tex.gill_edge(d, v)
                 bump = fish_tex_smooth(ge - 0.07, ge - 0.006, s) * fish_tex_smooth(ge + 0.014, ge + 0.002, s)
                 side = fish_tex_smooth(0.12, 0.35, v) * fish_tex_smooth(0.88, 0.62, v)
-                x *= 1 + 0.035 * bump * side
+                x *= 1 + (0.035 if d['type'] != 'G' else 0.0) * bump * side   # 장어는 아가미 뚜껑이 없다 (작은 구멍뿐)
                 # 입: 입술 사이가 실제로 파인 홈 (텍스처 입 선과 같은 자리: v = mouth_v + 0.6 s, 주둥이 끝에서 mlen까지)
                 if not d.get('ceph'):
                     mouth_v = 0.5 + 0.35 * d.get('mouth', 0) * 0.3
@@ -251,15 +258,17 @@ def make_fins(d, B):
                 L = h * interp(f.get('prof'), u)
                 if f.get('spiny'):
                     L *= 1 - 0.28 * math.sin(math.pi * u * spines) ** 2
-                if s > 0.97 and d['type'] == 'G':
-                    L *= max(0.0, (1.0 - s) / 0.03) * 0.5 + 0.5
+                if s > 0.82 and d['type'] == 'G':
+                    # 등·뒷지느러미가 꼬리 끝에서 둥글게 만난다 (끝까지 높으면 꼬리가 칼날처럼 보였다)
+                    L *= 0.12 + 0.88 * math.cos(math.pi / 2 * min(1.0, (s - 0.82) / 0.18)) ** 0.7
                 bz = B.zc(s) + (B.top(s) if up else -B.bot(s))
                 return (0.0, B.y(s) + L * math.sin(sweep), bz + (L if up else -L) * math.cos(sweep))
             # 가시살 사이 막이 아코디언처럼 접힌 주름 (평평한 판이 아니게): 끝으로 갈수록 크게
             pleats = max(3, nu // 3)
             def curl(fu, fv, pleats=pleats, h=h):
                 return (h * 0.035 * math.sin(fu * pleats * math.pi) * fv ** 1.3, 0.0, 0.0)
-            v, fc, uv = fin_grid(base, tip, nu, 4, grp, curl if kind != 'adipose' else None)
+            # 장어 지느러미는 가시 없는 부드러운 막 (주름을 넣으면 긴 지느러미가 톱날처럼 보였다)
+            v, fc, uv = fin_grid(base, tip, nu, 4, grp, curl if kind != 'adipose' and d['type'] != 'G' else None)
             out.append((f'{kind}{idx}', v, fc, uv, kind))
         elif kind == 'caudal':
             yb = B.y(1.0) - 0.004
@@ -616,6 +625,9 @@ def animate(d, arm):
     sc = bpy.context.scene
     sc.render.fps = FPS
     for clip, (frames, cycles, amp, wave, roll, pec, cbend) in CLIPS.items():
+        if clip == 'Flop' and d['type'] == 'G':
+            # 장어는 물 밖에서 C자로 펄떡이지 않고 S자로 몸을 꼰다 (몸 전체에 물결이 한 번 반)
+            amp, wave, cbend = 0.34, 1.4, 0.1
         # 어종 빈도 배율은 클립 길이로 (주기 수는 그대로라 반복이 이어진다)
         frames = max(12, int(round(frames / freq_k)))
         act = bpy.data.actions.new(clip)

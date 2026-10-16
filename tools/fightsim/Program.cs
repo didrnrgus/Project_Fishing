@@ -34,7 +34,8 @@ static class FightSim
     const int Trials = 40;
     const float Dt = 1f / 60f;
     const float TimeLimit = 240f;
-    const float ReactionTime = 0.25f;
+    // 사람 반응 시간 (감기/풀기 판단 간격). FIGHTSIM_REACTION=0.5 처럼 바꿔서 느린 사람 기준도 잰다
+    static readonly float ReactionTime = float.TryParse(Environment.GetEnvironmentVariable("FIGHTSIM_REACTION"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var rt) ? rt : 0.25f;
     const float CounterChance = 0.5f;
 
     // 플레이어 상태 배율 (PlayerProfile.StaminaFactor·FightPower·ReelFactor)
@@ -90,6 +91,44 @@ static class FightSim
         return (win, times.Count > 0 ? times.Average() : 0f, times.Count > 0 ? times.Max() : 0f, broken, hookOut, runOut, timeout);
     }
 
+    /// <summary>
+    /// 입질 분포: 낚시터·미끼마다 잡동사니가 걸릴 확률 (서식지 4 × 시간대 5 평균, 맑음, 어군 없음 / 큰 어군 안).
+    ///   dotnet run -- bites [맵id]
+    /// </summary>
+    static int Bites(string onlyMap)
+    {
+        string[] maps = { "hangang", "honghyeon", "seocheon", "yeongheung", "taean", "samcheok", "deungdae", "heonhwa", "yokji", "jeju", "cheongjin", "geomun", "halong", "santorini", "nile" };
+        Console.WriteLine("| 맵 | 미끼 | 잡동사니 (어군 밖) | 잡동사니 (어군 안) |");
+        Console.WriteLine("|---|---|---|---|");
+        foreach (var map in maps)
+        {
+            if (onlyMap != null && map != onlyMap) continue;
+            foreach (BaitKind bait in Enum.GetValues(typeof(BaitKind)))
+            {
+                var fish = FishDatabase.All.Where(s => !s.IsJunk && s.LivesIn(map) && Array.IndexOf(s.Baits, bait) >= 0).ToList();
+                if (fish.Count == 0) continue;
+                var school = new Fishing.World.FishSchool { SpeciesIds = fish.Take(3).Select(s => s.Id).ToArray() };
+                float Share(Fishing.World.FishSchool sc)
+                {
+                    float sum = 0f; int n = 0;
+                    foreach (Habitat h in Enum.GetValues(typeof(Habitat)))
+                    foreach (TimeBand band in Enum.GetValues(typeof(TimeBand)))
+                    {
+                        var ctx = new BiteContext { Habitat = h, Bait = bait, Band = band, Weather = Weather.Clear, MapId = map, School = sc };
+                        float fishW = 0f;
+                        foreach (var s in FishDatabase.All)
+                            if (!s.IsJunk) fishW += BiteSelector.Weight(s, ctx);
+                        sum += fishW > 0f ? BiteSelector.JunkChance(fishW, ctx) : 1f;
+                        n++;
+                    }
+                    return n > 0 ? sum / n : 0f;
+                }
+                Console.WriteLine($"| {map} | {bait} | {Share(null) * 100f:0.0}% | {Share(school) * 100f:0.0}% |");
+            }
+        }
+        return 0;
+    }
+
     static string Root()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
@@ -110,6 +149,7 @@ static class FightSim
         }
 
         Random.InitState(1234);
+        if (mode == "bites") return Bites(args.Length > 1 ? args[1] : null);
         var sb = new StringBuilder();
         bool report = mode == "report";
         if (report)

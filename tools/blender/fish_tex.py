@@ -218,6 +218,9 @@ def paint(d, seed=0):
     gx = head_end - 0.08 * (vside - 0.5) ** 2 * 4
     not_ceph = 0.0 if d.get('ceph') else 1.0
     gband = smooth(0.05, 0.25, vside) * smooth(0.98, 0.8, vside) * eyed * not_ceph
+    if d['type'] == 'G':
+        # 장어는 아가미 뚜껑 대신 가슴지느러미 앞의 작은 구멍뿐 (머리 둘레에 선을 두르면 헬멧처럼 보였다)
+        gband = smooth(0.2, 0.3, vside) * smooth(0.5, 0.4, vside) * eyed * 0.6
     # 아가미 뚜껑 뒤 가장자리: 뼈판 끝은 밝은 턱, 바로 뒤 아가미 틈은 짙은 그늘
     edge = np.exp(-((u - gx + 0.004) ** 2) / (2 * 0.0035 ** 2)) * gband
     slit = smooth(gx - 0.002, gx + 0.004, u) * smooth(gx + 0.022, gx + 0.006, u) * gband
@@ -422,6 +425,9 @@ def paint(d, seed=0):
         ray1 = smooth(0.62, 0.95, 0.5 + 0.5 * np.cos(xr * 2 * math.pi))
         ray2 = smooth(0.7, 0.97, 0.5 + 0.5 * np.cos(xr * 4 * math.pi)) * smooth(0.45, 0.6, fv)   # 갈라진 가지
         rays = np.maximum(ray1 * (1 - 0.5 * smooth(0.45, 0.6, fv)), ray2)
+        if d['type'] == 'G':
+            # 장어 지느러미: 가시 없는 부드러운 막. 줄기가 진하면 몸 길이만큼 늘어난 텍스처에서 톱니처럼 보였다
+            rays = rays * 0.25
         seg = smooth(0.8, 0.95, 0.5 + 0.5 * np.cos((fv * 26 + np.floor(xr) * 0.37) * 2 * math.pi)) * smooth(0.25, 0.4, fv)
         membrane = 1 - rays
         c *= (0.78 + 0.3 * membrane)[..., None]           # 줄기는 짙고 막은 밝다
@@ -436,7 +442,7 @@ def paint(d, seed=0):
         # 가장자리는 줄기 끝이 조금 더 나오고 줄기 사이 막이 살짝 들어간 물결 모양 (예전: 노이즈 구멍으로 해진 종이 같았다)
         mem_a = 0.82 - (0.82 - ta * 0.75) * smooth(0.05, 1.0, fv)
         a = np.maximum(mem_a, rays * (0.95 - 0.25 * fv))
-        edge_v = 0.975 - 0.045 * membrane
+        edge_v = 0.975 - 0.045 * membrane if d['type'] != 'G' else np.full_like(membrane, 0.96)
         a *= smooth(edge_v, edge_v - 0.035, fv)
         alb[0:FHb, x0:x0 + FWb, :3] = np.clip(c, 0, 1)
         alb[0:FHb, x0:x0 + FWb, 3] = np.clip(a, 0, 1)

@@ -12,7 +12,8 @@ namespace Fishing.Characters
     ///   하롱베이 해적, 산토리니 마을 아가씨
     /// - 밤(21~04시): 좀비 여럿(경찰·소녀·전쟁·해골 …, 가까이 가면 비명), 술 취해 비틀거리는 아저씨, 다리 밑 광대, 빛나는 댄서,
     ///   흡혈귀·그림자, 귀신(<see cref="NightVisitor"/>: X Bot + 반투명 셰이더, 다가가면 사라짐)
-    /// - 유니티짱: 한강 낚시꾼 + 공원 "낚시 아이돌"(<see cref="IdolRoutine"/>)
+    /// - 유니티짱: 한강 공원 버스킹 무대의 "낚시 아이돌"(<see cref="IdolRoutine"/>, 낮에만). 예전에는 데크 옆 낚시꾼으로도 한 명 더 있어서
+    ///   같은 사람이 두 곳에 동시에 서 있었다
     /// 에셋이 없으면(CharacterLibrary에 없음) 그 사람만 빠진다.
     /// </summary>
     public static class ExtraNpcs
@@ -69,8 +70,8 @@ namespace Fishing.Characters
             if (!(_map is CoastMapDef c)) return;
             var path = Path(c.S.Spawn.x + dx0, c.S.Spawn.x + dx1, c.S.Spawn.z + dz);
             if (path == null) { Debug.Log($"[Dev] 순찰 길 없음: {id}"); return; }
-            W(new Wanderer.Spec { Id = id, Name = name, Title = title, Points = path, Walk = CharacterAnimator.Walk2, Idle = CharacterAnimator.Idle,
-                React = CharacterAnimator.ThumbsUp, Speed = 1.25f, When = when, Tag = true, Rest = 6f });
+            W(new Wanderer.Spec { Id = id, Name = name, Title = title, Points = path, Idle = CharacterAnimator.Idle,
+                React = CharacterAnimator.ThumbsUp, Speed = 1.4f, When = when, Tag = true, Rest = 6f });
         }
 
         static void NightWalker(string id, float dx0, float dx1, float dz, string toast = null)
@@ -103,17 +104,13 @@ namespace Fishing.Characters
             {
                 case "hangang":
                 {
-                    float z = HanRiverMap.RiverMinZ - 1.6f, y = HanRiverMap.LandY;
+                    float y = HanRiverMap.LandY;
                     if (ExternalCharacters.Available("unitychan"))
                     {
-                        NpcAngler.Spawn(_root, new Vector3(30f, y, z), -5f, new CharacterLook
-                        {
-                            External = "unitychan", Female = true, Name = "유니티짱", Title = "낚시 아이돌"
-                        }, NpcAngler.Role.Angler);
-                        var idol = new Vector3(HanRiverMap.Pier.center.x - 14f, y, HanRiverMap.RiverMinZ - 9f);
-                        IdolRoutine.Spawn(_root, idol, 160f);
-                        // 아이돌 팬: 옆에서 닭 춤, 다가가면 환호
-                        W(new Wanderer.Spec { Id = "animekid", Name = "하늘이", Title = "아이돌 1호 팬", Points = new[] { idol + new Vector3(2.6f, 0f, -1.2f) }, Yaw = 200f,
+                        var idol = HanRiverMap.IdolStage;
+                        IdolRoutine.Spawn(_root, idol, HanRiverMap.IdolStageYaw);
+                        // 아이돌 팬: 무대 앞에서 아이돌을 보며 닭 춤, 다가가면 환호
+                        W(new Wanderer.Spec { Id = "animekid", Name = "하늘이", Title = "아이돌 1호 팬", Points = new[] { idol + Quaternion.Euler(0f, HanRiverMap.IdolStageYaw, 0f) * new Vector3(1.3f, 0f, 2.5f) }, Yaw = HanRiverMap.IdolStageYaw + 190f,
                             Idle = CharacterAnimator.DanceChicken, React = CharacterAnimator.Cheer2, When = Wanderer.When.Day, Tag = true });
                     }
                     // 공원 벤치(아이스박스)에서 수다 떠는 두 사람
@@ -121,9 +118,10 @@ namespace Fishing.Characters
                         Idle = CharacterAnimator.SitTalk, Seat = true, When = Wanderer.When.Day, Tag = true });
                     W(new Wanderer.Spec { Id = "woman", Name = "수진", Title = "수다 삼매경", Points = new[] { new Vector3(-52f, y, -81.4f) }, Yaw = 0f,
                         Idle = CharacterAnimator.SitTalk, Seat = true, When = Wanderer.When.Day, Tag = true });
-                    // 둔치 산책길의 의사 (당직 끝)
-                    W(new Wanderer.Spec { Id = "doctor", Name = "닥터 강", Title = "당직 끝 산책", Points = new[] { new Vector3(-60f, y, -69f), new Vector3(10f, y, -69f) },
-                        Walk = CharacterAnimator.Walk2, React = CharacterAnimator.ThumbsUp, When = Wanderer.When.Day, Tag = true, Rest = 6f });
+                    // 둔치 산책로의 의사 (당직 끝). 기본 걷기(Human Basic Motions)를 이동 속도에 맞춰 튼다 — Mixamo Walking은
+                    // 허리를 숙이고 팔을 휘저어 살금살금 걷는 것처럼 보였고, 속도도 안 맞아 발이 미끄러졌다
+                    W(new Wanderer.Spec { Id = "doctor", Name = "닥터 강", Title = "당직 끝 산책", Points = new[] { new Vector3(-60f, y, -66.6f), new Vector3(10f, y, -66.6f) },
+                        Speed = 1.5f, React = CharacterAnimator.ThumbsUp, When = Wanderer.When.Day, Tag = true, Rest = 6f });
                     Drinker(HanRiverMap.ShopPos + new Vector3(4.5f, 0f, 3.5f), 200f);
                     // 밤: 술 취한 아저씨, 다리 밑 광대, 데크 입구 댄서, 좀비들, 귀신
                     W(new Wanderer.Spec { Id = "worker", Name = "항만 노동자 김씨", Title = "딱 한 잔만…", Points = new[] { new Vector3(0f, y, -71f), new Vector3(45f, y, -71f) },
@@ -242,11 +240,18 @@ namespace Fishing.Characters
         Transform _tag;
         static readonly string[] Dances = { CharacterAnimator.DanceHipHop, CharacterAnimator.DanceRumba, CharacterAnimator.DanceCapoeira };
 
+        GameObject _model;
+        bool _shown = true;
+
+        /// <summary>
+        /// pos = 버스킹 무대 가운데(땅, <see cref="HanRiverMap.IdolStage"/>, 무대는 WorldBuilder가 짓는다 — 풀보다 먼저 있어야 풀이 무대를 뚫지 않는다).
+        /// 낮(06~21시)에만 나온다 — 밤에 빈 공원에서 혼자 춤추고 있었다.
+        /// </summary>
         public static IdolRoutine Spawn(Transform parent, Vector3 pos, float yaw)
         {
             var go = new GameObject("FishingIdol");
             go.transform.SetParent(parent, false);
-            go.transform.localPosition = pos;
+            go.transform.localPosition = pos + Vector3.up * WorldBuilder.IdolStageH;
             go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
             var ch = ExternalCharacters.Create("unitychan", go.transform, "낚시 아이돌");
             if (ch == null) { Destroy(go); return null; }
@@ -259,6 +264,7 @@ namespace Fishing.Characters
             r._anim = ch.GetComponentInChildren<CharacterAnimator>();
             r._home = go.transform.localRotation;
             r._tag = tag;
+            r._model = ch;
             return r;
         }
 
@@ -272,6 +278,15 @@ namespace Fishing.Characters
         void Update()
         {
             if (_anim == null) return;
+            bool day = Game.Clock == null || (Game.Clock.Hour >= 6 && Game.Clock.Hour < 21);
+            if (day != _shown)
+            {
+                _shown = day;
+                if (_model != null) ModelVisibility.Set(_model, day);
+                if (_tag != null) _tag.gameObject.SetActive(day);
+                foreach (var c in GetComponents<Collider>()) c.enabled = day;
+            }
+            if (!day) return;
             var player = Game.Player != null ? Game.Player.transform : null;
             float d = player != null ? Vector3.Distance(player.position, transform.position) : 999f;
             if (d < 7f)

@@ -21,6 +21,7 @@ namespace UnityEngine
         public static float Sqrt(float v) => (float)System.Math.Sqrt(v);
         public static float Sign(float v) => v >= 0f ? 1f : -1f;
         public static int RoundToInt(float v) => (int)System.Math.Round(v);
+        public static float Round(float v) => (float)System.Math.Round(v);
         public static int FloorToInt(float v) => (int)System.Math.Floor(v);
         public static int CeilToInt(float v) => (int)System.Math.Ceiling(v);
     }
@@ -41,4 +42,15 @@ namespace Fishing.Core
     public class GameClock { public int Day = 1; }
     public static class Game { public static GameClock Clock = null; }
     public static class PlayerProfile { public const string CottonGlovesId = "acc_cottongloves"; }
+}
+
+// 입질 분포(bites)용: BiteSelector가 쓰는 어군 멤버만 (실제 FishSchool은 MonoBehaviour 쪽 코드와 엮여 있다)
+namespace Fishing.World
+{
+    public class FishSchool
+    {
+        public string[] SpeciesIds = new string[0];
+        public float BiteBoost = 4f, WaitFactor = 0.5f, LengthSkew = 1.7f;
+        public bool Contains(string speciesId) => System.Array.IndexOf(SpeciesIds, speciesId) >= 0;
+    }
 }

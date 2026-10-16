@@ -52,6 +52,7 @@ Unity 없이 (.NET 8 SDK만 있으면, 클라우드 세션에서도):
 ```bash
 cd tools/fightsim && dotnet run -- report    # docs/balance-report.md 다시 쓰기
 dotnet run -- table nileperch 158 0.45 1 0.8 # 어종·길이·체력 상태를 골라 콘솔에 (04 문서)
+dotnet run -- bites hangang                  # 미끼마다 잡동사니 확률 (BiteSelector를 그대로 컴파일)
 ```
 
 ## 단위 테스트 (`Assets/Editor/Tests`)
@@ -61,7 +62,7 @@ dotnet run -- table nileperch 158 0.45 1 0.8 # 어종·길이·체력 상태를 
 | 묶음 | 확인하는 것 |
 |---|---|
 | `FishFightTests` | 작은 붕어는 입문 장비로 잡힌다, 체력 20% 이하(지침)여도 대물 장비면 나일농어 대물을 올린다(랜딩 피로), 대물일수록 오래 걸린다, 그루퍼를 입문 장비로 무작정 감으면 줄이 끊어진다, 센 낚싯대가 HP를 더 깎는다 |
-| `BiteSelectorTests` | 그 맵에 사는 고기만 문다, 그루퍼는 어군 안에서만, 맞는 미끼가 유리하다, 길이는 최소~최대 안 |
+| `BiteSelectorTests` | 그 맵에 사는 고기만 문다, **잡동사니는 13% 미만**(한강·산토리니·나일강·청진, 아침·밤), 그루퍼는 어군 안에서만, 맞는 미끼가 유리하다, 길이는 최소~최대 안 |
 | `TournamentRulesTests` | 세 미션 점수·동점, AI 시뮬레이션은 날짜마다 같다, 실력 차이, 시간대·엠블럼·대회 맵 |
 | `RodUpgradeTests` | 강화 성능(+10 = 힘 1.3배), 확률은 내려가고 비용은 오른다, +7부터 하락 |
 | `PlayerProfileTests` | 레벨업, 아이템, 판매가, 도감 최고 기록 |
@@ -69,7 +70,7 @@ dotnet run -- table nileperch 158 0.45 1 0.8 # 어종·길이·체력 상태를 
 | `SeasonTests` | 달력·계절, 빙어는 겨울 얼음 구멍에서만, 제철 배율, 다금바리·돗돔은 먼바다에서만 |
 | `CoastMapTests` | 해안 맵마다 물때(간조·평균·만조) 어느 때나 시작점·낚시점·조합 연락관 자리를 걷는다, 사양이 다 찼다(8×8 격자·연락관·어군·바다 칸), **모든 어종이 사는 낚시터에서 낚인다**(격자에 서식지·어군 전용은 어군, 그곳에서 파는 미끼), 가두리 통로/그물 칸, 목섬 모래톱은 간조에만 |
 
-에디터에서는 Window > General > Test Runner > EditMode. 지금 31개 (2026-10-15 마지막 Unity 실행은 30개 통과, 랜딩 피로 테스트는 `tools/fightsim`으로만 확인 — 다음 `sh tools/test.sh`에서 확인).
+에디터에서는 Window > General > Test Runner > EditMode. 지금 32개 (2026-10-16 `sh tools/test.sh` 32/32 통과).
 
 어종 표: `python tools/fish_table.py --write`가 `FishDatabase.cs`를 읽어 02 문서 11장 표와 맵별 어종 수를 다시 쓴다.
 
@@ -111,6 +112,8 @@ Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.ex
 | 05_hook_perfect | PERFECT 챔질 → HIT |
 | 06_fight, 06b_tension_danger, 06c_speedlines | 82cm 잉어 파이팅(1인칭 팔·장갑), 장력 위험 테두리, 카운터 집중선 |
 | 07_counter_chance, 08_counter, 09_landing, 09b_cheer, 10_result | 카운터 찬스·성공, 랜딩 찬스, 환호, RESULT |
+| 10c_result_eel, 10d_result_shoe, 10e_result_trap | 긴 고기(뱀장어, S자 꿈틀)·잡동사니(운동화·통발, 비스듬히 돈다) RESULT — 결과 창을 바로 연다 |
+| 00h_idol_greeting, 00i_idol_stage, 00l_park_chat, 00o_doctor_walk(_b), 00p_pier_entrance | 버스킹 무대 아이돌(인사·멀리서), 벤치 수다, 산책하는 의사 0.25초 간격 두 장(걸음), 데크와 둔치·석축 경계 |
 | 11_dex, 11b_dex_detail, 12_keepnet | 도감(아이콘), 도감 상세(3D 물고기), 살림망 |
 | 13_quest, 13b_daily, 13c_achievements, 13d_exchange, 14_shop | 퀘스트, 일일 의뢰, 업적, 소라고동 교환소, 상점 |
 | 16_help, 16b_options | 도움말, 옵션(키 설정) |

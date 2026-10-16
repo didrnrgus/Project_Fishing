@@ -32,6 +32,9 @@ namespace Fishing.World
         public static readonly Rect Pier = new Rect(23f, -62f, 4f, 36f);
 
         public static readonly Vector3 Spawn = new Vector3(-10f, LandY + 0.1f, -70f);
+        /// <summary>공원 버스킹 무대 (낚시 아이돌 유니티짱). 무대 앞이 산책로·강 쪽(+z)을 본다.</summary>
+        public static readonly Vector3 IdolStage = new Vector3(Pier.center.x - 14f, LandY, RiverMinZ - 11f);
+        public const float IdolStageYaw = -20f;
         // 시작 위치 왼쪽 뒤편. 3인칭 카메라가 건물 안으로 들어가지 않도록 스폰 바로 뒤는 비워 둔다.
         public static readonly Vector3 ShopPos = new Vector3(-17f, LandY, -76f);
         public const float ShopRadius = 10f;

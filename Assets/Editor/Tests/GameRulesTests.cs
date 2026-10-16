@@ -119,6 +119,21 @@ namespace Fishing.EditorTools.Tests
         }
 
         [Test]
+        public void JunkIsRare()
+        {
+            // 예전: 무게를 그냥 더해서 맞는 고기가 적은 바다·해외 맵에서는 입질의 절반 이상이 잡동사니였다
+            foreach (var map in new[] { "hangang", "santorini", "nile", "cheongjin" })
+            foreach (var band in new[] { TimeBand.Morning, TimeBand.Night })
+            {
+                var ctx = new BiteContext { MapId = map, Habitat = Habitat.Shallow, Bait = BaitKind.Minnow, Band = band, Weather = Weather.Clear };
+                int junk = 0;
+                for (int i = 0; i < 2000; i++)
+                    if (BiteSelector.Pick(ctx).Species.IsJunk) junk++;
+                Assert.Less(junk / 2000f, 0.13f, $"{map} {band}: 잡동사니 {junk / 20f:0.0}%");
+            }
+        }
+
+        [Test]
         public void SchoolOnlyFishNeedsItsSchool()
         {
             var grouper = FishDatabase.Get("giantgrouper");

@@ -59,21 +59,35 @@ namespace Fishing.Angling
             return w;
         }
 
+        /// <summary>
+        /// 잡동사니가 걸릴 확률. 예전에는 잡동사니 무게를 물고기 무게에 그냥 더해서, 희귀 어종이 많은 바다·해외 맵이나
+        /// 서식지·시간이 안 맞을 때 입질의 25~80%가 깡통·운동화였다. 이제는 비율로 정한다:
+        /// 맞는 고기가 넉넉하면(무게 합 ≥ 1 = 흔한 고기 한 종이 다 맞음) 4%, 맞는 고기가 거의 없으면 10%까지. 어군 안에서는 절반.
+        /// </summary>
+        public static float JunkChance(float fishWeight, BiteContext ctx)
+        {
+            float p = Mathf.Lerp(0.10f, 0.04f, Mathf.Clamp01(fishWeight));
+            return ctx.School != null ? p * 0.5f : p;
+        }
+
         public static BiteResult Pick(BiteContext ctx)
         {
-            var weights = new List<(FishSpecies s, float w)>();
-            float total = 0f;
+            var fish = new List<(FishSpecies s, float w)>();
+            var junk = new List<(FishSpecies s, float w)>();
+            float fishTotal = 0f, junkTotal = 0f;
             foreach (var s in FishDatabase.All)
             {
                 float w = Weight(s, ctx);
                 if (w <= 0f) continue;
-                weights.Add((s, w));
-                total += w;
+                if (s.IsJunk) { junk.Add((s, w)); junkTotal += w; }
+                else { fish.Add((s, w)); fishTotal += w; }
             }
 
-            float r = Random.value * total;
-            var picked = weights[weights.Count - 1].s;
-            foreach (var (s, w) in weights)
+            bool pickJunk = fish.Count == 0 || (junk.Count > 0 && Random.value < JunkChance(fishTotal, ctx));
+            var list = pickJunk ? junk : fish;
+            float r = Random.value * (pickJunk ? junkTotal : fishTotal);
+            var picked = list[list.Count - 1].s;
+            foreach (var (s, w) in list)
             {
                 r -= w;
                 if (r <= 0f) { picked = s; break; }

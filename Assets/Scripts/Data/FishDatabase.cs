@@ -39,7 +39,7 @@ namespace Fishing.Data
         public bool Boss => BossCoins > 0;
         /// <summary>제철 (null이면 사계절). 제철이면 잘 물고 아니면 덜 문다 (<see cref="Seasons.BiteFactor"/>).</summary>
         public Season[] Seasons;
-        /// <summary>잡동사니가 걸리는 빈도 배율.</summary>
+        /// <summary>잡동사니끼리의 상대 빈도 (잡동사니가 걸릴 확률 자체는 BiteSelector.JunkChance).</summary>
         public float JunkWeight = 1f;
         public bool IsJunk => Rarity == 0;
         public bool LivesIn(string mapId) => Maps == null || mapId == null || System.Array.IndexOf(Maps, mapId) >= 0;
@@ -537,11 +537,11 @@ namespace Fishing.Data
                 MinLen = 40, MaxLen = 40, TrophyLen = 999, TrophyName = "", WeightCoef = 0.00002f, Rarity = 0,
                 Habitats = AnyHabitat, Baits = AnyBait, Times = AnyTime, Weathers = AnyWeather,
                 Power = 0.3f, Speed = 0.1f, Stamina = 0.5f, Aggression = 0.1f, Exp = 1, Price = 30 },
-            new FishSpecies { Id = "fishcan", Name = "생선 캔", Latin = "-", Temper = "CBT 이벤트의 그 생선 캔! 낚시점에서 비싸게 사 준다", Maps = null, JunkWeight = 0.12f,
+            new FishSpecies { Id = "fishcan", Name = "생선 캔", Latin = "-", Temper = "CBT 이벤트의 그 생선 캔! 낚시점에서 비싸게 사 준다", Maps = null, JunkWeight = 0.45f,
                 MinLen = 10, MaxLen = 10, TrophyLen = 999, TrophyName = "", WeightCoef = 0.0003f, Rarity = 0,
                 Habitats = AnyHabitat, Baits = AnyBait, Times = AnyTime, Weathers = AnyWeather,
                 Power = 0.1f, Speed = 0.1f, Stamina = 0.3f, Aggression = 0.1f, Exp = 5, Price = 3000 },
-            new FishSpecies { Id = "robotfish", Name = "로봇 물고기", Latin = "-", Temper = "한강 수질을 감시하던 로봇 물고기 (원작 한강 명물)", Maps = FishSpecies.HanOnly, JunkWeight = 0.08f,
+            new FishSpecies { Id = "robotfish", Name = "로봇 물고기", Latin = "-", Temper = "한강 수질을 감시하던 로봇 물고기 (원작 한강 명물)", Maps = FishSpecies.HanOnly, JunkWeight = 0.45f,
                 MinLen = 50, MaxLen = 50, TrophyLen = 999, TrophyName = "", WeightCoef = 0.00003f, Rarity = 0,
                 Habitats = AnyHabitat, Baits = AnyBait, Times = AnyTime, Weathers = AnyWeather,
                 Power = 0.5f, Speed = 0.6f, Stamina = 0.6f, Aggression = 0.3f, Exp = 30, Price = 8000 },

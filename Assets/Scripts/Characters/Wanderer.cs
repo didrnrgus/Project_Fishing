@@ -25,7 +25,8 @@ namespace Fishing.Characters
             public string Idle = CharacterAnimator.Idle;
             public string React;            // 가까이 오면 한 번
             public string Toast;            // 처음 반응할 때 알림 (한 번)
-            public float Speed = 1.2f, WalkAnimSpeed = 1f, Rest = 4f, ReactRadius = 5f;
+            /// <summary>WalkAnimSpeed 0 = 기본 걷기(Human Basic Motions, 원래 2 m/s)면 이동 속도에 맞춰 자동 (발이 미끄러지지 않게), 아니면 1.</summary>
+            public float Speed = 1.2f, WalkAnimSpeed = 0f, Rest = 4f, ReactRadius = 5f;
             public When When = When.Always;
             public bool Water, Seat, Tag;
             public bool React_Sound;
@@ -53,6 +54,7 @@ namespace Fishing.Characters
             go.transform.localPosition = s.Points[0];
             go.transform.localRotation = Quaternion.Euler(0f, s.Yaw, 0f);
             var w = go.AddComponent<Wanderer>();
+            if (s.WalkAnimSpeed <= 0f) s.WalkAnimSpeed = s.Walk == CharacterAnimator.Walk ? s.Speed / CharacterAnimator.BasicWalkSpeed : 1f;
             w._s = s;
             w._model = ExternalCharacters.Create(s.Id, go.transform, s.Name);
             if (w._model == null) { Destroy(go); return null; }
@@ -152,8 +154,12 @@ namespace Fishing.Characters
                 Snap();
                 return;
             }
-            transform.localPosition += to.normalized * Mathf.Min(to.magnitude, _s.Speed * Time.deltaTime);
-            Face(transform.parent != null ? transform.parent.TransformDirection(to) : to, 3f);
+            // 끝점에서 돌아설 때: 먼저 그 자리에서 몸을 돌리고 나서 걷는다 (예전에는 몸이 돌기 전에 움직여 뒷걸음질·옆걸음질로 미끄러졌다)
+            var worldTo = transform.parent != null ? transform.parent.TransformDirection(to) : to;
+            float facing = Vector3.Dot(transform.forward, worldTo.normalized);
+            Face(worldTo, facing < 0.7f ? 5f : 3f);
+            float go = Mathf.Clamp01((facing - 0.7f) / 0.25f);
+            transform.localPosition += to.normalized * Mathf.Min(to.magnitude, _s.Speed * go * Time.deltaTime);
             Snap();
         }
 

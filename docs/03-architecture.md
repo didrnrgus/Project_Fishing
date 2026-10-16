@@ -94,7 +94,8 @@ Assets/
       ItemIcons.cs               아이템 아이콘 (Resources/Icons/Items, Blender 렌더)
       HudView.cs, FightHudView.cs, LobbyView.cs    필드 HUD(대회 순위 포함) / 파이팅 HUD / 대기실 HUD
       IntroSequence.cs           인트로: 사업자 로고 「제쓰로네 게임공방」 → 타이틀 「짭풍명월」(겹 그림 시차·물안개·배·꽃잎) → 아무 키 → 대기실 (아래 "인트로")
-      ResultPanel.cs, ResultFishStage.cs           결과 창, 3D 물고기(전용 카메라 → 투명 렌더 텍스처)
+      ResultPanel.cs, ResultFishStage.cs           결과 창, 3D 물고기(전용 카메라 → 투명 렌더 텍스처). 자세: 물고기는 옆모습으로 튀어 오름,
+                                                   장어처럼 긴 고기(몸길이/몸높이 > 7)는 60° 굴려 S자 꿈틀이 보이게, 잡동사니는 비스듬히 내려다보며 천천히 돈다
       DexPanel.cs                도감 (아이콘·실루엣, 3D 상세 무대)
       KeepNetPanel.cs, ShopPanel.cs, InventoryPanel.cs, UpgradePanel.cs, CostumePanel.cs, ExchangePanel.cs, AquariumPanel.cs
       InfoPanels.cs              퀘스트 창 (이야기·일일 의뢰·대물 도전·빙고·출석·업적·대회·일지 탭), 도움말
@@ -277,9 +278,9 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 - 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/Jog/Sprint/HoldRod/Windup/Cast/Hook/Reel/Cheer…)가 클립 이름이다. 클립은 `Resources/Animations/UAL1_Standard`, `Mixamo`, `KevinIglesias`에서 찾고, `이름_M`/`이름_F`가 있으면 캐릭터 성별(`CharacterAnimator.Female`)로 고른다. Mixamo FBX는 `AssetImportRules.MixamoClips`, Kevin Iglesias는 `KevinClips` 표대로 임포트한다(10 문서). 낚시 중 자세는 `PlayerController.FishingPose()`가 상태(Charging → Windup, 감는 중 → Reel, 그 밖 → HoldRod)로, 이동 중 클립과 배속은 `UpdateAnimation()`이 속도로 고른다.
 - 물고기: `tools/blender/fish_species.py`에 어종(체형 템플릿 A~H·두족류 O 문어/Q 갑오징어/S 오징어, 색·무늬·지느러미)을 넣고 `build_fish.py --only <id>` → `Resources/Fish/Species/<id>.fbx`·텍스처·아이콘. `FishModels.CreateSpecies`가 길이(cm/100)로 키운다(09 문서).
 - 물: `WaterSurface` + `Fishing/Water` 셰이더 (`_WaveAmp`, `_WaveLen`, 노멀 타일·속도). 하늘 반사는 `DayNightCycle`의 리얼타임 반사 프로브(하늘만, 2초마다).
-  - **물가 거품**: 맵을 불러올 때 `FieldMapDef.SeabedAt(x, z)`(물 밑 땅 높이, 방파제는 땅 높이)를 `SeabedArea`에 1m 간격(최대 512칸) RFloat 텍스처로 굽는다(`WaterSurface.SetSeabed`). 셰이더는 `수심 = 수면 높이(파도 포함) − 해저`, 이웃 텍셀로 해저 경사를 구해 `물가까지 거리 ≈ 수심 / 경사`를 어림하고, 그 거리 4.5m 안에 노이즈로 끊긴 흰 띠가 밀려오게 그린다. 수심 2.5m보다 얕으면 바닥이 비치게 밝힌다. 깊이 텍스처를 쓰지 않아 그림자·AO와 부딪치지 않는다. 새 맵은 `SeabedAt`만 지형 높이 함수로 바꿔 주면 된다(기본값은 물이면 수심 3m).
-- **z-fighting 막기**: 카메라 near는 평소 0.2m(1인칭 파이팅만 0.05m — 눈앞 낚싯대), 지형 `heightmapPixelError` 2, 땅 위에 까는 판(길·산책로·앞마당)은 5cm 넘게 띄우고, 같은 높이로 겹치는 토막(해안도로 이음매·가두리 통로 교차·수련잎)은 높이를 엇갈린다.
-- **월드 글자**: 간판은 `UIFactory.OneSided`로 단면(뒤에서 거울 글씨가 안 보이게), 길가 간판은 `WorldBuilder.AddSignBothSides`(앞뒤 두 장). 내 이름표는 NPC 곁에서 숨긴다(NPC 이름표와 겹친다).
+  - **물가 거품**: 맵을 불러올 때 `FieldMapDef.SeabedAt(x, z)`(물 밑 땅 높이, 방파제는 땅 높이)를 `SeabedArea`에 1m 간격(최대 512칸) RFloat 텍스처로 굽는다(`WaterSurface.SetSeabed`). 셰이더는 `수심 = 수면 높이(파도 포함) − 해저`, 이웃 텍셀로 해저 경사를 구해 `물가까지 거리 ≈ 수심 / 경사`를 어림하고, 그 거리 4.5m 안에 노이즈로 끊긴 흰 띠가 밀려오게 그린다. 기둥 위에 뜬 잔교(한강 낚시 데크)는 `SeabedAt`에서 깊은 물로 돌려 둘레에 해변 같은 거품 띠가 생기지 않게 한다. 수심 2.5m보다 얕으면 바닥이 비치게 밝힌다. 깊이 텍스처를 쓰지 않아 그림자·AO와 부딪치지 않는다. 새 맵은 `SeabedAt`만 지형 높이 함수로 바꿔 주면 된다(기본값은 물이면 수심 3m).
+- **z-fighting 막기**: 카메라 near는 평소 0.2m(1인칭 파이팅만 0.05m — 눈앞 낚싯대), 지형 `heightmapPixelError` 2, 땅 위에 까는 판(길·산책로·앞마당)은 5cm 넘게 띄우고, 같은 높이로 겹치는 토막(해안도로 이음매·가두리 통로 교차·수련잎)은 높이를 엇갈린다. 한강 데크는 둔치에 2m 걸치므로 윗면을 둔치보다 6cm 높이고(`WorldBuilder.DeckTop`) 둔치 쪽 끝에 비스듬한 문턱을 덮는다. 강가 석축은 데크 자리에서 끊는다(예전에는 데크 위로 20cm 턱이 가로질렀다).
+- **월드 글자**: 간판은 `UIFactory.OneSided`로 단면(뒤에서 거울 글씨가 안 보이게), 길가 간판은 `WorldBuilder.AddSignBothSides`(앞뒤 두 장). 내 이름표는 NPC 곁에서 숨긴다(NPC 이름표와 겹친다). 모든 머리 위 이름표에는 `NameTagFade`(`CharacterFactory.AddNameTag`가 붙임)가 있어 화면과 나란하게 서고(카메라 위치를 보게 돌리면 화면 가장자리에서 비스듬히 기울어 커 보였다), 카메라 3~6.5m 안에서는 흐려지다 사라진다.
 - **부딪히는 몸**: `KenneyProps.Spawn`이 건물·바위·배경 배는 상자, 나무는 줄기, 가로등은 기둥 콜라이더를 붙인다(`solid: false`면 안 붙임 — 내 배). NPC는 캡슐. 캐스팅 궤적 검사(`FishingController.CastBlocked`)와 배 이동(`BoatController.HullClear`)이 이 콜라이더를 본다. 자동 스크린샷은 낚시 장면마다 `CheckClear`로 앞이 막혔는지 로그(`[Dev] 캐스팅 막힘`)를 남긴다.
 - 낚싯대·릴: `TelescopicRod.StyleFor`(낚싯대 색·길이·마디 수)와 `BuildReel`(릴 모양)에서 장비 id별로 고른다. 좌표 규약은 +Y가 낚싯대 방향, 원점이 릴 시트, +Z가 릴 쪽. 휨은 `Drive(목표각, 줄 방향, 떨림, dt)`, 펼치기는 `SetExtension(0~1)`, 릴은 `SpinReel(감기 바퀴/s, 줄 풀림 m/s, dt)`.
 
@@ -300,8 +301,8 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 | `World/GrassField.cs` + `Shaders/Grass.shader` | 풀·들꽃 포기: 지형 풀 층·풀 텍스처 바닥을 레이캐스트로 훑어 심고 48m 칸 메쉬로 굽는다, 바람 흔들림, 130m 밖 칸은 끔(`GrassCuller`). `MapLoader`가 월드를 지은 직후 부른다 |
 | `Characters/RodGrip.cs` | 3인칭 오른손이 낚싯대를 쥔다: 릴 시트를 손바닥 가운데에, 손가락 마디를 낚싯대 축으로 감는다 (플레이어·NPC 낚시꾼) |
 | `Fishing/FpHand.cs` | 1인칭 주먹 메쉬: 손잡이(오른손)·릴 노브(왼손, 거울)를 감아 쥔 손가락 튜브·엄지·손등·손목 |
-| `Characters/CharacterLibrary.cs` · `ExternalCharacters.cs` · `ExtraNpcs.cs` + `Shaders/Ghost.shader` | 받은 휴머노이드 캐릭터(유니티짱·좀비·X Bot)를 같은 동작 시스템으로 움직인다. `CharacterLook.External`, 낚시 아이돌(`IdolRoutine`), 밤 손님(`NightVisitor`: 좀비·귀신) |
-| `Characters/Wanderer.cs` | 받은 사람으로 만든 배경 NPC: 점 사이 걷기·쉬기, 땅 레이캐스트, 반응 동작, 낮/밤 표시(렌더러만 끔), 헤엄(골반을 수면에), 앉기 |
+| `Characters/CharacterLibrary.cs` · `ExternalCharacters.cs` · `ExtraNpcs.cs` + `Shaders/Ghost.shader` | 받은 휴머노이드 캐릭터(유니티짱·좀비·X Bot)를 같은 동작 시스템으로 움직인다. `CharacterLook.External`, 낚시 아이돌(`IdolRoutine`: 공원 버스킹 무대 `HanRiverMap.IdolStage` 위, 낮에만 — 무대는 풀보다 먼저 지어야 해서 `WorldBuilder.BuildIdolStage`), 밤 손님(`NightVisitor`: 좀비·귀신). 같은 인물은 한 맵에 한 번만 |
+| `Characters/Wanderer.cs` | 받은 사람으로 만든 배경 NPC: 점 사이 걷기·쉬기, 땅 레이캐스트, 반응 동작, 낮/밤 표시(렌더러만 끔), 헤엄(골반을 수면에), 앉기. 기본 걷기는 이동 속도에 맞춘 배속(`CharacterAnimator.BasicWalkSpeed` 2 m/s 기준), 돌아설 때는 먼저 제자리에서 몸을 돌린 뒤 걷는다 |
 | `UIPanel.RowCursor` | 창 목록을 쌓으면 자동으로 잘라내기 + 휠 스크롤 + 스크롤바 (key로 스크롤 위치 기억) |
 
 새 셰이더는 코드에서 `Shader.Find`로 찾으므로 `ProjectSettings/GraphicsSettings.asset` Always Included와 `ProjectTools.RuntimeShaders`에 넣었다 (meta의 guid를 고정해 두었다).

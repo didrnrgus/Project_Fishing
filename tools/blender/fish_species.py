@@ -76,9 +76,10 @@ TEMPLATES = {
                     _fin('pelvic', s=(0.26, 0.26), h=0.05)],
               eye=dict(s=0.12, z=0.3, r=0.02), flat='left', anim=dict(amp=0.7, freq=0.9)),
     # G. 장어형: 아주 길고 지느러미가 몸을 따라 이어진다
-    'G': dict(depth=0.07, width=0.065, tmax=0.4, body_end=0.97, ped=0.55, arch=0.5, snout=0.7, mouth=0.0, xsec=2.2, scales=0,
-              fins=[_fin('dorsal', (0.32, 1.0), 0.45, prof=[(0, 0.2), (0.2, 0.8), (1, 1.0)]),
-                    _fin('anal', (0.45, 1.0), 0.45, prof=[(0, 0.2), (0.2, 0.8), (1, 1.0)]),
+    # 머리는 둥글고(blunt 0.55) 몸통은 거의 같은 굵기(hold)로 가다가 꼬리가 옆으로 납작하게 가늘어진다(ped·tail_w)
+    'G': dict(depth=0.07, width=0.065, tmax=0.2, hold=0.35, body_end=0.97, ped=0.12, tail_w=0.14, arch=0.5, snout=0.7, mouth=0.0, xsec=2.2, scales=0,
+              fins=[_fin('dorsal', (0.32, 1.0), 0.36, prof=[(0, 0.15), (0.15, 0.75), (0.55, 1.0), (1, 0.9)]),
+                    _fin('anal', (0.45, 1.0), 0.36, prof=[(0, 0.15), (0.15, 0.75), (0.55, 1.0), (1, 0.9)]),
                     _fin('caudal', h=0.05, shape='point'),
                     _fin('pectoral', s=(0.1, 0.1), h=0.05)],
               eye=dict(s=0.04, z=0.35, r=0.007), bones=14, anim=dict(amp=1.3, freq=0.8)),
@@ -423,7 +424,7 @@ SPECIES = {
                                patterns=[('stripe', dict(v=0.56, w=0.045, color='#f0c830', a=0.9))]),
                       eye=dict(iris='#d0c890'), anim=dict(amp=1.0, freq=1.25)),
     # 갈치 (Trichiurus lepturus): 은빛 띠 모양, 꼬리지느러미 없이 가늘어진다, 등지느러미가 몸 전체
-    'hairtail': dict(type='G', name='갈치', depth=0.07, width=0.025, tmax=0.25, body_end=0.99, ped=0.06, snout=0.9, mouth=0.35, xsec=1.3,
+    'hairtail': dict(type='G', name='갈치', depth=0.07, width=0.025, tmax=0.25, body_end=0.99, ped=0.06, snout=0.9, mouth=0.35, xsec=1.3, blunt=1.0, hold=0.0, tail_w=0.32,
                      fins=[_fin('dorsal', (0.08, 0.97), 0.4, prof=[(0, 0.6), (0.1, 1.0), (0.85, 0.7), (1, 0.2)]),
                            _fin('caudal', h=0.01, shape='point'), _fin('pectoral', s=(0.1, 0.1), h=0.05)],
                      colors=P('#b8c4cc', '#e4eaee', '#f8fafa', silver=1.0, metallic=0.85, fin_up=('#d0dce0', '#e8f0f0', 0.5), fin_low=('#d0dce0', '#e8f0f0', 0.5),
