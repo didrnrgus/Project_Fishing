@@ -135,6 +135,8 @@ cd tools/fightsim && dotnet run -- report   # Unity 없이 파이팅 밸런스 (
 | [11-original-crosscheck.md](docs/11-original-crosscheck.md) | 원작 자료집과 구현 대조표 (들어간 것 / 바꾼 것 / 안 넣은 것) |
 | [12-original-fight-video.md](docs/12-original-fight-video.md) | 원작 낚시 영상 프레임 분석: 입질·챔질·파이팅·카운터·랜딩·결과 연출을 원작 시각별로 맞춘 기록 |
 | [WORK-IN-PROGRESS.md](docs/WORK-IN-PROGRESS.md) | 지금 상태, **사용자가 해야 할 일**(에셋 스토어 로그인이 필요한 것), 다음 후보 |
+| [guide/](docs/guide/README.md) | **레벨별 플레이 가이드**: Lv.1~40 구간마다 열리는 것, 장비 사는 순서, 낚시터·어군·퀘스트 요령, 기본기 |
+| [tech/](docs/tech/README.md) | **기술 문서**: 만들면서 도움이 된 알고리즘·기법 (파이팅 모형, 헤드리스 밸런스, 가중치 확률, 제스처 인식, 스프링·IK, 절차적 지형, 셰이더, 성능, 절차적 콘텐츠, 개발 흐름) |
 
 ## 구조 한눈에
 
