@@ -88,7 +88,9 @@ bpyenv/Scripts/pip install bpy pillow numpy
 | `... build_fish.py --preview --only carp --out Screenshots/fish` | 물고기 미리보기 |
 | `... build_icons.py` | `Resources/Icons/Items`, `Icons/Junk`, `Resources/Junk` |
 | `... mixamo_probe.py <fbx> --out <폴더> [--loop A-B:MIN-MAX]` | Mixamo FBX 막대 인형 시트·움직임 곡선·루프 후보 (구간 나누기, 10 문서) |
+| `bpyenv/Scripts/python -I tools/intro/build_intro_art.py [--preview <폴더>]` | `Resources/Intro/*.png` 인트로 그림(타이틀 배경 겹·붓글씨·낙관·사업자 로고) + 미리보기 두 장. bpy 없이 numpy·PIL만 쓴다 (03 문서 "인트로") |
 
+- 인트로 글자는 PIL `stroke_width`로 굵게 하지 않는다: 윤곽이 겹친 글리프(송명 '쓰')에서 획 속이 지워진다(ㅡ가 사라짐). 그냥 그린 뒤 `ImageFilter.MaxFilter`로 넓힌다.
 - 스크립트 끝은 `sys.stdout.flush(); os._exit(0)` (bpy 종료 시 충돌 회피). `bpyenv/`는 .gitignore.
 - 물고기를 전부 다시 만들면 바뀌지 않은 어종도 FBX·PNG가 바이트 단위로 달라진다 → 새로 만든 것만 커밋하고 나머지는 `git checkout --`.
 - 만든 뒤 Unity에서 `Fishing > Reimport Fish Assets`(또는 배치모드 빌드가 자동 임포트).

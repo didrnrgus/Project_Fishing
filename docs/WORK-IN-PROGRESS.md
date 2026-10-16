@@ -20,6 +20,13 @@
 | 소리 | 절차적 낚시 소리 + Kenney CC0 UI 클릭·경고·발소리(청진은 눈) | 03 |
 | 편의 | 옵션(O)·키 설정, 패드 진동, 미끼 칸 8개(1~8), 단위 테스트 31개, 밸런스 시뮬레이터, 어종 표 생성기 | 04, 05 |
 
+### 2026-10-16: 인트로 (Unity → 제쓰로네 게임공방 → 짭풍명월)
+
+- `UI/IntroSequence.cs`, `Audio/IntroAudio.cs`, `Shaders/UIInkReveal.shader`, 그림 생성기 `tools/intro/build_intro_art.py` → `Resources/Intro`. 자세한 연출표는 03 문서 "인트로".
+- Unity 스플래시 바탕을 검정으로. `productName`·`companyName`은 저장 경로 때문에 그대로 (바꾸려면 save.json 옮기기가 필요).
+- 사용자 지적: 사업자 낙관의 '쓰'에서 ㅡ가 안 보임 → PIL stroke 대신 팽창 필터로 굵게 (05 문서 Blender 파이프라인 주의).
+- 확인: 빌드 에러 0, autoshot `00_intro_company`·`00_intro_title`·`00a_lobby` 예외 0, 60 FPS, 단위 테스트 31/31, 사용자 플레이 확인.
+
 ### 2026-10-15: 해안 낚시터 8곳 · 기본 동작 · 버그 정리
 
 - **기본 동작**: Kevin Iglesias Human Basic Motions FREE의 Idle01·Walk01·Run01·Sprint01(남·녀)을 `Resources/Animations/KevinIglesias`로. 걷기 키 4.5m/s는 Run 클립 ×1.1, 달리기 7.5m/s는 Sprint ×1.25 (원래 속도는 [RM] 판으로 잼). 10 문서 7장.

@@ -93,6 +93,7 @@ Assets/
       UIChart.cs                 EasyChart를 코드로: Line/Bars/Donut/Radar
       ItemIcons.cs               아이템 아이콘 (Resources/Icons/Items, Blender 렌더)
       HudView.cs, FightHudView.cs, LobbyView.cs    필드 HUD(대회 순위 포함) / 파이팅 HUD / 대기실 HUD
+      IntroSequence.cs           인트로: 사업자 로고 「제쓰로네 게임공방」 → 타이틀 「짭풍명월」(겹 그림 시차·물안개·배·꽃잎) → 아무 키 → 대기실 (아래 "인트로")
       ResultPanel.cs, ResultFishStage.cs           결과 창, 3D 물고기(전용 카메라 → 투명 렌더 텍스처)
       DexPanel.cs                도감 (아이콘·실루엣, 3D 상세 무대)
       KeepNetPanel.cs, ShopPanel.cs, InventoryPanel.cs, UpgradePanel.cs, CostumePanel.cs, ExchangePanel.cs, AquariumPanel.cs
@@ -102,11 +103,13 @@ Assets/
       KoreaMap.cs, RegionMap.cs  거점 지도 텍스처 (한국 / 동남아·지중해·아프리카: 해안선 다각형·강 선)
       AreaMapPanel.cs, DialogPanel.cs, PortraitCamera.cs, UIPanel.cs
     Audio/SoundFx.cs             절차적 낚시 소리 + Kenney CC0 UI·발소리
+    Audio/IntroAudio.cs          인트로 소리 (절차적): 낙관 쿵, 종, 붓, 징, 가야금풍 타이틀 음악(Karplus-Strong 평조 선율 + 바람·물결) — 작업 스레드에서 계산
     Dev/DevAutomation.cs         -autoshot 자동 연출 + 스크린샷
   Shaders/
     Skin.shader                  몸: 입은 옷 속 피부를 버텍스 컬러 마스크(R 상의, G 하의, B 신발, A 긴소매)로 잘라냄
     Garment.shader               옷: 트림(R)·음영(G)·보조 원단(B), 무늬(체크·데님·줄무늬·밀짚 엮음), 장화 속 바지 자르기
     Fish.shader                  물고기 (알파 컷 지느러미: clip(), 렌더 텍스처에서도 알파 유지)
+    UIInkReveal.shader           인트로 UI: 붓으로 쓰듯 왼쪽부터 번지며 드러남(_Progress), 지나가는 빛줄기(_Shine), 더하기 섞기(물에 비친 달빛)
     Water.shader                 버텍스 파도 + 흐르는 노멀맵, 하늘 반사, 밤 불빛 반짝임(WaterGlints), 물가 거품·얕은 물 (해저 높이 텍스처)
     Sky.shader                   Mode 0 달·별, Mode 1 구름(덮임 정도·노을색, 흐림·비 층구름)
     SkyCube.shader               흐림·비 하늘 큐브맵 돔 (AllSky "Overcast Low", 스카이박스 뒤 Transparent-300에 그린다)
@@ -140,6 +143,7 @@ tools/
   fish_table.py                  FishDatabase.cs → 02 문서 11장 어종 표 (--write)
   fightsim/                      Unity 없이 파이팅 밸런스 재기 (.NET 8, 게임 소스 + UnityEngine 대체 Stubs.cs) — 04 문서
   blender/                       headless Blender(bpy) 파이프라인: 캐릭터 옷(garments.py), 물고기(build_fish.py), 아이콘(build_icons.py), 해외 소품(build_props.py)
+  intro/build_intro_art.py       인트로 그림 → Resources/Intro (numpy·PIL로 그린 달밤 수묵 산수화 겹, 붓글씨 타이틀, 낙관). 글꼴 intro/fonts (SIL OFL)
 ```
 
 ## 실행 흐름
@@ -154,7 +158,9 @@ GameBootstrap.Awake
  ├─ FishingController (Start에서 찌, 1인칭 낚싯대, 낚싯줄, 착지 링 생성)
  ├─ GameUI (EventSystem, Canvas, HUD, 대기실 HUD, 창들)
  └─ LobbyRoom.Build (한강에서 멀리 떨어진 (0,0,-420)에 실내를 짓는다)
-GameBootstrap.Start → GameUI.EnterLobby (Mode=Lobby, 카메라 고정)
+GameBootstrap.Awake 끝 → IntroSequence.Play(Welcome)  (Unity 스플래시 뒤 사업자 → 타이틀, 정렬 500 캔버스가 화면을 덮는다)
+GameBootstrap.Start → GameUI.EnterLobby (Mode=Lobby, 카메라 고정) — 인트로 뒤에서 대기실이 미리 그려져 셰이더가 데워진다
+IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 ```
 
 **배에 탄 플레이어**: `PlayerController.Mount(자리, 앉음)`이 CharacterController를 끄고, `BoatController.Update`가 배를 움직인 뒤 `SnapToMount()`로 플레이어를 자리(운전석/뱃머리)에 옮긴다. 플레이어 `Update`는 배 위에서 이동하지 않고 WASD 눌림만 `MovedThisFrame`으로 알린다(찌 회수용). `Dismount`는 `Teleport`로 둔치에 내려놓는다.
@@ -167,6 +173,25 @@ GameBootstrap.Start → GameUI.EnterLobby (Mode=Lobby, 카메라 고정)
 - `FishingController.Update`가 상태 머신을 진행한다. 파이팅 중에는 `FishFight.Tick(dt, input, 체력계수, 힘계수(내구도×의상×목장갑), 릴계수)`를 부르고, Q를 누르면 `FishFight.Focus()`(포커싱).
 - `GameUI.Update`가 `HudView.Update`와 `FightHudView.Update`를 부른다. 둘 다 상태를 **폴링해서** 그리고, 창은 `PlayerProfile.Changed` 이벤트가 오면 다시 그린다.
 - `Game.Toast()`가 게임 어디서든 화면 위쪽에 메시지를 띄운다.
+
+## 인트로 (`IntroSequence`, 2026-10-16)
+
+게임을 켜면 **Unity 스플래시(검은 바탕) → 사업자 「제쓰로네 게임공방」 → 타이틀 「짭풍명월」 → 아무 키 → 대기실**.
+
+| 장면 | 연출 (초) |
+|---|---|
+| 사업자 (5.4초) | 0~0.9 검은 막이 걷힘 · 0.45~0.7 붉은 낙관이 커졌다가 **쾅**(흔들림·붉은 빛·인주 튀김, 도장 소리) · 1.1~2.3 「제쓰로네 게임공방」이 붓으로 쓰듯 왼쪽부터(붓 소리) · 2.0 금빛 선이 펼쳐지며 영어 이름(종) · 2.9 빛줄기 · 4.6 어두워짐 |
+| 타이틀 | 0~2.2 밝아지며 카메라가 천천히 물러남(11초) · 1.6~3.5 「짭풍명월」 붓글씨(붓 소리) · 3.72 「짭」 낙관 쾅(징) · 3.9 영어 · 4.4 「바람 맑고 달 밝은 밤, 낚싯대 하나」 · 5.6 「아무 키나 눌러 시작」 깜빡임. 음악은 가야금풍 36초 반복 |
+| 나가기 | 종 소리, 1.1초 동안 어두워지며 음악이 빠짐 → `Welcome` → 0.9초 동안 대기실이 밝아짐 |
+
+- **건너뛰기**: 사업자 화면에서 아무 키 → 바로 어두워짐. 타이틀이 써지는 중에 아무 키 → 다 쓴 상태로(붓 소리 끊고 징 생략), 다시 아무 키 → 게임.
+- 모든 연출은 장면 시간 t의 함수(`CompanyPose(t)`, `TitlePose(t)`)라서 건너뛰기는 t를 옮기기만 한다. 첫 프레임처럼 오래 걸린 프레임 때문에 연출이 튀지 않게 dt는 0.05초로 자른다.
+- 무대는 1920×1080(가운데 원점). 화면 비율이 달라도 덮도록(cover) 키운다. 배경 겹은 화면보다 6% 크게 그려서 마우스 시차·천천히 흐르는 흔들림의 여유가 있다.
+- 타이틀 겹(뒤→앞, 시차 계수): 하늘 0.1 · 달 0.12(숨쉬듯 밝아짐) · 엷은 구름 0.18(가로 흐름) · 먼 산 0.3 · 물 0.45 · 달빛 길 0.45(더하기 섞기, 좌우 뒤집은 두 장을 번갈아 → 반짝임) · 물안개 0.5 · 가까운 산·소나무 0.65 · 배와 그림자 0.6(흔들림) · 앞 물안개 0.7 · 꽃잎 22장(바람, 뒤집히며 날림) · 갈대 1.0(흔들림) · 비네트 · 글씨 0.15.
+- 그림 다시 만들기: `bpyenv/Scripts/python.exe -I tools/intro/build_intro_art.py --preview <폴더>` (미리보기 두 장도 만든다). 배치 좌표는 미리보기 그림 좌표(`P(x, y)`)를 그대로 쓴다. 임포트 규칙은 `AssetImportRules`의 `Resources/Intro/` (하늘·물·바탕은 무압축 — 압축하면 그러데이션에 띠가 진다).
+- 게임 단축키는 `IntroSequence.Playing` 동안 막힌다(`GameUI`). 자동 촬영(-autoshot)은 `00_intro_company`·`00_intro_title`을 찍고 `Continue()`로 넘어간다.
+- Unity 스플래시 설정(`ProjectTools.Setup`): 검은 바탕, 흰 로고(Light on Dark). 사업자 화면도 검은 막에서 시작해 이어진다.
+- 저장 경로·옵션(PlayerPrefs)이 `companyName`·`productName`을 따르므로 두 값은 바꾸지 않았다(바꾸면 예전 저장이 안 보인다).
 
 ## 정적 배칭 (`WorldBatcher`, 2026-10-15)
 

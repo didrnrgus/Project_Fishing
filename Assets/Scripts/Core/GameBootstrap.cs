@@ -98,21 +98,28 @@ namespace Fishing.Core
                         Game.Toast($"새 낚시터가 열렸습니다: {area.Name}. 대기실 [낚시터 선택하기]에서 입장하세요.", ToastKind.Great);
             };
 
+            // 인트로 (Unity 스플래시 → 제쓰로네 게임공방 → 짭풍명월 타이틀). 끝나고 대기실이 보일 때 환영 알림을 띄운다
+            IntroSequence.Play(Welcome);
             if (devArgs.Enabled) gameObject.AddComponent<DevAutomation>().Init(devArgs);
         }
 
         void Start()
         {
-            var q = Game.Quests.Current;
             Game.UI.EnterLobby();
+            _nextAutoSave = Time.time + AutoSaveInterval;
+            Bingo.EnsureCard();
+        }
+
+        /// <summary>인트로가 끝나 대기실이 보일 때: 환영·퀘스트·레벨 보상·출석 알림.</summary>
+        void Welcome()
+        {
+            var q = Game.Quests.Current;
             Game.Toast($"한국 낚시 조합에 오신 걸 환영합니다! [낚시터 선택하기]에서 {Fishing.World.FieldMap.ShortName}에 입장하세요.", ToastKind.Great);
             if (q != null) Game.Toast($"조합 퀘스트: {q.Title} - {q.GoalText}");
-            _nextAutoSave = Time.time + AutoSaveInterval;
             foreach (var msg in Game.Profile.GrantLevelRewards()) Game.Toast(msg, ToastKind.Good);
             // 출석 체크 (실제 날짜로 하루 한 번)
             var attend = Attendance.CheckIn();
             if (attend != null) Game.Toast(attend + "  · 퀘스트 창(L) [빙고·출석]", ToastKind.Great);
-            Bingo.EnsureCard();
         }
 
         void Update()

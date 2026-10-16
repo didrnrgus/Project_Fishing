@@ -20,7 +20,7 @@ namespace Fishing.EditorTools
 
         static readonly string[] RuntimeShaders =
         {
-            "Standard", "Unlit/Color", "Skybox/Procedural", "Legacy Shaders/Particles/Alpha Blended", "UI/Default", "Fishing/Skin", "Fishing/Garment", "Fishing/Water", "Fishing/Sky", "Fishing/SkyCube", "Fishing/Fish", "Fishing/FishFin", "Fishing/Ground", "Fishing/Grass", "Fishing/Ghost", "Fishing/Terrain", "Hidden/Fishing/Terrain-AddPass", "Nature/Terrain/Standard"
+            "Standard", "Unlit/Color", "Skybox/Procedural", "Legacy Shaders/Particles/Alpha Blended", "UI/Default", "Fishing/Skin", "Fishing/Garment", "Fishing/Water", "Fishing/Sky", "Fishing/SkyCube", "Fishing/Fish", "Fishing/FishFin", "Fishing/Ground", "Fishing/Grass", "Fishing/Ghost", "Fishing/UIInkReveal", "Fishing/Terrain", "Hidden/Fishing/Terrain-AddPass", "Nature/Terrain/Standard"
         };
 
         [MenuItem("Fishing/Setup Project")]
@@ -42,6 +42,11 @@ namespace Fishing.EditorTools
             PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
             PlayerSettings.resizableWindow = true;
             PlayerSettings.runInBackground = true;
+            // Unity 스플래시: 검은 바탕에 흰 로고 → 이어지는 사업자 인트로(IntroSequence)도 검은 화면에서 시작한다
+            PlayerSettings.SplashScreen.show = true;
+            PlayerSettings.SplashScreen.showUnityLogo = true;
+            PlayerSettings.SplashScreen.unityLogoStyle = PlayerSettings.SplashScreen.UnityLogoStyle.LightOnDark;
+            PlayerSettings.SplashScreen.backgroundColor = Color.black;
             AssetDatabase.SaveAssets();
             Debug.Log("[Setup] 완료: " + ScenePath);
         }

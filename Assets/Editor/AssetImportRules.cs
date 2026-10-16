@@ -137,6 +137,17 @@ namespace Fishing.EditorTools
                 importer.maxTextureSize = 1024;
                 importer.textureCompression = TextureImporterCompression.Compressed;
             }
+            else if (assetPath.Contains("Resources/Intro/"))
+            {
+                // 인트로 그림 (tools/intro/build_intro_art.py). 화면 크기로 그리므로 줄이지 않고, 하늘 그러데이션은 압축하면 띠가 져서 그대로 둔다
+                importer.textureType = TextureImporterType.Default;
+                importer.alphaIsTransparency = true;
+                importer.mipmapEnabled = true;
+                importer.wrapMode = assetPath.Contains("_mist") || assetPath.Contains("_wisps") ? UnityEngine.TextureWrapMode.Repeat : UnityEngine.TextureWrapMode.Clamp;
+                importer.maxTextureSize = 2048;
+                importer.textureCompression = assetPath.Contains("bg_sky") || assetPath.Contains("company_paper") || assetPath.Contains("bg_water")
+                    ? TextureImporterCompression.Uncompressed : TextureImporterCompression.CompressedHQ;
+            }
             else if (assetPath.Contains("Resources/Icons/"))
             {
                 importer.textureType = TextureImporterType.Sprite;

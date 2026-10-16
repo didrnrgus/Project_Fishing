@@ -123,7 +123,7 @@ namespace Fishing.UI
             // 대화 중이거나 카메라가 캐릭터에 바짝 붙는 연출(캐스팅·챔질·환호) 중에는 내 이름표를 숨긴다
             Game.Player.NameTagVisible = !Dialog.IsOpen && NearbyNpc == null && Game.CameraRig.Shot == Fishing.PlayerSystems.CameraRig.ShotKind.Follow;
             Result.Animate();
-            HandleKeys();
+            if (!IntroSequence.Playing) HandleKeys();
         }
 
         /// <summary>한국 낚시 조합(대기실)으로 나간다.</summary>

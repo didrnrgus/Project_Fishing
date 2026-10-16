@@ -55,6 +55,19 @@ namespace Fishing.Dev
 
         IEnumerator Run()
         {
+            // 인트로: 사업자 로고 · 타이틀을 찍고 넘어간다
+            var intro = Fishing.UI.IntroSequence.Instance;
+            if (intro != null)
+            {
+                yield return new WaitUntil(() => intro.Current == Fishing.UI.IntroSequence.Stage.Company && intro.T >= 3.6f);
+                yield return Shot("00_intro_company");
+                yield return new WaitUntil(() => intro.Ready);
+                yield return new WaitForSecondsRealtime(1.5f);
+                yield return Shot("00_intro_title");
+                intro.Continue();
+                yield return new WaitUntil(() => Fishing.UI.IntroSequence.Instance == null);
+            }
+
             var p = Game.Profile;
             p.Data.level = 6;
             p.Data.gold = 8400;
