@@ -43,9 +43,19 @@ namespace Fishing.EditorTools
             }
             else if (assetPath.Contains("Assets/MixamoCharacters/"))
             {
+                // Mixamo 캐릭터: 휴머노이드, 재질은 FBX 설명대로 (텍스처는 CharacterLibraryBake가 꺼내 1024로 줄인다)
                 importer.animationType = ModelImporterAnimationType.Human;
                 importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
                 importer.importAnimation = false;
+                importer.materialImportMode = assetPath.EndsWith("XBot.fbx") ? ModelImporterMaterialImportMode.None : ModelImporterMaterialImportMode.ImportViaMaterialDescription;
+                importer.materialLocation = ModelImporterMaterialLocation.InPrefab;
+            }
+            else if (assetPath.Contains("Assets/MixamoAnimation/Extra/"))
+            {
+                // 받은 Mixamo 동작 원본 (몸이 들어 있는 것도 있어 Resources 밖에 둔다). 클립만 MixamoClipBake가 Resources로 뽑는다
+                importer.animationType = ModelImporterAnimationType.Human;
+                importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+                importer.importAnimation = true;
                 importer.materialImportMode = ModelImporterMaterialImportMode.None;
             }
             else if (assetPath.Contains("Resources/Characters/Hair/"))
@@ -119,6 +129,13 @@ namespace Fishing.EditorTools
                 importer.wrapMode = UnityEngine.TextureWrapMode.Repeat;
                 importer.maxTextureSize = 1024;
                 importer.anisoLevel = 4;
+            }
+            else if (assetPath.Contains("Assets/MixamoCharacters/Textures/"))
+            {
+                // Mixamo 캐릭터에서 꺼낸 텍스처 (원본 4K). 사람 하나에 1024면 충분하다
+                if (assetPath.ToLower().Contains("normal")) importer.textureType = TextureImporterType.NormalMap;
+                importer.maxTextureSize = 1024;
+                importer.textureCompression = TextureImporterCompression.Compressed;
             }
             else if (assetPath.Contains("Resources/Icons/"))
             {
@@ -198,6 +215,22 @@ namespace Fishing.EditorTools
             ("Z_zombierun", "Zombie_Run_Loop"),
             ("Z_zombiescream", "Zombie_Scream"),
             ("Z_zombiewalk", "Zombie_Walk_Loop"),
+            // Assets/MixamoAnimation/Extra (2026-10-16)
+            ("Cheering", "Cheer2"),
+            ("ChickenDance", "Dance_Chicken_Loop"),
+            ("Dancing", "Dance_Club_Loop"),
+            ("Drinking", "Drink_Loop"),
+            ("Drunk_DrunkIdle", "Drunk_Idle_Loop"),
+            ("Drunk_DrunkIdleVariation", "Drunk_Idle2_Loop"),
+            ("Drunk_DrunkRunForward", "Drunk_Run_Loop"),
+            ("Drunk_DrunkWalk", "Drunk_Walk_Loop"),
+            ("SittingTalking", "Sit_Talk_Loop"),
+            ("SleepingIdle", "Sleep_Loop"),
+            ("StandingThumbsUp", "ThumbsUp"),
+            ("Swimming", "Swim_Loop"),
+            ("TreadingWater", "Tread_Loop"),
+            ("VictoryIdle", "Victory_Loop"),
+            ("Walking", "Walk2_Loop"),
         };
 
         static void PreprocessMixamoExtra(ModelImporter importer)
@@ -226,7 +259,7 @@ namespace Fishing.EditorTools
 
         void OnPreprocessAnimation()
         {
-            if (!assetPath.Contains("Resources/Animations/") && !assetPath.Contains("Resources/Fish/")) return;
+            if (!assetPath.Contains("Resources/Animations/") && !assetPath.Contains("Resources/Fish/") && !assetPath.Contains("Assets/MixamoAnimation/Extra/")) return;
             var importer = (ModelImporter)assetImporter;
             if (assetPath.Contains("Resources/Animations/Mixamo/"))
             {
@@ -238,7 +271,7 @@ namespace Fishing.EditorTools
                 PreprocessKevin(importer);
                 return;
             }
-            if (assetPath.Contains("Resources/Animations/MixamoExtra/"))
+            if (assetPath.Contains("Resources/Animations/MixamoExtra/") || assetPath.Contains("Assets/MixamoAnimation/Extra/"))
             {
                 PreprocessMixamoExtra(importer);
                 return;

@@ -127,6 +127,13 @@ namespace Fishing.Dev
                 Game.CameraRig.Distance = 6f;
                 yield return new WaitForSeconds(1.5f);
                 yield return Shot("00i_unitychan_angler");
+                // 공원 벤치(아이스박스)에서 수다 떠는 두 사람
+                Game.Player.Teleport(new Vector3(-46.5f, 1.1f, -80.2f), -90f);
+                Game.CameraRig.Yaw = -70f;
+                Game.CameraRig.Pitch = 8f;
+                Game.CameraRig.Distance = 5f;
+                yield return new WaitForSeconds(2f);
+                yield return Shot("00l_park_chat");
                 Game.Clock.Set(Game.Clock.Day, 23 * 60);
                 Game.Player.Teleport(new Vector3(-4f, 1.1f, -64.5f), 200f);
                 Game.CameraRig.Yaw = 170f;
@@ -140,6 +147,17 @@ namespace Fishing.Dev
                 Game.CameraRig.Distance = 5f;
                 yield return new WaitForSeconds(3.5f);
                 yield return Shot("00k_night_ghost");
+                Game.Player.Teleport(new Vector3(27f, 1.1f, -70f), 0f);
+                Game.CameraRig.Yaw = 10f;
+                Game.CameraRig.Pitch = 8f;
+                Game.CameraRig.Distance = 6f;
+                yield return new WaitForSeconds(2.5f);
+                yield return Shot("00m_night_dancer");
+                Game.Player.Teleport(new Vector3(-75f, 1.1f, -67.5f), -90f);
+                Game.CameraRig.Yaw = -80f;
+                Game.CameraRig.Distance = 6f;
+                yield return new WaitForSeconds(3f);
+                yield return Shot("00n_night_clown");
                 Game.Clock.Set(Game.Clock.Day, day0);
             }
             Game.CameraRig.Yaw = Game.Player.Yaw;
@@ -659,22 +677,30 @@ namespace Fishing.Dev
                 ("yeongheung", "43_yeongheung_harbor", new Vector3(62f, 1.1f, -47f), 0f, 20f, 14f, 14f, 10 * 60, Weather.Clear),
                 ("yeongheung", "43b_yeongheung_fog", new Vector3(-22f, 1.1f, -44f), 0f, -10f, 10f, 12f, 6 * 60 + 20, Weather.Cloudy),
                 ("taean", "44_taean_beach", new Vector3(-75f, 1.1f, -48f), 0f, -15f, 10f, 12f, 17 * 60 + 20, Weather.Clear),
+                ("taean", "44c_taean_swimmers", new Vector3(-77f, 1.1f, -12f), 0f, 5f, 10f, 7f, 12 * 60, Weather.Clear),
                 ("taean", "44b_taean_noon", new Vector3(-110f, 1.1f, -60f), 0f, 20f, 18f, 18f, 12 * 60, Weather.Clear),
                 ("samcheok", "45_samcheok_chuam", new Vector3(110f, 1.1f, -44f), 60f, 60f, 8f, 20f, 9 * 60, Weather.Clear),
+                ("samcheok", "45c_samcheok_ninja", new Vector3(16f, 1.1f, -47f), -60f, -70f, 10f, 6f, 10 * 60, Weather.Clear),
                 ("samcheok", "45b_samcheok_night", new Vector3(72f, 1.1f, 20f), 0f, 0f, 8f, 10f, 21 * 60, Weather.Clear),
                 ("deungdae", "46_deungdae_lighthouse", new Vector3(48f, 1.1f, -47f), 300f, 290f, 14f, 22f, 11 * 60, Weather.Clear),
+                ("deungdae", "46b_deungdae_patrol", new Vector3(38f, 1.1f, -47.5f), 270f, 250f, 8f, 7f, 13 * 60, Weather.Clear),
+                ("deungdae", "46c_deungdae_vampire", new Vector3(38f, 1.1f, -47.5f), 270f, 250f, 8f, 7f, 23 * 60, Weather.Clear),
                 ("heonhwa", "47_heonhwa_road", new Vector3(-40f, 1.1f, -47f), 90f, 140f, 12f, 16f, 13 * 60, Weather.Clear),
                 ("yokji", "48_yokji_farm", new Vector3(-126.5f, 1.4f, 0f), 0f, -20f, 22f, 20f, 15 * 60, Weather.Clear),
                 ("yokji", "48b_yokji_bridge", new Vector3(140f, 1.1f, -16f), 40f, 20f, 16f, 18f, 16 * 60, Weather.Clear),
                 ("jeju", "54_jeju_harbor", new Vector3(14f, 1.1f, -45f), 180f, 160f, 10f, 13f, 11 * 60, Weather.Clear),
                 ("jeju", "54b_jeju_oedolgae", new Vector3(-60f, 1.1f, -44f), 330f, 320f, 12f, 22f, 16 * 60 + 30, Weather.Clear),
                 ("cheongjin", "49_cheongjin_port", new Vector3(28f, 1.1f, -47f), 0f, 30f, 16f, 20f, 10 * 60, Weather.Clear),
+                ("cheongjin", "49c_cheongjin_swat", new Vector3(18f, 1.1f, -47.5f), 270f, 250f, 8f, 8f, 11 * 60, Weather.Clear),
+                ("cheongjin", "49d_cheongjin_night", new Vector3(18f, 1.1f, -47.5f), 90f, 110f, 8f, 8f, 23 * 60, Weather.Clear),
                 ("cheongjin", "49b_cheongjin_racks", new Vector3(-60f, 1.1f, -68f), 0f, 200f, 12f, 14f, 14 * 60, Weather.Cloudy),
                 ("geomun", "50_geomun_lighthouse", new Vector3(-90f, 1.1f, -45f), 300f, 300f, 12f, 24f, 17 * 60 + 30, Weather.Clear),
                 // 해외 거점
                 ("halong", "55_halong_bay", new Vector3(4f, 1.1f, -47f), 0f, 10f, 12f, 16f, 9 * 60, Weather.Clear),
+                ("halong", "55c_halong_pirate", new Vector3(-3f, 1.1f, -47f), 200f, 200f, 8f, 6f, 11 * 60, Weather.Clear),
                 ("halong", "55b_halong_karst", new Vector3(-70f, 1.1f, -46f), 0f, -20f, 8f, 14f, 16 * 60 + 30, Weather.Clear),
                 ("santorini", "56_santorini_cliff", new Vector3(-6f, 1.1f, -42f), 180f, 165f, 16f, 34f, 11 * 60, Weather.Clear),
+                ("santorini", "56c_santorini_village", new Vector3(14f, 1.1f, -48f), 270f, 250f, 8f, 7f, 10 * 60, Weather.Clear),
                 ("santorini", "56b_santorini_caldera", new Vector3(39f, 1.1f, -28f), 0f, -10f, 6f, 13f, 17 * 60 + 30, Weather.Clear),
                 ("nile", "57_nile_bank", new Vector3(6f, 1.1f, -47f), 0f, 10f, 10f, 14f, 10 * 60, Weather.Clear),
                 ("nile", "57b_nile_sunset", new Vector3(-2f, 1.1f, -42f), 0f, -15f, 6f, 12f, 17 * 60 + 40, Weather.Clear),

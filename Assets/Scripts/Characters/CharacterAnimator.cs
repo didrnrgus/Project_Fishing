@@ -56,6 +56,21 @@ namespace Fishing.Characters
         public const string ZombieWalk = "Zombie_Walk_Loop";
         public const string ZombieIdle = "Zombie_Idle_Loop";
         public const string ZombieScream = "Zombie_Scream";
+        public const string ZombieRun = "Zombie_Run_Loop";
+        public const string Cheer2 = "Cheer2";
+        public const string DanceChicken = "Dance_Chicken_Loop";
+        public const string DanceClub = "Dance_Club_Loop";
+        public const string Drink = "Drink_Loop";
+        public const string DrunkIdle = "Drunk_Idle_Loop";
+        public const string DrunkIdle2 = "Drunk_Idle2_Loop";
+        public const string DrunkWalk = "Drunk_Walk_Loop";
+        public const string SitTalk = "Sit_Talk_Loop";
+        public const string Sleep = "Sleep_Loop";
+        public const string ThumbsUp = "ThumbsUp";
+        public const string Swim = "Swim_Loop";
+        public const string Tread = "Tread_Loop";
+        public const string Victory = "Victory_Loop";
+        public const string Walk2 = "Walk2_Loop";
 
         /// <summary>그 이름의 클립이 있는지 (받은 에셋을 지운 프로젝트에서는 없을 수 있다).</summary>
         public static bool Has(string clipName) => Clips.ContainsKey(clipName) || Clips.ContainsKey(clipName + "_M");
@@ -155,7 +170,7 @@ namespace Fishing.Characters
         void Play(string clipName, float fade, float speed = 1f, bool restart = false)
         {
             int i = IndexOf(clipName);
-            if (i < 0) return;
+            if (i < 0) { Debug.LogWarning($"[Dev] 클립 없음: {clipName} ({name})"); return; }
             var p = _playables[i];
             p.SetSpeed(speed);
             // 반복하지 않는 클립은 다시 들어올 때마다 처음부터

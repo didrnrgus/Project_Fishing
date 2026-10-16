@@ -130,6 +130,17 @@
 - 아직 못 넣은 것: 군인·특공대 — 받은 파일은 동작뿐이고 모델이 없었다. Mixamo Characters 탭에서 `swat`·`soldier` 모델을 받아 `Assets/MixamoCharacters/`에 넣으면 항구 순찰 NPC로 연결. 노인 대기·밭일·앉아 웃기 동작은 받았지만 아직 쓰는 곳 없음 (귤밭 할망·대기실 손님 후보).
 - 자동 촬영 `00h_idol_greeting`·`00i_unitychan_angler`·`00j_night_zombie`·`00k_night_ghost`.
 
+### Mixamo 사람 34종 · 동작 15개 (2026-10-16 연결)
+
+- 사람 목록·키·성별: `ExternalCharacters.Registry` (id → 파일). 배치: `ExtraNpcs` + 배경 사람 `Characters/Wanderer` (점 사이 걷기·쉬기, 가까이 오면 돌아보고 반응 동작, 낮/밤/늘, 헤엄, 아이스박스 의자).
+- 낮: 한강 — 벤치 수다(민지·수진, 앉아 대화), 산책하는 의사, 낚시점 앞 음료 마시는 노동자, 아이돌 옆 닭 춤 추는 아이. 해안 — 코스프레 낚시꾼(영흥 엘리·태안 기사·삼척 닌자·헌화로 우리엘·욕지 아리사·제주 카추진·하롱 엘프·산토리니 마리아), 등대섬 군인·청진 특공대+군인·거문도 특공대 순찰, 청진 방역 요원, 태안 해수욕장 헤엄(Swimming/Treading Water, 골반을 수면에 맞춤), 하롱 정크선 선장, 산토리니 마을 아가씨.
+- 밤(21~04시): 한강 — 취해서 비틀거리는 노동자(Drunk), 다리 밑 광대(다가가면 손 흔듦), 데크 입구 네온 댄서, 경찰 좀비·소녀 좀비. 해안 — 영흥 썩은 좀비, 태안 전쟁 좀비, 삼척 걸스카우트 좀비, 등대섬 흡혈귀, 헌화로 좀비 둘, 청진 해골·야쿠·거인, 거문도 나이트셰이드, 하롱 그림자, 산토리니 약탈자, 나일 기생체. 가까이 가면 비명(첫 만남은 알림).
+- 동작: `Assets/MixamoAnimation/Extra` 원본(몸이 든 65MB 파일도 있어 Resources 밖) → 빌드 때 `CharacterLibraryBake`가 클립만 `Resources/Animations/MixamoExtra/*.anim`으로 복사.
+- 텍스처: Mixamo 캐릭터 FBX 안의 4K 텍스처를 빌드 때 `Assets/MixamoCharacters/Textures/`로 꺼내 1024로 줄인다(.gitignore, 없으면 다시 꺼냄). 빌드 948 → 1116MB.
+- 뺀 것: Pirate(뼈가 없는 모델), Prisoner(Unity 휴머노이드 아바타로 인식 안 됨). 파일은 남겨 두었다.
+- 고친 버그: 밤 캐릭터를 낮에 SetActive(false)로 꺼 두면 다시 켤 때 동작 그래프가 붙지 않아 T자 자세로 움직였다 → 렌더러만 끄고 켠다(`ModelVisibility`).
+- 자동 촬영: `00l_park_chat`·`00m_night_dancer`·`00n_night_clown`·`44c_taean_swimmers`·`45c_samcheok_ninja`·`46b_deungdae_patrol`·`46c_deungdae_vampire`·`49c_cheongjin_swat`·`49d_cheongjin_night`·`55c_halong_pirate`·`56c_santorini_village`.
+
 ### 사용자가 해야 할 일 (계정 로그인이 필요해서 Claude가 못 한 것)
 
 | 에셋 | 어디서 | 넣으면 좋아지는 것 | 받은 뒤 할 일 |

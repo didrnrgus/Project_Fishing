@@ -27,6 +27,8 @@
 | ![santorini](docs/images/56b_santorini_caldera.png) | ![nile](docs/images/57b_nile_sunset.png) |
 | **낚시 아이돌 유니티짱 (다가가면 손 흔들어 인사)** | **밤의 한강 다리 밑 귀신** |
 | ![idol](docs/images/00h_idol_greeting.png) | ![ghost](docs/images/00k_night_ghost.png) |
+| **한강 공원 벤치의 수다 (Mixamo 사람들)** | **밤 데크의 네온 댄서·좀비들** |
+| ![chat](docs/images/00l_park_chat.png) | ![dancer](docs/images/00m_night_dancer.png) |
 | **한강 둔치 공원 (실사 활엽수·소나무·풀)** | **삼척 바닷가 (실사 바위·풀)** |
 | ![park](docs/images/00g_park_trees.png) | ![samcheok](docs/images/45_samcheok_chuam.png) |
 | **거문도 등대** | **홍현 갯바위 섬 (반복 없는 지형 텍스처·실사 바위)** |
@@ -155,7 +157,7 @@ tools/        build·autoshot·test·balance 스크립트, fightsim/(Unity 없�
 - 3D 모델: [Quaternius](https://quaternius.com) — Universal Base Characters(몸·머리카락), Universal Animation Library, Animated Fish Pack(어종 모델이 없을 때 대체) (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Quaternius/`.
 - 낚시·상황 동작: [Mixamo](https://www.mixamo.com) (Adobe) — Fishing Idle, Fishing Cast, Cheering, Clapping, Excited, Rallying, Scared.
 - 흐린 하늘: AllSky Free (rpgwhitelock), 맑은 하늘: Fantasy Skybox FREE, 나무: Nature Starter Kit 2 (Shapes) — Unity Asset Store.
-- 캐릭터: [Unity-Chan! Model](https://unity-chan.com) © Unity Technologies Japan/UCL — 이 작품은 [유니티짱 라이선스 조항](https://unity-chan.com/contents/guideline/)으로 제공됩니다. Modern Zombie Free (Artalasky, Unity Asset Store), [Mixamo](https://www.mixamo.com) X Bot과 동작(춤·인사·좀비 등).
+- 캐릭터: [Unity-Chan! Model](https://unity-chan.com) © Unity Technologies Japan/UCL — 이 작품은 [유니티짱 라이선스 조항](https://unity-chan.com/contents/guideline/)으로 제공됩니다. Modern Zombie Free (Artalasky, Unity Asset Store), [Mixamo](https://www.mixamo.com) 사람 34종(군인·특공대·코스프레·좀비·흡혈귀·광대 …)과 동작(춤·인사·음주·헤엄·좀비 등).
 - 실사풍 식생·바위: Conifers [BOTD] (forst), Realistic Tree 9·10 (Pixel Games), Rock and Boulders 2, Grass Flowers Pack Free — Unity Asset Store.
 - 대기·걷기·뛰기: [Human Basic Motions FREE](https://assetstore.unity.com/packages/3d/animations/human-basic-motions-free-154271) (Kevin Iglesias, Unity Asset Store).
 - 배경·배 모델: [Kenney](https://kenney.nl) — City Kit Commercial, City Kit Roads, Nature Kit, Watercraft Kit (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Kenney/`.

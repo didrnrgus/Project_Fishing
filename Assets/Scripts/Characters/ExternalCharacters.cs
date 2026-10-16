@@ -15,14 +15,71 @@ namespace Fishing.Characters
     {
         static readonly HashSet<string> KeepScripts = new HashSet<string> { "SpringBone", "SpringManager", "SpringCollider", "AutoBlink" };
 
-        /// <summary>id에 맞는 키(m)와 성별(대기·걷기 클립 남/녀).</summary>
-        static (float height, bool female) Spec(string id) => id switch
+        public struct Def
         {
-            "unitychan" => (1.55f, true),
-            "zombie" => (1.78f, false),
-            "ghost" => (1.68f, true),
-            _ => (1.75f, false)
+            public string id, path, fallback;
+            public float height;
+            public bool female;
+        }
+
+        const string Mx = "Assets/MixamoCharacters/";
+
+        static Def D(string id, string file, float h, bool f) => new Def { id = id, path = Mx + file + ".fbx", height = h, female = f };
+
+        /// <summary>받은 캐릭터 목록: id, 파일, 키(m), 여자(대기·걷기 클립 _F). CharacterLibraryBake가 이 순서로 묶는다.</summary>
+        public static readonly Def[] Registry =
+        {
+            new Def { id = "unitychan", path = "Assets/unity-chan!/Unity-chan! Model/Prefabs/unitychan_dynamic.prefab",
+                      fallback = "Assets/unity-chan!/Unity-chan! Model/Prefabs/unitychan.prefab", height = 1.55f, female = true },
+            new Def { id = "zombie", path = "Assets/Zombie/ZombieRig.prefab", fallback = "Assets/Zombie/ZombieRig.fbx", height = 1.78f },
+            D("ghost", "XBot", 1.68f, true),
+            // 낮 사람들
+            D("teen", "Ch02_nonPBR", 1.6f, true),          // 노란 후드티 여학생
+            D("woman", "Ch26_nonPBR", 1.66f, true),        // 줄무늬 니트
+            D("animekid", "Ch46_nonPBR", 1.38f, true),     // 하늘색 머리 애니풍 아이
+            D("worker", "Ch17_nonPBR", 1.76f, false),      // 형광 조끼 항만 노동자 (밤엔 술 취해 비틀)
+            D("doctor", "Ch16_nonPBR", 1.76f, false),      // 수술복 의사 (둔치 산책)
+            D("hazmat", "Ch11_nonPBR", 1.76f, false),      // 흰 방호복 (청진 방역)
+            D("swat", "Ch15_nonPBR", 1.82f, false),        // 특공대
+            D("soldier", "Ch49_nonPBR", 1.78f, false),     // 군인
+            D("ely", "Ely By K.Atienza", 1.78f, false),
+            D("peasant", "Peasant Girl", 1.62f, true),
+            D("neon", "Ch50_nonPBR", 1.8f, false),         // 빛나는 줄무늬 슈트 (한강 밤 댄서)
+            // 코스프레 낚시꾼
+            D("knight", "Knight D Pelegrini", 1.85f, false),
+            D("ninja", "Ch24_nonPBR", 1.74f, false),
+            D("uriel", "Uriel A Plotexia", 1.8f, true),
+            D("arissa", "Arissa", 1.7f, true),
+            D("kachujin", "Kachujin G Rosales", 1.66f, true),
+            D("elf", "Ch40_nonPBR", 1.7f, true),
+            D("maria", "Maria J J Ong", 1.72f, true),
+            // 밤 손님
+            D("copzombie", "copzombie_l_actisdato", 1.78f, false),
+            D("zombiegirl", "Zombiegirl W Kurniawan", 1.65f, true),
+            D("warzombie", "Warzombie F Pedroso", 1.8f, false),
+            D("rotzombie", "Ch10_nonPBR", 1.76f, false),
+            D("skinless", "Ch30_nonPBR", 1.82f, false),
+            D("brute", "Ch25_nonPBR", 1.95f, false),
+            D("raider", "Ch05_nonPBR", 1.85f, false),
+            D("shadow", "Ch44_nonPBR", 1.95f, false),
+            D("girlscout", "Girlscout T Masuyama", 1.45f, true),
+            D("skeleton", "Skeletonzombie T Avelange", 1.8f, false),
+            D("yaku", "Yaku J Ignite", 1.78f, false),
+            D("parasite", "Parasite L Starkie", 1.95f, false),
+            D("vampire", "Vampire A Lusth", 1.88f, false),
+            D("nightshade", "Nightshade J Friedrich", 1.9f, false),
+            D("clown", "Whiteclown N Hallin", 1.86f, false),
         };
+
+        /// <summary>id에 맞는 키(m)와 성별(대기·걷기 클립 남/녀).</summary>
+        static (float height, bool female) Spec(string id)
+        {
+            foreach (var d in Registry)
+                if (d.id == id) return (d.height, d.female);
+            return (1.75f, false);
+        }
+
+        public static float HeightOf(string id) => Spec(id).height;
 
         public static bool Available(string id) => CharacterLibrary.Get(id) != null;
 

@@ -23,6 +23,12 @@ namespace Fishing.Characters
             Transform pelvis = null;
             foreach (var t in frame.GetComponentsInChildren<Transform>(true))
                 if (t.name == "pelvis") { pelvis = t; break; }
+            if (pelvis == null)
+            {
+                // 받은 휴머노이드 캐릭터 (Mixamo: mixamorig:Hips)
+                var an = frame.GetComponentInChildren<Animator>();
+                if (an != null && an.isHuman) pelvis = an.GetBoneTransform(HumanBodyBones.Hips);
+            }
             if (pelvis == null) return null;
             var s = frame.gameObject.AddComponent<SitSeat>();
             s._frame = frame;
