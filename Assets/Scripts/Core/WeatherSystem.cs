@@ -43,7 +43,35 @@ namespace Fishing.Core
             _nextChangeAt = Game.Clock.TotalMinutes + UnityEngine.Random.Range(180f, 420f);
             if (next == Current) return;
             Force(next);
-            Game.Toast($"날씨가 바뀌었습니다: {Names.Of(Current)}");
+            Announce();
+        }
+
+        // ---------------- 날씨 효과 (원작 2013 홍현 영상 0:22·3:06: 입장할 때와 날씨가 바뀔 때 화면 가운데 알림) ----------------
+
+        /// <summary>챔질 판정에 더하는 찌 잠김 보너스 (맑으면 챔질이 매우 쉬워진다).</summary>
+        public float HookBonus => Current == Weather.Clear ? 0.07f : 0f;
+        /// <summary>음식 회복 배율 (맑으면 조금 더 빠르다).</summary>
+        public float RegenFactor => Current == Weather.Clear ? 1.25f : 1f;
+        /// <summary>입질 기다리는 시간 배율 (흐리거나 비 오면 입질이 잦다).</summary>
+        public float WaitFactor => Current switch { Weather.Cloudy => 0.88f, Weather.Rain => 0.75f, _ => 1f };
+        /// <summary>시간에 따라 줄어드는 체력 배율 (비를 맞으면 빨리 지친다).</summary>
+        public float DrainFactor => Current == Weather.Rain ? 1.6f : 1f;
+
+        /// <summary>날씨가 바뀔 때·낚시터에 들어갈 때 원작 문구 그대로 화면 가운데에 띄운다.</summary>
+        public static string EffectText(Weather w) => w switch
+        {
+            Weather.Clear => "날씨가 쾌청해집니다. 챔질이 매우 쉬워지고 회복이 조금 더 빨라집니다.",
+            Weather.Cloudy => "구름이 끼기 시작합니다. 물고기의 경계심이 줄어 입질이 조금 잦아집니다.",
+            _ => Seasons.IsWinter || (Game.Mode == GameMode.Field && Fishing.World.FieldMap.Current.SnowGround)
+                ? "눈이 내립니다. 입질이 잦아지지만 체력이 더 빨리 줄어듭니다."
+                : "비가 내립니다. 입질이 잦아지지만 체력이 더 빨리 줄어듭니다.",
+        };
+
+        public void Announce()
+        {
+            if (Game.Mode != GameMode.Field) return;
+            Game.Notice(EffectText(Current));
+            Game.SysLog(EffectText(Current), "#9fd8ff");
         }
 
         public void Force(Weather weather)

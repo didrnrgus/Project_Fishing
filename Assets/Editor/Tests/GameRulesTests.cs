@@ -382,4 +382,56 @@ namespace Fishing.EditorTools.Tests
             Assert.AreEqual("Shift", Settings.KeyName(KeyCode.LeftShift));
         }
     }
+
+    /// <summary>퀘스트: 예전 저장 이전, NPC 수락 방식 (13 문서).</summary>
+    public class QuestTests
+    {
+        [Test]
+        public void StoryKeepsLegacyQuestsInOrder()
+        {
+            int last = -1;
+            for (int i = 0; i < QuestDatabase.LegacyStoryCount; i++)
+            {
+                int at = QuestDatabase.StoryIndex($"st{i:00}");
+                Assert.Greater(at, last, $"st{i:00}가 예전 순서대로 있어야 한다");
+                last = at;
+            }
+            Assert.AreEqual("남해로", QuestDatabase.Story[QuestDatabase.MigrateIndex(8)].Title);
+            Assert.AreEqual(QuestDatabase.Story.Count, QuestDatabase.MigrateIndex(45));
+            foreach (var q in QuestDatabase.Story)
+            {
+                Assert.IsNotNull(QuestNpcs.Get(q.Giver), $"{q.Title}: 주는 NPC");
+                Assert.IsNotNull(QuestNpcs.Get(q.Reporter), $"{q.Title}: 보고자");
+            }
+        }
+
+        [Test]
+        public void OldSaveKeepsCurrentStoryAccepted()
+        {
+            var d = new SaveData();
+            d.quest.index = 8;      // 예전 목록의 "남해로"
+            d.quest.progress = 2;
+            var qs = new QuestSystem(new PlayerProfile(d));
+            Assert.AreEqual(1, d.quest.ver);
+            Assert.AreEqual("남해로", qs.Current.Title);
+            Assert.IsTrue(qs.IsActive(qs.Current));
+            Assert.AreEqual(2, qs.ProgressOf(qs.Current));
+        }
+
+        [Test]
+        public void NewSaveAcceptsFirstStoryAtLobbyDesk()
+        {
+            var d = new SaveData();
+            var qs = new QuestSystem(new PlayerProfile(d));
+            var first = qs.Current;
+            Assert.IsFalse(qs.IsActive(first), "새 저장은 안내원에게 수락해야 한다");
+            Assert.AreEqual(QuestSystem.Mark.AvailableStory, qs.MarkFor(QuestNpcs.Desk));
+            Assert.IsTrue(qs.Accept(first));
+            Assert.IsTrue(qs.IsActive(first));
+            Assert.IsFalse(qs.Accept(first), "두 번 수락하지 않는다");
+            qs.DebugFill(first);
+            Assert.IsTrue(qs.IsReady(first));
+            Assert.AreEqual(QuestSystem.Mark.Ready, qs.MarkFor(first.Reporter));
+        }
+    }
 }

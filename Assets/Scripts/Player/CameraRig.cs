@@ -253,10 +253,10 @@ namespace Fishing.PlayerSystems
                 }
                 case ShotKind.Show:
                 {
-                    // 원작 1:56~1:58 RESULT: 정면 가까이, 얼굴과 왼손에 든 고기가 한 화면에 (고기는 화면 오른쪽)
+                    // 원작 1:56~1:58 RESULT: 정면 가까이 가슴 위로, 살짝 올려다본다. 머리 위로 치켜든 주먹과 늘어진 고기는 화면 오른쪽 위
                     var head = player.Head != null ? player.Head.position : root + Vector3.up * 1.65f;
-                    pos = head + fwd * 1.75f + right * 0.15f - Vector3.up * 0.12f;
-                    var look = head - Vector3.up * 0.22f - right * 0.32f;
+                    pos = head + fwd * 1.8f + right * 0.12f - Vector3.up * 0.2f;
+                    var look = head - Vector3.up * 0.08f - right * 0.3f;
                     rot = Quaternion.LookRotation(look - pos);
                     fov = 42f;
                     break;

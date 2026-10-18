@@ -41,6 +41,14 @@ namespace Fishing.Core
 
         public static void Toast(string message, ToastKind kind = ToastKind.Info) => Toasted?.Invoke(message, kind);
 
+        /// <summary>원작 화면 가운데 흰 글씨 진행 알림 ("[퀘스트] 참돔 잡아서 가져오기 1/5", "[업적] … [완 료]"). 3초쯤 떠 있다가 사라진다.</summary>
+        public static event Action<string> Noticed;
+        public static void Notice(string message) => Noticed?.Invoke(message);
+
+        /// <summary>원작 왼쪽 아래 시스템 채팅 줄 ("6000 EXP 를 획득했습니다.", "[X] 퀘스트를 수락하셨습니다."). color는 html 색 (#rrggbb).</summary>
+        public static event Action<string, string> Logged;
+        public static void SysLog(string message, string color = "#f0c040") => Logged?.Invoke(message, color);
+
         /// <summary>시계, 위치를 SaveData에 반영하고 파일로 저장한다.</summary>
         public static void Save()
         {

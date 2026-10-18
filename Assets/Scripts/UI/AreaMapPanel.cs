@@ -24,6 +24,11 @@ namespace Fishing.UI
 
         RectTransform _map;
         RectTransform _player, _bobber, _cellHighlight;
+        // 퀘스트 책 [힌트맵]: 갈 곳 핀 (원작 숫자 핀)
+        RectTransform _hint;
+        TMP_Text _hintLabel;
+        Vector3? _hintPos;
+        string _hintText;
         TMP_Text _cellInfo;
         readonly List<(RectTransform root, Image halo, TMP_Text label)> _schoolMarks = new List<(RectTransform, Image, TMP_Text)>();
         RectTransform _schoolList;
@@ -145,6 +150,15 @@ namespace Fishing.UI
             _cellHighlight = Place(UIFactory.Image(_map, new Color(1f, 0.9f, 0.4f, 0.22f), null, "CellHighlight").rectTransform, 0, 0,
                 new Vector2(map.CellW * Scale, map.CellH * Scale));
             _bobber = Place(UIFactory.Image(_map, new Color(1f, 0.3f, 0.2f), UIFactory.Circle, "Bobber").rectTransform, 0, 0, new Vector2(12, 12));
+            _hint = Place(UIFactory.Node("QuestHint", _map), 0, 0, new Vector2(10, 10));
+            UIFactory.Image(_hint, new Color(1f, 0.8f, 0.2f, 0.35f), UIFactory.Circle, "Halo").rectTransform.At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(54, 54));
+            var pin = UIFactory.Shape(_hint, new Color(1f, 0.78f, 0.15f), UIFactory.Pill, "Pin", 0f);
+            pin.rectTransform.At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(26, 26));
+            UIFactory.Text(pin.transform, "!", 18, new Color(0.25f, 0.15f, 0f), TextAnchor.MiddleCenter, FontStyle.Bold).rectTransform.Fill();
+            UIFactory.Shape(_hint, new Color(0.02f, 0.04f, 0.06f, 0.8f), UIFactory.Pill, "LabelBg", 0f).rectTransform
+                .At(new Vector2(0.5f, 0.5f), new Vector2(0, 26), new Vector2(150, 20));
+            _hintLabel = UIFactory.Text(_hint, "", 13, new Color(1f, 0.85f, 0.4f), TextAnchor.MiddleCenter, FontStyle.Bold, "Label");
+            _hintLabel.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 26), new Vector2(170, 20));
             _player = Place(UIFactory.Text(_map, "▲", 26, new Color(0.45f, 0.9f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold, "Player").rectTransform,
                 0, 0, new Vector2(30, 30));
         }
@@ -197,8 +211,32 @@ namespace Fishing.UI
             Tick();
         }
 
+        /// <summary>퀘스트 [힌트맵]: 지도에 갈 곳 핀을 꽂는다 (pos가 null이면 핀 없음). 창을 연 다음에 부른다 — 닫으면 지워진다.</summary>
+        public void SetHint(Vector3? pos, string label)
+        {
+            _hintPos = pos;
+            _hintText = label;
+            if (pos.HasValue) Game.Toast($"[힌트맵] {label} — 지도의 노란 핀", ToastKind.Info);
+        }
+
+        public override void Close()
+        {
+            _hintPos = null;
+            base.Close();
+        }
+
         public void Tick()
         {
+            if (_hint != null)
+            {
+                _hint.gameObject.SetActive(_hintPos.HasValue);
+                if (_hintPos.HasValue)
+                {
+                    _hint.anchoredPosition = ToMap(_hintPos.Value.x, _hintPos.Value.z);
+                    _hint.localScale = Vector3.one * (1f + Mathf.Sin(Time.unscaledTime * 4f) * 0.08f);
+                    _hintLabel.text = _hintText;
+                }
+            }
             // 플레이어와 찌
             var playerPos = Game.Player.transform.position;
             _player.anchoredPosition = ToMap(playerPos.x, playerPos.z);

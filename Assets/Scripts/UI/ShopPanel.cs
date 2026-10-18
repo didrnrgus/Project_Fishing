@@ -98,8 +98,9 @@ namespace Fishing.UI
             int total = 0;
             foreach (var f in p.Data.keepNet) total += PlayerProfile.SellPrice(f);
             var sell = rows.Next(46, 4);
-            Cell(sell, $"살림망 물고기 모두 판매  <size=14><color=#a0b0c0>{p.Data.keepNet.Count}마리</color></size>", 10, 380, 18);
-            RowButton(sell, $"+{total:N0}골드", SellAll, 400, 200, UIFactory.TabOn, p.Data.keepNet.Count > 0);
+            // 원작에는 상점 판매가 없고 납품소에서 넘긴다: 납품 창으로 (납품 게이지 · 생태조사 업적이 같이 쌓인다)
+            Cell(sell, $"살림망 물고기 납품  <size=14><color=#a0b0c0>{p.Data.keepNet.Count}마리 · 모두 {total:N0}골드</color></size>", 10, 380, 18);
+            RowButton(sell, "납품 창 열기", () => Game.UI.OpenExclusive(Game.UI.Delivery), 400, 200, UIFactory.TabOn, p.Data.keepNet.Count > 0);
 
             float dur = p.Data.rodDurability;
             int cost = Mathf.CeilToInt((100f - dur) * RepairCostPerPoint);
@@ -144,18 +145,6 @@ namespace Fishing.UI
             p.AddItem(id, count);
             Game.Sound.Coin();
             Game.Toast($"{name} {count}개 구매");
-        }
-
-        void SellAll()
-        {
-            var p = Game.Profile;
-            int total = 0;
-            foreach (var f in p.Data.keepNet) total += PlayerProfile.SellPrice(f);
-            int n = p.Data.keepNet.Count;
-            p.Data.keepNet.Clear();
-            p.AddGold(total);
-            Game.Sound.Coin();
-            Game.Toast($"물고기 {n}마리를 {total:N0}골드에 팔았습니다.", ToastKind.Good);
         }
 
         void Refuel(int cost)

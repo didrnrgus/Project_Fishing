@@ -118,6 +118,10 @@ namespace Fishing.Characters
             {
                 _nextReact = Time.time + 20f;
                 _reactUntil = Time.time + 3.5f;
+                // 걷다가 반응하면 쉬는 상태로 바꿔 둔다 — 반응이 끝나면 쉬기 끝에서 걷기 동작을 다시 튼다
+                // (예전에는 대기 동작인 채로 이동을 이어가 동작 없이 미끄러졌다)
+                _resting = true;
+                _restUntil = Mathf.Max(_restUntil, _reactUntil);
                 _anim.SetLoop(_s.Idle);
                 _anim.PlayOnce(_s.React);
                 if (_s.React_Sound) Game.Sound?.UiError();

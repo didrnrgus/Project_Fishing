@@ -10,6 +10,9 @@ namespace Fishing.UI
     public class GameUI : MonoBehaviour
     {
         public HudView Hud { get; private set; }
+        public SystemLogView SysLog { get; private set; }
+        public LoadingScreen Loading { get; private set; }
+        public EscMenuPanel EscMenu { get; private set; }
         public FightHudView Fight { get; private set; }
         public ResultPanel Result { get; private set; }
         public KeepNetPanel KeepNet { get; private set; }
@@ -21,6 +24,11 @@ namespace Fishing.UI
         public LobbyView LobbyHud { get; private set; }
         public AreaMapPanel AreaMap { get; private set; }
         public DialogPanel Dialog { get; private set; }
+        /// <summary>NPC 퀘스트 목록·상세 (필드 [퀘스트 목록보기], 대기실 [퀘스트] 직원 줄).</summary>
+        public QuestTalkPanel QuestTalk { get; private set; }
+        /// <summary>통발 설치/수거 (어부 NPC), 아이템 획득 창.</summary>
+        public TrapPanel Traps { get; private set; }
+        public ItemBagPopup ItemBag { get; private set; }
         public UpgradePanel Upgrade { get; private set; }
         public InventoryPanel Inventory { get; private set; }
         public CharacterPanel Character { get; private set; }
@@ -29,6 +37,10 @@ namespace Fishing.UI
         public OptionsPanel Options { get; private set; }
         /// <summary>F로 말을 걸 수 있는 가장 가까운 NPC.</summary>
         public Fishing.Characters.NpcAngler NearbyNpc { get; private set; }
+        /// <summary>납품 창 (필드 납품소 · 대기실 납품 버튼).</summary>
+        public DeliveryPanel Delivery { get; private set; }
+        /// <summary>F로 쓸 수 있는 가까운 납품소 (NPC보다 가까울 때만).</summary>
+        public DeliveryKiosk NearbyKiosk { get; private set; }
 
         UIPanel[] _panels;
 
@@ -65,22 +77,39 @@ namespace Fishing.UI
             Result = new ResultPanel(canvas);
             LobbyHud = new LobbyView(canvas,
                 openArea: () => OpenExclusive(Areas),
-                openQuest: () => OpenExclusive(Quest),
-                delivery: () => OpenExclusive(Shop),
+                openQuest: () => QuestTalk.OpenLobby(), // 원작: 대기실 [퀘스트] → 조합 직원 줄 + 대화 카드
+                delivery: () => OpenExclusive(Delivery),
                 openAquarium: () => OpenExclusive(Aquarium),
                 changeBase: () => Game.Toast("동남아·지중해 거점은 아직 준비 중입니다. 지금은 한국 낚시 조합만 열려 있어요.", ToastKind.Warn));
             Areas = new FishingAreaPanel(canvas);
-            Areas.Enter = (area, channel) => EnterField(area, channel);
+            Areas.Enter = (area, channel) => StartCoroutine(EnterWithLoading(area, channel));
             AreaMap = new AreaMapPanel(canvas);
             Dialog = new DialogPanel(canvas);
+            QuestTalk = new QuestTalkPanel(canvas);
             Upgrade = new UpgradePanel(canvas);
             Inventory = new InventoryPanel(canvas);
             Character = new CharacterPanel(canvas);
             Exchange = new ExchangePanel(canvas);
             Aquarium = new AquariumPanel(canvas);
             Options = new OptionsPanel(canvas);
-            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, Upgrade, Inventory, Character, Exchange, Aquarium, Options };
+            Delivery = new DeliveryPanel(canvas);
+            Traps = new TrapPanel(canvas);
+            ItemBag = new ItemBagPopup(canvas);
+            EscMenu = new EscMenuPanel(canvas,
+                options: () => OpenExclusive(Options),
+                startPoint: () =>
+                {
+                    if (Game.Fishing.State == FishingState.Fighting || Game.Fishing.State == FishingState.Result) { Game.Toast("파이팅 중에는 움직일 수 없습니다.", ToastKind.Warn); return; }
+                    Game.Fishing.ForceIdle();
+                    Game.Boat.StowToLand();
+                    Game.Player.Teleport(FieldMap.Spawn, 0f);
+                    Game.CameraRig.Yaw = 0f;
+                },
+                exitField: EnterLobby);
+            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, QuestTalk, Upgrade,Inventory, Character, Exchange, Aquarium, Options, EscMenu, Traps, ItemBag, Delivery };
             LobbyHud.Root.transform.SetAsFirstSibling();
+            SysLog = new SystemLogView(canvas);
+            Loading = new LoadingScreen(canvas);
             // 토스트는 모든 창 위에
             Hud.ToastLayer.SetParent(canvas, false);
             Hud.ToastLayer.SetAsLastSibling();
@@ -102,6 +131,7 @@ namespace Fishing.UI
         {
             if (Game.Profile != null) Game.Profile.Changed -= RefreshOpenPanels;
             if (Hud != null) Game.Toasted -= Hud.Toast;
+            SysLog?.Dispose();
         }
 
         void RefreshOpenPanels()
@@ -113,13 +143,15 @@ namespace Fishing.UI
         void Update()
         {
             bool lobby = Game.Mode == GameMode.Lobby;
-            LobbyHud.Root.SetActive(lobby && !BlockingPanelOpen);
+            LobbyHud.Root.SetActive(lobby && !BlockingPanelOpen && !Loading.Showing);
             if (lobby) LobbyHud.Update();
             Hud.Update();
+            SysLog.Update();
             Fight.Update();
             if (AreaMap.IsOpen) AreaMap.Tick();
             if (Dex.IsOpen) Dex.Tick();
             NearbyNpc = FindNearbyNpc();
+            NearbyKiosk = FindNearbyKiosk();
             // 대화 중이거나 카메라가 캐릭터에 바짝 붙는 연출(캐스팅·챔질·환호) 중에는 내 이름표를 숨긴다
             Game.Player.NameTagVisible = !Dialog.IsOpen && NearbyNpc == null && Game.CameraRig.Shot == Fishing.PlayerSystems.CameraRig.ShotKind.Follow;
             Result.Animate();
@@ -140,7 +172,39 @@ namespace Fishing.UI
             Game.Mode = GameMode.Lobby;
             Game.Player.CollapseRod();
             Game.CameraRig.SetFixed(Game.Lobby.CameraPos, Game.Lobby.CameraRot);
+            if (_inField) Game.SysLog($"{FieldMap.ShortName} CH.{Game.Channel} - 1 채널에서 퇴장 했습니다.");
+            Game.SysLog("한국 채널에 입장 했습니다.");
+            _inField = false;
             Game.Save();
+        }
+
+        bool _inField;
+
+        /// <summary>
+        /// 낚시터 목록에서 입장: 원작 로딩 화면(0:18)을 띄우고 월드를 지은 뒤, 물 위에서 마을 쪽을 비추는 풍경을 드러내며 막대를 채운다 (약 2초).
+        /// 자동 촬영은 <see cref="EnterField(Fishing.Data.FishingArea,int)"/>을 바로 부른다.
+        /// </summary>
+        public System.Collections.IEnumerator EnterWithLoading(Fishing.Data.FishingArea area, int channel)
+        {
+            foreach (var p in _panels) p.Close();
+            Loading.Begin(area);
+            yield return null;
+            yield return null; // 검은 화면과 글씨를 한 번 그린 뒤에 무거운 월드 짓기
+            var map = Maps.Get(area.MapId);
+            if (map.Id != FieldMap.Id) MapLoader.Load(map, true);
+            else Game.Player.Teleport(map.Spawn, 0f);
+            // 원작 그림처럼 물 위에서 뭍(마을·부두)을 바라본다
+            var spawn = map.Spawn;
+            var camPos = new Vector3(spawn.x + 6f, Mathf.Max(map.WaterY, spawn.y) + 3.2f, spawn.z + 20f);
+            Game.CameraRig.SetFixed(camPos, Quaternion.LookRotation(new Vector3(spawn.x - 4f, spawn.y + 2.5f, spawn.z - 12f) - camPos));
+            const float hold = 2f;
+            for (float t = 0f; t < hold; t += Time.unscaledDeltaTime)
+            {
+                Loading.Set(Mathf.SmoothStep(0.15f, 1f, t / hold), Mathf.Clamp01(1f - t / 0.5f));
+                yield return null;
+            }
+            Loading.End();
+            EnterField(channel);
         }
 
         /// <summary>낚시터에 입장한다. 다른 낚시터면 월드를 새로 짓는다.</summary>
@@ -160,6 +224,11 @@ namespace Fishing.UI
             Game.CameraRig.ClearFixed();
             Game.Player.ExtendRod();
             Game.Toast($"{FieldMap.ShortName} CH.{channel}에 입장했습니다.", ToastKind.Good);
+            // 원작 시스템 줄: 대기실 채널에서 나가고 낚시터 채널에 들어간다. 들어가면 지금 날씨 효과를 알린다
+            Game.SysLog("한국 채널에서 퇴장 했습니다.");
+            Game.SysLog($"{FieldMap.ShortName} CH.{channel} - 1 채널에 입장 했습니다.");
+            Game.Weather.Announce();
+            _inField = true;
             var d = Game.Profile.Data;
             if (!d.visitedMaps.Contains(FieldMap.Id))
             {
@@ -223,7 +292,10 @@ namespace Fishing.UI
 
             if (Input.GetKeyDown(KeyCode.Escape))
             {
+                // 열린 창이 있으면 닫고, 없으면 원작 ESC 메뉴 (파이팅 중엔 열지 않는다)
+                bool any = BlockingPanelOpen;
                 foreach (var p in _panels) p.Close();
+                if (!any && !Loading.Showing && Game.Fishing.State != FishingState.Fighting) OpenExclusive(EscMenu);
                 return;
             }
 
@@ -252,6 +324,7 @@ namespace Fishing.UI
             if (Settings.Down(KeyAction.Inventory)) OpenExclusive(Inventory);
             if (Settings.Down(KeyAction.Costume)) OpenExclusive(Character);
             if (Settings.Down(KeyAction.Talk) && NearbyNpc != null && idle && !BlockingPanelOpen) TalkTo(NearbyNpc);
+            else if (Settings.Down(KeyAction.Talk) && NearbyKiosk != null && idle && !BlockingPanelOpen) OpenExclusive(Delivery);
             if (Settings.Down(KeyAction.Boat) && !BlockingPanelOpen) Game.Boat.Toggle();
             if (Settings.Down(KeyAction.Dex)) OpenExclusive(Dex);
             if (Settings.Down(KeyAction.Quest)) OpenExclusive(Quest);
@@ -262,6 +335,24 @@ namespace Fishing.UI
             if (idle && !BlockingPanelOpen)
                 for (int i = 0; i < HudView.MaxBaitSlots; i++)
                     if (Input.GetKeyDown(KeyCode.Alpha1 + i)) Hud.SelectBait(i);
+        }
+
+        /// <summary>가까운 납품소. NPC(조합 연락관·통발 어부)와 둘 다 가까우면 더 가까운 쪽만 남긴다.</summary>
+        DeliveryKiosk FindNearbyKiosk()
+        {
+            if (Game.Mode != GameMode.Field || Game.Player.OnBoat || Game.Fishing.State != FishingState.Idle) return null;
+            var p = Game.Player.transform.position;
+            var k = DeliveryKiosk.Nearest(p);
+            if (k == null) return null;
+            if (NearbyNpc != null)
+            {
+                var dk = k.transform.position - p;
+                var dn = NearbyNpc.transform.position - p;
+                dk.y = dn.y = 0f;
+                if (dn.sqrMagnitude <= dk.sqrMagnitude) return null;
+                NearbyNpc = null;
+            }
+            return k;
         }
 
         Fishing.Characters.NpcAngler FindNearbyNpc()

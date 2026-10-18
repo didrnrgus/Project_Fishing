@@ -1,5 +1,5 @@
 """
-인트로 아트 생성기: 사업자 로고(제쓰로네 게임공방)와 타이틀(짭풍명월) 화면의 그림을 만든다.
+인트로 아트 생성기: 사업자 로고(제쓰로네 게임공방)와 타이틀(청풍명월) 화면의 그림을 만든다.
 결과는 Assets/Resources/Intro/*.png (IntroSequence.cs가 불러 움직인다).
 
     bpyenv/Scripts/python.exe -I tools/intro/build_intro_art.py [--preview 폴더]
@@ -592,14 +592,14 @@ def pad_img(img, px):
 
 def title_assets():
     f = font("EastSeaDokdo-Regular.ttf", 400)
-    m = render_text("짭풍명월", f, pad=60, spacing=-6)
+    m = render_text("청풍명월", f, pad=60, spacing=-6)
     m = ink_texture(m, 801, rough=0.25)
     # 위는 상아색, 아래로 달빛 은빛
     title = gradient_text(m, hexc("#fffaf0"), hexc("#d7dfe6"))
     title = pad_img(title, 60)
     glow = blur_glow(title, 28, 1.6, hexc("#bcd2e2"))
     sealimg = seal("짭", 300, 811, "SongMyung-Regular.ttf", grid=["짭"])
-    en = render_text("JJAPPUNG  MYEONGWOL", font("Cinzel.ttf", 64, "Bold"), pad=20, spacing=14)
+    en = render_text("CHEONGPUNG  MYEONGWOL", font("Cinzel.ttf", 64, "Bold"), pad=20, spacing=14)
     en_img = gradient_text(en, hexc("#e9d9a8"), hexc("#b99a5a"))
     tag = render_text("바람 맑고 달 밝은 밤, 낚싯대 하나", font("SongMyung-Regular.ttf", 64), pad=20, spacing=4)
     tag_img = gradient_text(tag, IVORY, IVORY * 0.85)

@@ -11,6 +11,26 @@ namespace Fishing.Core
         public float weight;
         public int day;
         public string zone;
+        /// <summary>낚은 낚시터 (생태조사 업적: "○○을 홍현 앞바다에서 납품하기"). 예전 세이브는 빈 문자열.</summary>
+        public string mapId = "";
+    }
+
+    /// <summary>낚시터·어종별 납품 마릿수 (원작 생태조사).</summary>
+    [Serializable]
+    public class DeliveryRecord
+    {
+        public string mapId;
+        public string speciesId;
+        public int count;
+    }
+
+    /// <summary>기록 책 업적의 완성 날짜와 보상 수령 여부 (생태조사·납품·방생 같은 GOLD 보상 업적).</summary>
+    [Serializable]
+    public class AchClaim
+    {
+        public string id;
+        public string doneAt;   // "2026/10/19 23:26" (실제 날짜)
+        public bool claimed;
     }
 
     [Serializable]
@@ -53,6 +73,17 @@ namespace Fishing.Core
         public bool done;
         public int gold;
         public int exp;
+        public bool accepted;     // 원작 일일반복: 그 낚시터 조합 연락관에게 "수락"해야 센다
+        public bool ready;        // 목표 달성, 보고 대기
+    }
+
+    /// <summary>수락한 퀘스트 하나 (이야기·가이드·일반). 일일반복은 <see cref="DailyQuest"/>에 따로 적는다.</summary>
+    [Serializable]
+    public class ActiveQuest
+    {
+        public string id;
+        public int progress;
+        public bool ready;        // 목표 달성, [보고자]에게 가면 완료
     }
 
     /// <summary>오늘 대회 참가 기록과 누적 성적.</summary>
@@ -78,10 +109,23 @@ namespace Fishing.Core
     [Serializable]
     public class QuestProgress
     {
+        /// <summary>이야기 퀘스트 진행 위치 (QuestDatabase.Story에서 다음에 할 퀘스트 번호 = 끝낸 이야기 수).</summary>
         public int index;
+        // 예전(ver 0) 저장: 지금 이야기 퀘스트의 진행·보고 대기. ver 1부터는 active에 적는다
         public int progress;
         public List<string> distinct = new List<string>();
         public bool ready; // 목표 달성, 보고 대기
+
+        /// <summary>0 = 예전 저장(이야기 퀘스트를 자동으로 받던 방식, index가 예전 45개 목록 기준), 1 = NPC에게 수락하는 방식.</summary>
+        public int ver;
+        /// <summary>수락해서 진행 중인 이야기·가이드·일반 퀘스트.</summary>
+        public List<ActiveQuest> active = new List<ActiveQuest>();
+        /// <summary>끝낸 가이드·일반 퀘스트 id (한 번만 하는 퀘스트).</summary>
+        public List<string> done = new List<string>();
+        /// <summary>완료한 퀘스트 수 (이야기·가이드·일반·일일반복 모두).</summary>
+        public int completedTotal;
+        /// <summary>HUD QUEST LIST: [현재 낚시터]에서 가능한 퀘스트만 보기.</summary>
+        public bool hereOnly;
     }
 
     /// <summary>낚시 일지 한 줄 (원작 "일지": 그날그날의 기록).</summary>
@@ -145,7 +189,15 @@ namespace Fishing.Core
             new ItemStack { id = "food_kimbap", count = 2 },
         };
 
+        // 납품 (원작 납품소 DELIVERY): 낚시터·어종별 납품 기록, 누적 마릿수, 납품 게이지(0~1, 가득 차면 다음 납품 X2)
+        public List<DeliveryRecord> deliveries = new List<DeliveryRecord>();
+        public int deliveredTotal;
+        public float deliveryGauge;
+        public int releasedTotal;                                    // 방생한 마릿수 (업적 방생)
+        public List<AchClaim> achClaims = new List<AchClaim>();      // GOLD 보상 업적 (생태조사·납품·방생)
+
         public List<CaughtFish> keepNet = new List<CaughtFish>();
+        public List<TrapSave> traps = new List<TrapSave>();   // 설치한 통발 (Core/FishTraps.cs, 최대 2개)
         public List<DexEntry> dex = new List<DexEntry>();
         public QuestProgress quest = new QuestProgress();
         public TournamentSave tournament = new TournamentSave();

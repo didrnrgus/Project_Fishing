@@ -125,7 +125,7 @@ namespace Fishing.UI
             lines.Append($"<color=#8fa3b5>요리하면</color>  체력 +{cook:0}\n");
             lines.Append($"<color=#8fa3b5>가장 큰 고기</color>  {biggest:0.0}cm");
             if (trophies > 0) lines.Append($"\n<color=#ff7090>대물 {trophies}마리</color>");
-            lines.Append("\n\n<size=13><color=#8fa3b5>판매는 상점(F12)에서</color></size>");
+            lines.Append("\n\n<size=13><color=#8fa3b5>판매는 납품소(필드) · 대기실 납품 버튼에서</color></size>");
             _summary.text = lines.ToString();
         }
 

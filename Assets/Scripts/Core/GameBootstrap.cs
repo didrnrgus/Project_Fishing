@@ -98,7 +98,7 @@ namespace Fishing.Core
                         Game.Toast($"새 낚시터가 열렸습니다: {area.Name}. 대기실 [낚시터 선택하기]에서 입장하세요.", ToastKind.Great);
             };
 
-            // 인트로 (Unity 스플래시 → 제쓰로네 게임공방 → 짭풍명월 타이틀). 끝나고 대기실이 보일 때 환영 알림을 띄운다
+            // 인트로 (Unity 스플래시 → 제쓰로네 게임공방 → 청풍명월 타이틀). 끝나고 대기실이 보일 때 환영 알림을 띄운다
             IntroSequence.Play(Welcome);
             if (devArgs.Enabled) gameObject.AddComponent<DevAutomation>().Init(devArgs);
         }
@@ -115,7 +115,14 @@ namespace Fishing.Core
         {
             var q = Game.Quests.Current;
             Game.Toast($"한국 낚시 조합에 오신 걸 환영합니다! [낚시터 선택하기]에서 {Fishing.World.FieldMap.ShortName}에 입장하세요.", ToastKind.Great);
-            if (q != null) Game.Toast($"조합 퀘스트: {q.Title} - {q.GoalText}");
+            if (q != null)
+            {
+                // 원작: 퀘스트는 NPC에게 수락한다. 받을 이야기 퀘스트가 있으면 누구에게 받는지 알려 준다
+                var giver = Fishing.Data.QuestNpcs.Get(q.Giver);
+                if (Game.Quests.IsActive(q)) Game.Toast($"이야기 퀘스트: {q.Title} - {Game.Quests.ObjectiveLine(q)}");
+                else Game.Toast($"새 이야기 퀘스트 [{q.Title}] — {giver?.Where ?? "조합"}에게서 받을 수 있습니다." +
+                                (giver != null && giver.InLobby ? " 오른쪽 아래 [퀘스트]를 눌러 보세요." : ""));
+            }
             foreach (var msg in Game.Profile.GrantLevelRewards()) Game.Toast(msg, ToastKind.Good);
             // 출석 체크 (실제 날짜로 하루 한 번)
             var attend = Attendance.CheckIn();
@@ -125,8 +132,9 @@ namespace Fishing.Core
         void Update()
         {
             // 체력은 시간이 흐르면 조금씩 줄어든다 (게임 1시간에 약 1)
-            Game.Profile.ChangeStamina(-Time.deltaTime * GameClock.GameMinutesPerSecond / 60f);
-            Game.Profile.TickRegen(Game.Clock.TotalMinutes, Time.deltaTime * GameClock.GameMinutesPerSecond);
+            // 비를 맞으면 빨리 지치고, 맑으면 음식 회복이 빠르다 (원작 날씨 효과)
+            Game.Profile.ChangeStamina(-Time.deltaTime * GameClock.GameMinutesPerSecond / 60f * Game.Weather.DrainFactor);
+            Game.Profile.TickRegen(Game.Clock.TotalMinutes, Time.deltaTime * GameClock.GameMinutesPerSecond * Game.Weather.RegenFactor);
             Game.Profile.TickFocus(Time.unscaledDeltaTime);
 
             if (Time.time >= _nextAutoSave)

@@ -50,7 +50,7 @@
 | `Fishing_Windup` | FishingCast | 0~45 | | 캐스팅하려고 당기는 동안(`Charging`) 1.5배속. 끝 자세에서 멈춰 있다 |
 | `Fishing_Cast` | FishingCast | 45~95 | | 버튼을 놓는 순간 `PlayCast()` 1.5배속 → 끝나면 `HoldRod` |
 | `Fishing_Hook` | FishingCast | 0~30 | | 챔질 `PlayHook()` 2배속 (홱 들어 올리기) |
-| `Fishing_Reel_Loop` | FishingCast | 207~238 | ○ | 대기 중 좌클릭으로 찌·루어를 감는 동안 (`FishingController.ReelingIn`) |
+| `Fishing_Reel_Loop` | FishingCast | 207~238 | ○ | (안 씀, 2026-10-19) 오른손이 원을 그려 낚싯대 쥔 손이 돌았다. 감는 동안은 `HoldRod` + 왼손 IK로 3인칭 릴 손잡이를 돌린다 (`PlayerController.UpdateCrank`) |
 | `Fishing_Sequence` | FishingCast | 0~263 | | NPC 낚시꾼이 20~45초마다 한 벌 통째로 (끝 자세 = `HoldRod` 첫 자세라 이음새가 없다) |
 | `Cheer_ArmsUp` | Cheering | 0~87 | | 랜딩 환호 `PlayCheer()` (두 팔 들고 흔들기, 얼굴 클로즈업) |
 | `Clap_Loop` | Clapping | 0~35 | ○ | 근처에서 대물(대물 기준 이상 또는 ★4 이상)을 낚으면 22m 안 대화 NPC가 돌아보며 약 3초 박수 (`NpcAngler.Applaud`) |

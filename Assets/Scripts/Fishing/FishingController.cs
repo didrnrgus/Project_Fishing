@@ -54,6 +54,8 @@ namespace Fishing.Angling
         public bool Trembling => State == FishingState.Waiting && _nibbleSeen;
         bool _nibbleSeen;
         bool _userOrbited;
+        /// <summary>찌 대기 중 손으로 시점을 돌렸는지 (자동 촬영이 원하는 시점으로 찍을 때 켠다).</summary>
+        public bool UserOrbited { get => _userOrbited; set => _userOrbited = value; }
         /// <summary>랜딩 직후 결과 화면 전 환호 컷.</summary>
         public bool Cheering => _cheering;
         /// <summary>대기 중 좌클릭으로 찌·루어를 감고 있다 (캐릭터 릴 감기 동작).</summary>
@@ -63,6 +65,8 @@ namespace Fishing.Angling
 
         /// <summary>개발용: 파이팅을 자동으로 진행한다 (스크린샷/밸런스 확인).</summary>
         public bool Autoplay;
+        /// <summary>자동 촬영용: 좌클릭을 누르고 있는 것처럼 찌를 감는다.</summary>
+        public bool DebugReeling;
         /// <summary>자동 조작이 카운터 찬스에서 카운터를 시도할 확률(프레임당).</summary>
         public float AutoplayCounterChance = 0.08f;
 
@@ -526,7 +530,7 @@ namespace Fishing.Angling
             PendingBite = BiteSelector.Pick(_ctx);
             BigBite = false;
 
-            _waitTimer = BiteSelector.WaitSeconds(_ctx) * slowdown * (_waitInSpot ? 0.7f : 1f) * Tide.WaitFactor; // 서해: 들물이면 빨리
+            _waitTimer = BiteSelector.WaitSeconds(_ctx) * slowdown * (_waitInSpot ? 0.7f : 1f) * Tide.WaitFactor * Game.Weather.WaitFactor; // 서해: 들물이면 빨리, 흐리거나 비 오면 빨리
             _nibblesLeft = PendingBite.Species.Aggression > 0.75f ? Random.Range(0, 2) : Random.Range(0, 4);
             _lureMode = IsLureBait(Game.Profile.Bait.Kind);
             _bobber.SetLureLook(_lureMode, Game.Profile.Bait.Kind);
@@ -733,7 +737,7 @@ namespace Fishing.Angling
         /// </summary>
         bool UpdateReel()
         {
-            bool hold = Input.GetMouseButton(0) && !_shakeSpent && !UiBlocking;
+            bool hold = (Input.GetMouseButton(0) || DebugReeling) && !_shakeSpent && !UiBlocking;
             if (!hold)
             {
                 if (!_reeling) return false;
@@ -795,7 +799,7 @@ namespace Fishing.Angling
             bool shook = Autoplay ? shown >= 0.97f : DetectShake();
             if (shook)
             {
-                var grade = GradeFor(shown);
+                var grade = GradeFor(Mathf.Min(1f, shown + Game.Weather.HookBonus)); // 맑으면 챔질이 쉽다
                 ShowGrade(grade);
                 if (grade == HookGrade.Bad)
                 {
@@ -1148,6 +1152,7 @@ namespace Fishing.Angling
                 weight = Mathf.Round(species.WeightGrams(f.Length)),
                 day = Game.Clock.Day,
                 zone = _cellName,
+                mapId = FieldMap.Id,
             };
             var previous = p.Dex(species.Id);
             float prevBest = previous?.maxLength ?? 0f;
@@ -1226,7 +1231,7 @@ namespace Fishing.Angling
                     {
                         grabbed = true;
                         player.HoldPoint = null;
-                        player.HoldFish(_caughtFish.transform);
+                        player.HoldFish(_caughtFish.transform, f.Length);
                     }
                     if (!grabbed)
                     {
@@ -1244,15 +1249,15 @@ namespace Fishing.Angling
             if (held)
             {
                 _resultShot = Fishing.PlayerSystems.CameraRig.ShotKind.Show;
-                // 왼손을 얼굴 옆으로 들어 고기를 보여 준다. 고기 머리는 위, 옆구리는 카메라 쪽
+                // 원작 1:57: 왼팔을 머리 위로 뻗어 주먹으로 고기 입을 쥐고 들어 보인다 (몸통은 아래로 늘어지고 옆구리가 카메라 쪽).
+                // 오른손은 낚싯대를 몸 옆에 거의 세워 든다 (얼굴을 가리지 않게)
                 var m = player.Model;
-                player.HoldPoint = player.Head.position - m.right * 0.42f + m.forward * 0.35f - Vector3.up * 0.18f;
-                player.HoldFish(_caughtFish.transform);
-                _caughtFish.transform.rotation = Quaternion.LookRotation(Vector3.up, m.right); // 머리 위, 옆구리(+X)가 앞(카메라 쪽)
+                player.HoldPoint = null;
+                player.ShowOff = true;
+                player.HoldFish(_caughtFish.transform, f.Length);
                 FishModels.Play(_caughtFish, FishModels.Flop, 0.6f, 0.2f);
-                // 낚싯대는 오른쪽으로 비켜 들어 얼굴을 가리지 않게 (원작 1:57)
-                player.RodPitch = 40f;
-                player.RodYaw = 38f;
+                player.RodPitch = 84f;
+                player.RodYaw = 6f;
                 // 밤에도 얼굴과 고기가 보이게 앞에서 비추는 보조광 (결과 창을 닫으면 끈다)
                 _showLight = new GameObject("ResultFill").AddComponent<Light>();
                 _showLight.type = LightType.Point;
@@ -1286,6 +1291,7 @@ namespace Fishing.Angling
                 _cheering = false;
                 Game.Player.HoldFish(null);
                 Game.Player.HoldPoint = null;
+                Game.Player.ShowOff = false;
                 if (_caughtFish != null) Destroy(_caughtFish);
                 _caughtFish = null;
                 _resultShot = Fishing.PlayerSystems.CameraRig.ShotKind.Follow;
@@ -1302,6 +1308,9 @@ namespace Fishing.Angling
                     p.AddExp(bonus);
                     Game.Toast($"방생했습니다. 경험치 +{bonus}", ToastKind.Good);
                     Bingo.OnAction("release");
+                    p.Data.releasedTotal++;
+                    EcoSurvey.OnRelease();
+                    Game.Quests.OnReleased();   // 가이드 퀘스트 "물고기 방생해보기"
                 }
                 p.NotifyChanged();
                 ToIdle();

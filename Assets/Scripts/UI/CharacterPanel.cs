@@ -102,14 +102,13 @@ namespace Fishing.UI
             v.Icon = UIFactory.Image(rt, Color.white, null, "Icon");
             v.Icon.preserveAspect = true;
             v.Icon.rectTransform.Fill(5, 5, 5, 5);
-            v.Fallback = UIFactory.Text(rt, "", 12, UIFactory.TextDim, TextAnchor.MiddleCenter);
+            v.Fallback = UIFactory.Text(rt, "", 13, UIFactory.TextMain, TextAnchor.MiddleCenter);
             v.Fallback.rectTransform.Fill(3, 3, 3, 3);
-            v.Badge = UIFactory.Text(rt, "", 13, UIFactory.Gold, TextAnchor.LowerRight, FontStyle.Bold);
+            v.Badge = UIFactory.Text(rt, "", 14, UIFactory.Gold, TextAnchor.LowerRight, FontStyle.Bold);
             v.Badge.rectTransform.Fill(2, 4, 2, 1);
-            UIFactory.Outline(v.Badge, new Color(0, 0, 0, 0.85f));
-            var cap = UIFactory.Text(parent, SlotNames[i], 12, UIFactory.TextDim, TextAnchor.MiddleCenter);
-            cap.rectTransform.At(new Vector2(right ? 1 : 0, 1), new Vector2(right ? -10 : 10, y - 64), new Vector2(62, 18), new Vector2(right ? 1 : 0, 1));
-            UIFactory.Outline(cap, new Color(0, 0, 0, 0.7f));
+            var cap = UIFactory.Text(parent, SlotNames[i], 14, UIFactory.TextMain, TextAnchor.MiddleCenter, FontStyle.Bold);
+            cap.rectTransform.At(new Vector2(right ? 1 : 0, 1), new Vector2(right ? -10 : 10, y - 66), new Vector2(62, 20), new Vector2(right ? 1 : 0, 1));
+            // 작은 글씨에 Outline을 걸면 SDF 두께가 최대(0.9)로 잡혀 글자가 검은 덩어리가 된다 → 외곽선 없이
 
             // 마우스를 올리면 아래 카드에 그 칸을 보여 준다 (원작 툴팁 대신)
             var et = btn.gameObject.AddComponent<EventTrigger>();

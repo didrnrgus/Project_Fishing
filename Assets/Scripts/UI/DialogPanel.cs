@@ -13,7 +13,7 @@ namespace Fishing.UI
     /// <summary>
     /// NPC 대화창. 가까이 가서 F로 말을 건다.
     ///  - shop (낚시점 김사장): 물건 사고팔기, 낚싯대 강화, 오늘 조황
-    ///  - union (조합 연락관: 한강 박주임, 홍현 정계장): 퀘스트 확인, 목표를 채웠으면 보고하고 보상 받기
+    ///  - union (조합 연락관: 한강 박주임, 홍현 정계장): [퀘스트 목록보기](QuestTalkPanel), 낚시 대회, 소라고동 교환
     ///  - angler (둔치·뗏목 낚시꾼): 실제 어군 위치를 알려 주는 조황 정보, 한마디
     /// </summary>
     public class DialogPanel : UIPanel
@@ -41,6 +41,29 @@ namespace Fishing.UI
             Npc = npc;
             npc.FaceTarget(Game.Player.transform);
             Open();
+            // 이 사람을 만나는 퀘스트는 말을 걸면 완료 (원작 "[퀘스트] 최아린을 만나기 1/1 [완 료]")
+            Game.Quests.Talked(QuestKey);
+        }
+
+        /// <summary>이 NPC의 퀘스트 키 (조합 연락관·낚시점 주인·어부). 퀘스트 NPC가 아니면 null.</summary>
+        string QuestKey => Npc == null ? null : QuestNpcs.KeyFor(Npc.NpcId, FieldMap.Id);
+
+        /// <summary>원작 [퀘스트 목록보기]: 왼쪽 퀘스트 대화 카드로 넘어간다.</summary>
+        void OpenQuestList()
+        {
+            var npc = Npc;
+            base.Close();
+            Npc = null;
+            Game.UI.QuestTalk.OpenFor(npc);
+        }
+
+        /// <summary>퀘스트 NPC 인사 끝에 붙는 안내 (완료할 것 / 받을 것).</summary>
+        string QuestHint()
+        {
+            var m = Game.Quests.MarkFor(QuestKey);
+            return m == QuestSystem.Mark.Ready ? "\n<color=#70e070>목표를 채운 퀘스트가 있군요! [퀘스트 목록보기]에서 완료하세요.</color>"
+                : m == QuestSystem.Mark.AvailableStory || m == QuestSystem.Mark.Available ? "\n<color=#ffd060>부탁드릴 일이 있어요. [퀘스트 목록보기]를 눌러 보세요.</color>"
+                : "";
         }
 
         public override void Close()
@@ -57,6 +80,7 @@ namespace Fishing.UI
             {
                 case "shop": ShopGreeting(); break;
                 case "union": UnionGreeting(); break;
+                case FishTraps.FisherId: FisherGreeting(); break;
                 default: AnglerGreeting(); break;
             }
         }
@@ -66,16 +90,33 @@ namespace Fishing.UI
             _speaker.text = $"{Npc.Look.Name}  <size=16><color=#7fd8ff>{Npc.Look.Title}</color></size>";
             _line.text = line;
             UIFactory.ClearChildren(_options);
+            // 선택지가 많으면(퀘스트 목록보기가 붙은 낚시점) 간격을 좁혀 창 안에 넣는다
+            float step = Mathf.Min(46f, 236f / Mathf.Max(1, options.Length));
             for (int i = 0; i < options.Length; i++)
             {
                 var (label, action) = options[i];
                 var b = UIFactory.Button(_options, label, () => action(), i == options.Length - 1 ? UIFactory.BtnGhost : (i == 0 ? UIFactory.BtnPrimary : UIFactory.BtnNeutral), 19);
                 UIFactory.SetRadius(b.targetGraphic, UIFactory.Pill);
-                ((RectTransform)b.transform).At(new Vector2(0, 1), new Vector2(0, -i * 46f), new Vector2(340, 42), new Vector2(0, 1));
+                ((RectTransform)b.transform).At(new Vector2(0, 1), new Vector2(0, -i * step), new Vector2(340, step - 4f), new Vector2(0, 1));
             }
         }
 
         (string, Action) Bye => ("대화 끝내기", Close);
+
+        // ---------------- 어부 (통발, 원작 0:42: 퀘스트 목록보기 / 미끼 조합하기 / 통발 설치하기) ----------------
+
+        void FisherGreeting()
+        {
+            string where = FieldMap.IsSea ? "바다" : "물";
+            string line = FishTraps.AnyReady
+                ? "통발 걷을 때가 됐구먼! 뭐가 들었나 같이 보세."
+                : $"이 {where}는 내 손바닥이지. 통발 하나 놓아 두면 {FishTraps.DurationHours:0}시간 뒤엔 고기가 그득하다네.\n수거할 때 수거비용만 내면 돼.";
+            Show(line,
+                ("퀘스트 목록보기", OpenQuestList),
+                ("미끼 조합하기", () => Show("미끼 조합은 아직 연구 중이라네. 큰 고기를 해체하면 좋은 미끼가 나오니 그걸 먼저 써 보게.", ("다른 이야기", FisherGreeting), Bye)),
+                ("통발 설치하기", () => { string name = Npc.Look.Name; Close(); Game.UI.Traps.OpenFrom(name); }),
+                Bye);
+        }
 
         // ---------------- 김사장 ----------------
 
@@ -91,6 +132,18 @@ namespace Fishing.UI
             };
             if (Game.Weather.Current == Weather.Rain) greet += "\n비 오는 날엔 붕어가 얕은 데로 붙는다고.";
             if (lv > 0) greet += $"\n그 낚싯대, +{lv}까지 올렸네? 손맛이 다르지.";
+            greet += QuestHint();
+            if (Game.Quests.HasQuestsAt(QuestKey))
+            {
+                Show(greet,
+                    ("퀘스트 목록보기", OpenQuestList),
+                    ("물건 사고팔기", () => { Close(); Game.UI.OpenExclusive(Game.UI.Shop); }),
+                    ("장비 강화 (낚싯대·릴)", () => { Close(); Game.UI.OpenExclusive(Game.UI.Upgrade); }),
+                    ("의상 보기", () => { Close(); Game.UI.Character.ShowTab(true); Game.UI.OpenExclusive(Game.UI.Character); }),
+                    ("오늘 조황 묻기", () => Show(Report(), ("다른 이야기", ShopGreeting), Bye)),
+                    Bye);
+                return;
+            }
             Show(greet,
                 ("물건 사고팔기", () => { Close(); Game.UI.OpenExclusive(Game.UI.Shop); }),
                 ("장비 강화 (낚싯대·릴)", () => { Close(); Game.UI.OpenExclusive(Game.UI.Upgrade); }),
@@ -103,21 +156,10 @@ namespace Fishing.UI
 
         void UnionGreeting()
         {
-            var quests = Game.Quests;
-            var q = quests.Current;
-            if (q == null)
-            {
-                Show("조합의 이야기 퀘스트를 모두 마치셨습니다. 이제 한강의 진짜 강태공이시네요!", ("퀘스트 기록 보기", OpenQuest), ("낚시 대회", Tournament), Bye);
-                return;
-            }
-            if (quests.Ready)
-            {
-                Show($"오, [{q.Title}] 목표를 채우셨군요! 조합에 보고하겠습니다.\n보상: {q.RewardText}",
-                    ("보고하고 보상 받기", Claim), Bye);
-                return;
-            }
-            Show($"한국 낚시 조합 {Npc.Look.Name}입니다.\n지금 맡으신 일은 [{q.Title}] — {q.GoalText} ({Mathf.Min(quests.Progress, q.Count)}/{q.Count}).\n\"{q.Desc}\"",
-                ("퀘스트 자세히 보기", OpenQuest),
+            // 원작: 인사말 + [퀘스트 목록보기] → 수락가능한 퀘스트 / 진행중인 퀘스트
+            string line = (QuestNpcs.Get(QuestKey)?.Greeting ?? $"한국 낚시 조합 {Npc.Look.Name}입니다.") + QuestHint();
+            Show(line,
+                ("퀘스트 목록보기", OpenQuestList),
                 ("낚시 대회", Tournament),
                 ("소라고동 교환", () => { Close(); Game.UI.OpenExclusive(Game.UI.Exchange); }),
                 ("조황 정보", () => Show(Report(), ("다른 이야기", UnionGreeting), Bye)),
@@ -153,24 +195,6 @@ namespace Fishing.UI
             Close();
             Game.UI.Quest.ShowTab(4);
             Game.UI.OpenExclusive(Game.UI.Quest);
-        }
-
-        void OpenQuest()
-        {
-            var npc = Npc;
-            base.Close();
-            Game.UI.OpenExclusive(Game.UI.Quest);
-            Npc = npc; // 퀘스트 창에서 보고할 수 있게 대화 상대를 기억한다
-        }
-
-        void Claim()
-        {
-            var q = Game.Quests.Current;
-            Game.Quests.Claim();
-            var next = Game.Quests.Current;
-            Show($"수고하셨습니다! [{q.Title}] 보상을 드렸습니다. ({q.RewardText})" +
-                 (next != null ? $"\n\n다음 부탁은 [{next.Title}] — {next.GoalText} 입니다." : ""),
-                ("다른 이야기", UnionGreeting), Bye);
         }
 
         // ---------------- 낚시꾼 ----------------

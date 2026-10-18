@@ -86,6 +86,7 @@ namespace Fishing.Characters
         int _target = -1;
         float _fadeSpeed = 5f;
         string _loopState = Idle;
+        float _loopSpeed = 1f;   // 한 번짜리 동작이 끝나고 반복 상태로 돌아갈 때 배속 (걷기 속도 맞춤 유지)
         float _oneShotUntil;
 
         /// <summary>여자 캐릭터면 "_F" 클립을 쓴다. CharacterFactory가 AddComponent 직후 정한다(첫 재생은 Start).</summary>
@@ -157,6 +158,7 @@ namespace Fishing.Characters
         public void SetLoop(string clipName, float speed = 1f)
         {
             _loopState = clipName;
+            _loopSpeed = speed;
             if (Time.time < _oneShotUntil) return;
             Play(clipName, 0.2f, speed);
         }
@@ -191,7 +193,7 @@ namespace Fishing.Characters
             if (_oneShotUntil > 0f && Time.time >= _oneShotUntil)
             {
                 _oneShotUntil = 0f;
-                Play(_loopState, 0.25f);
+                Play(_loopState, 0.25f, _loopSpeed);
             }
             float step = Time.deltaTime * _fadeSpeed;
             for (int k = 0; k < _names.Count; k++)

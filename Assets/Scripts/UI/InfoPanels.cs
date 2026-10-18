@@ -9,10 +9,11 @@ namespace Fishing.UI
 {
     /// <summary>조합 퀘스트 창: 현재 퀘스트와 완료한 퀘스트 목록.</summary>
     /// <summary>
-    /// 퀘스트(L). 원작처럼 여러 종류: 이야기(스토리) / 일일 의뢰 / 대물 도전 / 업적·칭호.
-    /// 이야기 퀘스트는 조합 연락관이나 대기실에서 보고해야 보상을 받는다.
+    /// 퀘스트(L). 첫 탭은 원작 퀘스트 책(13 문서 2:42): 왼쪽에 진행 중인 퀘스트(STORY/REPEAT/GUIDE 배지 + Lv, 일반은 Lv만),
+    /// 오른쪽에 [보고자]·[임무]·보상·이야기 글·[힌트맵], 아래 [퀘스트 포기]. 퀘스트는 NPC에게 받고 [보고자]에게 가서 완료한다 (QuestTalkPanel).
+    /// 나머지 탭: 이야기·의뢰 현황 / 대물 도전 / 업적 / 대회 / 빙고·출석 / 일지.
     /// </summary>
-    public class QuestPanel : UIPanel
+    public partial class QuestPanel : UIPanel
     {
         int _tab;
 
@@ -36,7 +37,7 @@ namespace Fishing.UI
             tabs.anchoredPosition = Vector2.zero; tabs.sizeDelta = new Vector2(0, 42);
             var rows = new RowCursor(UIFactory.Node("List", Body).Fill(0, 0, 52, 0), 0f, "quest" + _tab);
             // 원작 퀘스트 색: 이야기 보라 · 일일 파랑 · 일반 노랑 (탭 이름 앞 점)
-            string[] names = { "<color=#c49aff>●</color> 이야기", "<color=#6ab8ff>●</color> 일일 의뢰", "<color=#ffd060>●</color> 대물 도전", "업적 · 칭호", "대회", "빙고 · 출석", "일지" };
+            string[] names = { "<color=#c49aff>●</color> 퀘스트", "<color=#6ab8ff>●</color> 이야기·의뢰", "<color=#ffd060>●</color> 대물 도전", "업적 · 칭호", "대회", "빙고 · 출석", "일지" };
             int[] order = { 0, 1, 2, 5, 3, 4, 6 };
             for (int k = 0; k < order.Length; k++)
             {
@@ -48,10 +49,10 @@ namespace Fishing.UI
             Title.text = $"조합 퀘스트   <size=18><color=#ffd060>소라고동 {Game.Profile.Count(AchievementDatabase.ConchId)}개</color></size>";
             switch (_tab)
             {
-                case 0: Story(rows); break;
-                case 1: Daily(rows); break;
+                case 0: QuestBook(); break;         // 원작 퀘스트 책: 왼쪽 목록 + 오른쪽 상세
+                case 1: Overview(rows); break;  // 이야기 줄기·오늘의 일일반복·가이드/일반 현황
                 case 2: Trophy(rows); break;
-                case 3: Achievements(rows); break;
+                case 3: AchievementBook(rows); break;   // 기록 책 업적 분류 (QuestAchievementsTab.cs)
                 case 5: BingoTab(rows); break;
                 case 6: Journal(rows); break;
                 default: Tournament(rows); break;
@@ -161,62 +162,205 @@ namespace Fishing.UI
             Cell(row, $"{value}/{max}", x + width - 64, 64, 16, t >= 1f ? UIFactory.Good : UIFactory.TextMain, TextAnchor.MiddleRight, FontStyle.Bold);
         }
 
-        void Story(RowCursor rows)
+        // ================= 퀘스트 책 (원작 L) =================
+
+        string _sel;
+        bool _confirmAbandon;
+
+        /// <summary>책에서 고를 퀘스트 (자동 촬영 등).</summary>
+        public void Select(QuestDef q)
+        {
+            _sel = q?.Id;
+            _confirmAbandon = false;
+            if (IsOpen) Refresh();
+        }
+
+        static RectTransform Pane(RectTransform parent, string name, float x, float width, bool right)
+        {
+            var rt = UIFactory.Shape(parent, UIFactory.Surface, UIFactory.RadiusCard, name, 0f).rectTransform;
+            rt.anchorMin = new Vector2(right ? 1 : 0, 0);
+            rt.anchorMax = new Vector2(right ? 1 : 0, 1);
+            rt.pivot = new Vector2(right ? 1 : 0, 0.5f);
+            rt.anchoredPosition = new Vector2(x, 0);
+            rt.sizeDelta = new Vector2(width, 0);
+            return rt;
+        }
+
+        static Color TypeColorOf(QuestDef q) => QuestTalkPanel.ColorOf(q);
+
+        /// <summary>원작 배지: STORY(보라) · REPEAT(파랑) · GUIDE(연보라) 위에 작은 글씨, 아래 Lv.N. 일반은 배지 없이 "Lv. N".</summary>
+        static void Badge(RectTransform row, QuestDef q)
+        {
+            if (q.Type == QuestType.Normal)
+            {
+                Cell(row, $"Lv. {q.Lv}", 10, 66, 14, UIFactory.TextDim, TextAnchor.MiddleLeft, FontStyle.Bold);
+                return;
+            }
+            var col = q.Type switch { QuestType.Story => new Color(0.48f, 0.3f, 0.78f), QuestType.Repeat => new Color(0.2f, 0.48f, 0.82f), _ => new Color(0.62f, 0.38f, 0.75f) };
+            var b = UIFactory.Shape(row, col, 6f, "Badge", 0f).rectTransform;
+            b.At(new Vector2(0, 0.5f), new Vector2(8, 0), new Vector2(60, 32), new Vector2(0, 0.5f));
+            UIFactory.Text(b, $"<size=9>{q.Badge}</size>\n<b>Lv.{q.Lv}</b>", 13, Color.white, TextAnchor.MiddleCenter).rectTransform.Fill(2, 2, 1, 1);
+        }
+
+        void QuestBook()
         {
             var quests = Game.Quests;
-            var q = quests.Current;
-            Cell(rows.Next(24), QuestDatabase.Giver + "  <color=#c49aff>· 이야기 퀘스트</color>", 4, 600, 16, UIFactory.Accent);
-            if (q != null)
-            {
-                Cell(rows.Next(40), q.Title, 4, 900, 28, StoryColor, TextAnchor.MiddleLeft, FontStyle.Bold);
-                var desc = Cell(rows.Next(60), $"\"{q.Desc}\"", 4, 900, 18, UIFactory.TextDim, TextAnchor.UpperLeft);
-                desc.fontStyle = FontStyles.Italic;
-                var goal = rows.Next(34);
-                Cell(goal, $"목표: {q.GoalText}", 4, 560, 20);
-                ProgressBar(goal, Mathf.Min(quests.Progress, q.Count), q.Count, 580, 300);
-                Cell(rows.Next(30), $"보상: {q.RewardText}", 4, 900, 20, UIFactory.Gold);
-                if (quests.Ready)
-                {
-                    // 대기실(조합)에서는 바로, 필드에서는 조합 연락관과 대화 중일 때 보고할 수 있다
-                    bool canReport = Game.Mode == GameMode.Lobby || (Game.UI.Dialog.Npc != null && Game.UI.Dialog.Npc.NpcId == "union");
-                    var row = rows.Next(52, 8);
-                    if (canReport) RowButton(row, "목표 달성! 보고하고 보상 받기", () => { quests.Claim(); Refresh(); }, 4, 420, UIFactory.BtnGood, true, 20);
-                    else Cell(row, $"목표 달성! {Fishing.World.FieldMap.UnionContact}이나 한국 낚시 조합(대기실)에서 보고하세요.", 4, 900, 17, UIFactory.Good);
-                }
-            }
-            else Cell(rows.Next(40), "모든 이야기 퀘스트를 마쳤습니다!", 4, 900, 26, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+            var active = quests.Active();
+            var area = UIFactory.Node("Book", Body).Fill(0, 0, 52, 0);
+            var left = Pane(area, "Left", 0, 420, false);
+            var right = Pane(area, "Right", 0, 516, true);
+            var sel = active.Find(q => q.Id == _sel) ?? (active.Count > 0 ? active[0] : null);
+            _sel = sel?.Id;
 
-            rows.Next(10);
+            // ---- 왼쪽: 진행 중인 퀘스트 ----
+            var rows = new RowCursor(UIFactory.Node("ListArea", left).Fill(8, 14, 10, 66), 0f, "questbook");
+            foreach (var q in active)
+            {
+                var row = rows.Next(42, 3);
+                bool on = q == sel;
+                var b = UIFactory.Button(row, "", () => { _sel = q.Id; _confirmAbandon = false; Refresh(); },
+                    on ? new Color(1f, 1f, 1f, 0.16f) : new Color(1f, 1f, 1f, 0.03f), 16);
+                ((RectTransform)b.transform).Fill();
+                var label = b.GetComponentInChildren<TMP_Text>();
+                label.alignment = TextAlignmentOptions.Left;
+                label.textWrappingMode = TextWrappingModes.NoWrap;
+                label.overflowMode = TextOverflowModes.Ellipsis;
+                label.rectTransform.Fill(76, q.Type == QuestType.Repeat ? 84 : 10, 0, 0);
+                bool ready = quests.IsReady(q);
+                label.text = (ready ? "<color=#7ee07e>완 료</color> " : "") + q.Title;
+                Badge((RectTransform)b.transform, q);
+                if (q.Type == QuestType.Repeat)
+                    UIFactory.Text(b.transform, "(일일반복)", 13, TypeColorOf(q), TextAnchor.MiddleRight).rectTransform.Fill(0, 10, 0, 0);
+            }
+            if (active.Count == 0)
+            {
+                Cell(rows.Next(70), "진행중인 퀘스트가 없습니다.\n<size=14><color=#8090a0>머리 위에 <color=#ffd060>!</color> 가 뜬 NPC에게 말을 걸어\n[퀘스트 목록보기]에서 수락하세요.</color></size>",
+                    10, 390, 17, UIFactory.TextDim);
+            }
+            var next = quests.Current;
+            if (next != null && !quests.IsActive(next))
+            {
+                rows.Next(8);
+                var giver = QuestNpcs.Get(next.Giver);
+                Cell(rows.Next(60), $"<color=#c49aff>받을 이야기</color>  Lv.{next.Lv} {next.Title}\n<size=14><color=#8090a0>{giver?.Where ?? "조합"}에게서" +
+                                    (giver != null && giver.InLobby ? " (대기실 [퀘스트])" : "") + "</color></size>", 10, 390, 16, UIFactory.TextMain);
+            }
+
+            var bottom = UIFactory.Node("Bottom", left);
+            bottom.anchorMin = new Vector2(0, 0); bottom.anchorMax = new Vector2(1, 0); bottom.pivot = new Vector2(0.5f, 0);
+            bottom.anchoredPosition = new Vector2(0, 10); bottom.sizeDelta = new Vector2(0, 48);
+            if (sel != null)
+            {
+                var give = RowButton(bottom, _confirmAbandon ? "정말 포기할까요?" : "퀘스트 포기", () =>
+                {
+                    if (!_confirmAbandon) { _confirmAbandon = true; Refresh(); return; }
+                    _confirmAbandon = false;
+                    quests.Abandon(sel);
+                    _sel = null;
+                    Refresh();
+                }, 110, 200, _confirmAbandon ? UIFactory.BtnDanger : UIFactory.BtnNeutral, true, 17);
+                UIFactory.SetRadius(give.targetGraphic, UIFactory.Pill);
+            }
+
+            // ---- 오른쪽: 상세 ----
+            if (sel == null)
+            {
+                Cell(UIFactory.Node("Empty", right).Fill(20, 20, 20, 20), "퀘스트를 고르면 [보고자], [임무], 보상과 이야기가 여기에 나옵니다.", 0, 470, 16, UIFactory.TextDim);
+                return;
+            }
+            var d = new RowCursor(UIFactory.Node("Detail", right).Fill(18, 14, 14, 78), 0f, "questbook_detail");
+            Cell(d.Next(30), $"Lv. {sel.Lv}  {sel.Title}", 0, 470, 21, TypeColorOf(sel), TextAnchor.MiddleLeft, FontStyle.Bold);
+            var rep = QuestNpcs.Get(sel.Reporter);
+            Cell(d.Next(22, 2), $"[보고자] {rep?.Where ?? "-"}", 0, 470, 15, UIFactory.TextMain);
+            d.Next(6);
+            bool isReady = quests.IsReady(sel);
+            Cell(d.Next(24, 2), $"[임무] {quests.ObjectiveLine(sel)}" + (isReady ? "  <color=#ffd060>완 료</color>" : ""), 0, 470, 16, new Color(0.5f, 0.9f, 0.45f));
+            if (isReady) Cell(d.Next(22, 2), $"→ {QuestSystem.ReportLine(sel)}", 0, 470, 15, UIFactory.Good);
+            Cell(d.Next(22, 2), $"[퀘스트 완료 보상] {sel.RewardLine}", 0, 470, 15, UIFactory.Gold);
+            var items = sel.RewardItems;
+            if (items.Count > 0) Cell(d.Next(22, 2), "[보상 아이템] " + string.Join(", ", items.Select(i => i.Replace("\n", " "))), 0, 470, 14, UIFactory.Gold);
+            if (sel.Goal == QuestGoal.Deliver) Cell(d.Next(22, 2), $"[퀘스트 물건] {sel.ItemName} 1개", 0, 470, 14, UIFactory.TextMain);
+            d.Next(8);
+            var story = Cell(d.Next(10), sel.Desc ?? "", 2, 466, 15, new Color(0.86f, 0.89f, 0.92f), TextAnchor.UpperLeft);
+            story.lineSpacing = 6f;
+            float h = story.GetPreferredValues(story.text, 466, 0).y + 10f;
+            ((RectTransform)story.transform.parent).sizeDelta = new Vector2(0, h);
+            d.Next(h - 10f, 0f);
+
+            // 아래: 사용 미끼 · [힌트맵]
+            var foot = UIFactory.Node("Foot", right);
+            foot.anchorMin = new Vector2(0, 0); foot.anchorMax = new Vector2(1, 0); foot.pivot = new Vector2(0.5f, 0);
+            foot.anchoredPosition = new Vector2(0, 12); foot.sizeDelta = new Vector2(0, 52);
+            var sp = FishDatabase.Get(sel.SpeciesId);
+            string bait = sp != null && sp.Baits.Length > 0 ? string.Join(", ", sp.Baits.Take(3).Select(k => Names.Of(k))) : "-";
+            Cell(foot, $"[사용미끼] {bait}", 18, 320, 14, UIFactory.TextDim);
+            var hint = RowButton(foot, "[힌트맵]", () => QuestTalkPanel.ShowHint(sel), 516 - 18 - 140, 140, UIFactory.BtnBlue, true, 16);
+            UIFactory.SetRadius(hint.targetGraphic, UIFactory.Pill);
+        }
+
+        // ================= 이야기·의뢰 현황 =================
+
+        void Overview(RowCursor rows)
+        {
+            var quests = Game.Quests;
+            var p = Game.Profile;
+
+            // 이야기 줄기
             var storyHead = rows.Next(28);
-            UIFactory.SectionTitle(storyHead, "이야기", 4, 18);
+            UIFactory.SectionTitle(storyHead, "이야기 (STORY)", 4, 18);
             ProgressBar(storyHead, quests.CompletedCount, QuestDatabase.Story.Count, 580, 300);
+            var cur = quests.Current;
+            if (cur != null)
+            {
+                var giver = QuestNpcs.Get(cur.Giver);
+                string state = quests.IsActive(cur) ? (quests.IsReady(cur) ? $"<color=#7ee07e>완료 가능</color> — {QuestSystem.ReportLine(cur)}" : $"진행 중 — {quests.ObjectiveLine(cur)}")
+                    : $"<color=#ffd060>받을 수 있음</color> — {giver?.Where ?? "조합"}" + (giver != null && giver.InLobby ? " (대기실 [퀘스트])" : "");
+                Cell(rows.Next(26, 2), $"지금: <b>Lv.{cur.Lv} {cur.Title}</b>   <size=15>{state}</size>", 10, 900, 17, UIFactory.TextMain);
+            }
+            else Cell(rows.Next(30), "모든 이야기 퀘스트를 마쳤습니다!", 10, 900, 20, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
             for (int i = 0; i < QuestDatabase.Story.Count; i++)
             {
                 var def = QuestDatabase.Story[i];
                 bool done = i < quests.CompletedCount;
-                bool current = i == quests.CompletedCount;
-                string mark = done ? "<color=#70e070>●</color>" : current ? "▶" : "○";
-                var color = done ? UIFactory.Good : current ? UIFactory.TextMain : UIFactory.TextDim;
-                Cell(rows.Next(25, 1), $"{mark}  {def.Title}" + (done || current ? $"  <size=14><color=#8090a0>{def.GoalText}</color></size>" : ""),
-                    10, 900, 17, color);
+                bool now = i == quests.CompletedCount;
+                string mark = done ? "<color=#70e070>●</color>" : now ? "▶" : "○";
+                var color = done ? UIFactory.Good : now ? UIFactory.TextMain : UIFactory.TextDim;
+                string where = def.MapId != null ? Fishing.World.Maps.Get(def.MapId).ShortName : "대기실";
+                Cell(rows.Next(24, 1), $"{mark}  <color=#8090a0>Lv.{def.Lv}</color> {def.Title}" + (done || now ? $"  <size=13><color=#8090a0>{def.Objective} · {where}</color></size>" : ""),
+                    10, 900, 16, color);
             }
-        }
 
-        void Daily(RowCursor rows)
-        {
-            Cell(rows.Next(30), "오늘의 조합 의뢰  <size=14><color=#8090a0>게임 하루마다 새로 3개 · 가 본 낚시터에서 · 완료하면 바로 보상 + 소라고동</color></size>",
-                4, 900, 20, DailyColor);
-            foreach (var q in Game.Quests.Daily)
+            // 오늘의 일일반복
+            rows.Next(10);
+            UIFactory.SectionTitle(rows.Next(28), "오늘의 일일반복 (REPEAT)", 4, 18);
+            Cell(rows.Next(22), "게임 하루마다 새로 3개 · 그 낚시터 조합 연락관에게 수락하고, 채우면 다시 찾아가 완료 · 보상에 소라고동 1", 10, 900, 14, UIFactory.TextDim);
+            foreach (var q in quests.DailyDefs)
             {
-                var row = rows.Next(56, 6);
-                UIFactory.RowBg(row, !q.done);
-                Cell(row, $"{(q.done ? "● " : "")}<b>{QuestSystem.DailyText(q)}</b>\n<size=14><color=#ffd060>{q.gold:N0}골드 · 경험치 {q.exp} · 소라고동 1</color></size>",
-                    12, 640, 19, q.done ? UIFactory.Good : UIFactory.TextMain);
-                if (q.done) UIFactory.Chip(row, "완료", UIFactory.BtnGood, UIFactory.TextMain, 15).transform.parent.GetComponent<RectTransform>()
-                    .At(new Vector2(1, 0.5f), new Vector2(-16, 0), new Vector2(90, 30), new Vector2(1, 0.5f));
-                else ProgressBar(row, q.progress, q.count, 640, 230);
+                var row = rows.Next(50, 4);
+                bool done = quests.IsDone(q), active = quests.IsActive(q), ready = quests.IsReady(q);
+                UIFactory.RowBg(row, active);
+                var giver = QuestNpcs.Get(q.Giver);
+                string state = done ? "<color=#70e070>완료</color>" : ready ? $"<color=#7ee07e>완료 가능</color> — {giver?.Name}에게" :
+                    active ? $"진행 중 {quests.ProgressOf(q)}/{q.Count}" : $"<color=#ffd060>수락 전</color> — {giver?.Where}";
+                Cell(row, $"<b><color=#7fc4ff>Lv.{q.Lv}</color> {q.Title}</b>  <size=13><color=#8090a0>{Fishing.World.Maps.Get(q.MapId).ShortName} · {q.Objective} {q.Count}</color></size>\n" +
+                          $"<size=14>{state}   <color=#ffd060>{q.RewardLine} · 소라고동 1</color></size>", 12, 900, 16, done ? UIFactory.Good : UIFactory.TextMain);
             }
-            Cell(rows.Next(30), $"지금까지 완료한 의뢰 {Game.Profile.Data.dailyCompleted}개", 4, 900, 16, UIFactory.TextDim);
+
+            // 가이드 · 일반
+            rows.Next(10);
+            UIFactory.SectionTitle(rows.Next(28), "가이드 · 일반 퀘스트", 4, 18);
+            foreach (var q in QuestDatabase.Side)
+            {
+                bool done = quests.IsDone(q), active = quests.IsActive(q);
+                var giver = QuestNpcs.Get(q.Giver);
+                bool open = !done && !active && quests.AvailableAt(q.Giver).Contains(q);
+                string state = done ? "<color=#70e070>완료</color>" : active ? (quests.IsReady(q) ? "<color=#7ee07e>완료 가능</color>" : $"진행 중 {quests.ProgressOf(q)}/{q.Count}")
+                    : open ? $"<color=#ffd060>받을 수 있음</color> — {giver?.Where}" : "<color=#606c78>아직 (이야기를 더 진행하세요)</color>";
+                string tag = q.Type == QuestType.Guide ? "<color=#e6a8ff>[가이드]</color>" : "[일반]";
+                Cell(rows.Next(24, 1), $"{tag} <color=#8090a0>Lv.{q.Lv}</color> {q.Title}  <size=13>{state}</size>", 10, 900, 16, done ? UIFactory.Good : UIFactory.TextMain);
+            }
+            rows.Next(6);
+            Cell(rows.Next(26), $"지금까지 완료한 퀘스트 {p.Data.quest.completedTotal}개 · 그중 일일반복 {p.Data.dailyCompleted}개", 4, 900, 15, UIFactory.TextDim);
         }
 
         void Trophy(RowCursor rows)

@@ -24,6 +24,8 @@ namespace Fishing.UI
         Image _staminaFill, _expFill;
         TMP_Text _channelText, _clockText, _locationText, _areaText;
         TMP_Text _questTitle, _questGoal;
+        RectTransform _questBox;
+        float _nextQuestList;
         // 대회 순위표 (참가했을 때만)
         RectTransform _tourBox;
         TMP_Text _tourTitle, _tourBody;
@@ -173,10 +175,17 @@ namespace Fishing.UI
                 .At(new Vector2(0, 1), new Vector2(16, -6), new Vector2(200, 20));
             _areaText = UIFactory.Text(quest, "", 12, UIFactory.TextDim, TextAnchor.MiddleRight);
             _areaText.rectTransform.At(new Vector2(1, 1), new Vector2(-16, -6), new Vector2(200, 20));
-            _questTitle = UIFactory.Text(quest, "", 16, new Color(1f, 0.68f, 0.3f), TextAnchor.MiddleLeft, FontStyle.Bold);
-            _questTitle.rectTransform.At(new Vector2(0, 1), new Vector2(16, -30), new Vector2(316, 24));
-            _questGoal = UIFactory.Text(quest, "", 15, UIFactory.TextMain, TextAnchor.UpperLeft);
-            _questGoal.rectTransform.At(new Vector2(0, 1), new Vector2(22, -56), new Vector2(308, 46));
+            _questBox = quest;
+            // 원작: "[현재 낚시터]에서 가능한 퀘스트만 보기" 체크 + 번호 붙은 퀘스트 (제목 줄은 종류 색, 목표 줄은 오른쪽 정렬) 최대 6개
+            var hereToggle = UIFactory.Button(quest, "", () => { var qp = Game.Profile.Data.quest; qp.hereOnly = !qp.hereOnly; _nextQuestList = 0f; },
+                new Color(1f, 1f, 1f, 0f), 12);
+            ((RectTransform)hereToggle.transform).At(new Vector2(0, 1), new Vector2(8, -26), new Vector2(328, 22), new Vector2(0, 1));
+            _questTitle = hereToggle.GetComponentInChildren<TMP_Text>();
+            _questTitle.alignment = TextAlignmentOptions.Left;
+            _questTitle.color = new Color(0.55f, 0.85f, 1f);
+            _questGoal = UIFactory.Text(quest, "", 14, UIFactory.TextMain, TextAnchor.UpperLeft);
+            _questGoal.rectTransform.At(new Vector2(0, 1), new Vector2(16, -52), new Vector2(316, 300), new Vector2(0, 1));
+            _questGoal.lineSpacing = 2f;
 
             // 대회 순위표: 참가한 날 퀘스트 목록 아래에 (원작 대회 HUD 자리는 확인되지 않아 솔로판 배치)
             _tourBox = UIFactory.Panel(_root, "Tournament").rectTransform
@@ -188,6 +197,48 @@ namespace Fishing.UI
             _tourBody = UIFactory.Text(_tourBox, "", 14, UIFactory.TextMain, TextAnchor.UpperLeft);
             _tourBody.rectTransform.At(new Vector2(0, 1), new Vector2(16, -30), new Vector2(316, 136));
             _tourBody.lineSpacing = 4f;
+        }
+
+        /// <summary>
+        /// 원작 QUEST LIST: "1. [13] [이야기] 강대표의 추측" (종류 색) + 오른쪽 정렬 목표 "나린 참돔 잡아서 가져오기 0 / 1".
+        /// 목표를 채우면 "완 료"가 붙고 목표 줄이 "[홍현 앞바다]의 정계장에게 보고하기"로 바뀐다. 상자 높이는 줄 수에 맞추고, 대회 순위표는 그 아래로.
+        /// </summary>
+        void UpdateQuestList()
+        {
+            if (Time.unscaledTime < _nextQuestList) return;
+            _nextQuestList = Time.unscaledTime + 0.25f;
+            var quests = Game.Quests;
+            bool hereOnly = Game.Profile.Data.quest.hereOnly;
+            _questTitle.text = $"{(hereOnly ? "<color=#7fe0ff>●</color>" : "<color=#506070>○</color>")} [현재 낚시터]에서 가능한 퀘스트만 보기";
+            var sb = new System.Text.StringBuilder();
+            int n = 0;
+            foreach (var q in quests.Active())
+            {
+                if (hereOnly && !quests.DoableOn(q, FieldMap.Id)) continue;
+                if (++n > 6) break;
+                bool ready = quests.IsReady(q);
+                string tag = q.TypeTag.Length > 0 ? $"[{q.TypeTag}] " : "";
+                string title = q.Title.Length > 15 ? q.Title.Substring(0, 14) + ".." : q.Title;
+                sb.Append($"<color={q.TypeColor}>{n}. {(ready ? "<color=#7ee07e>완 료</color> " : "")}[{q.Lv}] {tag}{title}</color>\n");
+                string goal = ready ? QuestSystem.ReportLine(q) : quests.ObjectiveLine(q);
+                if (goal.Length > 26) goal = goal.Substring(0, 25) + "..";
+                sb.Append($"<align=right>{goal}</align>\n");
+            }
+            if (n == 0)
+                sb.Append(hereOnly ? "<color=#8090a0>이 낚시터에서 할 퀘스트가 없습니다.</color>"
+                    : "<color=#8090a0>진행중인 퀘스트가 없습니다.\n머리 위 <color=#ffd060>!</color> NPC에게 말을 걸어 보세요.</color>");
+            _questGoal.text = sb.ToString().TrimEnd('\n');
+            float h = 62f + _questGoal.GetPreferredValues(_questGoal.text, 316f, 0f).y;
+            _questBox.sizeDelta = new Vector2(344, h);
+            _tourBox.anchoredPosition = new Vector2(-14, -358 - h - 8);
+        }
+
+        /// <summary>F 대화 안내 뒤에 붙는 퀘스트 표시 (완료할 것 / 새 퀘스트).</summary>
+        static string PromptQuestTag(Fishing.Characters.NpcAngler npc)
+        {
+            var m = Game.Quests.MarkFor(npc.QuestKey);
+            return m == QuestSystem.Mark.Ready ? "  <color=#70e070>· 퀘스트 완료</color>"
+                : m == QuestSystem.Mark.AvailableStory || m == QuestSystem.Mark.Available ? "  <color=#ffd060>· 새 퀘스트</color>" : "";
         }
 
         void UpdateTournament()
@@ -700,11 +751,7 @@ namespace Fishing.UI
             _locationText.text = FieldMap.TryCell(lookPos, out int col, out int row) ? $"현재 위치 : {FieldMap.CellName(col, row)}" : "현재 위치 : 둔치";
             _areaText.text = FieldMap.AreaName(playerPos);
 
-            var quest = Game.Quests.Current;
-            _questTitle.text = quest != null ? $"① {quest.Title}" : "모든 조합 퀘스트 완료";
-            _questGoal.text = quest == null ? "자유롭게 대물을 노려보세요!"
-                : Game.Quests.Ready ? $"<color=#70e070>목표 달성! {FieldMap.UnionContact}에게 보고</color>"
-                : $"{quest.GoalText}  {Mathf.Min(Game.Quests.Progress, quest.Count)} / {quest.Count}";
+            UpdateQuestList();
 
             if (Time.frameCount % 20 == 0 && _baitsBuiltFor != BaitKey()) BuildBaitSlots();
             for (int i = 0; i < _baitSlots.Count; i++)
@@ -945,7 +992,8 @@ namespace Fishing.UI
             var npc = Game.UI.NearbyNpc;
             bool nearShop = Vector3.Distance(playerPos, FieldMap.ShopPos) < FieldMap.ShopRadius;
             if (Game.UI.BlockingPanelOpen) { _prompt.text = ""; _promptPill.gameObject.SetActive(false); return; }
-            _prompt.text = npc != null ? $"<color=#ffd060>[F]</color> {npc.Look.Name}{GameUI.Josa(npc.Look.Name, "과", "와")} 대화" + (npc.NpcId == "union" && Game.Quests.Ready ? "  <color=#70e070>· 퀘스트 보고</color>" : "")
+            _prompt.text = npc != null ? $"<color=#ffd060>[F]</color> {npc.Look.Name}{GameUI.Josa(npc.Look.Name, "과", "와")} 대화" + PromptQuestTag(npc)
+                : Game.UI.NearbyKiosk != null ? "<color=#ffd060>[F]</color> 납품소 · 살림망 고기 납품하기"
                 : nearShop && f.State == FishingState.Idle ? $"{FieldMap.ShopName}  [F12] 상점 이용" : "";
             if (Game.Profile.StaminaTier > 0 && f.State == FishingState.Idle)
                 _prompt.text = "지쳤습니다... 살림망(Z)에서 요리하거나 음식을 드세요 (가방 I)";

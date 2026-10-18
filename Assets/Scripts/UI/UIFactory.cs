@@ -390,7 +390,9 @@ namespace Fishing.UI
             if (_outlineBase == null || font == null) return;
             // SDF 두께 1 = 아틀라스에서 (패딩+1)/2 픽셀, 화면에선 거기에 글자크기/샘플크기를 곱한 만큼
             float width = px * font.faceInfo.pointSize / (Mathf.Max(1f, t.fontSize) * (font.atlasPadding + 1) * 0.5f);
-            width = Mathf.Round(Mathf.Clamp(width, 0.05f, 0.9f) * 20f) / 20f;
+            // 두께는 글자 크기에 반비례라 작은 글씨(12~16pt)에선 0.9까지 올라가 외곽선이 글자를 덮어 검게 뭉갰다.
+            // 큰 글씨는 원래 0.3보다 얇으니 위를 0.3에서 자르면 작은 글씨만 바뀐다
+            width = Mathf.Round(Mathf.Clamp(width, 0.05f, 0.3f) * 20f) / 20f;
             if (!_outlines.TryGetValue((color, width), out var mat) || mat == null)
             {
                 mat = new Material(_outlineBase) { name = $"{_outlineBase.name} {ColorUtility.ToHtmlStringRGBA(color)} {width}" };

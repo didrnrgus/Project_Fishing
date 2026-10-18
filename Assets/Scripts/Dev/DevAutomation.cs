@@ -233,6 +233,21 @@ namespace Fishing.Dev
             yield return Shot("02b_cast_flight");
             yield return new WaitForSeconds(2.05f);
             yield return Shot("03_waiting");
+            // 찌를 감는 중: 오른손은 낚싯대를 쥔 채 그대로, 왼손이 릴 손잡이를 돌린다
+            Game.Fishing.DebugReeling = true;
+            yield return new WaitForSeconds(0.5f);
+            yield return Shot("03b_reeling");
+            var rig0 = (Game.CameraRig.Yaw, Game.CameraRig.Pitch, Game.CameraRig.Distance);
+            Game.Fishing.UserOrbited = true;
+            Game.CameraRig.Yaw = Game.Player.Yaw + 150f;
+            Game.CameraRig.Pitch = 8f;
+            Game.CameraRig.Distance = 2.2f;
+            yield return new WaitForSeconds(2f);
+            yield return Shot("03c_reeling_close");
+            Game.Fishing.DebugReeling = false;
+            Game.Fishing.UserOrbited = false;
+            (Game.CameraRig.Yaw, Game.CameraRig.Pitch, Game.CameraRig.Distance) = rig0;
+            yield return new WaitForSeconds(0.3f);
 
             // 본신: 찌가 잠기는 챔질 게이지
             Game.Fishing.DebugForceBite("carp", 82f);
@@ -338,6 +353,15 @@ namespace Fishing.Dev
             yield return new WaitForSecondsRealtime(0.8f);
             yield return Shot("10b_result_held");
             yield return CloseResult();
+            // 손가락만 한 고기(빙어 12cm): 손에 들어 보이는 모양
+            CheckClear("DebugStartFight");
+            Game.Fishing.DebugStartFight("smelt", 12f, 3f);
+            timeout = Time.time + 60f;
+            while (Game.Fishing.State == FishingState.Fighting && Time.time < timeout) yield return null;
+            yield return WaitResult();
+            yield return new WaitForSecondsRealtime(0.8f);
+            yield return Shot("10b2_result_smelt");
+            yield return CloseResult();
             Game.Fishing.Autoplay = false;
             // 길쭉한 고기·잡동사니 결과 화면 (뱀장어는 몸이 S자로 꿈틀, 운동화는 3D 모델이 화면 안에)
             foreach (var (id, len, shot) in new[] { ("eel", 92f, "10c_result_eel"), ("shoe", 27f, "10d_result_shoe"), ("trap", 45f, "10e_result_trap") })
@@ -362,7 +386,7 @@ namespace Fishing.Dev
                     if (p.Data.keepNet.Count < 8) p.Data.keepNet.Add(new CaughtFish { speciesId = s.Id, length = len, weight = Mathf.Round(s.WeightGrams(len)), day = 1, zone = "E1" });
                 }
             }
-            p.Data.quest.index = 2;
+            Game.Quests.DebugSetStory(2); // 이야기 "도감 채우기"를 받은 상태 (도감 7종이라 바로 완료 가능)
             p.NotifyChanged();
 
             yield return new WaitForSeconds(0.5f);
@@ -376,12 +400,61 @@ namespace Fishing.Dev
             Game.UI.OpenExclusive(Game.UI.KeepNet);
             yield return new WaitForSeconds(0.8f); // 차트 등장 애니메이션이 끝나게
             yield return Shot("12_keepnet");
+            // 납품 창 (원작 납품소 DELIVERY): 게이지 87%, 월척 붕어 한 마리(도장), 4마리 고른 상태
+            float gaugeBefore = p.Data.deliveryGauge;
+            p.Data.deliveryGauge = 0.87f;
+            var wolcheok = FishDatabase.Get("crucian");
+            p.Data.keepNet.Add(new CaughtFish { speciesId = "crucian", length = 34.5f, weight = Mathf.Round(wolcheok.WeightGrams(34.5f)), day = 1, zone = "E1", mapId = "hangang" });
+            Game.UI.OpenExclusive(Game.UI.Delivery);
+            Game.UI.Delivery.DebugSelect(4);
+            yield return new WaitForSeconds(0.4f);
+            yield return Shot("12b_delivery");
+            Game.UI.Delivery.Close();
+            p.Data.deliveryGauge = gaugeBefore;
+            // ===== 퀘스트 (원작 13 문서): NPC [퀘스트 목록보기] → 상세 [수락] → 여러 퀘스트 동시 진행 (HUD QUEST LIST · 퀘스트 책) =====
+            var quests = Game.Quests;
+            string hanUnion = QuestNpcs.UnionOf("hangang");
+            Game.UI.QuestTalk.OpenFor(hanUnion);
+            yield return new WaitForSeconds(0.4f);
+            yield return Shot("13q_npc_quest_list");
+            var offer = quests.AvailableAt(hanUnion);
+            if (offer.Count > 0)
+            {
+                Game.UI.QuestTalk.ShowDetail(offer[0]);
+                yield return new WaitForSeconds(0.3f);
+                yield return Shot("13r_quest_accept");
+            }
+            // 가이드·일일반복(연락관)과 일반(낚시점)도 받아 두고, 몇 개는 조금 진행시킨다
+            foreach (var q in quests.AvailableAt(hanUnion)) quests.Accept(q);
+            foreach (var q in quests.AvailableAt(QuestNpcs.ShopOf("hangang"))) quests.Accept(q);
+            quests.OnReleased();
+            Game.UI.QuestTalk.Close();
+            yield return new WaitForSeconds(0.6f);
+            yield return Shot("13s_hud_questlist");
+            Game.UI.Quest.ShowTab(0);
             Game.UI.OpenExclusive(Game.UI.Quest);
             yield return Shot("13_quest");
             Game.UI.Quest.ShowTab(1);
             yield return Shot("13b_daily");
             Game.UI.Quest.ShowTab(3);
             yield return Shot("13c_achievements");
+            // 생태조사 (원작 기록 책 "홍현 생태조사 (16/23)"): 한강 어종 몇 개를 이미 납품해 완성(하나는 보상 받음), 하나는 방금 납품해 알림이 뜬 상태
+            var hanEco = System.Linq.Enumerable.ToList(EcoSurvey.OfMap("hangang"));
+            for (int i = 0; i < hanEco.Count && i < 5; i++)
+            {
+                p.Data.deliveries.Add(new DeliveryRecord { mapId = "hangang", speciesId = hanEco[i].Species.Id, count = 1 + i });
+                p.Data.achClaims.Add(new AchClaim { id = hanEco[i].Id, doneAt = $"2026/10/{12 + i} 2{i}:1{i}", claimed = i == 0 });
+            }
+            p.Data.deliveredTotal = Mathf.Max(p.Data.deliveredTotal, 130);
+            if (hanEco.Count > 5)
+            {
+                var fresh = hanEco[5].Species;
+                EcoSurvey.OnDelivered(new System.Collections.Generic.List<CaughtFish>
+                    { new CaughtFish { speciesId = fresh.Id, length = fresh.MinLen + 5f, weight = Mathf.Round(fresh.WeightGrams(fresh.MinLen + 5f)), day = 1, zone = "E1", mapId = "hangang" } });
+            }
+            Game.UI.Quest.ShowAchievements(EcoSurvey.CatEco, "hangang");
+            yield return new WaitForSeconds(0.4f);
+            yield return Shot("13g_eco_survey");
             // 빙고: 첫 줄과 대각선 몇 칸을 채운 상태
             Bingo.EnsureCard();
             foreach (int i in new[] { 0, 1, 2, 3, 6, 18, 24 }) p.Data.bingo.done[i] = true;
@@ -392,6 +465,17 @@ namespace Fishing.Dev
             Game.UI.Quest.ShowTab(6);
             yield return Shot("13f_journal");
             Game.UI.Quest.ShowTab(0);
+            // 완료: [보고자] 박주임에게 [완 료] → 가운데 완료 편지 카드 + 시스템 줄 EXP/GOLD, 목록은 다음 이야기로
+            var doneStory = quests.Current;
+            Game.UI.QuestTalk.OpenFor(hanUnion);
+            if (doneStory != null && quests.IsReady(doneStory)) Game.UI.QuestTalk.ShowDetail(doneStory);
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("13t_quest_complete_detail");
+            if (doneStory != null && quests.Finish(doneStory, hanUnion)) Game.UI.QuestTalk.ShowDetail(null);
+            yield return new WaitForSecondsRealtime(0.7f);
+            yield return Shot("13u_quest_complete_card");
+            Game.UI.QuestTalk.Close();
+            yield return new WaitForSecondsRealtime(2.8f); // 카드가 사라지게
             Game.UI.OpenExclusive(Game.UI.Exchange);
             yield return Shot("13d_exchange");
             Game.UI.OpenExclusive(Game.UI.Shop);
@@ -437,6 +521,19 @@ namespace Fishing.Dev
             p.Data.tournament.day = -1;
             Game.Clock.Set(1, clockBefore);
 
+            // 필드 납품소: 조합 연락관 옆 빨간 기계 + 초록 마름모 + "납품소" 이름표
+            var kiosk = Fishing.World.DeliveryKiosk.All.Count > 0 ? Fishing.World.DeliveryKiosk.All[0] : null;
+            if (kiosk != null)
+            {
+                float faceKiosk = kiosk.transform.eulerAngles.y + 180f;
+                Game.Player.Teleport(kiosk.transform.position + kiosk.transform.forward * 2.2f, faceKiosk);
+                Game.CameraRig.Yaw = faceKiosk + 25f;
+                Game.CameraRig.Pitch = 12f;
+                Game.CameraRig.Distance = 5f;
+                yield return new WaitForSeconds(0.8f);
+                yield return Shot("12c_delivery_kiosk");
+            }
+
             // NPC 대화 (낚시점 김사장), 낚싯대 강화 창
             Game.Player.Teleport(Fishing.World.FieldMap.ShopPos + new Vector3(1.2f, 0.1f, 4.5f), 180f);
             Game.CameraRig.Yaw = 200f;
@@ -477,6 +574,11 @@ namespace Fishing.Dev
             yield return Shot("21c_costume");
             Game.UI.Character.Close();
             Game.UI.Character.ShowTab(false);
+            // 일반 슬롯: 장비 6칸 이름·미끼 개수가 읽히는지
+            Game.UI.OpenExclusive(Game.UI.Character);
+            yield return new WaitForSeconds(0.5f);
+            yield return Shot("21d_character_gear");
+            Game.UI.Character.Close();
 
             // 지역 지도(M): 어군 하나는 3마리를 낚아 작은 어군으로 만든다
             var shrink = Game.Schools.Schools[1];
@@ -550,12 +652,23 @@ namespace Fishing.Dev
             Game.UI.Aquarium.Close();
             yield return new WaitForSeconds(0.3f);
             yield return Shot("29_lobby_aquarium");
+            // 대기실 [퀘스트]: 조합 직원 카드 줄(머리 위 !) + 왼쪽 대화 카드
+            Game.UI.QuestTalk.OpenLobby();
+            yield return new WaitForSeconds(0.5f);
+            yield return Shot("29b_lobby_quest");
+            Game.UI.QuestTalk.Close();
 
             // ================= 홍현 앞바다 =================
             p.Data.level = Mathf.Max(p.Data.level, 10);
             Game.Weather.Force(Weather.Clear);
             Game.Clock.Set(2, 15 * 60);
-            Game.UI.EnterField(Fishing.Data.FishingAreas.Korea.Find(a => a.Id == "honghyeon"), 2);
+            // 원작 로딩 화면(이름·소개·팁·진행 막대) → 입장하면 날씨 알림과 채널 입장 시스템 줄
+            Game.UI.StartCoroutine(Game.UI.EnterWithLoading(Fishing.Data.FishingAreas.Korea.Find(a => a.Id == "honghyeon"), 2));
+            yield return new WaitForSecondsRealtime(1.4f);
+            yield return Shot("21z_loading");
+            while (Game.UI.Loading.Showing) yield return null;
+            yield return new WaitForSecondsRealtime(0.6f);
+            yield return Shot("21za_weather_notice");
             Game.UI.Help.Close();
             var bw = Fishing.World.HonghyeonDef.Breakwater;
             Game.Player.Teleport(new Vector3(bw.center.x, 1.1f, bw.yMin + 6f), 0f);
@@ -564,6 +677,11 @@ namespace Fishing.Dev
             Game.CameraRig.Distance = 9f;
             yield return new WaitForSeconds(3f);
             yield return Shot("22_honghyeon_day");
+            // ESC 메뉴 (원작 2:50)
+            Game.UI.OpenExclusive(Game.UI.EscMenu);
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("22a_esc_menu");
+            Game.UI.EscMenu.Close();
             // 방파제 끝에서 마을 쪽: 해변 비탈, 포구 호안, 다랭이논 지형
             Game.Player.Teleport(new Vector3(bw.center.x, 1.1f, bw.yMax - 6f), 180f);
             Game.CameraRig.Yaw = 200f;
@@ -593,6 +711,45 @@ namespace Fishing.Dev
             yield return new WaitForSeconds(0.4f);
             yield return Shot("24_honghyeon_map");
             Game.UI.AreaMap.Close();
+
+            // 통발 (원작 0:42~0:48, 2:20~2:26): 어부 대화 → 설치 확인 → 다 된 통발 수거 → 아이템 획득
+            {
+                Game.Clock.Set(2, 16 * 60);
+                p.Data.level = Mathf.Max(p.Data.level, 12);
+                Fishing.Characters.NpcAngler trapFisher = null;
+                foreach (var npc in Fishing.Characters.NpcAngler.Talkable)
+                    if (npc != null && npc.NpcId == FishTraps.FisherId) { trapFisher = npc; break; }
+                if (trapFisher != null)
+                {
+                    var fisherPos = trapFisher.transform.position;
+                    Game.Player.Teleport(fisherPos + trapFisher.transform.forward * 2.2f + trapFisher.transform.right * 0.6f, trapFisher.transform.eulerAngles.y + 180f);
+                    yield return new WaitForSeconds(0.6f);
+                    Game.UI.TalkTo(trapFisher);
+                    yield return new WaitForSeconds(0.8f);
+                    yield return Shot("22d_trap_npc");
+                    p.Data.traps.Clear();
+                    Game.UI.Dialog.Close();
+                    Game.UI.Traps.OpenFrom(trapFisher.Look.Name);
+                    Game.UI.Traps.DebugConfirm();
+                    yield return new WaitForSeconds(0.5f);
+                    yield return Shot("22e_trap_install");
+                    FishTraps.DebugInstallReady(Fishing.World.FieldMap.Id);
+                    Game.UI.Traps.OpenFrom(trapFisher.Look.Name);
+                    yield return new WaitForSeconds(0.5f);
+                    yield return Shot("22f_trap_harvest");
+                    var trapReady = p.Data.traps.Find(FishTraps.Ready);
+                    var trapItems = trapReady != null ? FishTraps.Harvest(trapReady, new System.Collections.Generic.HashSet<int> { 0, 1, 2 }) : null;
+                    if (trapItems != null && trapItems.Count > 0)
+                    {
+                        Game.UI.ItemBag.Show(trapItems);
+                        yield return new WaitForSeconds(0.5f);
+                        yield return Shot("22g_item_bag");
+                    }
+                    Game.UI.ItemBag.Close();
+                    Game.UI.Traps.Close();
+                }
+                else Debug.LogWarning("[Dev] 통발 어부 없음");
+            }
 
             // 서쪽 갯바위 섬 근처를 배로
             Game.Clock.Set(2, 10 * 60);

@@ -164,7 +164,7 @@ namespace Fishing.Characters
                         _ => CharacterAnimator.Sit
                     });
                 // 조합 연락관: 보고할 퀘스트가 있고 내가 가까이 오면 손짓해 부른다 (Mixamo Rallying)
-                if (NpcId == "union" && Game.Quests != null && Game.Quests.Ready && _faceTarget == null && Game.Player != null && Time.time > _nextRally &&
+                if (_mark == Fishing.Core.QuestSystem.Mark.Ready && _faceTarget == null && Game.Player != null && Time.time > _nextRally &&
                     (Game.Player.transform.position - transform.position).sqrMagnitude < 15f * 15f)
                 {
                     _nextRally = Time.time + Random.Range(9f, 14f);
@@ -185,15 +185,21 @@ namespace Fishing.Characters
                 bool near = (cam - _nameTag.position).sqrMagnitude < 45f * 45f && _faceTarget == null;
                 _nameTag.gameObject.SetActive(near);
                 if (near) _nameTag.rotation = Quaternion.LookRotation(_nameTag.position - cam);
-                if (near && NpcId == "union") UpdateQuestMarker();
+                // 퀘스트 NPC(조합 연락관·낚시점 주인). 어부는 통발 표시(TrapFisherMarker)가 따로 있다
+                if (near && NpcId != "fisher" && QuestKey != null) UpdateQuestMarker();
             }
         }
 
         TMPro.TextMeshPro _questMark;
+        Fishing.Core.QuestSystem.Mark _mark;
+        float _nextMarkCheck;
+
+        /// <summary>이 NPC의 퀘스트 키 (QuestNpcs: union@맵 · shop@맵 · fisher@맵). 퀘스트 NPC가 아니면 null.</summary>
+        public string QuestKey => QuestNpcs.KeyFor(NpcId, FieldMap.Id);
 
         /// <summary>
-        /// 원작 NPC 퀘스트 표시: 노란 ? = 목표 달성(보고하면 보상), 회색 ? = 진행 중, 노란 ! = 받을 일일 의뢰가 남음.
-        /// 이름표 위에 떠서 위아래로 살짝 흔들린다.
+        /// 원작 NPC 머리 위 퀘스트 표시: 노란 ? = 완료할 퀘스트(보고하면 보상), 노란 ! = 받을 이야기 퀘스트,
+        /// 하늘색 ! = 받을 일일반복·가이드·일반 퀘스트, 회색 ? = 진행 중. 이름표 위에 떠서 위아래로 살짝 흔들린다.
         /// </summary>
         void UpdateQuestMarker()
         {
@@ -204,14 +210,17 @@ namespace Fishing.Characters
                 _questMark.outlineWidth = 0.2f;
                 _questMark.outlineColor = new Color32(30, 20, 0, 255);
             }
-            var q = Game.Quests;
-            bool ready = q != null && q.Ready;
-            bool working = q != null && q.Current != null;
-            bool daily = Game.Profile != null && Game.Profile.Data.daily.Exists(d => !d.done);
-            _questMark.text = ready ? "?" : working ? "?" : daily ? "!" : "";
-            _questMark.color = ready ? new Color(1f, 0.82f, 0.2f) : working ? new Color(0.7f, 0.72f, 0.75f) : new Color(1f, 0.82f, 0.2f);
-            _questMark.transform.localPosition = new Vector3(0f, 0.62f + (ready ? Mathf.Sin(Time.time * 4f) * 0.08f : 0f), 0f);
-            _questMark.transform.localScale = Vector3.one * (ready ? 1.15f : 0.9f);
+            if (Time.time >= _nextMarkCheck && Game.Quests != null)
+            {
+                _nextMarkCheck = Time.time + 0.4f;
+                _mark = Game.Quests.MarkFor(QuestKey);
+            }
+            var (text, color) = Fishing.UI.QuestTalkPanel.MarkGlyph(_mark);
+            bool pop = _mark == Fishing.Core.QuestSystem.Mark.Ready || _mark == Fishing.Core.QuestSystem.Mark.AvailableStory;
+            _questMark.text = text;
+            _questMark.color = color;
+            _questMark.transform.localPosition = new Vector3(0f, 0.62f + (pop ? Mathf.Sin(Time.time * 4f) * 0.08f : 0f), 0f);
+            _questMark.transform.localScale = Vector3.one * (pop ? 1.15f : 0.9f);
         }
 
         /// <summary>대기실처럼 낚싯대를 접어 들고 있게 한다 (빗자루 길이).</summary>
@@ -263,7 +272,8 @@ namespace Fishing.Characters
 
             if (_rod != null && _grip != null)
             {
-                _rod.position = _grip.Palm;
+                _grip.AlignTo(_rod.forward);
+                _rod.position = _grip.Grip;
                 _grip.Wrap(_rod.position, _rod.forward);
             }
             else if (_rod != null && _hand != null) _rod.position = _hand.position;
