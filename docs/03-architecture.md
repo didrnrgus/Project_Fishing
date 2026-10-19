@@ -83,7 +83,7 @@ Assets/
       FishFight.cs               파이팅 시뮬레이션 (순수 로직)
       BiteSelector.cs            어떤 고기가 몇 cm로 물지 결정 (맵·서식지·미끼·시간·날씨·어군·계절·얼음·먼바다)
       Bobber.cs                  찌 / 루어 모양, 비행·부유·예신·본신
-      FightRodView.cs            1인칭 낚싯대·팔(상의 색 소매)·반장갑 손, 낚싯줄, 물고기 위치·몸체
+      FightRodView.cs            1인칭 낚싯대(손·팔 없음), 낚싯줄, 물고기 위치·몸체
       TelescopicRod.cs           뽑기대(마디 펼치기·휨 스프링) + 스피닝 릴
       FishModels.cs              어종별 물고기 모델 (Resources/Fish/Species, 길이 = 실제 cm), 잡동사니 모델, 아이콘
       FightBot.cs                자동 파이팅 입력 (밸런스 시뮬레이션·자동 스크린샷용)
@@ -300,7 +300,6 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 | `World/VegetationLibrary.cs` + `Editor/VegetationBake.cs` | 받은 실사풍 소나무·활엽수·바위·풀 참조 묶음 (`Resources/VegetationLibrary.asset`, 빌드 때 채움). `KenneyProps.Spawn`(나무)·`Rocks.Prim`(바위, 눈 맵은 `Rocks.Snowy`)이 있으면 먼저 쓴다 |
 | `World/GrassField.cs` + `Shaders/Grass.shader` | 풀·들꽃 포기: 지형 풀 층·풀 텍스처 바닥을 레이캐스트로 훑어 심고 48m 칸 메쉬로 굽는다, 바람 흔들림, 130m 밖 칸은 끔(`GrassCuller`). `MapLoader`가 월드를 지은 직후 부른다 |
 | `Characters/RodGrip.cs` | 3인칭 오른손이 낚싯대를 쥔다: 릴 시트를 손바닥 가운데에, 손가락 마디를 낚싯대 축으로 감는다 (플레이어·NPC 낚시꾼) |
-| `Fishing/FpHand.cs` | 1인칭 주먹 메쉬: 손잡이(오른손)·릴 노브(왼손, 거울)를 감아 쥔 손가락 튜브·엄지·손등·손목 |
 | `Characters/CharacterLibrary.cs` · `ExternalCharacters.cs` · `ExtraNpcs.cs` + `Shaders/Ghost.shader` | 받은 휴머노이드 캐릭터(유니티짱·좀비·X Bot)를 같은 동작 시스템으로 움직인다. `CharacterLook.External`, 낚시 아이돌(`IdolRoutine`: 공원 버스킹 무대 `HanRiverMap.IdolStage` 위, 낮에만 — 무대는 풀보다 먼저 지어야 해서 `WorldBuilder.BuildIdolStage`), 밤 손님(`NightVisitor`: 좀비·귀신). 같은 인물은 한 맵에 한 번만 |
 | `Characters/Wanderer.cs` | 받은 사람으로 만든 배경 NPC: 점 사이 걷기·쉬기, 땅 레이캐스트, 반응 동작, 낮/밤 표시(렌더러만 끔), 헤엄(골반을 수면에), 앉기. 기본 걷기는 이동 속도에 맞춘 배속(`CharacterAnimator.BasicWalkSpeed` 2 m/s 기준), 돌아설 때는 먼저 제자리에서 몸을 돌린 뒤 걷는다 |
 | `UIPanel.RowCursor` | 창 목록을 쌓으면 자동으로 잘라내기 + 휠 스크롤 + 스크롤바 (key로 스크롤 위치 기억) |

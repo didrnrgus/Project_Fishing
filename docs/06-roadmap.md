@@ -95,7 +95,7 @@
 - [x] 앉은 자세 밑 아이스박스 의자(`SitSeat`), 겨울 한강 뗏목에 파묻히던 문제(콜라이더)
 - [x] 반복 무늬 깨기 셰이더 `Fishing/Ground`·`Fishing/Terrain`, 절차적 바위(`Rocks`)·테트라포드 메쉬
 - [x] 등대 회전체 메쉬(`LighthouseBuilder`), 바위기둥·석회암 봉우리 디테일, 도형 나무 → Nature Starter Kit 2
-- [x] 1인칭 손·팔 (주황 원통 밴드 제거, 손잡이·노브를 감아 쥔 손가락 메쉬 `FpHand`, 가늘어지는 팔), 3인칭 낚싯대 쥐기(`RodGrip`)
+- [x] 1인칭 손·팔 (주황 원통 밴드 제거, 손잡이·노브를 감아 쥔 손가락 메쉬 `FpHand`, 가늘어지는 팔 → 2026-10-19 손·팔을 빼고 낚싯대만), 3인칭 낚싯대 쥐기(`RodGrip`)
 - [x] 물고기 77종: 반투명 지느러미(`Fishing/FishFin`), 머리·주둥이·입, 비늘 크기 변화, 무늬 (09 문서 3-16)
 - [x] 크루저 카메라가 선장 몸에 걸리던 문제, 일출·일몰 주변광
 - [x] 실사 소나무·활엽수·바위·풀 무료 에셋 연결 (Conifers [BOTD], Realistic Tree 9·10, Rock and Boulders 2, Grass Flowers Pack Free), 산토리니 칼데라 절벽 메쉬

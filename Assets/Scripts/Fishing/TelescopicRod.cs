@@ -271,7 +271,7 @@ namespace Fishing.Angling
             }
         }
 
-        /// <summary>릴 손잡이 끝(손이 쥐는 곳). 1인칭에서 왼손을 붙인다.</summary>
+        /// <summary>릴 손잡이 끝(손이 쥐는 곳).</summary>
         public Transform HandleKnob => _handle != null ? _handle.Find("Knob") : null;
 
         /// <summary>
