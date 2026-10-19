@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Fishing.Characters;
+using Fishing.Core;
 using Fishing.Data;
 using UnityEngine;
 
@@ -7,39 +8,96 @@ namespace Fishing.World
 {
     public static partial class OverseasCoasts
     {
-        /// <summary>코사무이 (Lv.32): 숲으로 둘러싸인 해변의 섬. 바다 위 섬에 앉은 황금 대불, 할아버지·할머니 바위, 야자수 해변. 와후·만새기·코비아. (임시 틀 — 지형·랜드마크·어군은 아직)</summary>
+        /// <summary>
+        /// 코사무이 (Lv.32): 보풋 어촌 해변. 동쪽 바다 위 작은 섬(코 판)에 앉은 황금 대불과 둑길, 하얀 기단과 붉은 계단,
+        /// 서쪽 물가의 할아버지·할머니 바위(힌 따·힌 야이), 야자수 해변과 리조트 (원작 2차 — 실제 장소를 따랐다).
+        /// </summary>
         public static CoastSpec KohSamui() => new CoastSpec
         {
             Id = "kohsamui", MapName = "코사무이 · 타이만", ShortName = "코사무이", ShopName = "보풋 낚시점", UnionContact = "보풋 어촌의 찻차이 지부장",
-            LandName = "보풋 해변", SeaName = "타이만", Seed = 55, 
-            WaterDeep = new Color(0.03f, 0.2f, 0.28f), WaterShallow = new Color(0.1f, 0.5f, 0.5f),
-            Shores = new[] { new ShoreSeg(-999f, -40f, ShoreKind.Beach), new ShoreSeg(-40f, 40f, ShoreKind.Quay), new ShoreSeg(40f, 999f, ShoreKind.Beach) },
-            NearDepth = 3.5f, DepthSlope = 0.05f, FlatWidth = 30f, CliffHeight = 10f, CliffWidth = 40f, RoadOffset = 16f, VillageDensity = 0.8f,
-            Houses = HouseStyle.Resort, TreeKind = TreeStyle.Tropical,
+            LandName = "보풋 해변", SeaName = "타이만", Seed = 55,
+            WaterDeep = new Color(0.02f, 0.22f, 0.32f), WaterShallow = new Color(0.1f, 0.56f, 0.55f),
+            Shores = new[] { new ShoreSeg(-999f, -20f, ShoreKind.Beach), new ShoreSeg(-20f, 30f, ShoreKind.Quay), new ShoreSeg(30f, 999f, ShoreKind.Beach) },
+            NearDepth = 3f, DepthSlope = 0.05f, FlatWidth = 32f, CliffHeight = 18f, CliffWidth = 50f, RoadOffset = 18f, VillageDensity = 0.8f,
+            Houses = HouseStyle.Resort, TreeKind = TreeStyle.Palm,
+            Platforms = new[]
+            {
+                new PlatformSpec { Area = new Rect(-4f, -41f, 5f, 34f), Kind = PlatformKind.Pier, Name = "보풋 잔교" },
+                new PlatformSpec { Area = new Rect(117f, -41f, 6f, 46f), Kind = PlatformKind.Pier, Name = "빅부다 둑길" },
+            },
+            Islets = new[] { new IsletSpec { Center = new Vector3(120f, 0f, 22f), Radius = 20f, Height = 3f, Walkable = true, Trees = true, Name = "코 판 (빅부다 섬)" } },
+            Stacks = new[]
+            {
+                new StackSpec { Pos = new Vector3(-128f, 0f, -30f), Radius = 3.2f, Height = 6f, Name = "힌 따 (할아버지 바위)" },
+                new StackSpec { Pos = new Vector3(-118f, 0f, -26f), Radius = 4.5f, Height = 3.5f, Name = "힌 야이 (할머니 바위)" },
+            },
             Grid = new[,]
             {
-                { S, S, S, S, S, S, S, S },
-                { S, D, D, D, D, D, D, S },
+                { S, W, S, S, S, S, R, R },
+                { R, S, D, D, D, D, R, R },
+                { R, D, D, D, D, D, R, D },
                 { D, D, D, D, D, D, D, D },
-                { D, D, D, D, D, D, D, D },
-                { D, D, D, D, D, D, D, D },
+                { D, D, D, R, D, D, D, D },
                 { D, D, D, D, D, D, D, D },
                 { D, D, D, D, D, D, D, D },
                 { D, D, D, D, D, D, D, D },
             },
-            Spawn = new Vector3(4f, 1.1f, -47f), ShopPos = new Vector3(-16f, 1f, -52f),
-            ShopOwner = Local("보풋 낚시점 사장", "보풋 낚시점", new Color(0.9f, 0.85f, 0.6f), hat: 1),
+            Spawn = new Vector3(8f, 1.1f, -47f), ShopPos = new Vector3(-24f, 1f, -54f),
+            ShopRoof = new Color(0.15f, 0.48f, 0.5f),
+            ShopOwner = Local("보풋 낚시점 쁘라섯", "보풋 낚시점", new Color(0.3f, 0.6f, 0.8f), hat: 2),
             Npcs = new[]
             {
                 Npc(22f, -47f, 200f, Union("찻차이 지부장", "한국 낚시 조합 코사무이 지부", false, false), NpcAngler.Role.Talker, "union"),
+                Npc(-1.5f, -12f, 0f, Local("보풋 어부 할머니", "새벽 장에 고기를 낸다", new Color(0.6f, 0.35f, 0.55f), true, false, 2), NpcAngler.Role.Angler, y: 1f),
+                Npc(110f, -46f, 60f, Local("탁발 나온 스님", "대불 섬에서 왔다", new Color(0.95f, 0.52f, 0.12f), false, false, -1), NpcAngler.Role.Talker),
+                Npc(-96f, -44f, 20f, Local("코코넛 줍는 원숭이 주인", "원숭이 이름은 롱", new Color(0.8f, 0.7f, 0.4f), false, true, 0), NpcAngler.Role.Angler),
             },
-            Schools = () => new List<FishSchool>(),
+            Signs = new[] { ("BOPHUT", new Vector3(4f, 6.5f, -62f), SignBlue), ("BIG BUDDHA", new Vector3(118f, 6f, -50f), SignGold) },
+            FarIslands = new[] { new Vector4(-220f, 460f, 150f, 50f), new Vector4(240f, 520f, 200f, 60f) },
+            Schools = () => new List<FishSchool>
+            {
+                School("독가시치 수초", 1, 0, 1, DayLong, "rabbitfish"),
+                School("퀸피시 떼", 3, 1, 3, MornDay, "queenfish", "bluefintrevally"),
+                School("산호 바위", 6, 1, 3, DayLong, "coraltrout", "goldensnapper", "spangledemperor"),
+                School("삼치 떼", 2, 3, 5, DayLong, "narrowbarredmackerel", "mahimahi"),
+                School("코비아 그늘", 5, 4, 6, DayLong, "cobia", "barracuda"),
+                // 롱테일 참치: 새벽 E6, 저녁 B7
+                Special("롱테일 참치 떼", "longtailtuna", (TimeBand.Dawn, 4, 5), (TimeBand.Evening, 1, 6)),
+            },
             Extra = KohSamuiExtra,
         };
 
-        /// <summary>코사무이만의 풍경 (임시: 비어 있음).</summary>
+        /// <summary>코사무이만의 풍경: 섬 위 황금 대불(하얀 2단 기단, 붉은 계단, 나가 난간), 롱테일 보트.</summary>
         static void KohSamuiExtra(CoastWorldBuilder b)
         {
+            var root = new GameObject("KohSamui").transform;
+            root.SetParent(b.Root, false);
+            float water = b.Map.BaseWaterY;
+            var white = Mats.Lit(new Color(0.94f, 0.92f, 0.88f), 0.25f);
+            var red = Mats.Lit(new Color(0.72f, 0.18f, 0.14f), 0.3f);
+            var gold = Mats.Lit(new Color(0.88f, 0.68f, 0.26f), 0.6f, 0.7f);
+
+            // 섬 꼭대기에 2단 하얀 기단 → 황금 대불 (둑길·낚시터 쪽을 본다)
+            var c = new Vector3(120f, 0f, 26f);
+            c.y = b.Height(c.x, c.z) - 0.2f;
+            Mats.Prim(PrimitiveType.Cube, "BuddhaBase1", root, c + new Vector3(0f, 1.5f, 0f), new Vector3(20f, 3f, 20f), white, true);
+            Mats.Prim(PrimitiveType.Cube, "BuddhaBase2", root, c + new Vector3(0f, 4.2f, 0f), new Vector3(13f, 2.4f, 13f), white, true);
+            foreach (float y in new[] { 3f, 5.4f })
+                Mats.Prim(PrimitiveType.Cube, "BuddhaTrim", root, c + new Vector3(0f, y, 0f), new Vector3(y < 4f ? 20.3f : 13.3f, 0.25f, y < 4f ? 20.3f : 13.3f), red, false);
+            // 앞 계단 (붉은 바닥, 양옆 금빛 나가 난간)
+            Mats.Prim(PrimitiveType.Cube, "BuddhaStair", root, c + new Vector3(0f, 2.4f, -12f), new Vector3(5f, 0.4f, 9f), red, false, Quaternion.Euler(-28f, 0f, 0f));
+            foreach (float sx in new[] { -2.8f, 2.8f })
+            {
+                MapKit.Beam(root, c + new Vector3(sx, 0.9f, -16.5f), c + new Vector3(sx, 5.6f, -7f), 0.45f, gold, false, "NagaRail");
+                Mats.Prim(PrimitiveType.Sphere, "NagaHead", root, c + new Vector3(sx, 1.4f, -16.8f), new Vector3(0.9f, 1.4f, 0.9f), gold, false);
+            }
+            var at = c + new Vector3(0f, 5.4f, 0f);
+            MapKit.Prop(root, "buddha_gold", at, MapKit.Face(at, new Vector3(20f, 0f, -45f)), 20f);
+
+            // 롱테일 보트·어선
+            foreach (var (x, z, yaw, id) in new[] { (5f, -20f, 95f, "longtail_a"), (-10f, -14f, 80f, "longtail_b"), (-60f, -33f, 40f, "longtail_a"), (60f, -34f, 140f, "longtail_b") })
+                MapKit.Prop(root, id, new Vector3(x, water - 0.25f, z), yaw, 0f, 9.5f);
+            b.PlaceBoats("Kenney/Watercraft/boat-fishing-small", 3, 9f);
         }
     }
 }
@@ -49,6 +107,14 @@ namespace Fishing.Data
     public static partial class QuestDatabase
     {
         /// <summary>코사무이 이야기 (Lv.32~). 첫 퀘스트는 그 낚시터 연락관(찻차이 지부장)이 준다.</summary>
-        static QuestDef[] KohSamuiChapter() => new QuestDef[0];
+        static QuestDef[] KohSamuiChapter() => new[]
+        {
+            new QuestDef { Id = "kohsamui_1", Title = "새벽 장의 독가시치", Desc = "싸왓디 크랍! 보풋 할머니가 새벽 장에 낼 독가시치가 모자라대요. 수초 근처에서 크릴로 다섯 마리! 등지느러미 가시는 조심하세요. (낚시터 목록 [동남아] 탭, Lv.32부터)",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "rabbitfish", Count = 5, RewardGold = 55000, RewardExp = 6500 },
+            new QuestDef { Id = "kohsamui_2", Title = "황금 대불 앞 참치 떼", Desc = "새벽 E6, 저녁 B7에 롱테일 참치 떼가 대불 섬 앞을 지나간다네. 한 마리면 충분하오.",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "longtailtuna", Count = 1, RewardGold = 70000, RewardExp = 8000 },
+            new QuestDef { Id = "kohsamui_3", Title = "먼바다의 바다꼬치", Desc = "새벽에 배를 타고 먼바다로 나가면 와후가 루어를 쫓아온다오. 시속 80km로 달리는 물고기를 잡아 보시게!",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "wahoo", Count = 1, RewardGold = 110000, RewardExp = 10500 },
+        };
     }
 }

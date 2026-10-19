@@ -74,7 +74,7 @@ SPECIES = {
                            eye=dict(iris='#202830'), anim=dict(amp=0.9, freq=1.6)),
     # 혹돔 (Semicossyphus reticulatus): 커다란 놀래기. 수컷은 이마에 큰 혹이 솟아 머리가 뭉툭하고 높다(arch·snout로 흉내),
     # 두꺼운 입술, 긴 등지느러미, 붉은 자줏빛 몸, 턱 밑은 희다
-    'sheepsheadwrasse': dict(type='C', name='혹돔', depth=0.33, width=0.15, tmax=0.26, body_end=0.82, ped=0.42, arch=0.7, snout=0.28, mouth=-0.2, scales=45,
+    'sheepsheadwrasse': dict(type='C', name='혹돔', depth=0.33, width=0.15, tmax=0.26, body_end=0.82, ped=0.42, arch=0.7, snout=0.28, hump=0.22, mouth=-0.2, scales=45,
                              fins=[_fin('dorsal', (0.3, 0.84), 0.26, prof=[(0, 0.6), (0.15, 1.0), (0.75, 0.9), (1, 1.1)], spiny=True),
                                    _fin('anal', (0.62, 0.84), 0.28, prof=[(0, 0.6), (0.3, 1.0), (1, 1.0)]),
                                    _fin('caudal', h=0.22, shape='truncate'),

@@ -163,7 +163,7 @@ SPECIES = {
                                               ('spots', dict(n=1, r=(26, 26), u=(0.06, 0.06), v=(0.8, 0.8), color='#a8c098', a=0.6))]),
                            eye=dict(s=0.15, z=0.35, r=0.014, iris='#c0b060'), anim=dict(amp=0.8, freq=0.8)),
     # 나폴레옹피시 (Cheilinus undulatus): 이마에 큰 혹, 두툼한 입술, 청록 몸에 비늘마다 짙은 세로 줄, 눈 뒤로 검은 줄 두 가닥, 둥근 꼬리
-    'napoleonwrasse': dict(type='C', name='나폴레옹피시', depth=0.34, width=0.16, head_w=1.1, tmax=0.3, arch=0.72, snout=0.22, mouth=0.0, scales=34,
+    'napoleonwrasse': dict(type='C', name='나폴레옹피시', depth=0.34, width=0.16, head_w=1.1, tmax=0.3, arch=0.72, snout=0.22, hump=0.12, mouth=0.0, scales=34,
                            fins=[_fin('dorsal', (0.3, 0.84), 0.25, prof=[(0, 0.5), (0.6, 0.7), (0.9, 1.35), (1, 1.0)], spiny=True),
                                  _fin('anal', (0.62, 0.84), 0.32, prof=[(0, 0.5), (0.6, 1.0), (1, 0.8)]),
                                  _fin('caudal', h=0.26, shape='round'),

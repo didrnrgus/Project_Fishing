@@ -8,6 +8,7 @@
   palm_a, palm_b   야자수 (하롱베이 · 나일강). 줄기가 휘고 잎 9~11장, 코코넛 송이
   felucca          나일강 펠루카: 흰 나무배 + 비스듬한 긴 활대에 큰 삼각돛
   junk             하롱베이 정크선: 갈색 나무배, 높은 고물, 대나무 살을 댄 주황 돛 세 장
+  (새 해외 맵 소품 — 대불·머라이언·독수리·롱테일 보트·열기구·파라솔·망루·사자상·난파선은 props_sea.py)
 """
 import math
 import os
@@ -160,6 +161,8 @@ def junk(_):
 
 
 PROPS = {'palm_a': palm, 'palm_b': palm, 'felucca': felucca, 'junk': junk}
+import props_sea  # noqa: E402
+PROPS.update(props_sea.PROPS)
 
 
 def export(pid, objs):
@@ -167,6 +170,8 @@ def export(pid, objs):
     bpy.ops.object.select_all(action='DESELECT')
     o.select_set(True)
     bpy.context.view_layer.objects.active = o
+    # 기준점을 원점(바닥 가운데)으로: join은 첫 물체의 원점을 이어받아서, 파라솔은 기둥 가운데(1.4m 위)가 기준이라 땅에 묻혔다
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     os.makedirs(OUT, exist_ok=True)
     out = os.path.join(OUT, pid + '.fbx')
     bpy.ops.export_scene.fbx(filepath=out, use_selection=True, object_types={'MESH'}, axis_forward='-Y', axis_up='Z',

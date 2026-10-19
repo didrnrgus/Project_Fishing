@@ -138,6 +138,9 @@ namespace Fishing.World
         public bool Snow;
         /// <summary>검은 현무암 갯바위 (제주).</summary>
         public bool DarkRock;
+        /// <summary>포구 호안을 콘크리트 대신 돌(사암·석회암, StoneTint 색)로, 계류 말뚝 없이 (앙코르 해자 둑길, 하니아 베네치아 항구).</summary>
+        public bool StoneQuay;
+        public Color StoneTint = new Color(0.66f, 0.64f, 0.56f);
 
         public float ShoreZ = -40f;
         /// <summary>해안선 굴곡 (x 중심, 폭, z 이동). +면 바다로 튀어나오고, -면 만.</summary>
@@ -681,10 +684,13 @@ namespace Fishing.World
             {
                 if (seg.Kind != ShoreKind.Quay) continue;
                 float x0 = Mathf.Max(seg.X0, -halfW), x1 = Mathf.Min(seg.X1, halfW);
-                AlongShore("QuayWall", x0, x1, -0.4f, _map.LandY - 2.6f, new Vector3(1f, 7.2f, 1f), _concrete, true);
+                // 돌 부두: 바위 텍스처는 이끼 낀 갈라진 바위 덩어리처럼 보여서, 포장석 결이 있는 콘크리트 텍스처에 돌 색을 입힌다
+                var quay = S.StoneQuay ? Mats.Textured("concrete", S.StoneTint, 1f, 0.12f) : _concrete;
+                AlongShore("QuayWall", x0, x1, -0.4f, _map.LandY - 2.6f, new Vector3(1f, 7.2f, 1f), quay, true);
                 // 해안도로가 바로 뒤에 붙어 있으면 앞마당은 깔지 않는다 (겹쳐서 깜빡인다)
                 if (S.RoadOffset <= 0f || S.RoadOffset >= 16f)
-                    AlongShore("QuayApron", x0, x1, -5.5f, _map.LandY + 0.04f, new Vector3(10f, 0.14f, 1f), _concrete, false);
+                    AlongShore("QuayApron", x0, x1, -5.5f, _map.LandY + 0.04f, new Vector3(10f, 0.14f, 1f), quay, false);
+                if (S.StoneQuay) continue;
                 for (float x = x0 + 6f; x < x1 - 4f; x += R(7f, 11f))
                     Mats.Prim(PrimitiveType.Cylinder, "Bollard", _root, new Vector3(x, _map.LandY + 0.3f, _map.ShoreAt(x) - 1.2f), new Vector3(0.45f, 0.3f, 0.45f),
                         Mats.Lit(new Color(0.2f, 0.22f, 0.24f), 0.4f), false);
@@ -1238,6 +1244,10 @@ namespace Fishing.World
             {
                 var pos = n.Pos;
                 if (float.IsNaN(pos.y)) pos.y = Mathf.Max(_map.LandY, H(pos.x, pos.z));
+                // 잔교·데크 위 사람은 상판 윗면(LandY + 0.25 + 두께 절반)에 세운다 (y: 1f로 두면 무릎까지 상판에 묻혔다)
+                foreach (var pf in S.Platforms)
+                    if (pf.Kind != PlatformKind.FishFarm && pf.Area.Contains(new Vector2(pos.x, pos.z)))
+                        pos.y = _map.LandY + 0.34f;
                 var npc = NpcAngler.Spawn(parent, pos, n.Yaw, n.Look, n.Role);
                 if (!string.IsNullOrEmpty(n.Id)) npc.NpcId = n.Id;
             }

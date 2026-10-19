@@ -104,7 +104,13 @@ class Body:
         return a + (0.5 - a) * t * t * (3 - 2 * t)
 
     def top(self, s):
-        return self.depth(s) * self.arch(s)
+        top = self.depth(s) * self.arch(s)
+        # hump: 이마 혹 (혹돔·나폴레옹피시) — 눈 위 등선에 솟은 둥근 혹 (높이 = 몸 높이 비율, 위치 s)
+        hump = self.d.get('hump')
+        if hump:
+            hs = self.d.get('hump_s', 0.13)
+            top += self.H * hump * math.exp(-((s - hs) / 0.075) ** 2) * min(1.0, s / 0.05)
+        return top
 
     def bot(self, s):
         return self.depth(s) * (1 - self.arch(s))
@@ -319,10 +325,17 @@ def make_fins(d, B):
                 else:
                     # 배지느러미: 밑동이 몸을 따라 넓고(옆에서 막대 다리처럼 보이지 않게), 앞 가시가 가장 긴 삼각 부채꼴을
                     # 몸에 붙여 뒤로 눕힌다
-                    def base(u, s=s, side=side):
-                        ss = s + 0.07 * (u - 0.5)
+                    # thread: 구라미처럼 실처럼 가늘고 긴 배지느러미 (밑동이 좁고 아래 뒤로 늘어진다)
+                    thread = f.get('thread')
+                    def base(u, s=s, side=side, thread=thread):
+                        ss = s + (0.008 if thread else 0.07) * (u - 0.5)
                         return (side * B.width(ss) * (0.1 + 0.1 * u), B.y(ss), B.zc(ss) - B.bot(ss) + 0.002)
-                    def tip(u, s=s, side=side, h=h):
+                    def tip(u, s=s, side=side, h=h, thread=thread):
+                        if thread:
+                            L = h * (1.0 - 0.15 * u)
+                            dvec = mathutils.Vector((0.2 * side, 1.0, -0.75)).normalized()
+                            b = mathutils.Vector(base(u))
+                            return tuple(b + dvec * L)
                         L = h * (1.0 - 0.55 * u ** 1.2)
                         dvec = mathutils.Vector((0.3 * side, 1.0, -0.42 + 0.2 * u)).normalized()
                         b = mathutils.Vector(base(u))

@@ -14,6 +14,8 @@ namespace Fishing.Dev
         public string ShotDir;
         /// <summary>-autoshotStop 이름: 그 장면을 찍고 바로 끝낸다 (한 장면만 빨리 확인할 때).</summary>
         public string StopAfter;
+        /// <summary>-autoshotMaps id,id: 낚시터 둘러보기(CoastTour)에서 그 맵 장면만 찍고 끝낸다 (새 맵을 빨리 확인할 때).</summary>
+        public string Maps;
     }
 
     /// <summary>
@@ -24,6 +26,7 @@ namespace Fishing.Dev
     {
         DevArgs _args;
         float _fps;   // 최근 프레임의 평균 FPS (지수 이동 평균, 촬영 로그용)
+        string[] _tourOnly; // -autoshotMaps: 둘러보기에서 찍을 맵
 
         void Update()
         {
@@ -43,6 +46,7 @@ namespace Fishing.Dev
                     result.ShotDir = args[i + 1];
                 }
                 else if (args[i] == "-autoshotStop") result.StopAfter = args[i + 1];
+                else if (args[i] == "-autoshotMaps") result.Maps = args[i + 1];
             return result;
         }
 
@@ -66,6 +70,14 @@ namespace Fishing.Dev
                 yield return Shot("00_intro_title");
                 intro.Continue();
                 yield return new WaitUntil(() => Fishing.UI.IntroSequence.Instance == null);
+            }
+            if (!string.IsNullOrEmpty(_args.Maps))
+            {
+                _tourOnly = _args.Maps.Split(',');
+                yield return CoastTour();
+                Debug.Log("[Dev] 자동 스크린샷 완료 (-autoshotMaps " + _args.Maps + ")");
+                Application.Quit();
+                yield break;
             }
 
             var p = Game.Profile;
@@ -951,7 +963,7 @@ namespace Fishing.Dev
         IEnumerator CoastTour()
         {
             var p = Game.Profile;
-            p.Data.level = Mathf.Max(p.Data.level, 31);
+            p.Data.level = Mathf.Max(p.Data.level, 40);
             Game.Weather.Force(Weather.Clear);
             var shots = new (string map, string shot, Vector3 pos, float yaw, float camYaw, float pitch, float dist, int minute, Weather weather)[]
             {
@@ -986,10 +998,39 @@ namespace Fishing.Dev
                 ("santorini", "56b_santorini_caldera", new Vector3(39f, 1.1f, -28f), 0f, -10f, 6f, 13f, 17 * 60 + 30, Weather.Clear),
                 ("nile", "57_nile_bank", new Vector3(6f, 1.1f, -47f), 0f, 10f, 10f, 14f, 10 * 60, Weather.Clear),
                 ("nile", "57b_nile_sunset", new Vector3(-2f, 1.1f, -42f), 0f, -15f, 6f, 12f, 17 * 60 + 40, Weather.Clear),
+                // 2026-10-19 새 해외 맵 (World/Maps)
+                ("angkor", "58_angkor_moat", new Vector3(8f, 1.1f, -47f), 0f, 5f, 8f, 12f, 10 * 60, Weather.Clear),
+                ("angkor", "58b_angkor_lotus", new Vector3(-30f, 1.1f, -43f), 20f, 30f, 12f, 8f, 17 * 60 + 30, Weather.Clear),
+                ("vinpearl", "59_vinpearl_beach", new Vector3(-20f, 1.1f, -44f), 250f, 255f, 12f, 16f, 10 * 60, Weather.Clear),
+                ("vinpearl", "59b_vinpearl_gazebo", new Vector3(32f, 1.4f, 4f), 0f, -30f, 10f, 12f, 16 * 60, Weather.Clear),
+                ("donkhone", "60_donkhone_village", new Vector3(-10f, 1.1f, -47f), 270f, 290f, 10f, 14f, 9 * 60, Weather.Clear),
+                ("donkhone", "60b_donkhone_rapids", new Vector3(110f, 1.1f, -44f), 20f, 15f, 14f, 14f, 15 * 60, Weather.Clear),
+                ("phuket", "61_phuket_bay", new Vector3(-5f, 1.4f, 10f), 0f, 10f, 8f, 14f, 10 * 60, Weather.Clear),
+                ("phuket", "61b_phuket_buddha", new Vector3(-5f, 1.4f, 14f), 221f, 221f, 4f, 10f, 16 * 60, Weather.Clear),
+                ("bangkok", "62_bangkok_watarun", new Vector3(4f, 1.1f, -47f), 0f, 5f, 12f, 14f, 6 * 60 + 30, Weather.Clear),
+                ("bangkok", "62b_bangkok_night", new Vector3(4f, 1.1f, -47f), 0f, 10f, 8f, 12f, 20 * 60, Weather.Clear),
+                ("kohsamui", "63_kohsamui_buddha", new Vector3(60f, 1.1f, -46f), 40f, 45f, 8f, 14f, 9 * 60, Weather.Clear),
+                ("kohsamui", "63b_kohsamui_pier", new Vector3(-1f, 1.4f, -12f), 0f, 20f, 10f, 12f, 16 * 60, Weather.Clear),
+                ("langkawi", "64_langkawi_eagle", new Vector3(-30f, 1.1f, -40f), 230f, 230f, 14f, 18f, 10 * 60, Weather.Clear),
+                ("langkawi", "64b_langkawi_skybridge", new Vector3(17f, 1.4f, -2f), 180f, 170f, -8f, 10f, 15 * 60, Weather.Clear),
+                ("langkawi", "64c_langkawi_mangrove", new Vector3(-90f, 1.1f, -46f), 270f, 260f, 12f, 10f, 11 * 60, Weather.Clear),
+                ("sentosa", "65_sentosa_merlion", new Vector3(-50f, 1.1f, -44f), 240f, 230f, 4f, 14f, 10 * 60, Weather.Clear),
+                ("sentosa", "65b_sentosa_skyline", new Vector3(-10f, 1.1f, -46f), 10f, 10f, 2f, 10f, 18 * 60 + 30, Weather.Clear),
+                ("telokbatek", "66_telokbatek_village", new Vector3(30f, 1.1f, -47f), 300f, 300f, 10f, 16f, 17 * 60 + 30, Weather.Clear),
+                ("tioman", "67_tioman_resort", new Vector3(-6f, 1.4f, 0f), 180f, 180f, 6f, 14f, 10 * 60, Weather.Clear),
+                ("tioman", "67b_tioman_beach", new Vector3(50f, 1.1f, -46f), 270f, 250f, 8f, 12f, 15 * 60, Weather.Clear),
+                ("tenggol", "68_tenggol_deck", new Vector3(-2f, 1.4f, -20f), 0f, 0f, 14f, 16f, 10 * 60, Weather.Clear),
+                ("crete", "69_crete_harbor", new Vector3(6f, 1.1f, -46f), 20f, 30f, 8f, 14f, 10 * 60, Weather.Clear),
+                ("crete", "69b_crete_mountains", new Vector3(60f, 1.1f, 23f), 200f, 200f, 4f, 12f, 16 * 60, Weather.Clear),
+                ("zakynthos", "70_zakynthos_navagio", new Vector3(-28f, 1.4f, -18f), 150f, 140f, 12f, 16f, 11 * 60, Weather.Clear),
+                ("zakynthos", "70b_zakynthos_wreck", new Vector3(-28f, 1.4f, -24f), 110f, 105f, 8f, 12f, 14 * 60, Weather.Clear),
+                ("duden", "71_duden_falls", new Vector3(-30f, 1.1f, -44f), 290f, 290f, 6f, 12f, 10 * 60, Weather.Clear),
+                ("duden", "71b_duden_sunset", new Vector3(60f, 1.1f, -44f), 280f, 285f, 4f, 12f, 17 * 60 + 40, Weather.Clear),
             };
             string loaded = null;
             foreach (var s in shots)
             {
+                if (_tourOnly != null && Array.IndexOf(_tourOnly, s.map) < 0) continue;
                 if (loaded != s.map)
                 {
                     Game.UI.EnterField(System.Linq.Enumerable.First(Fishing.Data.FishingAreas.All, a => a.Id == s.map), 1);
@@ -1008,6 +1049,7 @@ namespace Fishing.Dev
                 yield return new WaitForSeconds(2.5f);
                 yield return Shot(s.shot);
             }
+            if (_tourOnly != null) yield break;
             // 덕장 명태 가까이 (코를 엮어 장대에 건 명태 쌍)
             Game.UI.EnterField(Fishing.Data.FishingAreas.Korea.Find(a => a.Id == "cheongjin"), 1);
             Game.UI.Help.Close();

@@ -1,4 +1,4 @@
-"""Assets/Scripts/Data/FishDatabase.cs에서 docs/02-game-design.md 11장 어종 표를 뽑는다.
+"""Assets/Scripts/Data/FishDatabase*.cs(지역별 partial 포함)에서 docs/02-game-design.md 11장 어종 표를 뽑는다.
 
   python tools/fish_table.py            # 표를 화면에 출력
   python tools/fish_table.py --write    # 02 문서 11장의 표(| 맵 | 어종 ... 다음 줄부터 빈 줄까지)를 바꾼다
@@ -11,14 +11,19 @@ import re
 import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-SRC = os.path.join(ROOT, 'Assets', 'Scripts', 'Data', 'FishDatabase.cs')
+DATA = os.path.join(ROOT, 'Assets', 'Scripts', 'Data')
 DOC = os.path.join(ROOT, 'docs', '02-game-design.md')
 
 SHORT = {'hangang': '한강', 'honghyeon': '홍현', 'seocheon': '서천', 'yeongheung': '영흥도', 'taean': '태안', 'samcheok': '삼척',
          'deungdae': '등대섬', 'heonhwa': '헌화로', 'yokji': '욕지도', 'cheongjin': '청진', 'geomun': '거문도', 'jeju': '제주',
-         'halong': '하롱베이', 'santorini': '산토리니', 'nile': '나일강'}
+         'halong': '하롱베이', 'santorini': '산토리니', 'nile': '나일강',
+         'angkor': '앙코르와트', 'vinpearl': '빈펄', 'donkhone': '돈콘', 'phuket': '푸켓', 'bangkok': '방콕', 'kohsamui': '코사무이',
+         'langkawi': '랑카위', 'sentosa': '센토사', 'telokbatek': '텔록 바텍', 'tioman': '티오만', 'tenggol': '탱글',
+         'crete': '크레타', 'zakynthos': '자킨토스', 'duden': '듀덴'}
 ORDER = ['hangang', 'honghyeon', 'yokji', 'geomun', 'jeju', 'seocheon', 'yeongheung', 'taean', 'heonhwa', 'samcheok', 'deungdae', 'cheongjin',
-         'halong', 'santorini', 'nile']
+         'halong', 'angkor', 'vinpearl', 'donkhone', 'phuket', 'bangkok', 'kohsamui', 'langkawi', 'sentosa', 'telokbatek', 'tioman', 'tenggol',
+         'santorini', 'crete', 'zakynthos', 'duden', 'nile']
+FRESH = ('hangang', 'nile', 'angkor', 'donkhone', 'bangkok')
 SOUTH = ['honghyeon', 'yokji', 'geomun', 'jeju']
 WEST = ['seocheon', 'yeongheung', 'taean']
 EAST = ['heonhwa', 'samcheok', 'deungdae', 'cheongjin']
@@ -68,7 +73,31 @@ def maps_of(expr):
         return ['hangang']
     if expr.startswith('M('):
         return re.findall(r'"(\w+)"', expr)
-    return GROUPS[expr]
+    return list(GROUPS[expr]) if GROUPS[expr] else GROUPS[expr]
+
+
+def sources():
+    """(파일 이름, 내용): FishDatabase.cs가 먼저, 지역별 partial(Korea2·SeaAsia…)이 뒤."""
+    files = sorted(f for f in os.listdir(DATA) if f.startswith('FishDatabase') and f.endswith('.cs'))
+    files.sort(key=lambda f: f != 'FishDatabase.cs')
+    return [(f, io.open(os.path.join(DATA, f), encoding='utf-8').read()) for f in files]
+
+
+def load_groups(srcs):
+    """partial 파일의 이름 붙은 맵 배열 (static string[] AngkorDon => new[] { "angkor", "donkhone" };)."""
+    for _, src in srcs:
+        for name, body in re.findall(r'static (?:readonly )?string\[\] (\w+)\s*(?:=>|=)\s*(?:new\[\]\s*)?\{([^}]*)\}', src):
+            GROUPS.setdefault(name, re.findall(r'"(\w+)"', body))
+
+
+def map_adds(srcs):
+    """…MapAdds: 이미 있는 어종이 새 맵에도 산다 → {어종 id: [맵]}."""
+    adds = {}
+    for _, src in srcs:
+        for blk in re.findall(r'MapAdds\s*=\s*\{(.*?)\};', src, re.S):
+            for sid, expr in re.findall(r'\("(\w+)",\s*(M\([^)]*\)|\w+)\)', blk):
+                adds.setdefault(sid, []).extend(maps_of(expr) or [])
+    return adds
 
 
 def map_label(ids):
@@ -84,15 +113,26 @@ def map_label(ids):
 
 
 def species():
-    src = io.open(SRC, encoding='utf-8').read()
-    body = src[src.index('List<FishSpecies> All'):]
-    body = body[:body.index('\n        };')]
-    for b in body.split('new FishSpecies {')[1:]:
+    srcs = sources()
+    load_groups(srcs)
+    adds = map_adds(srcs)
+    blocks = []
+    for f, src in srcs:
+        if f == 'FishDatabase.cs':
+            body = src[src.index('List<FishSpecies> All'):]
+            body = body[:body.index('\n        };')]
+        else:
+            body = src[src.index('new List<FishSpecies>'):] if 'new List<FishSpecies>' in src else ''
+        blocks += body.split('new FishSpecies {')[1:]
+    for b in blocks:
         rarity = int(field(b, 'Rarity'))
         if rarity == 0:
             continue
         maps = maps_of(field(b, 'Maps'))
-        sea = maps is not None and maps[0] not in ('hangang', 'nile')
+        sid = field(b, 'Id').strip('"')
+        if maps is not None:
+            maps = maps + [m for m in adds.get(sid, []) if m not in maps]
+        sea = maps is not None and maps[0] not in FRESH
         num = lambda n: float(field(b, n).rstrip('f'))
         habs = enum_list(field(b, 'Habitats'), {k: v[1 if sea else 0] for k, v in HAB.items()})
         seasons = enum_list(field(b, 'Seasons'), SEASON)

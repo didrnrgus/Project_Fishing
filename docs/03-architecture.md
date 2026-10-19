@@ -36,16 +36,21 @@ Assets/
       Mats.cs                    런타임 머티리얼 캐시, 프리미티브·텍스처 상자 헬퍼, 절차적 텍스처
     Data/                        정적 데이터 테이블 (순수 C#)
       Enums.cs                   Habitat, TimeBand, Weather, BaitKind + 한글 이름
-      FishDatabase.cs            어종 77종 + 잡동사니 6종 (맵·제철·어군 전용·먼바다 전용·괴물 어종 BossCoins). 바다 묶음 SouthSea·WestSea·EastSea·AllSeas, 미끼 판매 SeaMaps·FreshMaps
+      FishDatabase.cs            어종 77종(한국·첫 해외 거점) + 잡동사니 6종 (맵·제철·어군 전용·먼바다 전용·괴물 어종 BossCoins). 바다 묶음 SouthSea·WestSea·EastSea·AllSeas, 미끼 판매 SeaMaps·FreshMaps.
+                                 정적 생성자가 아래 지역별 partial의 …Species 목록과 …MapAdds(이미 있는 어종이 새 맵에도 산다)를 합친다 → 모두 165종
+      FishDatabase.Korea2.cs     한국 7종 (황복·웅어·참다랑어 등, docs/fish-db 01)
+      FishDatabase.SeaAsiaFresh.cs  동남아 민물 20종 (메콩 대형 메기·자이언트 바브·피라루쿠…, 앙코르·돈콘·방콕)
+      FishDatabase.SeaAsia.cs    동남아 바다 27종 (돛새치·청새치·대왕바리·나폴레옹피시…)
+      FishDatabase.Mediterranean.cs / .Mediterranean2.cs  지중해 34종 (덴텍스·갈색 그루퍼·미거·쏠배감펭…)
       GearDatabase.cs            낚싯대/릴/줄/배, 미끼(해체 미끼 5등급 포함), 음식 5종(FoodDef), 레벨 보상(LevelRewards)
       ItemDatabase.cs            가방 아이템 이름·설명
       CostumeDatabase.cs         의상 6부위 25벌 + 능력치
       AchievementDatabase.cs     업적 35개, 레벨 칭호
-      QuestDatabase.cs           이야기 퀘스트 45개 (낚시터마다, 해외 거점 9개)
+      QuestDatabase.cs           이야기 퀘스트 87개 (낚시터마다, 해외 51개 — 새 해외 맵 14곳의 이야기는 그 맵 파일의 <이름>Chapter())
       RodUpgrade.cs              장비 강화 규칙 (+1~+15, 확률·비용·재료·성능)
       Seasons.cs                 계절 (한 달 = 게임 7일, 1일째 = 4월), 제철 입질 배율
       TournamentRules.cs         대회 규칙 (미션 점수, 엠블럼, 대회 맵 순서 — 6일 주기, 해안 낚시터 지역 대회)
-      FishingAreas.cs            낚시터 목록 (한국 12곳 + 해외 7곳 중 3곳 열림), 거점 4개(Hubs), 경위도, 입장 레벨, 맵 id
+      FishingAreas.cs            낚시터 목록 (한국 12곳 + 해외 17곳), 거점 4개(Hubs), 경위도, 입장 레벨, 맵 id
     Characters/
       CharacterFactory.cs        Angler FBX(몸 + 옷 메쉬)에서 입은 옷만 남기고 색 입히기, 머리카락·이름표 (CharacterLook)
       CharacterAnimator.cs       Playables 믹서로 클립 재생 (AnimatorController 없이 SetLoop/PlayOnce). "이름_M/_F" 클립은 성별로 고른다
@@ -57,7 +62,11 @@ Assets/
       SeocheonMap.cs             서천 앞바다 정의·지형·월드 (갯벌·홍원항 등대·동백정 정자)
       CoastMap.cs                해안 맵 틀: CoastSpec(사양) → CoastMapDef(지형 높이·판정) + CoastWorldBuilder(월드)
       KoreaCoasts.cs             해안 낚시터 9곳 사양 (영흥도·태안·삼척·등대섬·헌화로·욕지도·제주·청진포구·거문도)
-      OverseasCoasts.cs          해외 거점 3곳 사양 (하롱베이·산토리니·나일강 하류)
+      OverseasCoasts.cs          해외 거점 3곳 사양 (하롱베이·산토리니·나일강 하류) + 해외 맵 공용 도우미(School·Special·Local·Union·Npc)
+      CoastWorldApi.cs           CoastSpec.Extra(맵 고유 풍경)가 쓰는 CoastWorldBuilder 공개 도우미(Root·Height·Rand·PlaceHouse·PlaceTree·PlaceBoats·AddLamp·KarstPeak·Gable·Sign)
+                                 + 새 집 양식 4가지 (고상 가옥·리조트 빌라·타이 겹지붕 집·베네치아풍 회벽 집)
+      Maps/<이름>.cs             새 해외 맵 14곳 — 파일 하나에 사양(OverseasCoasts.<이름>()) · 랜드마크(<이름>Extra) · 이야기(QuestDatabase.<이름>Chapter())
+      Maps/MapKit.cs             랜드마크 공용 도구: 회전체 Lathe(톱니 단면 프랑), 관 묶음 Tubes, 원판 묶음 Discs, 눈 덮인 산 Mountain, 폭포 FallSheet, 들보 Beam, Blender 소품 Prop
       CoastWorldOverseas.cs      CoastWorldBuilder의 해외 부분(partial): 지역 양식 집(키클라데스·이집트·베트남)·나무(야자수·열대·지중해), 강 맞은편 둑·사막 판, 석회암 봉우리·정크선·수상 마을·칼데라·풍차·펠루카·피라미드
       CoastProps.cs              바닷가 공용 소품 (등대·큰 등대·테트라포드·정자·가로등·낚시점·바위·한국 바닷가 집)
       WorldBuilder.cs            한강 월드 (다리, 데크, 낚시점, 나무, 도시, NPC)
@@ -143,9 +152,9 @@ Assets/
     Tests/CoastMapTests.cs       낚시터 정의 검사 5개 (+ GameRulesTests의 대회 지역 순환) (물때마다 걸을 수 있는 곳, 어종이 사는 곳에서 낚이는지, 가두리 통로, 모래톱, 강 맵 맞은편 둑)
 tools/
   build.sh, autoshot.sh, test.sh, balance.sh    배치모드 빌드 / 자동 스크린샷 / 테스트 / 밸런스
-  fish_table.py                  FishDatabase.cs → 02 문서 11장 어종 표 (--write)
+  fish_table.py                  FishDatabase*.cs(지역별 partial·이름 붙은 맵 배열·MapAdds 포함) → 02 문서 11장 어종 표 (--write)
   fightsim/                      Unity 없이 파이팅 밸런스 재기 (.NET 8, 게임 소스 + UnityEngine 대체 Stubs.cs) — 04 문서
-  blender/                       headless Blender(bpy) 파이프라인: 캐릭터 옷(garments.py), 물고기(build_fish.py), 아이콘(build_icons.py), 해외 소품(build_props.py)
+  blender/                       headless Blender(bpy) 파이프라인: 캐릭터 옷(garments.py), 물고기(build_fish.py, 어종 설계는 fish_species.py + 지역별 species_*.py), 아이콘(build_icons.py), 해외 소품(build_props.py + props_sea.py)
   intro/build_intro_art.py       인트로 그림 → Resources/Intro (numpy·PIL로 그린 달밤 수묵 산수화 겹, 붓글씨 타이틀, 낙관). 글꼴 intro/fonts (SIL OFL)
 ```
 
@@ -266,7 +275,12 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 - 해안도로·가로등·건물은 지형을 따라 놓고, 언덕(곶)이나 비탈은 건너뛴다.
 - 그 밖에: `FishingAreas`(국내는 `Korea`, 해외는 `Overseas` + `Hub`)에 `Open = true, MapId`를 넣고, 어종 `Maps`에 id를 더하고, 바다 미끼를 팔려면 `FishSpecies.SeaMaps`(민물이면 `FreshMaps`)에도 id를 넣고, `DevAutomation.CoastTour`에 장면을 추가, `sh tools/test.sh`(CoastMapTests가 물때마다 시작점·낚시점·연락관 자리, 어군 수, 바다/강 칸을 검사한다).
 - 새 거점: `FishingAreas.Hubs`에 거점을 더하고 `UI/RegionMap.cs`의 `Regions`에 지도 범위(경위도)·해안선 다각형(`Sea`면 바다 다각형)·섬 타원·강 선을 넣는다.
-- 해외 소품 모델: `tools/blender/build_props.py`(야자수·펠루카·정크선, `Resources/Props`). `KenneyProps.Spawn("Props/<id>", …)`로 놓으면 키·길이를 맞추고 콜라이더(야자수 줄기, 배는 상자)를 붙인다.
+- 해외 소품 모델: `tools/blender/build_props.py`(야자수·펠루카·정크선) + `props_sea.py`(대불·머라이언·독수리·롱테일 보트·열기구·파라솔·선베드·망루·사자상·난파선), `Resources/Props`. `KenneyProps.Spawn("Props/<id>", …)`(또는 `MapKit.Prop`)으로 놓으면 키·길이를 맞추고 콜라이더(야자수 줄기, 배는 상자)를 붙인다.
+  - Blender FBX는 Z-up이라 루트에 축 변환 회전(-90° X)이 있다. `Spawn`은 그 회전 위에 yaw만 더하고 크기는 부모 기준 경계로 잰다 (예전엔 회전을 지워 정크선·펠루카가 세로로 서 있었다).
+  - 내보낼 때 기준점을 원점(바닥 가운데)으로 굳힌다(`transform_apply(location=True)`). 안 그러면 합친 첫 물체의 원점이 기준이 되어 땅에 묻힌다.
+  - 조각상처럼 한 덩어리여야 하는 것은 메타볼 → 메쉬 → 구름 노이즈 깎기 → 면별 이끼 재질(`props_sea._eroded`, 앙코르 사자상).
+- **새 해외 맵 (2026-10-20 방식)**: `World/Maps/<이름>.cs` 하나에 `OverseasCoasts.<이름>()` 사양 + `Extra = <이름>Extra`(랜드마크, `MapKit`·`CoastWorldApi` 도우미, 맵 하나에 프리미티브 700개 안쪽·스크립트 없이) + `QuestDatabase.<이름>Chapter()`(id `<맵>_1..3`). `Reserved`(마을 집·나무를 놓지 않을 자리, 강 건너편 둑에도 적용), `StoneQuay`/`StoneTint`(돌 부두). 잔교·데크 위 NPC는 상판 높이에 저절로 선다.
+- 빨리 보기: `sh tools/autoshot.sh --maps angkor,vinpearl`(둘러보기에서 그 맵 장면만, 약 35초), Unity 없이 컴파일만: `sh tools/compilecheck.sh`.
 
 **모양이 아주 다른 맵**(강·호수 등)은 `FieldMapDef`를 직접 상속한다 (한강 `HanRiverMap`, 홍현 `HonghyeonMap`, 서천 `SeocheonMap`):
 1. 격자(열·행·칸 크기), `HabitatAt`, `IsWater`/`IsWalkable`, 시작·상점 위치, 수면 색, (바다면) `IsSea`·`TideAmplitude`를 정한다.

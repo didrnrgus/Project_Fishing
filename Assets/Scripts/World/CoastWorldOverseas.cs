@@ -288,14 +288,14 @@ namespace Fishing.World
             {
                 float z = _map.FarShoreAt(x) + R(4f, 16f);
                 float y = H(x, z);
-                if (y < _map.LandY - 0.1f) continue;
+                if (y < _map.LandY - 0.1f || InFeature(x, z)) continue;
                 Tree(new Vector3(x, y - 0.05f, z));
             }
             for (float x = -180f; x < 180f; x += R(28f, 50f))
             {
                 float z = _map.FarShoreAt(x) + R(24f, 34f);
                 var (y, flat) = Footing(x, z, 4f);
-                if (!flat) continue;
+                if (!flat || InFeature(x, z)) continue;
                 House(new Vector3(x, y - 0.05f, z), 180f + R(-15f, 15f), false);
             }
         }

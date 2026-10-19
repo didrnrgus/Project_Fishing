@@ -42,7 +42,7 @@ namespace Fishing.World
 
         // ---------- 재질 ----------
 
-        static Material Mat(Color color, Texture2D tex, Texture2D night, Color nightColor, float smooth, float metal, Vector2 tiling)
+        internal static Material Mat(Color color, Texture2D tex, Texture2D night, Color nightColor, float smooth, float metal, Vector2 tiling)
         {
             var shader = Shader.Find("Fishing/Landmark") ?? Shader.Find("Standard");
             var m = new Material(shader) { color = color };
@@ -61,7 +61,7 @@ namespace Fishing.World
         /// 커튼월 한 장 = floors층 × bays칸. 유리(하늘이 비친 세로 그러데이션) + 층마다 흰/금 스팬드럴 띠 + 세로 멀리언.
         /// night: 창마다 켜짐·꺼짐(따뜻한 빛, 사무실 형광등빛 섞어서).
         /// </summary>
-        static Texture2D Facade(int floors, int bays, Color glassTop, Color glassBottom, Color frame, float bandFrac, float mullionFrac, int seed, out Texture2D night, float litChance)
+        internal static Texture2D Facade(int floors, int bays, Color glassTop, Color glassBottom, Color frame, float bandFrac, float mullionFrac, int seed, out Texture2D night, float litChance)
         {
             const int W = 256, H = 256;
             var tex = new Texture2D(W, H, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Repeat, anisoLevel = 4 };
@@ -430,7 +430,7 @@ namespace Fishing.World
         }
 
         /// <summary>둥근 산: 가운데가 높고 가장자리로 흘러내리는 돔 + 능선 노이즈.</summary>
-        static Mesh HillMesh(float rx, float rz, float height, int seed)
+        internal static Mesh HillMesh(float rx, float rz, float height, int seed)
         {
             const int seg = 64, rings = 20;
             var verts = new List<Vector3>();

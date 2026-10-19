@@ -64,15 +64,18 @@ namespace Fishing.World
             if (prefab == null) return null;
             var go = Object.Instantiate(prefab, parent, false);
             go.name = prefab.name;
-            go.transform.localRotation = Quaternion.identity;
+            // Blender FBX(Z-up)는 루트에 축 변환 회전(-90° X)이 들어 있다. 그걸 지우면 배·야자수가 옆으로 눕거나 서 버린다
+            // (예전엔 지워서 정크선·펠루카가 세로로 서 있었다). 원래 회전을 두고 그 위에 yaw만 더한다
+            var baseRot = prefab.transform.localRotation;
+            go.transform.localRotation = baseRot;
             go.transform.localScale = Vector3.one;
-            var size = LocalBounds(go).size;
+            var size = RotatedSize(LocalBounds(go), baseRot);
             float s = 1f;
             if (height > 0f && size.y > 0.001f) s = height / size.y;
             else if (length > 0f) s = length / Mathf.Max(0.001f, Mathf.Max(size.x, size.z));
             go.transform.localScale = Vector3.one * s;
             go.transform.localPosition = localPos;
-            go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f) * baseRot;
 
             bool nature = path.Contains("/Nature/");
             bool city = path.Contains("/City/");
@@ -216,9 +219,13 @@ namespace Fishing.World
             else if (n.StartsWith("tree_") || n.StartsWith("palm"))
             {
                 var cap = go.AddComponent<CapsuleCollider>();
-                cap.radius = b.size.y * 0.04f;
-                cap.height = b.size.y * 0.6f;
-                cap.center = new Vector3(0f, b.min.y + cap.height * 0.5f, 0f);
+                // Blender 야자수(Props)는 로컬 Z가 위 (루트 축 변환 회전)
+                bool zUp = Vector3.Dot(go.transform.localRotation * Vector3.forward, Vector3.up) > 0.7f;
+                float tall = zUp ? b.size.z : b.size.y, low = zUp ? b.min.z : b.min.y;
+                cap.direction = zUp ? 2 : 1;
+                cap.radius = tall * 0.04f;
+                cap.height = tall * 0.6f;
+                cap.center = zUp ? new Vector3(0f, 0f, low + cap.height * 0.5f) : new Vector3(0f, low + cap.height * 0.5f, 0f);
             }
             else if (path.Contains("/Roads/light"))
             {
@@ -230,6 +237,18 @@ namespace Fishing.World
         }
 
         /// <summary>스케일 1 기준 렌더러 경계 (부모 기준 좌표).</summary>
+        /// <summary>로컬 경계 상자를 rot만큼 돌린 뒤의 축 정렬 크기 (부모 기준 가로·높이·깊이).</summary>
+        static Vector3 RotatedSize(Bounds b, Quaternion rot)
+        {
+            var size = Vector3.zero;
+            for (int i = 0; i < 8; i++)
+            {
+                var c = rot * Vector3.Scale(b.extents, new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1));
+                size = Vector3.Max(size, new Vector3(Mathf.Abs(c.x), Mathf.Abs(c.y), Mathf.Abs(c.z)));
+            }
+            return size * 2f;
+        }
+
         public static Bounds LocalBounds(GameObject go)
         {
             var b = new Bounds(Vector3.zero, Vector3.zero);
