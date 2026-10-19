@@ -60,9 +60,10 @@ namespace Fishing.Data
         public static readonly string[] Seas = { "honghyeon", "yokji", "geomun", "jeju", "seocheon", "yeongheung", "taean" };
         /// <summary>바다 미끼를 파는 낚시터.</summary>
         /// <summary>바다 미끼를 파는 곳: 국내 바다 + 해외 바다(하롱베이·산토리니).</summary>
-        public static readonly string[] SeaMaps = { "honghyeon", "yokji", "geomun", "jeju", "seocheon", "yeongheung", "taean", "heonhwa", "samcheok", "deungdae", "cheongjin", "halong", "santorini" };
-        /// <summary>민물 미끼(지렁이·떡밥·옥수수·플라이)를 파는 곳: 한강 · 나일강.</summary>
-        public static readonly string[] FreshMaps = { "hangang", "nile" };
+        public static readonly string[] SeaMaps = { "honghyeon", "yokji", "geomun", "jeju", "seocheon", "yeongheung", "taean", "heonhwa", "samcheok", "deungdae", "cheongjin", "halong", "santorini",
+            "vinpearl", "phuket", "kohsamui", "langkawi", "sentosa", "tioman", "telokbatek", "tenggol", "crete", "zakynthos", "duden" };
+        /// <summary>민물 미끼(지렁이·떡밥·옥수수·플라이)를 파는 곳: 한강 · 나일강 · 앙코르와트(톤레삽) · 돈콘(메콩) · 방콕(짜오프라야).</summary>
+        public static readonly string[] FreshMaps = { "hangang", "nile", "angkor", "donkhone", "bangkok" };
         /// <summary>에기(가짜 새우 미끼)를 파는 곳: 서해(주꾸미·갑오징어), 동해(오징어·대문어), 제주·거문도(무늬오징어).</summary>
         public static readonly string[] EgiMaps = { "seocheon", "yeongheung", "taean", "heonhwa", "samcheok", "deungdae", "cheongjin", "jeju", "geomun" };
 
@@ -70,8 +71,13 @@ namespace Fishing.Data
         public bool IsTrophy(float len) => !IsJunk && len >= TrophyLen;
     }
 
-    /// <summary>한강 맵에 등장하는 어종. 해외 맵은 아직 없다.</summary>
-    public static class FishDatabase
+    /// <summary>
+    /// 어종 표. 이 파일의 <see cref="All"/>이 처음 만든 77종 + 잡동사니이고, 2026-10-19부터 늘어난 어종은 지역별 partial 파일에 있다
+    /// (<c>FishDatabase.Korea2.cs</c>, <c>.SeaAsiaFresh.cs</c>(동남아 민물), <c>.SeaAsia.cs</c>(동남아 바다), <c>.Mediterranean.cs</c>·<c>.Mediterranean2.cs</c> — docs/fish-db 기준).
+    /// 지역 파일은 새 어종 목록(<c>…Species</c>)과, 이미 있는 어종이 새 낚시터에도 살게 하는 목록(<c>…MapAdds</c>)을 내놓고
+    /// 정적 생성자가 합친다. 정적 생성자는 모든 partial 파일의 필드 초기화가 끝난 뒤에 돈다.
+    /// </summary>
+    public static partial class FishDatabase
     {
         static readonly Habitat[] AnyHabitat = { Habitat.Shallow, Habitat.Deep, Habitat.Rocky, Habitat.Weed };
         static readonly TimeBand[] AnyTime = { TimeBand.Dawn, TimeBand.Morning, TimeBand.Day, TimeBand.Evening, TimeBand.Night };
@@ -550,6 +556,22 @@ namespace Fishing.Data
                 Habitats = AnyHabitat, Baits = AnyBait, Times = AnyTime, Weathers = AnyWeather,
                 Power = 0.15f, Speed = 0.1f, Stamina = 0.4f, Aggression = 0.1f, Exp = 1, Price = 0 },
         };
+
+        static FishDatabase()
+        {
+            foreach (var list in new[] { Korea2Species, SeaAsiaFreshSpecies, SeaAsiaSpecies, MediterraneanSpecies, Mediterranean2Species })
+                if (list != null) All.AddRange(list);
+            foreach (var adds in new[] { Korea2MapAdds, SeaAsiaFreshMapAdds, SeaAsiaMapAdds, MediterraneanMapAdds, Mediterranean2MapAdds })
+            {
+                if (adds == null) continue;
+                foreach (var (id, maps) in adds)
+                {
+                    var s = All.Find(f => f.Id == id);
+                    if (s == null || s.Maps == null) continue;
+                    s.Maps = s.Maps.Concat(maps).Distinct().ToArray(); // 공유 배열(SouthSea 등)은 건드리지 않고 새 배열로
+                }
+            }
+        }
 
         static Dictionary<string, FishSpecies> _byId;
 

@@ -157,9 +157,25 @@ namespace Fishing.World
         public static readonly FieldMapDef HaLong = new CoastMapDef(OverseasCoasts.HaLong());
         public static readonly FieldMapDef Santorini = new CoastMapDef(OverseasCoasts.Santorini());
         public static readonly FieldMapDef Nile = new CoastMapDef(OverseasCoasts.Nile());
+        // 2026-10-19 원작 동남아 ①②③·지중해 나머지 (World/Maps/*.cs)
+        public static readonly FieldMapDef Angkor = new CoastMapDef(OverseasCoasts.Angkor());
+        public static readonly FieldMapDef Vinpearl = new CoastMapDef(OverseasCoasts.Vinpearl());
+        public static readonly FieldMapDef DonKhone = new CoastMapDef(OverseasCoasts.DonKhone());
+        public static readonly FieldMapDef Phuket = new CoastMapDef(OverseasCoasts.Phuket());
+        public static readonly FieldMapDef Bangkok = new CoastMapDef(OverseasCoasts.Bangkok());
+        public static readonly FieldMapDef KohSamui = new CoastMapDef(OverseasCoasts.KohSamui());
+        public static readonly FieldMapDef Langkawi = new CoastMapDef(OverseasCoasts.Langkawi());
+        public static readonly FieldMapDef Sentosa = new CoastMapDef(OverseasCoasts.Sentosa());
+        public static readonly FieldMapDef TelokBatek = new CoastMapDef(OverseasCoasts.TelokBatek());
+        public static readonly FieldMapDef Tioman = new CoastMapDef(OverseasCoasts.Tioman());
+        public static readonly FieldMapDef Tenggol = new CoastMapDef(OverseasCoasts.Tenggol());
+        public static readonly FieldMapDef Crete = new CoastMapDef(OverseasCoasts.Crete());
+        public static readonly FieldMapDef Zakynthos = new CoastMapDef(OverseasCoasts.Zakynthos());
+        public static readonly FieldMapDef Duden = new CoastMapDef(OverseasCoasts.Duden());
 
         /// <summary>열린 낚시터 (입장 레벨 순, 도감 탭·대물 도전 순서).</summary>
-        public static readonly FieldMapDef[] All = { HanRiver, Honghyeon, Seocheon, Yeongheung, Taean, Samcheok, Deungdae, Heonhwa, Yokji, Jeju, Cheongjin, Geomun, HaLong, Santorini, Nile };
+        public static readonly FieldMapDef[] All = { HanRiver, Honghyeon, Seocheon, Yeongheung, Taean, Samcheok, Deungdae, Heonhwa, Yokji, Jeju, Cheongjin, Geomun,
+            HaLong, Angkor, Vinpearl, DonKhone, Santorini, Phuket, Crete, Bangkok, Nile, KohSamui, Langkawi, Zakynthos, Sentosa, TelokBatek, Duden, Tioman, Tenggol };
 
         public static FieldMapDef Get(string id)
         {

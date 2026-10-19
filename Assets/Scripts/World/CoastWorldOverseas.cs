@@ -21,6 +21,10 @@ namespace Fishing.World
                 case HouseStyle.Cyclades: CycladicHouse(at, yaw, _rng.NextDouble() < 0.12); break;
                 case HouseStyle.Egypt: MudHouse(at, yaw); break;
                 case HouseStyle.Vietnam: TubeHouse(at, yaw, sign); break;
+                case HouseStyle.Stilt: StiltHouse(at, yaw); break;
+                case HouseStyle.Resort: ResortVilla(at, yaw); break;
+                case HouseStyle.Thai: ThaiHouse(at, yaw); break;
+                case HouseStyle.Venetian: VenetianHouse(at, yaw, sign); break;
                 default: _props.KoreanHouse(at, yaw, sign); break;
             }
         }
@@ -172,10 +176,10 @@ namespace Fishing.World
             col.size = new Vector3(w, hgt + 1f, d);
         }
 
-        static Mesh _gableMesh;
+        internal static Mesh _gableMesh;
 
         /// <summary>박공지붕 단위 메쉬 (CoastProps와 같은 모양): 바닥 -0.5~0.5, 용마루 높이 1.</summary>
-        static Mesh GableMesh()
+        internal static Mesh GableMesh()
         {
             if (_gableMesh != null) return _gableMesh;
             var a = new Vector3(-0.5f, 0f, -0.5f); var b = new Vector3(0.5f, 0f, -0.5f);

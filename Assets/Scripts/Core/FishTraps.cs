@@ -85,6 +85,20 @@ namespace Fishing.Core
             { "halong", ("하롱베이", "어부 탄") },
             { "santorini", ("산토리니", "어부 니코스") },
             { "nile", ("나일강", "어부 카림") },
+            { "angkor", ("앙코르와트", "어부 삼낭") },
+            { "vinpearl", ("빈펄", "어부 꽝") },
+            { "donkhone", ("돈콘", "어부 캄") },
+            { "phuket", ("푸켓", "어부 쁘라윳") },
+            { "bangkok", ("방콕", "어부 웃") },
+            { "kohsamui", ("코사무이", "어부 쏨밧") },
+            { "langkawi", ("랑카위", "어부 이스마일") },
+            { "sentosa", ("센토사", "어부 림") },
+            { "telokbatek", ("텔록 바텍", "어부 오스만") },
+            { "tioman", ("티오만", "어부 유수프") },
+            { "tenggol", ("탱글", "어부 다우드") },
+            { "crete", ("크레타", "어부 마놀리스") },
+            { "zakynthos", ("자킨토스", "어부 스피로스") },
+            { "duden", ("듀덴 폭포", "어부 알리") },
         };
 
         static string Stem(string mapId) => MapInfo.TryGetValue(mapId ?? "", out var i) ? i.stem : (Maps.Get(mapId)?.ShortName ?? mapId);

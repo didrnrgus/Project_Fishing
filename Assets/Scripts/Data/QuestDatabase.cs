@@ -212,6 +212,20 @@ namespace Fishing.Data
             ("halong", "응우옌 지부장", "한국 낚시 조합 하롱베이 지부", "씬 짜오! 한국에서 오신 손님이군요. 봉우리 사이 물길을 안내해 드리죠."),
             ("santorini", "야니스 지부장", "한국 낚시 조합 산토리니 지부", "칼리메라! 에게해의 바람은 낚싯줄도 노래하게 만들지요."),
             ("nile", "하산 지부장", "한국 낚시 조합 이집트 지부", "앗살람 알라이쿰! 나일강은 오천 년 동안 사람을 먹여 살린 강이오."),
+            ("angkor", "속 찬나 지부장", "한국 낚시 조합 앙코르 지부", "줌 리읍 쑤어! 천 년 된 해자에도 고기는 산답니다. 큰 놈은 톤레삽에서 올라오지요."),
+            ("vinpearl", "레 티 마이 지부장", "한국 낚시 조합 나트랑 지부", "씬 짜오! 바다 위 케이블카 보셨어요? 저 아래가 다 낚시터예요."),
+            ("donkhone", "분미 지부장", "한국 낚시 조합 메콩 지부", "싸바이디! 메콩은 천천히 흘러요. 낚시도 천천히 하세요. 여울 아래엔 사람만 한 메기가 산답니다."),
+            ("phuket", "솜차이 지부장", "한국 낚시 조합 푸켓 지부", "싸왓디 크랍! 안다만 바다는 돛새치가 뛰노는 곳이에요. 언덕 위 대불님께 인사부터 하세요."),
+            ("bangkok", "니란 지부장", "한국 낚시 조합 방콕 지부", "싸왓디 카! 강 건너 새벽 사원 보이시죠? 저 강바닥에 큰 메기와 가물치가 살아요."),
+            ("kohsamui", "찻차이 지부장", "한국 낚시 조합 코사무이 지부", "싸왓디 크랍! 황금 대불님이 바다를 지켜 주신답니다. 저녁엔 와후가 들어와요."),
+            ("langkawi", "아지즈 지부장", "한국 낚시 조합 랑카위 지부", "슬라맛 다탕! 맹그로브 숲 물길은 대물이 숨는 곳이지요. 독수리님이 보고 계세요."),
+            ("sentosa", "탄 지부장", "한국 낚시 조합 싱가포르 지부", "웰컴 투 센토사! 동남아 여행의 종착역에 오신 걸 환영해요. 머라이언 앞 물에 GT가 들어온답니다."),
+            ("telokbatek", "로즈나 지부장", "한국 낚시 조합 텔록 바텍 연락소", "슬라맛 다탕! 해 질 녘 롱테일 보트 소리가 이 마을의 노래예요. 망루 아저씨가 고기 지나가는 걸 다 봐요."),
+            ("tioman", "파리다 지부장", "한국 낚시 조합 티오만 지부", "슬라맛 다탕! 한적하죠? 동쪽 깊은 바다엔 돛새치 떼가 몰려온답니다."),
+            ("tenggol", "아이샤 지부장", "한국 낚시 조합 탱글 연락소", "슬라맛 다탕! 나만의 바다 별장에 오신 걸 환영해요. 산호초 너머엔 도그투스 참치가 있어요."),
+            ("crete", "디미트리스 지부장", "한국 낚시 조합 크레타 지부", "칼리메라! 크레타는 신화의 섬이자 고기의 섬이지요. 등대 끝에서 덴텍스를 노려 보세요."),
+            ("zakynthos", "엘레나 지부장", "한국 낚시 조합 자킨토스 지부", "칼리스페라! 난파선 해변의 바다는 하늘보다 파랗답니다. 깊은 데엔 상어도 있어요."),
+            ("duden", "메흐메트 지부장", "한국 낚시 조합 안탈리아 지부", "메르하바! 폭포가 바다로 곧장 떨어지는 곳, 세상에 여기뿐이에요. 홍해에서 온 독 있는 손님도 많답니다."),
         };
 
         static readonly (string map, string name, string epithet, string greet)[] ShopTable =
@@ -272,7 +286,7 @@ namespace Fishing.Data
     ///  - 일반(Normal): 낚시점 주인 같은 NPC의 한 번짜리 부탁.
     ///  - 일일반복(Repeat): QuestSystem이 게임 하루마다 3개 만든다 (그 낚시터 연락관이 준다).
     /// </summary>
-    public static class QuestDatabase
+    public static partial class QuestDatabase
     {
         public const string Giver = "한국 낚시 조합";
 
@@ -465,6 +479,9 @@ namespace Fishing.Data
                     Goal = QuestGoal.CatchSpecies, SpeciesId = "orangegrouper", Count = 2, RewardGold = 30000, RewardExp = 4500 },
                 new QuestDef { Title = "GT의 비명", Desc = "새벽 F5, 저녁 C7 물살에 자이언트 트레발리가 몰려온다네. 릴이 비명을 지르는 소리를 들어 보게.",
                     Goal = QuestGoal.CatchSpecies, SpeciesId = "gianttrevally", Count = 1, RewardGold = 50000, RewardExp = 6000 });
+            Chapter("angkor", null, AngkorChapter()); // 앙코르와트 (Lv.26) — World/Maps/Angkor.cs
+            Chapter("vinpearl", null, VinpearlChapter()); // 빈펄 (Lv.27) — World/Maps/Vinpearl.cs
+            Chapter("donkhone", null, DonKhoneChapter()); // 돈콘 (Lv.28) — World/Maps/DonKhone.cs
             // ---------- 산토리니 (Lv.28) ----------
             Chapter("santorini", QuestNpcs.Manager,
                 new QuestDef { Title = "하얀 마을 아래 항구", Desc = "산토리니 이아 절벽 아래 암모우디 항구라네. 깊은 칼데라 바다의 유럽대구를 한 마리 낚아 보게. 야니스 지부장에게 보고하세요. (낚시터 목록 [지중해] 탭, Lv.28부터)",
@@ -473,6 +490,9 @@ namespace Fishing.Data
                     Goal = QuestGoal.CatchSpecies, SpeciesId = "giltheadbream", Count = 3, RewardGold = 40000, RewardExp = 5500 },
                 new QuestDef { Title = "에게해의 탄환", Desc = "먼바다(배로 D7·G8)에 참다랑어 떼가 지나간다네. 새벽과 아침에만. 배를 끌고 다닐 만큼 세니 각오하게!",
                     Goal = QuestGoal.CatchSpecies, SpeciesId = "bluefintuna", Count = 1, RewardGold = 90000, RewardExp = 9000 });
+            Chapter("phuket", null, PhuketChapter()); // 푸켓 (Lv.30) — World/Maps/Phuket.cs
+            Chapter("crete", null, CreteChapter()); // 크레타 (Lv.30) — World/Maps/Crete.cs
+            Chapter("bangkok", null, BangkokChapter()); // 방콕 (Lv.31) — World/Maps/Bangkok.cs
             // ---------- 나일강 하류 (Lv.31) ----------
             Chapter("nile", QuestNpcs.Doctor,
                 new QuestDef { Title = "나일강의 저녁거리", Desc = "나일강 하류일세. 강변 사람들 저녁거리인 틸라피아를 다섯 마리 낚아 하산 지부장에게 갖다 주게. 지렁이·떡밥이 잘 듣는다네. (낚시터 목록 [아프리카] 탭, Lv.31부터)",
@@ -482,6 +502,14 @@ namespace Fishing.Data
                 new QuestDef { Title = "나일의 거인", Desc = "벽화 속 그 고기, 나일농어. 새벽 B4·저녁 G5 깊은 골에 어군이 든다네. 1.5m가 넘는 놈을 낚으면 자네는 세계의 강태공일세!",
                     Goal = QuestGoal.CatchMinLength, SpeciesId = "nileperch", MinLen = 150f, Count = 1, RewardGold = 150000, RewardExp = 15000, RewardKeepNet = 3 });
 
+            Chapter("kohsamui", null, KohSamuiChapter()); // 코사무이 (Lv.32) — World/Maps/KohSamui.cs
+            Chapter("langkawi", null, LangkawiChapter()); // 랑카위 (Lv.33) — World/Maps/Langkawi.cs
+            Chapter("zakynthos", null, ZakynthosChapter()); // 자킨토스 (Lv.33) — World/Maps/Zakynthos.cs
+            Chapter("sentosa", null, SentosaChapter()); // 센토사 (Lv.35) — World/Maps/Sentosa.cs
+            Chapter("telokbatek", null, TelokBatekChapter()); // 텔록 바텍 (Lv.36) — World/Maps/TelokBatek.cs
+            Chapter("duden", null, DudenChapter()); // 듀덴 폭포 (Lv.36) — World/Maps/Duden.cs
+            Chapter("tioman", null, TiomanChapter()); // 플라우 티오만 (Lv.37) — World/Maps/Tioman.cs
+            Chapter("tenggol", null, TenggolChapter()); // 플라우 탱글 (Lv.39) — World/Maps/Tenggol.cs
             return list;
         }
 

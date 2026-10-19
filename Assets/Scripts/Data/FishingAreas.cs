@@ -59,19 +59,43 @@ namespace Fishing.Data
         };
 
         /// <summary>
-        /// 해외 거점 (원작: 2012-04 동남아 ① 앙코르와트·하롱베이·빈펄·돈콘, 지중해 산토리니, 2013-03 나일강 하류).
-        /// 솔로판은 거점마다 대표 낚시터 한 곳. 만렙도 원작처럼 25 → 40으로 늘렸다.
+        /// 해외 거점 (원작: 2012-04 동남아 ① 앙코르와트·하롱베이·빈펄·돈콘, ② 푸켓·방콕·코사무이·랑카위, ③ 센토사·티오만·텔록바텍·탱글,
+        /// 지중해 산토리니·크레타·자킨토스·듀덴폭포, 2013-03 나일강 하류). 2026-10-19 원작 전체 맵 목록(docs/14)에 맞춰 14곳을 더했다. 만렙 40.
         /// </summary>
         public static readonly List<FishingArea> Overseas = new List<FishingArea>
         {
             new FishingArea { Id = "halong", Hub = "sea", Name = "하롱베이", Lon = 107.08f, Lat = 20.91f, Open = true, Level = 25, MapId = "halong",
                 Desc = "에메랄드 바다에 솟은 석회암 봉우리 수천 개. 수상 마을과 정크선, 바라문디·얼룩바리·GT." },
-            new FishingArea { Id = "angkor", Hub = "sea", Name = "톤레삽 호수", Lon = 104.0f, Lat = 13.0f, Open = false, Level = 26, Desc = "앙코르와트 옆 동남아 최대 호수. (준비 중)" },
-            new FishingArea { Id = "phuket", Hub = "sea", Name = "푸켓", Lon = 98.35f, Lat = 7.9f, Open = false, Level = 30, Desc = "안다만해의 섬. (준비 중)" },
-            new FishingArea { Id = "sentosa", Hub = "sea", Name = "센토사", Lon = 103.83f, Lat = 1.25f, Open = false, Level = 35, Desc = "싱가포르 남쪽 섬. (준비 중)" },
             new FishingArea { Id = "santorini", Hub = "med", Name = "산토리니", Lon = 25.37f, Lat = 36.46f, Open = true, Level = 28, MapId = "santorini",
                 Desc = "칼데라 절벽 위 하얀 마을과 파란 돔. 깊은 바다의 유럽대구·귀족도미, 먼바다엔 참다랑어." },
-            new FishingArea { Id = "venice", Hub = "med", Name = "베네치아", Lon = 12.33f, Lat = 45.44f, Open = false, Level = 33, Desc = "운하와 석호의 도시. (준비 중)" },
+            new FishingArea { Id = "angkor", Hub = "sea", Name = "앙코르와트", Lon = 103.87f, Lat = 13.41f, Open = true, Level = 26, MapId = "angkor",
+                Desc = "천 년 사원의 해자와 톤레삽 호수. 이끼 낀 회랑과 연꽃 봉오리 탑, 메콩 대형 메기·자이언트 바브·거대 가오리." },
+            new FishingArea { Id = "vinpearl", Hub = "sea", Name = "빈펄", Lon = 109.24f, Lat = 12.22f, Open = true, Level = 27, MapId = "vinpearl",
+                Desc = "나트랑 앞바다 혼째 섬의 리조트 해변. 초가 파라솔과 바다 위 정자, 바다를 건너는 케이블카. 코비아·만새기·코랄 트라우트." },
+            new FishingArea { Id = "donkhone", Hub = "sea", Name = "돈콘", Lon = 105.92f, Lat = 14.12f, Open = true, Level = 28, MapId = "donkhone",
+                Desc = "메콩강 4천 개 섬 지대의 수상 가옥 마을. 물탱크 탑과 나무 선착장, 여울과 바위섬. 메콩 대형 메기·줄리엔 잉어·자이언트 파항가시우스." },
+            new FishingArea { Id = "phuket", Hub = "sea", Name = "푸켓", Lon = 98.34f, Lat = 7.82f, Open = true, Level = 30, MapId = "phuket",
+                Desc = "안다만해의 진주. 언덕 위 하얀 대불과 팡아만 석회암 섬, 롱테일 보트. 돛새치·청새치·황다랑어·GT." },
+            new FishingArea { Id = "bangkok", Hub = "sea", Name = "방콕", Lon = 100.49f, Lat = 13.74f, Open = true, Level = 31, MapId = "bangkok",
+                Desc = "짜오프라야 강가와 낚시공원. 강 건너 새벽 사원 왓 아룬, 롱테일 보트와 수상 버스. 자이언트 스네이크헤드·피라루쿠·앨리게이터 가." },
+            new FishingArea { Id = "kohsamui", Hub = "sea", Name = "코사무이", Lon = 100.06f, Lat = 9.57f, Open = true, Level = 32, MapId = "kohsamui",
+                Desc = "숲으로 둘러싸인 해변의 섬. 바다 위 섬에 앉은 황금 대불, 할아버지·할머니 바위, 야자수 해변. 와후·만새기·코비아." },
+            new FishingArea { Id = "langkawi", Hub = "sea", Name = "랑카위", Lon = 99.85f, Lat = 6.32f, Open = true, Level = 33, MapId = "langkawi",
+                Desc = "바다·늪·정글의 섬. 붉은 독수리 상과 산 위 스카이 브리지, 맹그로브 물길. 바라문디·맹그로브 잭·포핑거 스레드핀·GT." },
+            new FishingArea { Id = "sentosa", Hub = "sea", Name = "센토사", Lon = 103.82f, Lat = 1.25f, Open = true, Level = 35, MapId = "sentosa",
+                Desc = "동남아 여행의 종착역, 해양 스포츠의 중심지. 거대한 머라이언, 바다 건너 마천루, 하늘의 열기구와 요트 마리나. GT·바라문디·스내퍼." },
+            new FishingArea { Id = "telokbatek", Hub = "sea", Name = "텔록 바텍", Lon = 103.0f, Lat = 5.1f, Open = true, Level = 36, MapId = "telokbatek",
+                Desc = "고즈넉한 동남아 어촌 마을. 해변 망루와 초가 오두막, 색칠한 롱테일 보트, 금빛 노을. 퀸피시·레이디피시·아처피시." },
+            new FishingArea { Id = "tioman", Hub = "sea", Name = "플라우 티오만", Lon = 104.16f, Lat = 2.79f, Open = true, Level = 37, MapId = "tioman",
+                Desc = "한적하고 평화로운 리조트. 언덕의 둥근 리조트 호텔, 보라 파라솔 백사장, 용의 뿔 봉우리. 돛새치·와후·나폴레옹피시." },
+            new FishingArea { Id = "tenggol", Hub = "sea", Name = "플라우 탱글", Lon = 103.68f, Lat = 4.81f, Open = true, Level = 39, MapId = "tenggol",
+                Desc = "나만의 특별한 해양 별장. 바다 위 나무 데크 별장과 산호초, 정글 바위섬. 도그투스 참치·범프헤드 패럿피시·코랄 트라우트." },
+            new FishingArea { Id = "crete", Hub = "med", Name = "크레타", Lon = 24.02f, Lat = 35.52f, Open = true, Level = 30, MapId = "crete",
+                Desc = "지중해에서 가장 큰 섬, 하니아의 베네치아 항구. 돌 등대와 파스텔 집, 둥근 지붕 모스크, 뒤로 하얀 산. 덴텍스·그루퍼·만새기." },
+            new FishingArea { Id = "zakynthos", Hub = "med", Name = "자킨토스", Lon = 20.62f, Lat = 37.86f, Open = true, Level = 33, MapId = "zakynthos",
+                Desc = "이오니아해의 휴양섬. 하얀 절벽에 둘러싸인 난파선 해변 나바지오와 푸른 동굴. 참다랑어·청상아리·황새치." },
+            new FishingArea { Id = "duden", Hub = "med", Name = "듀덴 폭포", Lon = 30.79f, Lat = 36.86f, Open = true, Level = 36, MapId = "duden",
+                Desc = "도시 폭포가 절벽에서 바다로 곧장 떨어지는 안탈리아. 뒤로 토로스 산맥. 미거·블루피시, 홍해에서 들어온 은빛뺨복어·쏠배감펭." },
             new FishingArea { Id = "nile", Hub = "africa", Name = "나일강 하류", Lon = 31.23f, Lat = 29.9f, Open = true, Level = 31, MapId = "nile",
                 Desc = "야자수 강가와 펠루카, 사막 너머 피라미드. 2m 나일농어와 송곳니 타이거피시가 사는 민물." },
         };

@@ -12,7 +12,7 @@ namespace Fishing.World
     ///  - 나일강 하류(이집트, Lv.31): 강(맞은편 둑), 야자수 강가, 흙벽돌 집과 비둘기탑, 펠루카 돛배, 사막 너머 피라미드. 민물.
     /// 좌표는 국내 해안 맵과 같다: 해안선 z ≈ -40, 물이 +Z, 격자 A~H × 1~8.
     /// </summary>
-    public static class OverseasCoasts
+    public static partial class OverseasCoasts
     {
         const float NaN = float.NaN;
         static Habitat S => Habitat.Shallow;

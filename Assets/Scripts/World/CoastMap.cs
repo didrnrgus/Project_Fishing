@@ -44,8 +44,11 @@ namespace Fishing.World
         Feluccas = 1048576,   // 큰 삼각돛 펠루카 (나일강)
     }
 
-    /// <summary>마을 집 양식: 한국 바닷가 / 키클라데스(하얀 집·파란 돔) / 이집트(흙벽돌 평지붕) / 베트남(좁고 높은 색깔 집).</summary>
-    public enum HouseStyle { Korean, Cyclades, Egypt, Vietnam }
+    /// <summary>
+    /// 마을 집 양식: 한국 바닷가 / 키클라데스(하얀 집·파란 돔) / 이집트(흙벽돌 평지붕) / 베트남(좁고 높은 색깔 집) /
+    /// 수상·고상 가옥(기둥 위 판잣집, 메콩·말레이 어촌) / 리조트(흰 빌라·초가 방갈로) / 타이(가파른 겹지붕 티크 집) / 베네치아풍(파스텔 회벽·붉은 기와, 크레타·안탈리아).
+    /// </summary>
+    public enum HouseStyle { Korean, Cyclades, Egypt, Vietnam, Stilt, Resort, Thai, Venetian }
 
     /// <summary>나무 양식: 한국(소나무·활엽수) / 야자수 / 열대(야자수 + 활엽수) / 지중해(작고 둥근 올리브).</summary>
     public enum TreeStyle { Korean, Palm, Tropical, Mediterranean }
@@ -182,6 +185,13 @@ namespace Fishing.World
         public bool SandLand;
         public Func<List<FishSchool>> Schools;
         public int Seed = 1;
+        /// <summary>
+        /// 그 맵만의 풍경을 짓는 함수 (2026-10-19 새 해외 맵: 앙코르와트 사원, 머라이언, 나바지오 난파선…). 지형·해안·마을·기본 풍경을 다 지은 뒤 부른다.
+        /// <see cref="CoastWorldBuilder"/>의 공개 도우미(Root·Height·Rand·FootingAt·PlaceHouse·PlaceTree…)를 쓴다.
+        /// </summary>
+        public Action<CoastWorldBuilder> Extra;
+        /// <summary>마을 집·나무를 놓지 않을 자리 (x, z, 너비, 깊이) — <see cref="Extra"/>가 지을 랜드마크 자리.</summary>
+        public Rect[] Reserved = new Rect[0];
     }
 
     /// <summary>
@@ -1210,6 +1220,7 @@ namespace Fishing.World
             if ((S.Features & CoastFeature.Dunes) != 0 && S.DuneArea.Contains(new Vector2(x, z))) return true;
             if ((S.Features & CoastFeature.DryingRacks) != 0 && Mathf.Abs(x - DryingRackX) < 22f && Mathf.Abs(z - DryingRackZ) < 12f) return true;
             if ((S.Features & CoastFeature.Cranes) != 0 && Mathf.Abs(x - CraneX) < 40f && z > _map.ShoreAt(x) - 30f) return true;
+            foreach (var r in S.Reserved) if (r.Contains(new Vector2(x, z))) return true;
             return new Vector2(x - S.ShopPos.x, z - S.ShopPos.z).magnitude < 12f;
         }
 
@@ -1275,6 +1286,7 @@ namespace Fishing.World
             if ((S.Features & CoastFeature.Tangerines) != 0) Tangerines();
             if ((S.Features & CoastFeature.Columnar) != 0) ColumnarJoints();
             BuildOverseasFeatures();
+            S.Extra?.Invoke(this);
         }
 
         /// <summary>한라산: 육지 뒤로 완만하게 솟은 큰 방패 화산, 꼭대기에 백록담 분화구 테.</summary>

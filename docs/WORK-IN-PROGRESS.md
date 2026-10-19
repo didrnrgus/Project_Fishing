@@ -2,6 +2,86 @@
 
 세션이 끊겨도 이 파일만 보고 이어서 작업할 수 있게 남기는 메모. 끝난 일은 로드맵·각 문서에 합쳤다.
 
+## ▶ 다음 세션은 여기부터 (2026-10-19 중단 — 어종 88종 · 새 맵 14곳 작업 도중)
+
+사용자 요청: 원작 전체 맵 목록(동남아 12곳·지중해 4곳, `docs/14-original-sea-video.md`)과 어종 DB(`docs/fish-db/`)를 게임에 반영.
+토큰 소진으로 **도중에 멈췄다. 아직 커밋하지 않았다** (마지막 커밋 `4310a31`). 작업 트리는 컴파일된다: `sh tools/compilecheck.sh` → compile OK, `cd tools/fightsim && dotnet build` → 오류 0.
+Unity 빌드·자동 촬영은 이 작업으로는 아직 한 번도 안 돌렸다.
+
+### 1. 이미 된 것 (작업 트리, 커밋 전)
+
+- **구조**
+  - 어종을 지역별 partial로 나눴다: `Data/FishDatabase.Korea2.cs` · `.SeaAsiaFresh.cs` · `.SeaAsia.cs` · `.Mediterranean.cs` · `.Mediterranean2.cs`. 각 파일은 `…Species` 목록과 `…MapAdds`(이미 있는 어종이 새 맵에도 살게)를 내놓고, `FishDatabase` 정적 생성자가 합친다.
+  - Blender 설계도 같은 이름의 `tools/blender/species_korea2.py` · `species_sea_fresh.py` · `species_sea.py` · `species_med.py` · `species_med2.py`로 나눴다. `fish_species.py` 끝에서 불러온다.
+  - `tools/fightsim/fightsim.csproj`는 `FishDatabase*.cs`를 포함한다.
+- **어종 데이터·설계 88종**: 한국 7, 동남아 민물 20, 동남아 바다 27, 지중해 앞 17, 지중해 뒤 17. 모두 C# 항목과 Blender 설계가 있고 아이콘(미리보기에서 생김)도 있다.
+  - **지중해 34종은 FBX·텍스처·아이콘까지 다 만들었다** (담당 에이전트가 완료 보고).
+  - **나머지 54종(한국 7 + 동남아 민물 20 + 동남아 바다 27)은 FBX를 아직 안 만들었다.** 미리보기로 모양을 다듬던 중 멈춘 것이라, 설계가 덜 다듬어졌을 수 있다. 아래 2-1로 미리보기를 보고 고친 뒤 만든다.
+  - 동남아 바다 쪽에 `daewangbari`(대왕바리?)가 새로 생겼다. 기존 `giantgrouper`와 같은 종(Epinephelus lanceolatus)이면 하나로 합친다(학명 확인).
+  - 황새치(`swordfish`, BossCoins 5)가 산토리니·크레타·자킨토스에도 살게 됐다 → 지중해에서도 대물 코인 괴물 어종으로 나온다(의도대로 둠).
+- **새 맵 14곳 등록** (아직 지형·랜드마크 없는 임시 틀)
+  - id: angkor · vinpearl · donkhone · phuket · bangkok · kohsamui · langkawi · sentosa · telokbatek · tioman · tenggol · crete · zakynthos · duden
+  - 입장 레벨: halong 25 · angkor 26 · vinpearl 27 · donkhone 28 · santorini 28 · phuket 30 · crete 30 · bangkok 31 · nile 31 · kohsamui 32 · langkawi 33 · zakynthos 33 · sentosa 35 · telokbatek 36 · duden 36 · tioman 37 · tenggol 39
+  - 이미 등록된 곳:
+    - `FishingAreas.Overseas`(이름·좌표·설명; 예전 "준비 중" 자리인 앙코르·푸켓·센토사·베네치아는 지움)
+    - `FieldMap.Maps`(선언 + `All` 레벨 순)
+    - `FishTraps.MapInfo`(어부 이름), `LoadingScreen.Romanize`
+    - `QuestDatabase` 연락관 표(`UnionTable`)
+    - 이야기 장 호출: 레벨 순 자리에 `Chapter("angkor", null, AngkorChapter())` 같은 형태로 끼웠다. 새 퀘스트는 id를 직접 붙여(`angkor_1` …) 기존 `st##` 번호가 밀리지 않게 한다.
+    - `FishSpecies.SeaMaps/FreshMaps`(앙코르·돈콘·방콕 = 민물), `RegionMap`(지중해 지도를 안탈리아 33°E까지 넓힘)
+  - 맵마다 파일 하나: `Assets/Scripts/World/Maps/<Name>.cs`. 안에 다음 세 가지가 있다. **지금은 모두 54줄짜리 임시 틀이다** (해변 하나, 연락관 NPC 하나, 어군 없음, 퀘스트 없음).
+    - `OverseasCoasts.<Name>()` 사양
+    - `<Name>Extra(CoastWorldBuilder b)` 랜드마크 함수
+    - `QuestDatabase.<Name>Chapter()` 이야기 3개
+  - 맵 에이전트 4개가 실제 내용을 쓰기 전에 멈췄다.
+- **확장 지점**
+  - `CoastSpec.Extra`(맵 고유 풍경 함수), `CoastSpec.Reserved`(마을 집을 놓지 않을 자리)
+  - `World/CoastWorldApi.cs`: Extra용 공개 도우미(Root·Height·Rand·FootingAt·PlaceHouse·PlaceTree·PlaceBoats·AddLamp·KarstPeak·Gable·Sign…)와 새 집 양식 4가지(`HouseStyle.Stilt` 고상 가옥, `Resort` 빌라·초가 방갈로, `Thai` 겹지붕 티크 집, `Venetian` 파스텔 회벽·붉은 기와). 새 집 양식은 아직 화면으로 확인하지 않았다.
+- **도구**: `tools/compilecheck.sh` — Unity 없이 런타임 스크립트 컴파일 오류만 2초 안에 본다 (Library/Bee의 rsp + Unity 안 Roslyn).
+
+### 2. 남은 일 (이 순서로)
+
+1. **동남아·한국 어종 54종 마무리**: 미리보기로 모양을 보고 설계(`species_korea2.py`·`species_sea_fresh.py`·`species_sea.py`)를 고친 뒤 FBX를 만든다.
+   - 미리보기: `bpyenv/Scripts/python.exe -I tools/blender/build_fish.py --preview --only <ids> --out <스크래치 폴더>` (한 종 약 8초, 그 id의 아이콘도 다시 쓴다)
+   - 만들기: `bpyenv/Scripts/python.exe -I tools/blender/build_fish.py --only yellowmandarin,grenadieranchovy,obscurepuffer,japanesedace,chumsalmon,pacificbluefin,sheepsheadwrasse,sailfish,blackmarlin,yellowfintuna,wahoo,dogtoothtuna,mahimahi,cobia,queenfish,narrowbarredmackerel,longtailtuna,bluefintrevally,pompano,daewangbari,coraltrout,goldensnapper,spangledemperor,bumpheadparrot,napoleonwrasse,bullshark,threadfin,ladyfish,tarpon,archerfish,silverpomfret,yellowfinseabream,russellsnapper,rabbitfish,mekonggiantcatfish,giantbarb,giantstingray,giantpangasius,arowana,julliencarp,goonch,arapaima,alligatorgar,giantsnakehead,stripedcatfish,clownknifefish,wallago,redtailcatfish,stripedsnakehead,hampalabarb,giantgourami,pacu,silverbarb,moonlightgourami`
+   - **`--only` 없이 돌리지 않는다** (기존 어종을 모두 다시 만든다).
+2. **맵 14곳 채우기**: `World/Maps/<Name>.cs`마다 다음을 쓴다.
+   - 사양: 해안·잔교·섬·수심·서식지 격자·스폰·낚시점·NPC 2~4명
+   - `Extra`: 랜드마크. 무엇을 만들지는 `docs/14-original-sea-video.md` 1장 "보이는 것"을 따른다.
+     - 앙코르: 연꽃 봉오리 탑 5개·회랑·사자상·해자 둑길
+     - 빈펄: 초가 파라솔·바다 위 정자·케이블카
+     - 돈콘: 수상 가옥·물탱크 탑·여울
+     - 푸켓: 언덕 위 하얀 대불·팡아만 석회암 섬·롱테일 보트
+     - 방콕: 강 건너 왓 아룬
+     - 코사무이: 섬 위 황금 대불
+     - 랑카위: 독수리 상·스카이 브리지·맹그로브
+     - 센토사: 머라이언·마리나 스카이라인·열기구
+     - 텔록 바텍: 망루·롱테일 보트·초가 마을
+     - 티오만: 둥근 리조트 호텔·보라 파라솔·용의 뿔 봉우리
+     - 탱글: 수상 별장 데크
+     - 크레타: 하니아 베네치아 항구 등대·모스크·하얀 산
+     - 자킨토스: 나바지오 하얀 절벽·난파선
+     - 듀덴: 바다로 떨어지는 폭포·토로스 산맥
+   - 어군: 3~5개 + 특별 어군 1개. 그 맵에 사는 어종 id만 쓴다.
+   - 이야기 3개: id `<맵>_1..3`, 첫 퀘스트에 "낚시터 목록 [동남아]/[지중해] 탭 · Lv.xx부터"
+   - 참고할 것: `OverseasCoasts.cs`(하롱베이·산토리니·나일강 예), `HanRiverLandmarks.cs`(로프트 메쉬·코드 텍스처·`Fishing/Landmark` 셰이더로 만든 정교한 랜드마크)
+   - 한 맵에 프리미티브 700개 안쪽, 스크립트 없이.
+3. `sh tools/build.sh` → `DevAutomation`의 해외 촬영 목록(`("halong", "55_halong_bay", …)` 줄들)에 새 맵마다 1~2장 추가 → `sh tools/autoshot.sh` → 화면 보며 고치기 (새 집 양식·랜드마크·지도 마커·낚시터 목록 동남아 12줄).
+4. 문서:
+   - `python tools/fish_table.py --write` (02 문서 어종 표)
+   - README 어종 수·맵 수·스크린샷
+   - 02 9-9 해외 거점 절, 03 구조(`World/Maps/`, `CoastWorldApi.cs`, 지역별 FishDatabase), `docs/guide/06-lv25-40-overseas-endgame.md`
+   - 밸런스 확인: `cd tools/fightsim && dotnet run -- report`
+5. 사용자 순서대로 스테이징 → 문서 업데이트 → 스테이징 → 커밋·푸시. 커밋에서 뺄 것: 사용자가 임포트하다 만 `Assets/BigRookGames/Nature Pack/HDRP URP/`, `Assets/Forst/Conifers [BOTD]/Conifers_BIRP.unitypackage.meta`.
+
+### 3. 참고
+
+- 원작 영상 3개(동남아 1차·3차 홍보 영상)는 세션 스크래치에만 받아 두었다. 다시 보려면:
+  - `pip install yt-dlp imageio-ffmpeg`를 깐 venv에서 `yt-dlp -f "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b"`로 받는다.
+  - `imageio_ffmpeg.get_ffmpeg_exe()`로 2초 간격 프레임을 뽑는다.
+  - 영상: mxyGA32Tk_E, izT0_9CNufQ, JbVfU2oF7ms
+- 2차 4곳(푸켓·방콕·코사무이·랑카위)은 원작 영상이 없다 → 실제 장소 사진·기사를 참고한다.
+
 ## 지금 상태 (2026-10-16)
 
 2026-10-15 (5) 로컬 세션에서 "다음에 로컬에서 할 일"을 모두 끝냈고, 사용자가 플레이 화면을 보고 지적한 퀄리티 문제(아래 "사용자 지적 사항" 표)를 고쳤다. **남은 일은 표의 "에셋 필요" 칸과 아래 "남은 것"** — 사용자가 무료 에셋(실사 나무·바위·풀)을 임포트해 주면 이어서 연결한다.

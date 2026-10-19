@@ -618,6 +618,14 @@ SPECIES = {
 JUNK = ['can', 'trap', 'box', 'fishcan', 'robotfish', 'shoe']
 
 
+# 2026-10-19부터 늘어난 어종: 지역별 파일 (docs/fish-db). 각 파일은 SPECIES = {...}를 내놓는다 (P·_fin은 여기서 가져간다)
+for _mod in ('species_korea2', 'species_sea_fresh', 'species_sea', 'species_med', 'species_med2'):
+    try:
+        SPECIES.update(__import__(_mod).SPECIES)
+    except ImportError:
+        pass
+
+
 def resolve(sid):
     """틀 + 어종 덮어쓰기 → 완성된 파라미터."""
     sp = SPECIES[sid]
