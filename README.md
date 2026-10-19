@@ -37,6 +37,10 @@
 | ![langkawi](docs/images/64_langkawi_eagle.png) | ![sentosa](docs/images/65b_sentosa_skyline.png) |
 | **크레타 하니아 (베네치아 항구·하얀 산)** | **듀덴 폭포 (바다로 떨어지는 폭포)** |
 | ![crete](docs/images/69b_crete_mountains.png) | ![duden](docs/images/71_duden_falls.png) |
+| **코사무이 (바다 위 섬의 황금 대불)** | **자킨토스 (나바지오 난파선 해변)** |
+| ![kohsamui](docs/images/63_kohsamui_buddha.png) | ![zakynthos](docs/images/70_zakynthos_navagio.png) |
+| **플라우 티오만 (곡선 리조트 호텔·보라 파라솔)** | **플라우 탱글 (바다 위 데크 별장)** |
+| ![tioman](docs/images/67b_tioman_beach.png) | ![tenggol](docs/images/68_tenggol_deck.png) |
 | **버스킹 무대의 낚시 아이돌 유니티짱 (다가가면 손 흔들어 인사)** | **밤의 한강 다리 밑 귀신** |
 | ![idol](docs/images/00h_idol_greeting.png) | ![ghost](docs/images/00k_night_ghost.png) |
 | **한강 공원 벤치의 수다 (Mixamo 사람들)** | **밤 데크의 네온 댄서·좀비들** |
