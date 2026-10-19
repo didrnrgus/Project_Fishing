@@ -1,5 +1,5 @@
 #!/bin/sh
-# 빌드된 게임을 자동 연출 모드로 실행해 Screenshots/에 주요 장면(약 100장)을 저장한다. (세이브 파일은 건드리지 않음)
+# 빌드된 게임을 자동 연출 모드로 실행해 Screenshots/에 주요 장면(약 150장)을 저장한다. (세이브 파일은 건드리지 않음)
 # sh tools/autoshot.sh 06_fight  → 그 장면까지만 찍고 끝낸다 (한 장면 빨리 확인)
 . "$(dirname "$0")/unity.sh"
 rm -rf "$PROJECT/Screenshots"

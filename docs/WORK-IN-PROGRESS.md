@@ -25,7 +25,12 @@
 - 1인칭 파이팅의 손(튜브 손가락 주먹)·팔(가늘어지는 캡슐)·소매가 "너무 도형 같다". 실사 손 메쉬로 바꾸는 대신 사용자 결정으로 **손·팔을 그리지 않고 낚싯대·릴·줄만** 보인다.
 - `FightRodView`에서 양손·팔·소매 생성과 매 프레임 자세(`PoseRightHand`·`PoseLeftHand`·`Arm`·`ApplyLook`)를 지웠고, `Fishing/FpHand.cs`는 삭제. 밤에 릴을 비추는 보조광은 남김(`RodFill`).
 - 3인칭 낚싯대 쥐기(`RodGrip`)·내 캐릭터 반장갑은 그대로.
-- 확인: 컴파일 에러 0 (rsp + Roslyn). 빌드·자동 촬영은 안 함 — 다음 `autoshot.sh 06_fight`로 화면 확인.
+- 확인: 컴파일 에러 0 (rsp + Roslyn). 이어서 빌드·`autoshot.sh`로 `06_fight` 등에서 손·팔이 사라진 것을 확인.
+
+### 2026-10-19 (4): README 스크린샷 갱신
+
+- 빌드(에러 0) → `autoshot.sh` 146장(예외 0, 15개 맵 모두 평균 59~60 FPS) → `docs/images/`에 덮어씀(새 장면 26장 포함).
+- README 표에 NPC 퀘스트 완료 카드·납품·통발·내 캐릭터(장비·능력치)·로딩 화면·ESC 메뉴 6칸 추가, 1인칭 파이팅 캡션에서 "장갑 낀 손" 뺌, 특징에 납품소·통발 추가.
 
 ### 2026-10-19 (2): 원작 대기실·퀘스트·배 영상 → 퀘스트·납품·통발·로딩·날씨·ESC·가방
 
@@ -227,7 +232,7 @@
 - 피부 텍스처 팔 근육 흐리기 (가까이 보는 화면이 생기면, 08 4장 8)
 
 ## 참고
-- 빌드 `sh tools/build.sh` → 확인 `sh tools/autoshot.sh` (Screenshots/ 약 100장 + 맵별 FPS) → 테스트 `sh tools/test.sh` → 밸런스 `sh tools/balance.sh -simSummary` (Unity 없으면 `cd tools/fightsim && dotnet run -- report`) → 어종 표 `python tools/fish_table.py --write`
+- 빌드 `sh tools/build.sh` → 확인 `sh tools/autoshot.sh` (Screenshots/ 약 150장 + 맵별 FPS) → 테스트 `sh tools/test.sh` → 밸런스 `sh tools/balance.sh -simSummary` (Unity 없으면 `cd tools/fightsim && dotnet run -- report`) → 어종 표 `python tools/fish_table.py --write`
 - Blender 파이프라인: `bpyenv/Scripts/python -I tools/blender/<build_characters|build_fish|build_icons|mixamo_probe>.py` (05 문서). 새 PC에서 bpyenv가 없으면 `py install 3.13` → `py -3.13 -m venv bpyenv` → `bpyenv/Scripts/pip install bpy pillow numpy`
 - 다른 PC에서 이어 할 때: `git lfs install` 후 `git pull` (FBX·PNG가 LFS). 처음 열면 에셋 임포트에 시간이 걸린다
 - 단축키: F 대화, I 가방, C 의상, M 지역 지도, B 배, O 옵션, L 퀘스트(탭 4개), Z 살림망(해체), P 도감(맵 탭 12개), 1~8 미끼

@@ -41,7 +41,7 @@
 | 캐스팅 (당겼다 밀기) | 챔질 (찌 게이지) |
 |---|---|
 | ![casting](docs/images/02_casting.png) | ![bite](docs/images/04_bite_gauge.png) |
-| **1인칭 파이팅 (휘는 낚싯대, 장갑 낀 손)** | **카운터 찬스** |
+| **1인칭 파이팅 (휘는 낚싯대·릴, 카운터 방향 표시)** | **카운터 찬스** |
 | ![fight](docs/images/06_fight.png) | ![counter](docs/images/07_counter_chance.png) |
 | **RESULT (3D 물고기, 파이팅 기록 차트)** | **도감 (어종별 3D 모델)** |
 | ![result](docs/images/10_result.png) | ![dex](docs/images/11b_dex_detail.png) |
@@ -49,6 +49,12 @@
 | ![tournament](docs/images/30_tournament_hud.png) | ![aquarium](docs/images/28_aquarium.png) |
 | **나일농어 158cm 파이팅** | **조합 퀘스트 (이야기 45개, 스크롤)** |
 | ![nile_fight](docs/images/58_nile_fight.png) | ![quest](docs/images/13_quest.png) |
+| **NPC 퀘스트 완료 카드** | **납품 (게이지가 차면 다음 납품 두 배)** |
+| ![quest_complete](docs/images/13u_quest_complete_card.png) | ![delivery](docs/images/12b_delivery.png) |
+| **통발 설치·수거** | **내 캐릭터 (장비 6칸 · 최종 능력치)** |
+| ![trap](docs/images/22f_trap_harvest.png) | ![gear](docs/images/21d_character_gear.png) |
+| **낚시터 로딩 화면** | **ESC 메뉴** |
+| ![loading](docs/images/21z_loading.png) | ![esc](docs/images/22a_esc_menu.png) |
 
 **물고기 77종** (Blender 스크립트로 만든 어종별 모델·텍스처, 반투명 지느러미)
 
@@ -74,7 +80,7 @@
 - **생태**: 어종 **77종** + 잡동사니 6종. 서식지·미끼·시간대·날씨·**계절**(한 달 = 게임 7일, 제철 어종)에 따라 입질이 달라진다. 수면의 하얀 소용돌이 **어군**(큰/작은 어군), 고기떼를 모두 흩으면 나오는 **히든 어군**, 고기떼를 쫓는 **포식자 어군**, 지역 지도(M).
 - **괴물 어종**: 괴물잉어·괴물가물치·폭군삼치·황새치를 낚으면 대물 코인 → 풍림화산 낚싯대·릴로 교환.
 - **배 4종**: 고무보트·돛단배(바람)·고속보트·낚시 크루저. 연료, 배마다 다른 흔들림(안정성 × 파도), 먼바다 포인트(대물 +8%).
-- **성장·수집**: 레벨 1~40(레벨 보상 장비), 장비(낚싯대·릴·줄·배) 강화 +15, 미끼 + 해체 미끼 5등급, 도감, 살림망, 이야기 퀘스트 45개(낚시터마다), **일일 의뢰**, **대물 도전**, **업적**·칭호, **빙고 5×5**, **출석 체크**, 낚시 일지, 소라고동 교환소, **내 캐릭터 창**(장착 장비 칸 + 최종 능력치 표), **의상**(6부위 25벌, 부위별 능력치), 대기실 **수족관**.
+- **성장·수집**: 레벨 1~40(레벨 보상 장비), 장비(낚싯대·릴·줄·배) 강화 +15, 미끼 + 해체 미끼 5등급, 도감, 살림망, 이야기 퀘스트 45개(낚시터마다), **일일 의뢰**, **대물 도전**, **업적**·칭호, **빙고 5×5**, **출석 체크**, 낚시 일지, 소라고동 교환소, **납품소**(살림망 고기를 팔면 납품 게이지가 차고, 가득 차면 다음 납품 두 배), **통발**(낚시터에 설치해 두고 20시간 뒤 수거), **내 캐릭터 창**(장착 장비 칸 + 최종 능력치 표), **의상**(6부위 25벌, 부위별 능력치), 대기실 **수족관**.
 - **조합 낚시 대회**: 매일 09~15시, AI 낚시꾼 7명과 마릿수·최장·길이 합계로 겨룬다. 계급 엠블럼, 우승 상품 거거 낚시대·나팔고둥 릴.
 - **손맛**: 마디를 펼치는 뽑기대가 줄 방향으로 휘고 출렁인다. 장비별 릴이 돌고, 릴·드랙·카운터 소리, 게임패드 진동.
 - **화면**: 다크 유리 UI(Translucent Image + Paraform), EasyChart 차트, 후처리(블룸·톤매핑·AO), 낮밤·노을·해달별, 날씨(흐린 날 층구름·비·겨울 눈), 물결 셰이더, 새벽 물안개. 바닥·지형은 반복 무늬를 깨는 셰이더(`Fishing/Ground`·`Fishing/Terrain`), 테트라포드·등대·바위기둥은 절차적 메쉬, 나무·바위·풀은 실사풍 에셋(Conifers [BOTD], Realistic Tree 9·10, Rock and Boulders 2, Grass Flowers Pack Free).
@@ -90,7 +96,7 @@
 명령줄로 빌드할 수도 있다 (Git Bash).
 ```bash
 sh tools/build.sh      # Builds/Windows/ProjectFishing.exe
-sh tools/autoshot.sh   # 빌드를 자동 연출해 Screenshots/ 에 약 100장 + 맵별 FPS
+sh tools/autoshot.sh   # 빌드를 자동 연출해 Screenshots/ 에 약 150장 + 맵별 FPS
 sh tools/test.sh       # 단위 테스트 32개
 cd tools/fightsim && dotnet run -- report   # Unity 없이 파이팅 밸런스 (.NET 8)
 ```

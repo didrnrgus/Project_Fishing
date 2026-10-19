@@ -36,7 +36,7 @@ new FishSpecies { Id = "carp", Name = "잉어", Rarity = 3, MinLen = 25, MaxLen 
 
 ```bash
 sh tools/build.sh                 # 배치모드 빌드
-sh tools/autoshot.sh              # 빌드를 실행해 약 100장 촬영 후 종료, 맵별 평균 FPS
+sh tools/autoshot.sh              # 빌드를 실행해 약 150장 촬영 후 종료, 맵별 평균 FPS
 sh tools/autoshot.sh 06_fight     # 그 장면까지만 (-autoshotStop)
 ```
 
