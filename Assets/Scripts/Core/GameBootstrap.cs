@@ -129,11 +129,13 @@ namespace Fishing.Core
             if (attend != null) Game.Toast(attend + "  · 퀘스트 창(L) [빙고·출석]", ToastKind.Great);
         }
 
+        const float StaminaDrainPerSecond = 2f / 60f;
+
         void Update()
         {
-            // 체력은 시간이 흐르면 조금씩 줄어든다 (게임 1시간에 약 1)
+            // 체력은 시간이 흐르면 조금씩 줄어든다 (현실 30초에 약 1 — 시계를 늦춰도 현실 시간 기준은 그대로)
             // 비를 맞으면 빨리 지치고, 맑으면 음식 회복이 빠르다 (원작 날씨 효과)
-            Game.Profile.ChangeStamina(-Time.deltaTime * GameClock.GameMinutesPerSecond / 60f * Game.Weather.DrainFactor);
+            Game.Profile.ChangeStamina(-Time.deltaTime * StaminaDrainPerSecond * Game.Weather.DrainFactor);
             Game.Profile.TickRegen(Game.Clock.TotalMinutes, Time.deltaTime * GameClock.GameMinutesPerSecond * Game.Weather.RegenFactor);
             Game.Profile.TickFocus(Time.unscaledDeltaTime);
 

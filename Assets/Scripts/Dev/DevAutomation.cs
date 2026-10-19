@@ -124,6 +124,24 @@ namespace Fishing.Dev
             Game.CameraRig.Distance = 9f;
             yield return new WaitForSeconds(1f);
             yield return Shot("00g_park_trees");
+            // 서울 스카이라인: 데크 끝에서 북동쪽 남산서울타워·롯데월드타워, 북서쪽 63빌딩
+            Game.Player.Teleport(new Vector3(25f, 1.1f, -30f), 15f);
+            Game.CameraRig.Yaw = 22f;
+            Game.CameraRig.Pitch = -4f;
+            Game.CameraRig.Distance = 7f;
+            yield return new WaitForSeconds(1.5f);
+            yield return Shot("00q_skyline_namsan_lotte");
+            Game.CameraRig.Yaw = -50f;
+            yield return new WaitForSeconds(1f);
+            yield return Shot("00r_skyline_63");
+            // CU 편의점 (자전거도로 남쪽)
+            var cu = Fishing.World.HanRiverMap.StorePos;
+            Game.Player.Teleport(new Vector3(cu.x + 3f, 1.1f, cu.z + 13f), 180f);
+            Game.CameraRig.Yaw = 200f;
+            Game.CameraRig.Pitch = 8f;
+            Game.CameraRig.Distance = 9f;
+            yield return new WaitForSeconds(1.5f);
+            yield return Shot("00t_cu_store");
 
             // 받은 캐릭터 (ExtraNpcs): 버스킹 무대의 낚시 아이돌 유니티짱, 밤의 좀비·귀신
             if (Fishing.Characters.CharacterLibrary.Lib != null)
@@ -170,6 +188,31 @@ namespace Fishing.Dev
                 Game.CameraRig.Distance = 4f;
                 yield return new WaitForSeconds(1.2f);
                 yield return Shot("00p_pier_entrance");
+                // 밤 스카이라인 (창 불빛·푸른 남산타워·흰 왕관)과 별
+                Game.Clock.Set(Game.Clock.Day, 22 * 60);
+                var weather0 = Game.Weather.Current;
+                Game.Weather.Force(Weather.Clear);
+                Game.Player.Teleport(new Vector3(25f, 1.1f, -30f), 15f);
+                Game.CameraRig.Yaw = 22f;
+                Game.CameraRig.Pitch = -5f;
+                Game.CameraRig.Distance = 7f;
+                yield return new WaitForSeconds(3f);
+                yield return Shot("00s_skyline_night");
+                var cuN = Fishing.World.HanRiverMap.StorePos;
+                Game.Player.Teleport(new Vector3(cuN.x + 3f, 1.1f, cuN.z + 13f), 180f);
+                Game.CameraRig.Yaw = 200f;
+                Game.CameraRig.Pitch = 8f;
+                Game.CameraRig.Distance = 9f;
+                yield return new WaitForSeconds(1.5f);
+                yield return Shot("00u_cu_night");
+                // 별이 총총한 밤하늘 (위를 올려다본다)
+                Game.Player.Teleport(new Vector3(25f, 1.1f, -40f), 0f);
+                Game.CameraRig.Yaw = 0f;
+                Game.CameraRig.Pitch = -5f;
+                Game.CameraRig.Distance = 3f;
+                yield return new WaitForSeconds(1.5f);
+                yield return Shot("00v_night_stars");
+                Game.Weather.Force(weather0);
                 Game.Clock.Set(Game.Clock.Day, 23 * 60);
                 Game.Player.Teleport(new Vector3(-4f, 1.1f, -64.5f), 200f);
                 Game.CameraRig.Yaw = 170f;
@@ -245,6 +288,17 @@ namespace Fishing.Dev
             yield return new WaitForSeconds(2f);
             yield return Shot("03c_reeling_close");
             Game.Fishing.DebugReeling = false;
+            // 찌를 기다리며 낚싯대를 눕히면 줄이 처져 물에 눕고, 세우면 팽팽하다 (옆에서)
+            Game.CameraRig.Yaw = Game.Player.Yaw + 95f;
+            Game.CameraRig.Pitch = 6f;
+            Game.CameraRig.Distance = 9f;
+            Game.Fishing.DebugRodAim(8f);
+            yield return new WaitForSeconds(1.5f);
+            yield return Shot("03d_rod_low_slack");
+            Game.Fishing.DebugRodAim(76f);
+            yield return new WaitForSeconds(1.2f);
+            yield return Shot("03e_rod_high_taut");
+            Game.Fishing.DebugRodAim(28f);
             Game.Fishing.UserOrbited = false;
             (Game.CameraRig.Yaw, Game.CameraRig.Pitch, Game.CameraRig.Distance) = rig0;
             yield return new WaitForSeconds(0.3f);
@@ -926,6 +980,7 @@ namespace Fishing.Dev
                 ("halong", "55_halong_bay", new Vector3(4f, 1.1f, -47f), 0f, 10f, 12f, 16f, 9 * 60, Weather.Clear),
                 ("halong", "55c_halong_pirate", new Vector3(-3f, 1.1f, -47f), 200f, 200f, 8f, 6f, 11 * 60, Weather.Clear),
                 ("halong", "55b_halong_karst", new Vector3(-70f, 1.1f, -46f), 0f, -20f, 8f, 14f, 16 * 60 + 30, Weather.Clear),
+                ("halong", "55d_halong_karst_close", new Vector3(-100f, 1.1f, -44f), 0f, -10f, 2f, 10f, 11 * 60, Weather.Clear),
                 ("santorini", "56_santorini_cliff", new Vector3(-6f, 1.1f, -42f), 180f, 165f, 16f, 34f, 11 * 60, Weather.Clear),
                 ("santorini", "56c_santorini_village", new Vector3(14f, 1.1f, -48f), 270f, 250f, 8f, 7f, 10 * 60, Weather.Clear),
                 ("santorini", "56b_santorini_caldera", new Vector3(39f, 1.1f, -28f), 0f, -10f, 6f, 13f, 17 * 60 + 30, Weather.Clear),
@@ -952,6 +1007,26 @@ namespace Fishing.Dev
                 Game.CameraRig.Distance = s.dist;
                 yield return new WaitForSeconds(2.5f);
                 yield return Shot(s.shot);
+            }
+            // 덕장 명태 가까이 (코를 엮어 장대에 건 명태 쌍)
+            Game.UI.EnterField(Fishing.Data.FishingAreas.Korea.Find(a => a.Id == "cheongjin"), 1);
+            Game.UI.Help.Close();
+            yield return new WaitForSeconds(1f);
+            Game.Clock.Set(5, 13 * 60);
+            Game.Weather.Force(Weather.Clear);
+            var pollock = GameObject.Find("PollockPair");
+            if (pollock != null)
+            {
+                var pp = pollock.transform.position;
+                // 장대 줄 사이(6m 간격) 가운데에 서서 앞줄을 본다
+                var at = new Vector3(pp.x + 1.5f, 0f, pp.z + 2.8f);
+                at.y = (Fishing.World.FieldMap.Current is Fishing.World.CoastMapDef cm ? cm.HeightAt(at.x, at.z) : 1f) + 0.1f;
+                Game.Player.Teleport(at, 200f);
+                Game.CameraRig.Yaw = 200f;
+                Game.CameraRig.Pitch = 2f;
+                Game.CameraRig.Distance = 2.4f;
+                yield return new WaitForSeconds(2f);
+                yield return Shot("49e_cheongjin_pollock_close");
             }
             // 새 어종 파이팅·결과 (등대섬 방파제에서 방어)
             Game.Clock.Set(5, 8 * 60);

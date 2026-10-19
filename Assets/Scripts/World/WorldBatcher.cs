@@ -10,7 +10,7 @@ namespace Fishing.World
     /// 묶지 않는 것 (묶인 메쉬는 월드 좌표로 굳어서 움직이면 안 된다):
     /// - 스크립트가 붙은 물체와 그 아래 전부 (NPC 낚시꾼·어군·수족관·잔물결·배 등 런타임에 움직이는 것)
     /// - Animator 아래 (캐릭터), 꺼져 있는 물체, 읽을 수 없는 메쉬
-    /// - Standard·Fishing/Ground(월드 좌표)가 아닌 셰이더 (물·하늘·물고기·파티클 셰이더는 오브젝트 좌표를 써서 배칭하면 깨진다)
+    /// - Standard·Fishing/Ground·Fishing/Karst·Fishing/Landmark(월드 좌표로 굳혀도 되는 셰이더)가 아닌 셰이더 (물·하늘·물고기·파티클 셰이더는 오브젝트 좌표를 써서 배칭하면 깨진다)
     /// 재질 색을 나중에 바꾸는 것(SeasonFx의 눈 덮인 둔치, 밤 가로등 전구)은 배칭과 상관없이 동작한다.
     /// </summary>
     public static class WorldBatcher
@@ -36,7 +36,7 @@ namespace Fishing.World
             var mf = mr.GetComponent<MeshFilter>();
             if (mf == null || mf.sharedMesh == null || !mf.sharedMesh.isReadable) return false;
             foreach (var m in mr.sharedMaterials)
-                if (m == null || m.shader == null || (m.shader.name != "Standard" && m.shader.name != "Fishing/Ground")) return false;
+                if (m == null || m.shader == null || (m.shader.name != "Standard" && m.shader.name != "Fishing/Ground" && m.shader.name != "Fishing/Karst" && m.shader.name != "Fishing/Landmark")) return false;
             // 자기와 조상(월드 루트는 빼고) 중 스크립트·Animator가 있으면 런타임에 움직일 수 있다
             for (var t = mr.transform; t != null && t != root; t = t.parent)
             {

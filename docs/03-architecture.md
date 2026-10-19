@@ -19,7 +19,7 @@ Assets/
     Core/                        진입점, 전역 상태, 시간·날씨·조명, 저장, 퀘스트, 대회, 설정
       GameBootstrap.cs           모든 시스템 생성·연결, 자동 저장, 체력 자연 감소·음식 분당 회복·포커싱 쿨타임, 레벨 보상·출석 체크
       Game.cs                    전역 참조(서비스 로케이터), GameMode(Lobby/Field), 채널, Toast 이벤트, Save()
-      GameClock.cs               게임 시계 (1초 = 2분, 하루 12분), 시간대
+      GameClock.cs               게임 시계 (1초 = 1분, 하루 24분), 시간대
       WeatherSystem.cs           날씨 전환, 비 파티클(겨울엔 눈), 바람(돛단배)·파도
       DayNightCycle.cs           해/달, 스카이박스, 주변광, 안개, 가로등, 하늘 반사 프로브, SkyDecor(구름 양) 제어
       PostFx.cs, PostFxConfig.cs 후처리 (Post Processing Stack v2: 블룸, Neutral 톤매핑, AO, SMAA, 시간대별 그레이딩)
@@ -61,6 +61,8 @@ Assets/
       CoastWorldOverseas.cs      CoastWorldBuilder의 해외 부분(partial): 지역 양식 집(키클라데스·이집트·베트남)·나무(야자수·열대·지중해), 강 맞은편 둑·사막 판, 석회암 봉우리·정크선·수상 마을·칼데라·풍차·펠루카·피라미드
       CoastProps.cs              바닷가 공용 소품 (등대·큰 등대·테트라포드·정자·가로등·낚시점·바위·한국 바닷가 집)
       WorldBuilder.cs            한강 월드 (다리, 데크, 낚시점, 나무, 도시, NPC)
+      HanRiverLandmarks.cs       한강에서 보이는 롯데월드타워·63빌딩·남산서울타워(로프트 메쉬 + 코드 텍스처), 먼 시가지, CU 편의점
+      DriedPollock.cs            덕장에 거는 명태 한 쌍 메쉬·텍스처 (청진포구)
       TerrainBuilder.cs          높이 함수 + 칠하기 함수 → Unity Terrain (SeaTerrain = 홍현, SeocheonTerrain = 서천)
       SeaTerrain.cs              홍현 지형 (해변 비탈, 다랭이논 계단, 갯바위 섬)
       SeasonFx.cs                계절이 보이는 것 (겨울 한강 얼음판·얼음 구멍, 눈 덮인 둔치)
@@ -69,7 +71,7 @@ Assets/
       WaterSurface.cs            격자 수면 메쉬 + Fishing/Water 머티리얼 (맵마다 색), 해저 높이 텍스처 굽기(SetSeabed → 물가 거품)
       WaterGlints.cs             밤 물 위에 길게 비치는 불빛 (가로등·다리·도시)
       WorldBatcher.cs            맵을 지은 뒤 움직이지 않는 Standard 소품을 정적 배칭으로 묶기 (아래 "정적 배칭")
-      SkyDecor.cs                달·별·구름 돔 (카메라를 따라다님)
+      SkyDecor.cs                달·별(번지는 사각형 2,200개, 은하수 띠, 반짝임)·구름 돔 (카메라를 따라다님)
       KenneyProps.cs             Kenney CC0 모델 배치 헬퍼
       ProceduralTextures.cs      물 노멀맵, 구름 노이즈, 달 텍스처
       FishSchoolManager.cs       어군 자리·이동, 큰/작은 어군, 히든·포식자 어군(SchoolKind), 소용돌이(색)·파문

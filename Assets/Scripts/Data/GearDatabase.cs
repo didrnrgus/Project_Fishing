@@ -210,7 +210,7 @@ namespace Fishing.Data
 
         /// <summary>
         /// 음식 (원작: 상점 F12에서 산다. 즉시 회복형과 분당 회복형(10분간 회복량 증가)이 있었다).
-        /// 분당 회복형은 게임 시간(1초 = 2분) 기준이라 솔로판은 1시간(현실 30초)으로 늘렸다.
+        /// 분당 회복형은 게임 시간(1초 = 1분) 기준이라 솔로판은 1시간(현실 1분)으로 늘렸다.
         /// "살살녹는어묵"은 원작 유저 영상 제목에 나온 이름.
         /// </summary>
         public static readonly List<FoodDef> Foods = new List<FoodDef>

@@ -38,6 +38,8 @@ namespace Fishing.World
         // 시작 위치 왼쪽 뒤편. 3인칭 카메라가 건물 안으로 들어가지 않도록 스폰 바로 뒤는 비워 둔다.
         public static readonly Vector3 ShopPos = new Vector3(-17f, LandY, -76f);
         public const float ShopRadius = 10f;
+        /// <summary>CU 편의점 (자전거도로 남쪽, 앞면이 강 쪽 +z). 가게 8m + 앞마당 파라솔 탁자.</summary>
+        public static readonly Vector3 StorePos = new Vector3(-52f, LandY, -100f);
 
         static readonly string[] ColNames = { "A", "B", "C", "D", "E", "F" };
 

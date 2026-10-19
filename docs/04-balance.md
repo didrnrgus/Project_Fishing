@@ -169,7 +169,7 @@ FIGHTSIM_REACTION=0.5 dotnet run -- table giantgrouper  # 봇 반응을 사람�
 | `FishFight.UpdateFish` | 기분 배율 Run/Burst/Rest | 물고기 힘 |
 | `BiteSelector.RarityWeight` | 희귀도 가중치 | 희귀어 출현율 |
 | `BiteSelector.RollLength` | 지수 2.2 / 어군 1.7 | 대물 출현율 |
-| `GameClock.GameMinutesPerSecond` | 2 | 하루 길이 (12분) |
+| `GameClock.GameMinutesPerSecond` | 1 | 하루 길이 (24분). 체력 자연 소모는 현실 30초에 1로 따로 고정 |
 | `PlayerProfile.ExpToNext` | `100 × lv^1.5` | 레벨업 속도 |
 | `RodUpgrade.Apply` | 단계당 힘 +3%, 감기 +2.5% | 강화 체감 |
 | `TournamentRules.SimulateAi` | 실력 1.0 = 45분에 한 마리, 길이 지수 1.9/실력 | 대회 난이도 |

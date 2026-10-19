@@ -1,5 +1,6 @@
 // 하늘 장식(달, 별, 구름) 공용 셰이더. 안개를 받지 않고 깊이를 쓰지 않는다.
-//  _Mode 0: 텍스처 × 색 × 버텍스 컬러 (달, 별)
+//  _Mode 0: 텍스처 × 색 × 버텍스 컬러 (달)
+//  _Mode 2: 별 — _Mode 0에 별마다 다른 박자의 반짝임(uv2.x = 위상)
 //  _Mode 1: 구름 — 텍스처 알파를 흘리고, 버텍스 컬러 알파(지평선 근처 페이드)를 곱한다. _Coverage가 0.6을 넘으면 층구름이 하늘을 덮는다
 Shader "Fishing/Sky"
 {
@@ -31,7 +32,7 @@ Shader "Fishing/Sky"
             float _Mode, _Coverage;
             float4 _Scroll;
 
-            struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; fixed4 color : COLOR; };
+            struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; float2 uv2 : TEXCOORD1; fixed4 color : COLOR; };
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; fixed4 color : COLOR; };
 
             v2f vert(appdata v)
@@ -40,12 +41,19 @@ Shader "Fishing/Sky"
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.uv = v.uv;
                 o.color = v.color;
+                if (_Mode > 1.5)
+                {
+                    // 별 반짝임: 위상마다 다른 속도로, 0.55~1 사이를 오간다
+                    float p = v.uv2.x;
+                    float tw = sin(_Time.y * (1.3 + p * 2.4) + p * 40.0) * sin(_Time.y * (0.7 + p) + p * 17.0);
+                    o.color.a *= 0.78 + 0.22 * tw;
+                }
                 return o;
             }
 
             fixed4 frag(v2f i) : SV_Target
             {
-                if (_Mode < 0.5)
+                if (_Mode < 0.5 || _Mode > 1.5)
                     return tex2D(_MainTex, i.uv) * _Color * i.color;
 
                 // 구름: 두 겹을 다른 속도로 흘려서 뭉게구름 느낌

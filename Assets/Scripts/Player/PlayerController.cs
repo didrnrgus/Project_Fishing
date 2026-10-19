@@ -52,6 +52,8 @@ namespace Fishing.PlayerSystems
         Transform _rodPivot;
         float _vy;
         float _currentRodPitch = 35f;
+        /// <summary>지금 실제로 보이는 낚싯대 각도 (RodPitch를 따라가는 중간값). 줄 처짐 계산에 쓴다.</summary>
+        public float CurrentRodPitch => _currentRodPitch;
         float _currentRodYaw;
         float _currentLean;
         Transform _spine;

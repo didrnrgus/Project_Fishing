@@ -46,8 +46,11 @@ namespace Fishing.Data
         public const float StartMinute = 9 * 60f;    // 대회 09:00 ~ 15:00
         public const float EndMinute = 15 * 60f;
         public const float Duration = EndMinute - StartMinute;
-        /// <summary>대회에 참가하면 시간이 천천히 흐른다 (게임 6시간 = 현실 6분).</summary>
-        public const float ClockSpeed = 0.5f;
+        /// <summary>
+        /// 대회에 참가하면 시간이 천천히 흐른다 (게임 6시간 = 현실 6분). 예전 시계(1초 = 2분)의 0.5배였는데,
+        /// 시계 자체를 1초 = 1분으로 늦췄으므로(2026-10-19) 대회 길이를 그대로 두려고 1배.
+        /// </summary>
+        public const float ClockSpeed = 1f;
         public const int ParticipationPoints = 3;
         public const int AiCount = 7;
 

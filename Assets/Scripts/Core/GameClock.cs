@@ -4,10 +4,10 @@ using UnityEngine;
 
 namespace Fishing.Core
 {
-    /// <summary>게임 내 시계. 현실 1초 = 게임 2분 (하루 12분).</summary>
+    /// <summary>게임 내 시계. 현실 1초 = 게임 1분 (하루 24분). 2026-10-19 낮밤이 너무 빨라 2분 → 1분으로 늦췄다.</summary>
     public class GameClock : MonoBehaviour
     {
-        public const float GameMinutesPerSecond = 2f;
+        public const float GameMinutesPerSecond = 1f;
         public const float MinutesPerDay = 24 * 60f;
 
         public int Day { get; private set; } = 1;

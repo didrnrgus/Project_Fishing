@@ -67,6 +67,8 @@ namespace Fishing.Angling
         public bool Autoplay;
         /// <summary>자동 촬영용: 좌클릭을 누르고 있는 것처럼 찌를 감는다.</summary>
         public bool DebugReeling;
+        /// <summary>자동 촬영용: 마우스 대신 낚싯대 각도를 정한다 (AimMin~AimMax).</summary>
+        public void DebugRodAim(float pitch) => _aimPitch = Mathf.Clamp(pitch, AimMin, AimMax);
         /// <summary>자동 조작이 카운터 찬스에서 카운터를 시도할 확률(프레임당).</summary>
         public float AutoplayCounterChance = 0.08f;
 
@@ -109,6 +111,9 @@ namespace Fishing.Angling
         int _hookCombo;
         bool _cheering;
         float _swayYaw;
+        // 마우스 위아래로 직접 세우고 눕히는 낚싯대 각도 (던지기 전·찌 기다리는 동안). 내리면 줄이 처진다
+        float _aimPitch = 35f;
+        const float AimMin = 6f, AimMax = 80f;
         Coroutine _hitStop;
         // 루어 낚시 (스푼 루어·에기·플라이): 감으면서 액션을 줘야 문다. 배 위에서는 트롤링
         bool _lureMode;
@@ -173,6 +178,19 @@ namespace Fishing.Angling
         bool PointerOverUI => EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
         bool UiBlocking => Game.UI != null && Game.UI.BlockingPanelOpen;
 
+        /// <summary>
+        /// 마우스를 위로 올리면 낚싯대를 세우고, 내리면 눕힌다 (오른쪽 드래그로 시점을 돌리는 중이나 창이 열렸을 땐 그대로).
+        /// 예전에는 던지기 전 35도, 찌를 기다릴 때 28도로 고정이라 갑갑했다. 약 300px이면 끝에서 끝까지.
+        /// </summary>
+        float AimRod()
+        {
+            if (!UiBlocking && !Input.GetMouseButton(1))
+                _aimPitch = Mathf.Clamp(_aimPitch + Input.GetAxis("Mouse Y") * Settings.FightSensitivity * 2.5f, AimMin, AimMax);
+            Game.Player.RodPitch = _aimPitch;
+            Game.Player.RodPitchSpeed = 14f;
+            return _aimPitch;
+        }
+
         void Update()
         {
             if (Game.Mode == GameMode.Lobby) return;
@@ -195,7 +213,7 @@ namespace Fishing.Angling
         void UpdateIdle()
         {
             Game.Player.MovementLocked = false;
-            Game.Player.RodPitch = 35f;
+            AimRod();
             if (UiBlocking || PointerOverUI) return;
             if (!Input.GetMouseButtonDown(0)) return;
 
@@ -434,7 +452,8 @@ namespace Fishing.Angling
             FlyingDistance = Mathf.Max(FlyingDistance, flat.magnitude);
             if (!_bobber.Landed) return;
             FlyingDistance = CastDistance;
-            // 착수: 낚싯대를 거두며 숨 고르기. 카메라는 잠시 찌를 본 뒤 원래 자리로
+            // 착수: 낚싯대를 거두며 숨 고르기. 카메라는 잠시 찌를 본 뒤 원래 자리로 (그다음은 마우스로 세우고 눕힌다)
+            _aimPitch = 28f;
             Game.Player.RodPitch = 28f;
             Game.Player.RodPitchSpeed = 6f;
             Game.Player.BodyLean = 0f;
@@ -600,7 +619,7 @@ namespace Fishing.Angling
         {
             if (WantsRetrieve) { Retrieve("찌를 회수했습니다."); return; }
             if (_lureMode || Trolling) { UpdateLureWait(); return; }
-            if (Time.time >= _castShotUntil) SwayRod(false);
+            if (Time.time >= _castShotUntil) { SwayRod(false); AimRod(); }
             // 얼음 구멍에서는 감을 줄이 없다 (누르고 흔들면 챔질만)
             if (!_iceFishing && UpdateReel()) { if (State == FishingState.Waiting && DetectShake()) FalseHook(); return; }
 
@@ -699,7 +718,11 @@ namespace Fishing.Angling
                         Game.Sound.ReelClick(0.7f);
                     }
                 }
-                else rate = kind == BaitKind.Fly ? 0.55f : 0.12f;
+                else
+                {
+                    rate = kind == BaitKind.Fly ? 0.55f : 0.12f;
+                    if (Time.time >= _castShotUntil) AimRod();
+                }
             }
             if (kind == BaitKind.Fly && Game.Profile.Data.rodId == "rod_fly") rate *= 1.3f;
             _waitTimer -= Time.deltaTime * rate;
@@ -726,7 +749,7 @@ namespace Fishing.Angling
             if (Random.value < 0.5f) Game.Profile.ConsumeItem(Game.Profile.Bait.Id);
             ShowGrade(HookGrade.Bad);
             Game.Toast(_nibbleActive ? "헛챔질! 예신에 속았다..." : "헛챔질! 고기가 놀라 달아났다.", ToastKind.Warn);
-            Game.Player.RodPitch = 60f;
+            Game.Player.RodPitch = _aimPitch = 60f;
             BeginWait(1.3f);
         }
 
@@ -742,7 +765,6 @@ namespace Fishing.Angling
             {
                 if (!_reeling) return false;
                 _reeling = false;
-                Game.Player.RodPitch = 28f;
                 FieldMap.TryCell(_bobber.Position, out int col, out int row);
                 col = Mathf.Clamp(col, 0, FieldMap.Cols - 1);
                 row = Mathf.Clamp(row, 0, FieldMap.Rows - 1);
@@ -765,8 +787,6 @@ namespace Fishing.Angling
             }
             _bobber.DragTo(next);
             _nibbleActive = false;
-            Game.Player.RodPitch = 48f;
-            Game.Player.RodPitchSpeed = 8f;
             if (Time.time >= _reelFxAt)
             {
                 _reelFxAt = Time.time + 0.14f;
@@ -1337,12 +1357,19 @@ namespace Fishing.Angling
 
             var a = Game.Player.RodTip.position;
             var b = _bobber.Position + Vector3.up * 0.3f;
-            float sag = State == FishingState.Bite ? 0.1f : Vector3.Distance(a, b) * 0.06f;
+            // 낚싯대를 세울수록 줄이 팽팽하고, 눕힐수록 처져 물 위에 늘어진다. 감는 중이면 팽팽
+            float tension = Mathf.InverseLerp(AimMin + 4f, AimMax - 6f, Game.Player.CurrentRodPitch);
+            if (_reeling || _lureReeling) tension = Mathf.Max(tension, 0.85f);
+            float sag = State == FishingState.Bite ? 0.1f
+                      : State == FishingState.Casting ? Vector3.Distance(a, b) * 0.06f
+                      : Vector3.Distance(a, b) * Mathf.Lerp(0.2f, 0.012f, Mathf.Pow(tension, 0.8f));
             var mid = (a + b) * 0.5f + Vector3.down * sag;
+            float floor = FieldMap.WaterY + 0.02f;
             for (int i = 0; i < _line.positionCount; i++)
             {
                 float t = i / (float)(_line.positionCount - 1);
                 var p = (1 - t) * (1 - t) * a + 2 * (1 - t) * t * mid + t * t * b;
+                if (State != FishingState.Casting) p.y = Mathf.Max(p.y, floor); // 처진 줄은 물에 닿으면 수면에 눕는다
                 _line.SetPosition(i, p);
             }
         }

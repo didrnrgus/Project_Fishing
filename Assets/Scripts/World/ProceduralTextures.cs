@@ -5,11 +5,13 @@ namespace Fishing.World
     /// <summary>물결 노멀맵, 구름 노이즈, 달 텍스처를 코드로 만든다. 모두 이음매 없이 반복된다.</summary>
     public static class ProceduralTextures
     {
-        static Texture2D _waterNormal, _cloudNoise, _moon, _schoolSwirl;
+        static Texture2D _waterNormal, _cloudNoise, _moon, _schoolSwirl, _star;
 
         public static Texture2D WaterNormal => _waterNormal ??= MakeWaterNormal(256);
         public static Texture2D CloudNoise => _cloudNoise ??= MakeCloudNoise(256);
         public static Texture2D Moon => _moon ??= MakeMoon(128);
+        /// <summary>별 하나: 또렷한 점 + 둘레로 번지는 빛. 흰색에 알파만 있다.</summary>
+        public static Texture2D Star => _star ??= MakeStar(32);
         /// <summary>어군 자리의 하얀 소용돌이(물고기 떼가 휘저은 거품). 흰색에 알파만 있다.</summary>
         public static Texture2D SchoolSwirl => _schoolSwirl ??= MakeSchoolSwirl(256);
 
@@ -110,6 +112,24 @@ namespace Fishing.World
                 px[y * size + x] = c;
             }
             tex.SetPixels32(px);
+            tex.Apply(true);
+            return tex;
+        }
+
+        static Texture2D MakeStar(int size)
+        {
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp };
+            var px = new Color[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float u = (x + 0.5f) / size * 2f - 1f, v = (y + 0.5f) / size * 2f - 1f;
+                float r2 = u * u + v * v;
+                float core = Mathf.Exp(-r2 * 14f);
+                float halo = Mathf.Exp(-r2 * 4f) * 0.4f * Mathf.Clamp01(1f - r2);
+                px[y * size + x] = new Color(1f, 1f, 1f, Mathf.Clamp01(core + halo));
+            }
+            tex.SetPixels(px);
             tex.Apply(true);
             return tex;
         }

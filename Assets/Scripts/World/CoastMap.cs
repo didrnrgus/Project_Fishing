@@ -920,11 +920,13 @@ namespace Fishing.World
                 go.transform.SetParent(t, false);
                 go.AddComponent<MeshFilter>().sharedMesh = StackMesh(st.Radius, st.Height + 2f, _rng.Next(1000), (S.Features & CoastFeature.Karst) != 0);
                 // 재질 3개: 옆 절벽 / 파도에 젖은 아랫단(짙고 번들) / 위를 보는 턱·꼭대기(풀·이끼)
-                var cliff = S.DarkRock ? Mats.Textured("rock", new Color(0.36f, 0.34f, 0.33f), 1f, 0.3f) : Mats.Textured("rock", new Color(0.78f, 0.74f, 0.68f), 1f, 0.25f);
+                bool karst = (S.Features & CoastFeature.Karst) != 0;
+                var cliff = karst ? Mats.Karst(new Color(0.95f, 0.94f, 0.9f))
+                    : S.DarkRock ? Mats.Textured("rock", new Color(0.36f, 0.34f, 0.33f), 1f, 0.3f) : Mats.Textured("rock", new Color(0.78f, 0.74f, 0.68f), 1f, 0.25f);
                 go.AddComponent<MeshRenderer>().sharedMaterials = new[]
                 {
-                    cliff, Mats.Textured("rock", new Color(0.22f, 0.21f, 0.2f), 1f, 0.75f),
-                    st.Pines ? Mats.Textured("grass", new Color(0.55f, 0.62f, 0.45f), 1f, 0.1f) : cliff,
+                    cliff, karst ? Mats.Karst(new Color(0.42f, 0.41f, 0.38f), 0.1f) : Mats.Textured("rock", new Color(0.22f, 0.21f, 0.2f), 1f, 0.75f),
+                    st.Pines ? (karst ? Mats.Karst(new Color(0.95f, 0.94f, 0.9f), 1f) : Mats.Textured("grass", new Color(0.55f, 0.62f, 0.45f), 1f, 0.1f)) : cliff,
                 };
                 if (st.Pines && KenneyProps.Available)
                     for (int k = 0; k < 3; k++)
@@ -1503,30 +1505,53 @@ namespace Fishing.World
             }
         }
 
-        /// <summary>명태 덕장: 통나무 틀에 명태를 줄줄이 매달아 바닷바람에 말린다.</summary>
+        /// <summary>
+        /// 명태 덕장: 통나무 틀(덕목)에 장대 두 단을 걸고, 코를 새끼줄로 엮은 명태 두 마리씩(<see cref="DriedPollock"/>)
+        /// 장대에 걸쳐 바닷바람에 말린다. 마른 정도가 다른 세 빛깔이 섞이고, 군데군데 빈자리, 눈 오는 맵이면 장대 위에 눈.
+        /// 기둥 끝은 X자 버팀목, 맨 위는 긴 들보.
+        /// </summary>
         void DryingRacks()
         {
             var log = Mats.Lit(new Color(0.42f, 0.33f, 0.24f), 0.2f);
-            var fish = Mats.Lit(new Color(0.72f, 0.58f, 0.36f), 0.45f);
-            var head = Mats.Lit(new Color(0.42f, 0.34f, 0.24f), 0.4f);
+            var oldLog = Mats.Lit(new Color(0.33f, 0.28f, 0.23f), 0.15f);
+            var snow = Mats.Lit(new Color(0.93f, 0.95f, 0.98f), 0.35f);
+            var pair = DriedPollock.Pair;
             for (int r = 0; r < 3; r++)
             {
                 float x0 = DryingRackX - 16f, z = DryingRackZ - 6f + r * 6f;
                 float y = Mathf.Max(_map.LandY, H(DryingRackX, z));
                 for (int p = 0; p <= 4; p++)
-                    Mats.Prim(PrimitiveType.Cylinder, "RackPost", _root, new Vector3(x0 + p * 8f, y + 1.6f, z), new Vector3(0.22f, 1.6f, 0.22f), log, false);
-                foreach (float hy in new[] { 2.2f, 3f })
                 {
-                    Mats.Prim(PrimitiveType.Cylinder, "RackBar", _root, new Vector3(x0 + 16f, y + hy, z), new Vector3(0.12f, 16f, 0.12f), log, false, Quaternion.Euler(0f, 0f, 90f));
-                    for (float x = x0 + 0.6f; x < x0 + 32f; x += 0.62f)
-                        foreach (float side in new[] { -0.13f, 0.13f })
-                        {
-                            // 두 마리씩 줄에 엮어 걸쳐 둔다 (머리가 아래)
-                            var c = new Vector3(x, y + hy - 0.62f, z + side);
-                            var rot = Quaternion.Euler(R(-6f, 6f) + side * 40f, R(-12f, 12f), R(-4f, 4f));
-                            Mats.Prim(PrimitiveType.Capsule, "Pollock", _root, c, new Vector3(0.2f, 0.5f, 0.11f), fish, false, rot);
-                            Mats.Prim(PrimitiveType.Sphere, "PollockHead", _root, c + rot * new Vector3(0f, -0.5f, 0f), new Vector3(0.17f, 0.22f, 0.1f), head, false, rot);
-                        }
+                    float px = x0 + p * 8f;
+                    Mats.Prim(PrimitiveType.Cylinder, "RackPost", _root, new Vector3(px, y + 1.75f, z), new Vector3(0.24f, 1.75f, 0.24f), log, false,
+                        Quaternion.Euler(R(-2f, 2f), 0f, R(-2f, 2f)));
+                    // 끝 기둥은 앞뒤로 비스듬한 버팀목
+                    if (p == 0 || p == 4)
+                        foreach (float dz in new[] { -1f, 1f })
+                            Mats.Prim(PrimitiveType.Cylinder, "RackBrace", _root, new Vector3(px, y + 1.2f, z + dz * 0.75f), new Vector3(0.12f, 1.35f, 0.12f), oldLog, false,
+                                Quaternion.Euler(dz * 34f, 0f, 0f));
+                }
+                // 맨 위 들보
+                Mats.Prim(PrimitiveType.Cylinder, "RackBeam", _root, new Vector3(x0 + 16f, y + 3.45f, z), new Vector3(0.16f, 16.2f, 0.16f), oldLog, false, Quaternion.Euler(0f, 0f, 90f));
+                if (S.Snow)
+                    Mats.Prim(PrimitiveType.Cube, "RackSnow", _root, new Vector3(x0 + 16f, y + 3.55f, z), new Vector3(32.2f, 0.06f, 0.2f), snow, false);
+                foreach (float hy in new[] { 2.25f, 3.05f })
+                {
+                    Mats.Prim(PrimitiveType.Cylinder, "RackBar", _root, new Vector3(x0 + 16f, y + hy, z), new Vector3(0.11f, 16f, 0.11f), log, false, Quaternion.Euler(0f, 0f, 90f));
+                    for (float x = x0 + 0.4f; x < x0 + 31.8f; x += R(0.26f, 0.34f))
+                    {
+                        if (_rng.NextDouble() < 0.07) continue; // 걷어 간 빈자리
+                        // 장대 위 줄이 걸치는 점에서 늘어진다. 바람에 조금씩 돌고 기울었다
+                        var go = new GameObject("PollockPair");
+                        go.transform.SetParent(_root, false);
+                        go.transform.localPosition = new Vector3(x, y + hy + 0.055f, z);
+                        go.transform.localRotation = Quaternion.Euler(R(-5f, 5f), R(-14f, 14f), R(-4f, 4f));
+                        go.transform.localScale = Vector3.one * R(0.88f, 1.12f);
+                        go.AddComponent<MeshFilter>().sharedMesh = pair;
+                        var mr = go.AddComponent<MeshRenderer>();
+                        double v = _rng.NextDouble();
+                        mr.sharedMaterial = DriedPollock.Material(v < 0.25 ? 0 : v < 0.7 ? 1 : 2);
+                    }
                 }
             }
             WorldBuilder.AddSignBothSides(_root, "명태 덕장", new Vector3(DryingRackX, _map.LandY + 5.5f, DryingRackZ + 9f), new Color(1f, 0.85f, 0.6f));

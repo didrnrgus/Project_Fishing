@@ -235,6 +235,8 @@ namespace Fishing.Core
             Fishing.World.KenneyProps.SetNightGlow(1f - day);
             bool wantLamps = day < 0.45f || _weatherDim < 0.45f;
             Fishing.World.WaterGlints.SetNight(Mathf.Clamp01((0.55f - day) / 0.35f));
+            // 랜드마크(Fishing/Landmark) 창문 불빛: 해 질 녘부터 켜진다
+            Shader.SetGlobalFloat("_FishingNight", Mathf.Clamp01((0.62f - day) / 0.35f));
             if (wantLamps != _lampsOn) SetLamps(wantLamps);
         }
 

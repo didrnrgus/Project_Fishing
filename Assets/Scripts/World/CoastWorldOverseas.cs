@@ -312,9 +312,9 @@ namespace Fishing.World
         void KarstHorizon()
         {
             // 회백색 석회암 절벽 + 젖은 아랫단 + 턱·꼭대기를 덮은 짙은 숲 (먼 것은 안개에 묻히게 엷게)
-            var limestone = Mats.Textured("rock", new Color(0.72f, 0.72f, 0.66f), 1f, 0.15f);
-            var wet = Mats.Textured("rock", new Color(0.3f, 0.32f, 0.3f), 1f, 0.6f);
-            var jungle = Mats.Textured("grass", new Color(0.32f, 0.45f, 0.3f), 2f, 0.05f);
+            var limestone = Mats.Karst(new Color(0.92f, 0.92f, 0.88f));
+            var wet = Mats.Karst(new Color(0.42f, 0.42f, 0.4f), 0.1f);
+            var jungle = Mats.Karst(new Color(0.92f, 0.92f, 0.88f), 1f);
             var near = new[] { limestone, wet, jungle };
             var far = new[] { Mats.Lit(new Color(0.5f, 0.56f, 0.55f), 0.02f), Mats.Lit(new Color(0.42f, 0.48f, 0.48f), 0.02f), Mats.Lit(new Color(0.4f, 0.5f, 0.46f), 0.02f) };
             for (int i = 0; i < 46; i++)

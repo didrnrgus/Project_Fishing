@@ -69,6 +69,33 @@ namespace Fishing.Core
             return m;
         }
 
+        /// <summary>
+        /// 석회암 봉우리(하롱베이) 절벽: Fishing/Karst에 실사 석회암 두 장(Resources/Terrain/karst·karst2)을 섞는다.
+        /// 메쉬 UV는 1 = 4m(StackMesh). 덤불 양 moss 0~1. 셰이더·텍스처가 없으면 예전 rock 텍스처.
+        /// </summary>
+        public static Material Karst(Color tint, float moss = 0.6f)
+        {
+            string key = $"karst{tint}{moss}";
+            if (Cache.TryGetValue(key, out var m)) return m;
+            var shader = Shader.Find("Fishing/Karst");
+            var diff = Resources.Load<Texture2D>("Terrain/karst_diff");
+            var layer = Resources.Load<Texture2D>("Terrain/karst2_diff");
+            if (shader == null || diff == null || layer == null) return Textured("rock", tint, 1f, 0.2f);
+            m = new Material(shader) { color = tint, mainTexture = diff };
+            m.SetTexture("_LayerTex", layer);
+            var nor = Resources.Load<Texture2D>("Terrain/karst_nor");
+            var lnor = Resources.Load<Texture2D>("Terrain/karst2_nor");
+            if (nor != null && lnor != null)
+            {
+                m.SetTexture("_BumpMap", nor);
+                m.SetTexture("_LayerBump", lnor);
+                m.EnableKeyword("_NORMALMAP");
+            }
+            m.SetFloat("_Moss", moss);
+            Cache[key] = m;
+            return m;
+        }
+
         public static Material Lit(Color color, float smoothness = 0.15f, float metallic = 0f)
         {
             string key = $"lit{color}{smoothness}{metallic}";

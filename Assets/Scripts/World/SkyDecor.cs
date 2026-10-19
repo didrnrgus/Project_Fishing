@@ -23,11 +23,11 @@ namespace Fishing.World
             _moonMat.SetFloat("_Mode", 0f);
             _moon = Quad("Moon", _moonMat, 70f);
 
-            _starMat = new Material(shader);
-            _starMat.SetFloat("_Mode", 0f);
+            _starMat = new Material(shader) { mainTexture = ProceduralTextures.Star };
+            _starMat.SetFloat("_Mode", 2f);
             _stars = new GameObject("Stars").transform;
             _stars.SetParent(transform, false);
-            _stars.gameObject.AddComponent<MeshFilter>().sharedMesh = StarMesh(1400);
+            _stars.gameObject.AddComponent<MeshFilter>().sharedMesh = StarMesh(2200);
             var sr = _stars.gameObject.AddComponent<MeshRenderer>();
             sr.sharedMaterial = _starMat;
             sr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -98,27 +98,61 @@ namespace Fishing.World
             return mesh;
         }
 
+        /// <summary>
+        /// 별마다 하늘 중심(카메라)을 바라보는 작은 사각형. 예전에는 점(Points)이라 1픽셀로만 찍혀 거의 안 보였다.
+        /// 반지름 900m에서 1픽셀 ≈ 1.2m라 크기 3.2~10m(번짐 포함, 대부분 작고 몇 개만 크다). 색은 푸른 별·흰 별·노란 별을 섞고,
+        /// uv2.x에 반짝임 위상을 넣어 셰이더(_Mode 2)가 별마다 다른 박자로 깜빡이게 한다. 은하수 띠 쪽에 더 촘촘하다.
+        /// </summary>
         static Mesh StarMesh(int count)
         {
             var rng = new System.Random(4242);
-            var verts = new Vector3[count];
-            var colors = new Color[count];
-            var idx = new int[count];
+            var verts = new Vector3[count * 4];
+            var colors = new Color[count * 4];
+            var uvs = new Vector2[count * 4];
+            var uv2 = new Vector2[count * 4];
+            var tris = new int[count * 6];
+            // 은하수: 하늘을 비스듬히 가로지르는 큰 원 둘레
+            var bandNormal = new Vector3(0.35f, 0.55f, 0.76f).normalized;
             for (int i = 0; i < count; i++)
             {
-                // 위쪽 반구에만
+                // 위쪽 반구에만, 절반쯤은 은하수 띠 근처에 몰리게
                 Vector3 d;
+                bool band = i % 2 == 0;
                 do d = new Vector3((float)rng.NextDouble() * 2 - 1, (float)rng.NextDouble(), (float)rng.NextDouble() * 2 - 1);
-                while (d.sqrMagnitude > 1f || d.y < 0.05f);
-                verts[i] = d.normalized * SkyRadius;
-                float b = 0.4f + (float)rng.NextDouble() * 0.6f;
-                colors[i] = new Color(b, b, Mathf.Min(1f, b * 1.1f), 1f);
-                idx[i] = i;
+                while (d.sqrMagnitude > 1f || d.sqrMagnitude < 0.01f || d.normalized.y < 0.04f
+                       || (band && Mathf.Abs(Vector3.Dot(d.normalized, bandNormal)) > 0.16f));
+                d.Normalize();
+                var c = d * SkyRadius;
+                var right = Vector3.Cross(Vector3.up, d);
+                right = right.sqrMagnitude < 1e-4f ? Vector3.right : right.normalized;
+                var up = Vector3.Cross(d, right);
+
+                float t = (float)rng.NextDouble();
+                float size = Mathf.Lerp(3.2f, 10f, t * t * t);    // 큰 별은 드물다
+                float b = Mathf.Lerp(0.45f, 1f, Mathf.Sqrt(t)) * (band ? 0.85f : 1f);
+                float hue = (float)rng.NextDouble();
+                var tint = hue < 0.22f ? new Color(0.75f, 0.85f, 1f) : hue > 0.86f ? new Color(1f, 0.88f, 0.68f) : Color.white;
+                var col = new Color(tint.r, tint.g, tint.b, b);
+                float phase = (float)rng.NextDouble();
+
+                int v = i * 4;
+                verts[v + 0] = c + (-right - up) * size * 0.5f;
+                verts[v + 1] = c + (right - up) * size * 0.5f;
+                verts[v + 2] = c + (right + up) * size * 0.5f;
+                verts[v + 3] = c + (-right + up) * size * 0.5f;
+                uvs[v + 0] = new Vector2(0, 0); uvs[v + 1] = new Vector2(1, 0);
+                uvs[v + 2] = new Vector2(1, 1); uvs[v + 3] = new Vector2(0, 1);
+                for (int k = 0; k < 4; k++) { colors[v + k] = col; uv2[v + k] = new Vector2(phase, 0f); }
+                int ti = i * 6;
+                tris[ti + 0] = v; tris[ti + 1] = v + 2; tris[ti + 2] = v + 1;
+                tris[ti + 3] = v; tris[ti + 4] = v + 3; tris[ti + 5] = v + 2;
             }
             var mesh = new Mesh { name = "Stars" };
             mesh.vertices = verts;
             mesh.colors = colors;
-            mesh.SetIndices(idx, MeshTopology.Points, 0);
+            mesh.uv = uvs;
+            mesh.uv2 = uv2;
+            mesh.triangles = tris;
             mesh.bounds = new Bounds(Vector3.zero, Vector3.one * SkyRadius * 2.2f);
             return mesh;
         }
@@ -140,9 +174,9 @@ namespace Fishing.World
             _moonMat.color = new Color(1f, 0.98f, 0.9f, Mathf.Clamp01(night * 1.2f) * Mathf.Clamp01(toMoon.y * 6f + 0.3f));
             _moon.gameObject.SetActive(toMoon.y > -0.05f);
 
-            _starMat.color = new Color(1f, 1f, 1f, Mathf.Clamp01(night * night * 1.1f) * (1f - coverage * 0.8f));
+            _starMat.color = new Color(2.2f, 2.2f, 2.2f, Mathf.Clamp01(night * night * 1.3f) * (1f - Mathf.Max(0f, coverage - 0.4f) * 1.6f));
             _stars.gameObject.SetActive(night > 0.05f);
-            _stars.rotation = Quaternion.Euler(0f, Time.time * 0.15f, 0f);
+            _stars.rotation = Quaternion.Euler(0f, Time.time * 0.05f, 0f); // 별자리가 아주 천천히 돈다
 
             _clouds.position = camPos;
             _cloudMat.color = cloudColor;

@@ -41,6 +41,7 @@ namespace Fishing.World
             BuildLamps();
             BuildCity();
             BuildProps();
+            HanRiverLandmarks.ConvenienceStore(_root, HanRiverMap.StorePos, 0f);
             BuildBankAnglers();
             return _root;
         }
@@ -335,6 +336,7 @@ namespace Fishing.World
                 float x = R(-155f, 155f);
                 float z = i % 3 == 0 ? R(-104f, -90f) : R(-80f, -70f);
                 if (Mathf.Abs(x - HanRiverMap.ShopPos.x) < 7f && z > -82f) continue;
+                if (Mathf.Abs(x - HanRiverMap.StorePos.x) < 10f && z < -86f) continue; // CU 편의점과 앞마당
                 if (Vector2.Distance(new Vector2(x, z), new Vector2(HanRiverMap.IdolStage.x, HanRiverMap.IdolStage.z)) < 5f) continue; // 버스킹 무대
                 PlaceTree(trees, new Vector3(x, HanRiverMap.LandY, z), trunk, leaves[i % leaves.Length]);
             }
@@ -636,15 +638,7 @@ namespace Fishing.World
             }
         }
 
-        void BuildNamsan(Transform city)
-        {
-            // 멀리 보이는 남산과 타워
-            var hill = Mats.Lit(new Color(0.22f, 0.36f, 0.22f));
-            Mats.Prim(PrimitiveType.Sphere, "Namsan", city, new Vector3(60f, -40f, 260f), new Vector3(260f, 150f, 160f), hill, false);
-            var tower = Mats.Lit(new Color(0.9f, 0.9f, 0.92f));
-            Mats.Prim(PrimitiveType.Cylinder, "Tower", city, new Vector3(60f, 55f, 250f), new Vector3(3f, 25f, 3f), tower, false);
-            Mats.Prim(PrimitiveType.Sphere, "TowerTop", city, new Vector3(60f, 78f, 250f), new Vector3(9f, 5f, 9f), tower, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Antenna", city, new Vector3(60f, 90f, 250f), new Vector3(0.6f, 10f, 0.6f), Mats.Emissive(new Color(1f, 0.3f, 0.3f), 1f), false);
-        }
+        /// <summary>남산서울타워·롯데월드타워·63빌딩과 먼 시가지 (<see cref="HanRiverLandmarks"/>). 예전에는 구 하나 + 원기둥 두 개였다.</summary>
+        void BuildNamsan(Transform city) => HanRiverLandmarks.Build(city);
     }
 }
