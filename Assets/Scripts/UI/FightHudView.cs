@@ -478,7 +478,7 @@ namespace Fishing.UI
             _nameText.text = fishing.BigBite ? "<color=#ff7090>♥ 두근두근 ♥</color>" : "";
 
             float shownDistance = f.Landing ? f.LandingDistance : f.Distance;
-            float rulerT = Mathf.Clamp01(shownDistance / f.Reel.Capacity);
+            float rulerT = Mathf.Clamp01(shownDistance / f.LineCapacity);
             _distMarker.anchoredPosition = new Vector2(rulerT * RulerWidth, -1);
             _distLabel.text = $"{shownDistance:0}m";
 
@@ -541,7 +541,7 @@ namespace Fishing.UI
             }
             _runMouse.gameObject.SetActive(running && tips);
 
-            bool far = !f.Landing && f.Distance > f.Reel.Capacity * 0.7f;
+            bool far = !f.Landing && f.Distance > f.LineCapacity * 0.7f;
             _bigDistance.text = far ? $"{f.Distance:0.00}m" : "";
 
             // 안내문 (원작 문구)

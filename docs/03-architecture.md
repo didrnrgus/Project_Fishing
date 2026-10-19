@@ -27,8 +27,10 @@ Assets/
       Tide.cs                    물때 (서해처럼 TideAmplitude가 있는 맵에서 수면 높이가 오르내림), 물이 들면 갯벌·모래톱에서 해안으로 구조
       TournamentSystem.cs        조합 낚시 대회 진행 (참가·집계·AI 낚시꾼·시상)
       PlayerProfile.cs           레벨/경험치/골드/체력(2단계 지침)/음식/포커싱/레벨 보상/목장갑/일지/아이템/장비/의상/도감 규칙 + SaveSystem
-      SaveData.cs                JsonUtility 직렬화용 데이터 (수족관·대회·일일 의뢰 포함)
+      SaveData.cs                JsonUtility 직렬화용 데이터 (수족관·대회·일일 의뢰·릴 내구도·잃은 줄·RewardSave 포함)
       QuestSystem.cs             이야기 퀘스트, 대물 도전, 일일 의뢰, 업적 판정, 소라고동, 대물 코인, 일지 기록
+      CatchRewards.cs            원작 RESULT 말풍선 토스트·BONUS·등급(초급/중급/고급)·오늘의 이벤트 어종(EXP +200%)·재도전(복수혈전 X2/X3/X5)·조준 업적 3줄 (RewardSave)
+      AnglerChatter.cs           같은 채널 다른 낚시꾼의 조과·잡담 시스템 줄 (솔로판 분위기용, 규칙 영향 없음)
       Bingo.cs                   빙고 5×5 (칸 만들기·채우기·줄 보상, BingoSave)
       Attendance.cs              출석 체크 (실제 날짜, 7일째 블랙스피어)
       Settings.cs                옵션(소리·감도·화면·진동)과 키 설정 (PlayerPrefs)
@@ -87,7 +89,7 @@ Assets/
       Effects.cs                 물보라(공유 파티클), 파문
     Player/
       PlayerController.cs        3인칭 캐릭터 이동, 발소리, 낚싯대 기울기, 배 탑승(Mount)
-      BoatController.cs          배: 띄우기·운전·연료·흔들림(안정성 × 파도)·돛(바람)·먼바다 제한·뱃머리 낚시·트롤링
+      BoatController.cs          배: 소환 연출(바다 쪽에서 달려와 돌아 선다)·엔진 START/STOP(Y)·운전·연료·흔들림(안정성 × 파도)·돛(바람)·먼바다 제한·뱃머리 낚시·트롤링
       CameraRig.cs               3인칭 ↔ 파이팅 1인칭 ↔ 고정(대기실), 연출 구도(Cast/Bite/Cheer), 흔들림·펀치
     Fishing/
       FishingController.cs       낚시 상태 머신 + 루어 감기·저킹, 플라이, 트롤링, 얼음 구멍 낚시
@@ -103,7 +105,7 @@ Assets/
       UIFactory.cs, UIStyle.cs   코드 UGUI 헬퍼(버튼 클릭음 포함), 다크 유리 스타일
       UIChart.cs                 EasyChart를 코드로: Line/Bars/Donut/Radar
       ItemIcons.cs               아이템 아이콘 (Resources/Icons/Items, Blender 렌더)
-      HudView.cs, FightHudView.cs, LobbyView.cs    필드 HUD(대회 순위 포함) / 파이팅 HUD / 대기실 HUD
+      HudView.cs, FightHudView.cs, LobbyView.cs    필드 HUD(대회 순위·WARNING 카드·재도전 말풍선/배지·조준 업적 3줄·엔진 버튼 포함) / 파이팅 HUD / 대기실 HUD
       IntroSequence.cs           인트로: 사업자 로고 「제쓰로네 게임공방」 → 타이틀 「짭풍명월」(겹 그림 시차·물안개·배·꽃잎) → 아무 키 → 대기실 (아래 "인트로")
       ResultPanel.cs, ResultFishStage.cs           결과 창, 3D 물고기(전용 카메라 → 투명 렌더 텍스처). 자세: 물고기는 옆모습으로 튀어 오름,
                                                    장어처럼 긴 고기(몸길이/몸높이 > 7)는 60° 굴려 S자 꿈틀이 보이게, 잡동사니는 비스듬히 내려다보며 천천히 돈다

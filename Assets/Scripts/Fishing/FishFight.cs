@@ -64,6 +64,10 @@ namespace Fishing.Angling
         public float Pull { get; private set; }
         /// <summary>카운터 데미지 배율 (의상).</summary>
         public float CounterBonus = 1f;
+        /// <summary>감겨 있는 줄 길이 m (릴 권사량 − 끊겨 잃은 줄). 물고기가 이보다 멀리 가면 다 풀린다.</summary>
+        public float LineCapacity;
+        /// <summary>이번 파이팅에서 성공한 카운터 수 (원작 토스트 "연속 공격! 가장 많은 카운터를 친 파이팅").</summary>
+        public int CounterCount { get; private set; }
 
         /// <summary>
         /// 포커싱 (원작 파이팅 스킬): 켜져 있는 동안 장력이 천천히 변하고(물고기가 당겨도 덜 튄다) 데미지가 커진다.
@@ -132,6 +136,7 @@ namespace Fishing.Angling
             Rod = rod;
             Reel = reel;
             Line = line;
+            LineCapacity = reel.Capacity;
 
             MaxHP = species.Stamina * Mathf.Pow(length / 10f, 1.5f) * 12.5f;
             HP = MaxHP;
@@ -215,7 +220,7 @@ namespace Fishing.Angling
             // 1.0을 넘어도 0.7초까지는 버틴다 (풀기로 대응할 시간)
             if (_overTimer > 0.7f || Tension > 1.35f) Outcome = FightOutcome.LineBroken;
             else if (Hook <= 0f) Outcome = FightOutcome.HookOut;
-            else if (Distance > Reel.Capacity) Outcome = FightOutcome.LineRunOut;
+            else if (Distance > LineCapacity) Outcome = FightOutcome.LineRunOut;
         }
 
         /// <summary>랜딩 찬스에 들어간다. 이후 LandingTap() 연타로 거리를 0m까지 줄인다.</summary>
@@ -339,6 +344,7 @@ namespace Fishing.Angling
             LastCounterDamage = Mathf.Min(HP, damage);
             HP = Mathf.Max(0f, HP - damage);
             Combo = Mathf.Min(5, Combo + 1);
+            CounterCount++;
             _dir = want;
             FishX *= 0.7f;
             Tension *= 0.6f;

@@ -80,6 +80,8 @@ namespace Fishing.UI
             BuildHookGauge();
             BuildCenter();
             BuildBoatGauges();
+            BuildRetry();
+            BuildAimLines();
             _toastRoot = UIFactory.Node("Toasts", _root).At(new Vector2(0.5f, 1), new Vector2(0, -230), new Vector2(1000, 200));
             Game.Toasted += Toast;
         }
@@ -387,7 +389,19 @@ namespace Fishing.UI
                 .At(new Vector2(1, 1), new Vector2(0, 40), new Vector2(560, 32), new Vector2(1, 1));
             _boatHint = UIFactory.Text(_boatHintPill, "", 14, UIFactory.TextMain, TextAnchor.MiddleCenter);
             _boatHint.rectTransform.Fill();
+            // 원작 계기판 오른쪽 아래 둥근 버튼 "ENGINE START STOP [Y]"
+            var eng = UIFactory.Button(_boatGauges, "", () => Game.Boat.ToggleEngine(), new Color(0.1f, 0.14f, 0.2f, 0.95f), 12);
+            UIFactory.SetRadius(eng.targetGraphic, UIFactory.Pill);
+            ((RectTransform)eng.transform).At(new Vector2(1, 0), new Vector2(-340, 10), new Vector2(92, 92), new Vector2(0.5f, 0f));
+            _engineRing = UIFactory.Image(eng.transform, new Color(0.4f, 0.9f, 1f), UIFactory.Ring, "Ring");
+            _engineRing.rectTransform.Fill(4, 4, 4, 4);
+            _engineRing.raycastTarget = false;
+            _engineText = eng.GetComponentInChildren<TMP_Text>();
+            _engineText.lineSpacing = -12f;
         }
+
+        Image _engineRing;
+        TMP_Text _engineText;
 
         static (Image fill, TMP_Text value) Gauge(RectTransform parent, Vector2 pos, string label, Color color)
         {
@@ -432,9 +446,14 @@ namespace Fishing.UI
                 _fuelFill.color = fuel < def.FuelCapacity * 0.2f ? UIFactory.Danger : new Color(1f, 0.75f, 0.3f);
                 _fuelText.text = $"{fuel:0.0}<size=13>L</size>";
             }
+            bool on = boat.EngineOn;
+            _engineRing.transform.parent.gameObject.SetActive(!def.Sail);
+            _engineRing.color = on ? new Color(0.35f, 1f, 0.55f) : new Color(1f, 0.45f, 0.35f, 0.5f + Mathf.Abs(Mathf.Sin(Time.time * 3f)) * 0.5f);
+            _engineText.text = $"<size=11>ENGINE</size>\n<b><color={(on ? "#70ff90" : "#ff8070")}>{(on ? "STOP" : "START")}</color></b>\n<size=11><color=#80c8ff>[Y]</color></size>";
             _boatHint.text = boat.Seated
                 ? $"{def.Name}  ·  W/S 속도  ·  A/D 방향  ·  멈추면 낚시" + (def.Sail ? $"  ·  바람 {Game.Weather.WindSpeed:0}m/s, 옆바람이 빠르다" : "")
-                : $"{def.Name}  ·  뱃머리에서 낚시할 수 있습니다  ·  물가에서 B로 내리기";
+                : def.Sail || !on ? $"{def.Name}  ·  뱃머리에서 낚시할 수 있습니다  ·  Y 시동 · 물가에서 B로 내리기"
+                : $"{def.Name}  ·  시동이 걸려 있습니다 — Y로 엔진을 꺼야 낚시할 수 있습니다";
             FitPill(_boatHintPill, _boatHint, 40f, 900f);
         }
 
@@ -519,6 +538,18 @@ namespace Fishing.UI
             var bait = baits[index];
             Game.Profile.SelectBait(bait.Id);
             Game.Toast($"미끼 변경: {bait.Name}");
+        }
+
+        TMP_Text _aimLines;
+
+        /// <summary>원작: 조준 중 큰 거리 숫자 바로 아래 업적 진행 3줄 (작은 흰 글씨, 가운데 정렬).</summary>
+        void BuildAimLines()
+        {
+            _aimLines = UIFactory.Text(_root, "", 16, new Color(1f, 1f, 1f, 0.92f), TextAnchor.UpperCenter);
+            _aimLines.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -258), new Vector2(900, 80));
+            _aimLines.lineSpacing = 4f;
+            UIFactory.Outline(_aimLines, new Color(0f, 0f, 0f, 0.6f), 0.2f);
+            _aimLines.gameObject.SetActive(false);
         }
 
         void BuildCasting()
@@ -634,24 +665,161 @@ namespace Fishing.UI
         /// 원작 실패 경고 (2013 홍현 영상 0:54.5, 3:20, 6:24): 화면 위쪽 가운데에 흰 카드, 위에 빨간 삼각형 WARNING 표지,
         /// 카드 안에 검은 글씨로 사유. 3초 뒤 사라진다.
         /// </summary>
-        public void ShowWarning(string message)
+        public void ShowWarning(string message, string penalty = null)
         {
             if (_warningCard != null) Object.Destroy(_warningCard);
-            var card = UIFactory.Shape(_root, new Color(0.97f, 0.96f, 0.94f, 0.97f), 14f, "WarningCard", 4f);
-            UIFactory.AddBorder(card, new Color(0.85f, 0.15f, 0.12f, 0.95f), 4f);
-            UIFactory.AddShadow(card, 20f, new Vector2(0, -6), 0.55f);
-            var rt = card.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -250), new Vector2(560, 104));
-            var sign = UIFactory.Text(rt, "▲", 78, new Color(0.88f, 0.12f, 0.1f), TextAnchor.MiddleCenter, FontStyle.Bold);
-            sign.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, 22), new Vector2(110, 90));
-            UIFactory.Outline(sign, new Color(1f, 1f, 1f, 0.95f), 3f);
-            var bang = UIFactory.Text(rt, "!", 40, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
-            bang.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, 12), new Vector2(60, 60));
-            var label = UIFactory.Text(rt, "WARNING", 13, new Color(0.88f, 0.12f, 0.1f), TextAnchor.MiddleCenter, FontStyle.Bold);
-            label.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -14), new Vector2(160, 18));
-            var text = UIFactory.Text(rt, message, 19, new Color(0.12f, 0.1f, 0.1f), TextAnchor.MiddleCenter, FontStyle.Bold);
-            text.rectTransform.Fill(24, 24, 30, 10);
-            _warningCard = card.gameObject;
-            Object.Destroy(_warningCard, 3f);
+            // 금속 테두리
+            var frame = UIFactory.Shape(_root, new Color(0.62f, 0.64f, 0.66f, 0.98f), 10f, "WarningCard", 5f);
+            UIFactory.AddShadow(frame, 22f, new Vector2(0, -6), 0.6f);
+            var rt = frame.rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -260), new Vector2(720, 128));
+            var paper = UIFactory.Shape(rt, new Color(0.97f, 0.96f, 0.93f, 1f), 4f, "Paper", 1f);
+            paper.rectTransform.Fill(8, 8, 8, 8);
+            UIFactory.AddBorder(paper, new Color(0.8f, 0.12f, 0.1f, 0.95f), 2.5f);
+            // 위아래 빗금 띠
+            HazardBand(paper.rectTransform, true);
+            HazardBand(paper.rectTransform, false);
+            // 리벳
+            foreach (var c in new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1) })
+                UIFactory.Shape(rt, new Color(0.85f, 0.86f, 0.88f), UIFactory.Pill, "Rivet", 2f).rectTransform
+                    .At(c, new Vector2(c.x < 0.5f ? 4 : -4, c.y < 0.5f ? 4 : -4), new Vector2(8, 8), new Vector2(0.5f, 0.5f));
+            // 빨간 삼각 표지 (카드 위로 걸친다)
+            var signRoot = UIFactory.Node("Sign", rt).At(new Vector2(0.5f, 1), new Vector2(0, 46), new Vector2(170, 120));
+            var signBack = UIFactory.Text(signRoot, "▲", 190, new Color(1f, 1f, 1f, 0.95f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            signBack.rectTransform.Fill(-20, -20, -30, -10);
+            var sign = UIFactory.Text(signRoot, "▲", 168, new Color(0.86f, 0.1f, 0.08f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            sign.rectTransform.Fill(-20, -20, -24, -10);
+            var bang = UIFactory.Text(signRoot, "!", 46, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            bang.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 14), new Vector2(60, 60));
+            var label = UIFactory.Text(signRoot, "WARNING", 15, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
+            label.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, -24), new Vector2(120, 20));
+            UIFactory.Outline(label, new Color(0.5f, 0f, 0f, 0.9f), 0.25f);
+            if (string.IsNullOrEmpty(penalty))
+            {
+                var text = UIFactory.Text(rt, message, 19, new Color(0.12f, 0.1f, 0.1f), TextAnchor.MiddleCenter, FontStyle.Bold);
+                text.rectTransform.Fill(30, 30, 34, 22);
+            }
+            else
+            {
+                var text = UIFactory.Text(rt, penalty, 17, new Color(0.1f, 0.08f, 0.08f), TextAnchor.MiddleCenter, FontStyle.Bold);
+                text.textWrappingMode = TextWrappingModes.NoWrap;
+                text.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 2), new Vector2(680, 30));
+                var cause = UIFactory.Text(rt, message, 14, new Color(0.5f, 0.2f, 0.18f), TextAnchor.MiddleCenter);
+                cause.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, -28), new Vector2(660, 22));
+            }
+            _warningCard = frame.gameObject;
+            _warningAt = Time.time;
+            Object.Destroy(_warningCard, 3.5f);
+        }
+
+        float _warningAt;
+
+        /// <summary>원작 경고 카드 위아래의 빨강·검정 빗금 띠.</summary>
+        static void HazardBand(RectTransform paper, bool top)
+        {
+            var band = UIFactory.Node(top ? "BandTop" : "BandBottom", paper)
+                .At(new Vector2(0.5f, top ? 1 : 0), new Vector2(0, top ? -6 : 6), new Vector2(680, 10), new Vector2(0.5f, top ? 1 : 0));
+            band.gameObject.AddComponent<RectMask2D>();
+            for (int i = 0; i < 52; i++)
+            {
+                var stripe = UIFactory.Image(band, i % 2 == 0 ? new Color(0.82f, 0.1f, 0.08f) : new Color(0.12f, 0.1f, 0.1f), null, "Stripe");
+                stripe.rectTransform.At(new Vector2(0, 0.5f), new Vector2(i * 14f - 10f, 0), new Vector2(9, 30));
+                stripe.rectTransform.localRotation = Quaternion.Euler(0, 0, -40f);
+            }
+        }
+
+        // ---------------- 재도전 (원작: 실패 뒤 오른쪽 아래 "재도전 하시겠습니까?" + 오른쪽 위 "X2 재도전") ----------------
+
+        RectTransform _retryBubble, _retryBadge;
+        TMP_Text _retrySub, _retryBadgeText;
+        float _retryUntil;
+
+        void BuildRetry()
+        {
+            // 나무 액자 같은 갈색 말풍선 + 왼쪽 금테 별 아이콘 + 오른쪽 조합 안내원
+            var bubble = UIFactory.Shape(_root, new Color(0.24f, 0.17f, 0.11f, 0.96f), 10f, "RetryBubble", 4f);
+            UIFactory.AddBorder(bubble, new Color(0.78f, 0.6f, 0.35f, 0.95f), 3f);
+            UIFactory.AddShadow(bubble, 18f, new Vector2(0, -5), 0.55f);
+            _retryBubble = bubble.rectTransform.At(new Vector2(1, 0), new Vector2(-150, 90), new Vector2(430, 92), new Vector2(1, 0));
+            var inner = UIFactory.Shape(_retryBubble, new Color(0.93f, 0.88f, 0.76f, 1f), 6f, "Paper", 1f);
+            inner.rectTransform.Fill(6, 6, 6, 6);
+            var iconBox = UIFactory.Shape(_retryBubble, new Color(0.2f, 0.14f, 0.08f), 8f, "IconBox", 2f);
+            UIFactory.AddBorder(iconBox, UIFactory.Gold, 2.5f);
+            iconBox.rectTransform.At(new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(64, 64), new Vector2(0, 0.5f));
+            UIFactory.Image(iconBox.rectTransform, new Color(1f, 0.85f, 0.35f, 0.6f), UIFactory.Glow, "Glow").rectTransform.Fill(-6, -6, -6, -6);
+            var star = UIFactory.Text(iconBox.rectTransform, "★", 46, new Color(1f, 0.88f, 0.3f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            star.rectTransform.Fill();
+            UIFactory.Outline(star, new Color(0.45f, 0.25f, 0f, 0.9f), 0.25f);
+            var q = UIFactory.Text(_retryBubble, "재도전 하시겠습니까?", 20, new Color(0.2f, 0.13f, 0.07f), TextAnchor.MiddleLeft, FontStyle.Bold);
+            q.rectTransform.At(new Vector2(0, 1), new Vector2(92, -14), new Vector2(330, 30));
+            _retrySub = UIFactory.Text(_retryBubble, "", 13, new Color(0.38f, 0.27f, 0.16f), TextAnchor.UpperLeft);
+            _retrySub.rectTransform.At(new Vector2(0, 1), new Vector2(92, -46), new Vector2(330, 40));
+            var btn = _retryBubble.gameObject.AddComponent<Button>();
+            btn.targetGraphic = inner;
+            btn.onClick.AddListener(AcceptRetry);
+            // 조합 안내원 (원작: 밀짚모자 소녀 일러스트 → 색 원 + 이름)
+            var face = UIFactory.Shape(_retryBubble, new Color(0.95f, 0.75f, 0.45f), UIFactory.Pill, "Guide", 3f);
+            UIFactory.AddBorder(face, new Color(0.78f, 0.6f, 0.35f), 3f);
+            face.rectTransform.At(new Vector2(1, 0.5f), new Vector2(120, 14), new Vector2(104, 104), new Vector2(1, 0.5f));
+            UIFactory.Text(face.rectTransform, "서윤", 26, new Color(0.35f, 0.2f, 0.08f), TextAnchor.MiddleCenter, FontStyle.Bold).rectTransform.Fill();
+            UIFactory.Chip(_retryBubble, "한서윤 <조합 안내원>", new Color(0.2f, 0.14f, 0.08f, 0.95f), new Color(1f, 0.9f, 0.7f), 11, "GuideName")
+                .transform.parent.GetComponent<RectTransform>().At(new Vector2(1, 0), new Vector2(124, -14), new Vector2(130, 20), new Vector2(1, 0));
+            _retryBubble.gameObject.SetActive(false);
+
+            // 오른쪽 위 "X2 재도전" 배지 (시계 왼쪽)
+            var badge = UIFactory.Shape(_root, new Color(0.08f, 0.1f, 0.18f, 0.92f), 10f, "RetryBadge", 3f);
+            UIFactory.AddBorder(badge, UIFactory.Gold, 2f);
+            _retryBadge = badge.rectTransform.At(new Vector2(1, 1), new Vector2(-370, -14), new Vector2(128, 60), new Vector2(1, 1));
+            _retryBadgeText = UIFactory.Text(_retryBadge, "", 30, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.BoldAndItalic);
+            _retryBadgeText.rectTransform.Fill(4, 4, 2, 2);
+            UIFactory.Outline(_retryBadgeText, new Color(0.3f, 0.15f, 0f, 0.9f), 0.25f);
+            _retryBadge.gameObject.SetActive(false);
+        }
+
+        /// <summary>물고기를 놓친 뒤: 10초 동안 재도전 말풍선 (클릭 또는 Enter).</summary>
+        public void OfferRetry(string fishName, int mult)
+        {
+            _retryUntil = Time.time + 10f;
+            _retrySub.text = $"방금 놓친 <b>{fishName}</b>{GameUI.Josa(fishName, "이", "가")} 다시 옵니다\n다시 낚으면 <color=#b04010><b>EXP X{mult}</b></color>  ·  클릭 / Enter";
+            _retryBubble.gameObject.SetActive(true);
+            _retryBubble.localScale = Vector3.one * 0.6f;
+        }
+
+        public void AcceptRetry()
+        {
+            if (!_retryBubble.gameObject.activeSelf) return;
+            _retryBubble.gameObject.SetActive(false);
+            CatchRewards.Arm();
+            Game.Sound.Coin();
+            Game.Notice($"재도전! 다음 입질에 {CatchRewards.RevengeName}{GameUI.Josa(CatchRewards.RevengeName, "이", "가")} 다시 옵니다.");
+        }
+
+        void UpdateRetry()
+        {
+            if (_retryBubble == null) return;
+            if (_retryBubble.gameObject.activeSelf)
+            {
+                float left = _retryUntil - Time.time;
+                bool busy = Game.Fishing.State != FishingState.Idle && Game.Fishing.State != FishingState.Charging;
+                if (left <= 0f || Game.Mode != GameMode.Field || busy)
+                {
+                    _retryBubble.gameObject.SetActive(false);
+                    if (!busy) CatchRewards.Decline();
+                }
+                else
+                {
+                    if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) AcceptRetry();
+                    _retryBubble.localScale = Vector3.one * Mathf.MoveTowards(_retryBubble.localScale.x, 1f, Time.deltaTime * 5f);
+                    bool riding = Game.Boat != null && Game.Boat.Riding;
+                    _retryBubble.anchoredPosition = new Vector2(-150, riding ? 264 : 90);
+                }
+            }
+            bool armed = CatchRewards.Armed;
+            _retryBadge.gameObject.SetActive(armed);
+            if (armed)
+            {
+                _retryBadgeText.text = $"<color=#ffe070>★</color> X{CatchRewards.Mult}<size=55%> 재도전</size>";
+                _retryBadge.localScale = Vector3.one * (1f + Mathf.Max(0f, Mathf.Sin(Time.time * 3f)) * 0.05f);
+            }
         }
 
         public void Toast(string message, ToastKind kind)
@@ -714,6 +882,7 @@ namespace Fishing.UI
             }
 
             UpdateToasts();
+            UpdateRetry();
             if (fighting)
             {
                 UpdateGradePopup();
@@ -836,6 +1005,8 @@ namespace Fishing.UI
                 _castDistance.color = c;
             }
             _castTip.gameObject.SetActive(charging && tips);
+            _aimLines.gameObject.SetActive(charging);
+            if (charging && Time.frameCount % 10 == 0) _aimLines.text = string.Join("\n", CatchRewards.AimLines());
             if (charging) _castTip.anchoredPosition = new Vector2(0, 120 + Mathf.Repeat(Time.time * 1.6f, 1f) * 40f);
         }
 
@@ -1021,11 +1192,12 @@ namespace Fishing.UI
             // 자리: 결과 화면 = 오른쪽 위(대물 배지·물고기와 안 겹치게), 창이 열림 = 맨 위 가운데, 파이팅 = 조금 아래
             bool result = Game.UI.Result != null && Game.UI.Result.IsOpen;
             bool fight = Game.Fishing.State == FishingState.Fighting || Game.Fishing.Cheering;
-            float ax = result || fight ? 1f : 0.5f;
+            float ax = fight && !result ? 1f : 0.5f;
             _toastRoot.anchorMin = _toastRoot.anchorMax = _toastRoot.pivot = new Vector2(ax, 1f);
-            _toastRoot.anchoredPosition = result ? new Vector2(-40, -78)
+            _toastRoot.anchoredPosition = result ? new Vector2(0, -66)
                 : fight ? new Vector2(-30, -200)
                 : Game.UI.BlockingPanelOpen ? new Vector2(0, -16)
+                : Game.Fishing.State == FishingState.Charging ? new Vector2(0, -350) // 조준 업적 3줄 아래
                 : new Vector2(0, -284); // 캐스팅 비거리 숫자(위 180~260) 아래
             // 최근 것이 맨 위, 아래로 쌓는다 (두 줄 알림은 그만큼 더 내려간다).
             // 창이 열려 있으면 최신 하나만 화면 맨 위 가장자리에 (여러 개를 쌓으면 창 제목·탭을 덮는다)

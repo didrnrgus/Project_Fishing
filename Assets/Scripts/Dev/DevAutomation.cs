@@ -404,6 +404,33 @@ namespace Fishing.Dev
             yield return Shot("10_result");
             yield return CloseResult();
 
+            // 원작 RESULT 오른쪽 말풍선 토스트(노랑 보상형·하늘색 기록형) · BONUS 보상 · 이벤트 어종 EXP +200% · 파이팅 시간 · 등급
+            {
+                var rs = FishDatabase.Get("carp");
+                var demo = new CatchRewards.Outcome { BonusGold = 460, BonusExp = 1910, EventPct = 200, FightSeconds = 67f, Grade = CatchRewards.Grade(rs) };
+                demo.Toasts.Add(new CatchRewards.Toast { Title = "첫 월척 물고기", Body = "처음으로 대물급 잉어를 낚았습니다.", Gold = 230, Exp = 955, Reward = true });
+                demo.Toasts.Add(new CatchRewards.Toast { Title = "5가지 물고기", Body = "지금까지 5가지 물고기를 낚았습니다.", Gold = 230, Exp = 955, Reward = true });
+                demo.Toasts.Add(new CatchRewards.Toast { Title = "연속 공격!", Body = "가장 많은 카운터를 친 파이팅이었습니다. 신규 기록: 7회 / 기존 기록: 5회" });
+                demo.Toasts.Add(new CatchRewards.Toast { Title = "최고 기록", Body = "이전 최고 기록 61.20cm를 72.40cm로 갱신했습니다." });
+                Game.UI.Result.Show(new CaughtFish { speciesId = "carp", length = 72.4f, weight = Mathf.Round(rs.WeightGrams(72.4f)), day = 1, zone = "C2" },
+                    3 * rs.Exp, true, 61.2f, 1, false, false, demo, _ => { });
+                yield return new WaitForSecondsRealtime(1.9f);
+                yield return Shot("10f_result_rewards");
+                yield return CloseResult();
+            }
+
+            // 원작 실패: 위쪽 WARNING 카드(내구도·줄 길이 감소) + 오른쪽 아래 "재도전 하시겠습니까?" → 오른쪽 위 X2 재도전
+            Game.UI.Hud.ShowWarning("낚싯줄이 끊어졌습니다! 장력이 HIGH를 넘지 않게 조심하세요.",
+                "낚싯대 내구도 감소 : 1.00 %  릴 내구도 감소 : 2.00 %  줄 길이 감소 : 7.00m");
+            CatchRewards.OnLost(FishDatabase.Get("carp"), 72.4f);
+            Game.UI.Hud.OfferRetry("잉어", CatchRewards.Mult);
+            yield return new WaitForSecondsRealtime(0.7f);
+            yield return Shot("10g_warning_retry");
+            Game.UI.Hud.AcceptRetry();
+            yield return new WaitForSecondsRealtime(0.5f);
+            yield return Shot("10h_retry_badge");
+            CatchRewards.DebugClear();
+
             // 작은 고기: 결과 화면에서 캐릭터가 왼손에 들어 보인다 (원작 1:56~1:58)
             CheckClear("DebugStartFight");
             Game.Fishing.Autoplay = true;
@@ -433,7 +460,7 @@ namespace Fishing.Dev
             foreach (var (id, len, shot) in new[] { ("eel", 92f, "10c_result_eel"), ("shoe", 27f, "10d_result_shoe"), ("trap", 45f, "10e_result_trap") })
             {
                 var s = FishDatabase.Get(id);
-                Game.UI.Result.Show(new CaughtFish { speciesId = id, length = len, weight = Mathf.Round(s.WeightGrams(len)), day = 1, zone = "B1" }, s.Exp, false, 0f, 1, false, false, _ => { });
+                Game.UI.Result.Show(new CaughtFish { speciesId = id, length = len, weight = Mathf.Round(s.WeightGrams(len)), day = 1, zone = "B1" }, s.Exp, false, 0f, 1, false, false, null, _ => { });
                 yield return new WaitForSecondsRealtime(1.2f);
                 yield return Shot(shot);
                 yield return CloseResult();
@@ -674,7 +701,16 @@ namespace Fishing.Dev
             Game.CameraRig.Pitch = 14f;
             Game.CameraRig.Distance = 8f;
             yield return new WaitForSeconds(1f);
+            // 원작 소환: 먼바다 쪽에서 배가 물보라를 끌며 달려와 물가에서 돌아 선다 → 엔진 START/STOP [Y]
+            Game.Boat.InstantLaunch = false;
             Game.Boat.Toggle();
+            yield return new WaitForSeconds(1.1f);
+            yield return Shot("18a_boat_summon");
+            float summonUntil = Time.time + 5f;
+            while (Game.Boat.Summoning && Time.time < summonUntil) yield return null;
+            yield return new WaitForSeconds(0.8f);
+            yield return Shot("18b_boat_engine");
+            Game.Boat.InstantLaunch = true;
             Game.Boat.DebugThrottle = 1f;
             Game.Boat.DebugSteer = 0.25f;
             yield return new WaitForSeconds(3.5f);
@@ -821,6 +857,7 @@ namespace Fishing.Dev
             Game.Clock.Set(2, 10 * 60);
             Game.Player.Teleport(new Vector3(bw.center.x - 6f, 1.1f, -42f), 0f);
             yield return new WaitForSeconds(0.5f);
+            Game.Boat.InstantLaunch = true;
             Game.Boat.Toggle();
             Game.Boat.DebugThrottle = 1f;
             Game.Boat.DebugSteer = -0.35f;
@@ -898,6 +935,7 @@ namespace Fishing.Dev
                 Game.Clock.Set(4, 11 * 60);
                 Game.Player.Teleport(new Vector3(20f, 1.1f, -43f), 0f);
                 yield return new WaitForSeconds(0.5f);
+                Game.Boat.InstantLaunch = true;
                 Game.Boat.Toggle();
                 Game.Boat.DebugThrottle = 1f;
                 Game.Boat.DebugSteer = boatId == "boat_sail" ? 0.25f : -0.1f;

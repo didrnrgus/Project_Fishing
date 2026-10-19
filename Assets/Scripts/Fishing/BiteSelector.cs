@@ -124,6 +124,6 @@ namespace Fishing.Angling
             return t;
         }
 
-        static bool Contains<T>(T[] arr, T v) => System.Array.IndexOf(arr, v) >= 0;
+        static bool Contains<T>(T[] arr, T v) => arr != null && System.Array.IndexOf(arr, v) >= 0;
     }
 }

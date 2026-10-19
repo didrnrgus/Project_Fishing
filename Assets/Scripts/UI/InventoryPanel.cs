@@ -19,7 +19,6 @@ namespace Fishing.UI
     {
         const int Cols = 6, Rows = 7;
         const float Slot = 58f, Gap = 4f;
-        const int RepairCostPerPoint = 8;
 
         enum Tab { Bag, KeepNet, Boat }
         Tab _tab;
@@ -111,7 +110,7 @@ namespace Fishing.UI
             // 아래: 정렬 · 수리 · 골드
             var sort = UIFactory.Button(_bottom, "정렬", () => { _sorted = !_sorted; Refresh(); }, _sorted ? UIFactory.TabOn : UIFactory.ButtonBg, 16);
             ((RectTransform)sort.transform).At(new Vector2(0, 0.5f), Vector2.zero, new Vector2(84, 36), new Vector2(0, 0.5f));
-            int cost = Mathf.CeilToInt((100f - p.Data.rodDurability) * RepairCostPerPoint);
+            int cost = p.RepairCost;
             var repair = UIFactory.Button(_bottom, cost > 0 ? $"수리 {cost:N0}G" : "수리", () => Repair(cost), UIFactory.ButtonBg, 16);
             ((RectTransform)repair.transform).At(new Vector2(0, 0.5f), new Vector2(92, 0), new Vector2(120, 36), new Vector2(0, 0.5f));
             repair.interactable = cost > 0 && p.Data.gold >= cost && Game.Fishing.State == Fishing.Angling.FishingState.Idle;
@@ -280,10 +279,8 @@ namespace Fishing.UI
         void Repair(int cost)
         {
             var p = Game.Profile;
-            if (cost <= 0 || !p.TrySpend(cost)) return;
-            p.Data.rodDurability = 100f;
-            Game.SysLog($"{cost:N0} GOLD 를 지불했습니다. 낚싯대를 수리했습니다.");
-            p.NotifyChanged();
+            if (cost <= 0 || !p.RepairAll()) return;
+            Game.SysLog($"{cost:N0} GOLD 를 지불했습니다. 낚싯대·릴을 수리하고 줄을 새로 감았습니다.");
         }
     }
 }

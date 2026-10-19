@@ -314,6 +314,7 @@ namespace Fishing.UI
                 return;
             }
 
+            AnglerChatter.Tick();
             var state = Game.Fishing.State;
             if (state == FishingState.Fighting) return;
             bool idle = state == FishingState.Idle;
@@ -326,6 +327,7 @@ namespace Fishing.UI
             if (Settings.Down(KeyAction.Talk) && NearbyNpc != null && idle && !BlockingPanelOpen) TalkTo(NearbyNpc);
             else if (Settings.Down(KeyAction.Talk) && NearbyKiosk != null && idle && !BlockingPanelOpen) OpenExclusive(Delivery);
             if (Settings.Down(KeyAction.Boat) && !BlockingPanelOpen) Game.Boat.Toggle();
+            if (Settings.Down(KeyAction.Engine) && !BlockingPanelOpen) Game.Boat.ToggleEngine();
             if (Settings.Down(KeyAction.Dex)) OpenExclusive(Dex);
             if (Settings.Down(KeyAction.Quest)) OpenExclusive(Quest);
             if (Settings.Down(KeyAction.KeepNet)) OpenExclusive(KeepNet);

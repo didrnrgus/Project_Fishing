@@ -138,6 +138,48 @@ namespace Fishing.World
             Ripple(pos, 4f * scale, 1.6f);
         }
 
+        static ParticleSystem _sparkle;
+
+        /// <summary>반짝이는 작은 빛 (중력 없음, 짧게 커졌다 사라진다). 조준 궤적의 별 파티클.</summary>
+        static ParticleSystem SparkleSystem
+        {
+            get
+            {
+                if (_sparkle != null) return _sparkle;
+                var go = new GameObject("SparkleFx");
+                _sparkle = go.AddComponent<ParticleSystem>();
+                _sparkle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                var main = _sparkle.main;
+                main.loop = false;
+                main.playOnAwake = false;
+                main.simulationSpace = ParticleSystemSimulationSpace.World;
+                main.gravityModifier = 0f;
+                main.maxParticles = 600;
+                var emission = _sparkle.emission;
+                emission.rateOverTime = 0f;
+                var size = _sparkle.sizeOverLifetime;
+                size.enabled = true;
+                size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 0.3f), new Keyframe(0.25f, 1f), new Keyframe(1f, 0f)));
+                var renderer = go.GetComponent<ParticleSystemRenderer>();
+                renderer.sharedMaterial = Mats.Particle(new Color(1f, 1f, 1f, 0.9f));
+                return _sparkle;
+            }
+        }
+
+        /// <summary>원작 조준선: 캐릭터 → 목표 지점 곡선을 따라가는 흰 별 파티클.</summary>
+        public static void Sparkle(Vector3 pos, float size = 0.22f, float life = 0.35f)
+        {
+            var p = new ParticleSystem.EmitParams
+            {
+                position = pos,
+                velocity = Random.insideUnitSphere * 0.15f + Vector3.up * 0.1f,
+                startSize = size * Random.Range(0.7f, 1.3f),
+                startLifetime = life,
+                startColor = Color.Lerp(Color.white, new Color(0.6f, 0.95f, 1f), Random.value * 0.5f),
+            };
+            SparkleSystem.Emit(p, 1);
+        }
+
         public static void Ripple(Vector3 pos, float size = 1.5f, float duration = 1.4f)
         {
             var go = Mats.Prim(PrimitiveType.Cylinder, "Ripple", null,

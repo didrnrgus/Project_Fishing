@@ -513,3 +513,19 @@ bpyenv/Scripts/python -I tools/blender/build_props.py --only palm_a --preview Sc
 - FAO [Biology of Major Cultivated Fishes](https://www.fao.org/4/ac233e/AC233E01.htm) (잉어 수염), [Wikipedia Barred knifejaw](https://en.wikipedia.org/wiki/Barred_knifejaw), [CIESM 아틀라스](https://ciesm.org/atlas/fishes_2nd_edition/Oplegnathus_fasciatus.pdf), [Wikipedia Pagrus major](https://en.wikipedia.org/wiki/Pagrus_major)
 - [Zoological Science 2018 피라미 혼인색](https://bioone.org/journals/zoological-science/volume-35/issue-1/zs170102/Female-Mate-Choice-Based-on-Male-Nuptial-Coloration-in-Pale/10.2108/zs170102.full), [한국어류학회지 쏘가리 체색형](https://koreascience.or.kr/article/JAKO199727236818347.pub?orgId=isk)
 - 그루퍼: [방글라데시 해양생물 DB](https://marinebiodiversity.org.bd/?p=39727), [Redmap](https://redmap.org.au/species/1/73)
+
+## 7. UI 팔레트 원작풍 (2026-10-20)
+
+원작 클립 라이브러리의 인벤토리·내 캐릭터 창 프레임(`07_인벤토리_UI_팝업`)과 HUD 명세(clips docs 04 §4)를 보고 `UI/UIStyle.cs` 팔레트를 바꿨다. 모든 창·HUD가 같이 바뀐다 (15 문서 1장).
+
+| 항목 | 예전 (다크 유리) | 지금 (원작풍) |
+|---|---|---|
+| 판 바탕 | `(0.035, 0.06, 0.085)` | 짙은 남색 `(0.02, 0.045, 0.08)` |
+| 테두리 | 흰색 9% 1.2 | 파란 빛 `FrameBlue (0.16, 0.58, 1, 0.75)` 안쪽 1.2 + 바깥 번짐 1.6 |
+| 모서리 반지름 (창·HUD·카드·버튼) | 22 · 16 · 12 · 10 | 8 · 6 · 5 · 5 |
+| 주 버튼·켜진 탭 | 청록 `(0.1, 0.46, 0.45)` | 파랑 `(0.09, 0.36, 0.68)` |
+| 꺼진 탭 · 보통 버튼 | 흰색 7% · `(0.17, 0.22, 0.27)` | 짙은 파랑 `(0.12, 0.22, 0.36)` · `(0.1, 0.16, 0.25)` |
+| 강조색 | 청록 `(0.36, 0.88, 0.8)` | 하늘색 `(0.3, 0.78, 1)` |
+
+원작의 붓글씨 로고·나무 액자·NPC 일러스트는 원작 리소스라 쓰지 않는다. WARNING 카드(빗금 띠·리벳·삼각 표지)와 재도전 말풍선(갈색 액자·금테 별)은 도형으로 그린다.
+

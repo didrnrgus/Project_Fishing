@@ -9,7 +9,7 @@ namespace Fishing.UI
     /// <summary>코드로 UGUI를 조립하기 위한 헬퍼. 기준 해상도는 1920x1080. 유리·도형 스타일은 UIStyle.cs.</summary>
     public static partial class UIFactory
     {
-        public static readonly Color Accent = new Color(0.36f, 0.88f, 0.8f);
+        public static readonly Color Accent = new Color(0.3f, 0.78f, 1f);
         public static readonly Color Gold = new Color(1f, 0.82f, 0.35f);
         public static readonly Color Warn = new Color(1f, 0.62f, 0.25f);
         public static readonly Color Danger = new Color(0.95f, 0.3f, 0.28f);

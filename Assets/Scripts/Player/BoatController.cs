@@ -7,8 +7,9 @@ using UnityEngine;
 namespace Fishing.PlayerSystems
 {
     /// <summary>
-    /// 배. 원작처럼 물가에서 꺼내(B) 타고 나가서, 멈추면 배 위에서 낚시한다.
-    ///  - 물가(둔치·데크 끝)에서 B: 앞쪽 물 위에 배를 띄우고 탄다
+    /// 배. 원작처럼 물가에서 불러(B) 타고 나가서, 엔진을 끄면 배 위에서 낚시한다.
+    ///  - 물가(둔치·데크 끝)에서 B: 원작 소환 연출 — 먼바다 쪽에서 배가 물보라를 끌며 달려와 물가에 돌아 선다. 그다음 탄다
+    ///  - Y: 엔진 START/STOP (원작 계기판 "ENGINE START STOP [Y]"). 시동이 걸려 있으면 낚시를 못 한다 (돛단배는 엔진이 없다)
     ///  - W/S 속도, A/D 방향. 달릴 때는 운전석에 앉고, 멈추면 뱃머리에 서서 낚시할 수 있다
     ///  - 연료를 쓰며 달린다. 다 떨어지면 노를 저어 아주 천천히만 간다 (낚시점에서 채운다)
     ///  - 물가에 대고 B: 내려서 배를 접어 넣는다
@@ -39,6 +40,18 @@ namespace Fishing.PlayerSystems
             }
         }
         public bool Seated { get; private set; }
+        /// <summary>시동이 걸려 있다. 돛단배·연료가 떨어진 배는 엔진 없이 (돛·노).</summary>
+        public bool EngineOn { get; private set; }
+        /// <summary>엔진이 돌고 있어 낚싯대를 던질 수 없다 (원작: 정지해야 낚시).</summary>
+        public bool BlocksCasting => Riding && Def != null && !Def.Sail && EngineOn;
+        /// <summary>배가 물가로 달려오는 소환 연출 중.</summary>
+        public bool Summoning => _summonT >= 0f;
+        /// <summary>자동 촬영용: 소환 연출 없이 바로 띄운다.</summary>
+        public bool InstantLaunch;
+        float _summonT = -1f;
+        Vector3 _summonFrom, _summonLand;
+        float _engineWarnAt;
+        const float SummonTime = 2.4f;
         /// <summary>배 꼬리 (트롤링 줄이 나가는 곳).</summary>
         public Vector3 SternPosition => _pos - Forward * _halfLen;
         public Vector3 Forward => Quaternion.Euler(0f, _yaw, 0f) * Vector3.forward;
@@ -68,8 +81,37 @@ namespace Fishing.PlayerSystems
 
         public void Toggle()
         {
+            if (Summoning) return;
             if (Riding) TryDisembark();
             else TryLaunch();
+        }
+
+        /// <summary>Y: 엔진 START / STOP.</summary>
+        public void ToggleEngine()
+        {
+            if (!Riding || Def == null) return;
+            if (Def.Sail) { Game.Toast("돛단배는 엔진이 없습니다. 바람을 받아 W로 나아갑니다.", ToastKind.Info); return; }
+            if (!EngineOn)
+            {
+                if (Game.Profile.Data.boatFuel <= 0f) { Game.Toast("연료가 없어 시동이 걸리지 않습니다. 노를 저어 W로 천천히 갑니다.", ToastKind.Warn); return; }
+                if (Game.Fishing.State != FishingState.Idle && !Game.Fishing.CanTroll)
+                {
+                    Game.Toast("낚시 중에는 시동을 걸 수 없습니다.", ToastKind.Warn);
+                    return;
+                }
+                EngineOn = true;
+                Game.Sound.Splash(0.3f);
+                Game.CameraRig.Shake(0.25f);
+                Game.SysLog($"{Def.Name} 시동을 걸었습니다.", "#7fd8ff");
+            }
+            else
+            {
+                if (Mathf.Abs(Speed) > 1.5f) { Game.Toast("속도를 줄인 뒤 엔진을 끄세요.", ToastKind.Warn); return; }
+                EngineOn = false;
+                Speed = 0f;
+                Throttle = 0f;
+                Game.Toast("엔진을 껐습니다. 뱃머리에서 낚시할 수 있습니다.", ToastKind.Info);
+            }
         }
 
         // ---------------- 띄우기 / 내리기 ----------------
@@ -115,6 +157,78 @@ namespace Fishing.PlayerSystems
             _yaw = yaw;
             Speed = 0f;
             BuildModel();
+            EngineOn = false;
+            if (!InstantLaunch && BeginSummon(at, yaw)) return;
+            Board(at);
+        }
+
+        /// <summary>
+        /// 원작 소환 (clips 03_배_소환_탑승_출항, 4:38~4:45): 빈 바다 쪽에서 배가 흰 물보라를 길게 끌며 달려와
+        /// 물가 앞에서 옆으로 돌며 서고, 곧바로 뱃머리 위 3인칭으로 바뀐다. 달려올 물길이 없으면 바로 띄운다.
+        /// </summary>
+        bool BeginSummon(Vector3 at, float yaw)
+        {
+            var dir = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+            for (float d = 26f; d >= 10f; d -= 2f)
+            {
+                var from = at + dir * d;
+                bool clear = true;
+                for (float t = 0.15f; t < 1f && clear; t += 0.15f)
+                    if (!FieldMap.IsWater(Vector3.Lerp(from, at, t))) clear = false;
+                if (!clear || !FieldMap.IsWater(from)) continue;
+                _summonFrom = from;
+                _summonLand = at;
+                _summonT = 0f;
+                _pos = from;
+                _yaw = yaw + 180f;    // 물가 쪽을 보고 달려온다
+                Speed = Def.BoatSpeed * 0.8f;
+                Game.Player.MovementLocked = true;
+                UpdateTransform(0f, 0f);
+                Game.Toast($"{Def.Name}{(Fishing.UI.GameUI.Josa(Def.Name, "을", "를"))} 불렀습니다!", ToastKind.Good);
+                return true;
+            }
+            return false;
+        }
+
+        void UpdateSummon(float dt)
+        {
+            _summonT += dt;
+            float k = Mathf.Clamp01(_summonT / SummonTime);
+            // 앞 65%는 곧장 달려오고, 나머지는 속도를 줄이며 180° 돌아 물가에 옆으로 선다
+            float travel = 1f - (1f - k) * (1f - k);
+            var prev = _pos;
+            _pos = Vector3.Lerp(_summonFrom, _summonLand, travel);
+            float turn = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.6f, 1f, k));
+            float baseYaw = Quaternion.LookRotation(_summonFrom - _summonLand).eulerAngles.y; // 띄울 방향 (먼바다 쪽)
+            _yaw = baseYaw + 180f * (1f - turn);
+            Speed = (prev - _pos).magnitude / Mathf.Max(dt, 1e-4f);
+            var fwd = Quaternion.Euler(0f, _yaw, 0f) * Vector3.forward;
+            UpdateTransform(turn > 0f && turn < 1f ? 1f : 0f, dt);
+            UpdateWake(fwd, dt);
+            // 원작: 흰 물보라를 길게 끌며 달려온다 (뱃머리 양옆 물보라 + 꼬리 파문), 돌 때는 옆으로 크게 튄다
+            if (Time.time >= _nextBowSplash)
+            {
+                _nextBowSplash = Time.time + 0.05f;
+                var side = Vector3.Cross(Vector3.up, fwd);
+                if (turn > 0.05f && turn < 0.95f) Effects.Splash(_pos - fwd * _halfLen * 0.4f + side * _halfWidth, 14, 1.2f);
+                else if (k < 0.6f)
+                {
+                    Effects.Splash(_pos + fwd * _halfLen * 0.5f + side * _halfWidth * (Random.value < 0.5f ? -1f : 1f), 8, 1.1f);
+                    Effects.Ripple(_pos - fwd * _halfLen, 1.6f, 1.8f);
+                }
+            }
+            Game.Sound.SetEngine(0.25f + (1f - k) * 0.75f, Speed / Mathf.Max(1f, Def.BoatSpeed));
+            if (k < 1f) return;
+            _summonT = -1f;
+            Speed = 0f;
+            _yaw = baseYaw;
+            Board(_summonLand);
+        }
+
+        void Board(Vector3 at)
+        {
+            _pos = at;
+            Speed = 0f;
             Riding = true;
             Seated = false;
             _fuelWarned = false;
@@ -124,7 +238,9 @@ namespace Fishing.PlayerSystems
             Effects.Splash(at, 30, 1.2f);
             Effects.Ripple(at, 3f, 1.5f);
             Game.Sound.Splash(1f);
-            Game.Toast($"{Def.Name}를 띄웠습니다. W/S 속도 · A/D 방향 · 멈추면 낚시 · 물가에서 B로 내리기", ToastKind.Good);
+            Game.Player.MovementLocked = false;
+            Game.Toast(Def.Sail ? $"{Def.Name}에 탔습니다. W/S 속도 · A/D 방향 · 멈추면 낚시 · 물가에서 B로 내리기"
+                : $"{Def.Name}에 탔습니다. Y 시동 · W/S 속도 · A/D 방향 · 엔진을 끄면 낚시 · 물가에서 B로 내리기", ToastKind.Good);
         }
 
         void TryDisembark()
@@ -156,6 +272,7 @@ namespace Fishing.PlayerSystems
                 return;
             }
             best.y = FieldMap.LandY + 0.1f;
+            EngineOn = false;
             var face = _pos - best;
             face.y = 0f;
             Stow(best, Quaternion.LookRotation(face.sqrMagnitude > 0.01f ? face : Vector3.forward).eulerAngles.y);
@@ -175,6 +292,8 @@ namespace Fishing.PlayerSystems
             Game.Sound.Splash(0.7f);
             Riding = false;
             Speed = 0f;
+            EngineOn = false;
+            _summonT = -1f;
             Game.Player.Dismount(landAt, yaw);
             if (_boat != null) Destroy(_boat.gameObject);
             if (_wake != null) Destroy(_wake.gameObject);
@@ -186,6 +305,12 @@ namespace Fishing.PlayerSystems
 
         void Update()
         {
+            if (Summoning)
+            {
+                if (Game.Mode != GameMode.Field) { _summonT = -1f; if (_boat != null) Destroy(_boat.gameObject); _boat = null; Game.Player.MovementLocked = false; return; }
+                UpdateSummon(Time.deltaTime);
+                return;
+            }
             if (!Riding) return;
             if (Game.Mode != GameMode.Field) { StowToLand(); return; }
             float dt = Time.deltaTime;
@@ -197,6 +322,7 @@ namespace Fishing.PlayerSystems
             {
                 if (!float.IsNaN(DebugThrottle))
                 {
+                    if (!Def.Sail && DebugThrottle != 0f) EngineOn = true;
                     throttleIn = DebugThrottle;
                     steer = DebugSteer;
                 }
@@ -206,6 +332,18 @@ namespace Fishing.PlayerSystems
                     if (Settings.Held(KeyAction.MoveBack)) throttleIn -= 0.4f;
                     if (Settings.Held(KeyAction.MoveRight)) steer += 1f;
                     if (Settings.Held(KeyAction.MoveLeft)) steer -= 1f;
+                    // 엔진 배는 시동을 걸어야 간다 (연료가 떨어졌으면 노)
+                    bool needEngine = !Def.Sail && Game.Profile.Data.boatFuel > 0f && !EngineOn;
+                    if (needEngine && (throttleIn != 0f || steer != 0f))
+                    {
+                        throttleIn = 0f;
+                        steer = 0f;
+                        if (Time.time >= _engineWarnAt)
+                        {
+                            _engineWarnAt = Time.time + 4f;
+                            Game.Toast($"시동이 꺼져 있습니다. {Settings.KeyName(KeyAction.Engine)}를 눌러 시동을 거세요.", ToastKind.Warn);
+                        }
+                    }
                 }
             }
             Throttle = Mathf.MoveTowards(Throttle, Mathf.Abs(throttleIn), dt * 2f);
@@ -260,7 +398,8 @@ namespace Fishing.PlayerSystems
             Game.Player.SnapToMount();
 
             UpdateWake(fwd, dt);
-            if (!Def.Sail) Game.Sound.SetEngine(Game.Profile.Data.boatFuel > 0f ? 0.15f + Throttle * 0.85f : 0f, Mathf.Abs(Speed) / Mathf.Max(1f, Def.BoatSpeed));
+            if (!Def.Sail) Game.Sound.SetEngine(Game.Profile.Data.boatFuel > 0f && EngineOn ? 0.15f + Throttle * 0.85f : 0f, Mathf.Abs(Speed) / Mathf.Max(1f, Def.BoatSpeed));
+            if (EngineOn && Game.Profile.Data.boatFuel <= 0f) EngineOn = false;
 
             // 달리는 동안 카메라가 배 뒤로 천천히 돈다 (오른쪽 드래그 중이면 그대로)
             if (Seated && Mathf.Abs(Speed) > 1f && !Input.GetMouseButton(1))

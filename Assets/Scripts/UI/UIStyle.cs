@@ -9,7 +9,8 @@ using PfOutline = LeTai.Paraform.Scaffold.Outline;
 namespace Fishing.UI
 {
     /// <summary>
-    /// 다크 유리 스타일. Translucent Image(배경 블러)와 Paraform(둥근 도형·그림자·테두리·가장자리 광택)으로
+    /// 원작풍 UI (clips 07 인벤토리·내 캐릭터 창, 04 HUD 명세 §4): 짙은 남색 반투명 판 + 청록·파랑 빛 테두리, 모서리는 거의 각지게,
+    /// 탭·버튼은 파란 판. Translucent Image(배경 블러)와 Paraform(도형·그림자·테두리·가장자리 광택)으로
     /// 창·HUD 판·버튼·바를 그린다.
     ///  - <see cref="Glass"/>: 뒤의 3D 화면이 흐리게 비치는 어두운 유리 판 (창, HUD 패널)
     ///  - <see cref="Shape"/>: 블러 없는 둥근 도형 (버튼, 칩, 바, 배지)
@@ -18,15 +19,17 @@ namespace Fishing.UI
     public static partial class UIFactory
     {
         // ---------------- 팔레트 ----------------
-        public static readonly Color GlassTint = new Color(0.035f, 0.06f, 0.085f, 1f);
+        public static readonly Color GlassTint = new Color(0.02f, 0.045f, 0.08f, 1f);
         public static readonly Color TextFaint = new Color(0.45f, 0.52f, 0.6f);
         /// <summary>유리 판 안의 카드·행 배경.</summary>
         public static readonly Color Surface = new Color(1f, 1f, 1f, 0.05f);
         public static readonly Color SurfaceHi = new Color(1f, 1f, 1f, 0.1f);
-        public static readonly Color Hairline = new Color(1f, 1f, 1f, 0.1f);
+        public static readonly Color Hairline = new Color(0.3f, 0.65f, 1f, 0.22f);
+        /// <summary>원작 창 테두리의 파란 빛.</summary>
+        public static readonly Color FrameBlue = new Color(0.16f, 0.58f, 1f, 0.75f);
 
-        public static readonly Color BtnNeutral = new Color(0.17f, 0.22f, 0.27f, 0.96f);
-        public static readonly Color BtnPrimary = new Color(0.1f, 0.46f, 0.45f, 1f);
+        public static readonly Color BtnNeutral = new Color(0.1f, 0.16f, 0.25f, 0.96f);
+        public static readonly Color BtnPrimary = new Color(0.09f, 0.36f, 0.68f, 1f);
         public static readonly Color BtnGold = new Color(0.6f, 0.43f, 0.13f, 1f);
         public static readonly Color BtnGood = new Color(0.17f, 0.48f, 0.29f, 1f);
         public static readonly Color BtnDanger = new Color(0.56f, 0.18f, 0.16f, 1f);
@@ -34,12 +37,12 @@ namespace Fishing.UI
         public static readonly Color BtnBlue = new Color(0.15f, 0.35f, 0.55f, 1f);
         public static readonly Color BtnGhost = new Color(1f, 1f, 1f, 0.07f);
         public static readonly Color TabOn = BtnPrimary;
-        public static readonly Color TabOff = new Color(1f, 1f, 1f, 0.07f);
+        public static readonly Color TabOff = new Color(0.12f, 0.22f, 0.36f, 0.75f);
 
-        public const float RadiusPanel = 22f;
-        public const float RadiusHud = 16f;
-        public const float RadiusCard = 12f;
-        public const float RadiusButton = 10f;
+        public const float RadiusPanel = 8f;
+        public const float RadiusHud = 6f;
+        public const float RadiusCard = 5f;
+        public const float RadiusButton = 5f;
         public const float Pill = 999f;
 
         static Material _glassMat, _solidMat;
@@ -107,7 +110,8 @@ namespace Fishing.UI
             img.flatten = 0.3f;
             img.raycastTarget = raycast;
             if (shadow) AddShadow(img, 28f, new Vector2(0, -8), 0.45f);
-            AddBorder(img, new Color(1f, 1f, 1f, 0.09f), 1.2f);
+            // 원작 창: 파란 빛 테두리 (안쪽 선 + 바깥으로 번지는 빛)
+            AddBorder(img, FrameBlue, 1.2f, 1.6f);
             return img;
         }
 

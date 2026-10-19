@@ -153,6 +153,12 @@ namespace Fishing.Core
         public string lineId = "line_nylon";
         public string baitId = "bait_worm";
         public float rodDurability = 100f;
+        /// <summary>릴 내구도 (원작 실패 경고 "릴 내구도 감소 : 2.00 %"). 0이면 릴 속도가 떨어진다.</summary>
+        public float reelDurability = 100f;
+        /// <summary>줄이 끊겨 잃은 길이 m (원작 "줄 길이 감소 : 7.00m"). 수리하면 다시 감는다.</summary>
+        public float lineLost;
+        /// <summary>결과 화면 보상 토스트·재도전·조준 업적 (Core/CatchRewards.cs).</summary>
+        public RewardSave rewards = new RewardSave();
         public string mapId = "hangang";
         public int keepNetBonus;         // 퀘스트로 늘어난 살림망 칸
         public List<string> visitedMaps = new List<string>();
@@ -206,5 +212,26 @@ namespace Fishing.Core
         public float clockMinutes = 6 * 60f;
         public float posX = -10f, posY = 1.1f, posZ = -70f; // 낚시점 앞 (HanRiverMap.Spawn)
         public float yaw;
+    }
+
+    /// <summary>원작 RESULT 오른쪽 토스트(오늘 단위 업적·기록)와 재도전(복수혈전), 조준 중 업적 3줄의 진행 상태.</summary>
+    [Serializable]
+    public class RewardSave
+    {
+        public int day = -1;                 // 오늘 카운터의 기준 게임 날짜
+        public int midToday;                 // 오늘 낚은 중급(파랑) 물고기
+        public bool highToday;               // 오늘 고급(보라 이상)을 낚았다
+        public int trophyTotal, landedTotal, counterFights;   // 조준 업적 진행
+        public int trophyTier, landedTier, counterTier;       // 받은 단계
+        public int lastGrade = -1, gradeStreak, bestGradeStreak;
+        public int bestCounters;             // 한 파이팅 최다 카운터
+        public int dexTier;                  // "N가지 물고기" 받은 단계
+        public List<string> firstTrophy = new List<string>();  // 첫 월척(대물)을 받은 어종
+        // 재도전: 놓친 물고기 (빈 문자열이면 없음). mult = 다시 낚았을 때 EXP 배율, armed = 재도전을 눌렀다
+        public string revengeId = "";
+        public float revengeLen;
+        public string revengeMap = "";
+        public int revengeMult;
+        public bool revengeArmed;
     }
 }

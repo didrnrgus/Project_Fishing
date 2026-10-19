@@ -2,6 +2,21 @@
 
 세션이 끊겨도 이 파일만 보고 이어서 작업할 수 있게 남기는 메모. 끝난 일은 로드맵·각 문서에 합쳤다.
 
+## 2026-10-20 (2): 원작 기능별 클립 라이브러리 반영 → [15-original-clip-library.md](15-original-clip-library.md)
+
+사용자 요청: `Videos/Movavi Library/clips`(원작 영상 13개를 기능별로 자른 814개 + 분석 문서 17개)를 보고 시스템·아트 풍까지 똑같이, "게임하는 맛"이 나게.
+이미 맞춘 것(12·13 문서)은 클립으로 다시 확인만 하고, 빠진 것을 채웠다.
+- **실패**: 원작 WARNING 카드(빗금 띠·리벳·삼각 표지) + 페널티 낚싯대 1%·릴 2%·줄 7m. `SaveData.reelDurability`·`lineLost`, `FishFight.LineCapacity`, `PlayerProfile.RepairCost/RepairAll`
+- **재도전·복수혈전**: `Core/CatchRewards.cs` + `HudView.OfferRetry` 말풍선(10초, 클릭/Enter) → `★ X2 재도전` 배지 → 다음 입질은 놓친 그 고기 → 복수혈전 EXP ×2 (또 놓치면 X3·X5)
+- **RESULT**: 말풍선 토스트(보상형 노랑·기록형 하늘색, 최대 3개), BONUS 보상, 파이팅 시간, 등급 색·칩, 오늘의 이벤트 어종 EXP +200% 도장. 시스템 줄 `[어종] cm, kg 을 잡았습니다.` + 보상마다 EXP/GOLD 줄
+- **조준**: 업적 3줄(월척급·랜딩·카운터, 단계 보상), 별 파티클 궤적(`Effects.Sparkle`)
+- **채널 분위기**: `Core/AnglerChatter.cs` 다른 낚시꾼 조과(초록)·잡담 줄
+- **배**: 소환 연출(바다 쪽에서 달려와 180° 돌아 선다), **Y 엔진 START/STOP**(`KeyAction.Engine`), 시동 중엔 캐스팅 막힘, 계기판 둥근 엔진 버튼
+- **UI 아트**: `UIStyle` 팔레트 원작풍(09 문서 7장)
+- 덤: `BiteSelector.Contains`가 빈 배열(null)에서 죽던 것 → 단위 테스트 `JunkIsRare` 다시 통과
+- 확인: 컴파일 에러 0, 빌드 에러 0, 단위 테스트 35/35, 자동 촬영 새 장면 `10f_result_rewards`·`10g_warning_retry`·`10h_retry_badge`·`18a_boat_summon`·`18b_boat_engine`
+- 다음 후보: 실내 상점 씬(Fishshop 8탭·비교 툴팁), 보트 카메라 파이팅, 재도전 말풍선 안내원 초상화(지금은 색 원)
+
 ## 2026-10-20: 원작 전체 맵 반영 끝 (어종 88종 · 새 해외 맵 14곳)
 
 사용자 요청: 원작 전체 맵 목록(동남아 12곳·지중해 4곳, `docs/14-original-sea-video.md`)과 어종 DB(`docs/fish-db/`)를 게임에 반영 → **끝**.

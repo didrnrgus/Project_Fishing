@@ -218,7 +218,9 @@ namespace Fishing.UI
                 $"낚싯대 {rodBase.CastRange:0}m" + (rodLv > 0 ? $" + 강화 {rodLv * 0.4f:0.0}m" : "") + (st.Cast > 0f ? $" + 의상 {st.Cast:0.0}m" : ""));
             Stat(rows, "릴 감는 속도", $"{reel.ReelSpeed * p.ReelFactor:0.00}m/s",
                 $"{reelBase.Name} {reelBase.ReelSpeed:0.0}m/s" + (reelLv > 0 ? $" · 강화 +{reelLv}" : "") + gloves + (p.StaminaTier > 0 ? " · 지쳐서 느려짐" : ""));
-            Stat(rows, "감을 수 있는 줄", $"{reel.Capacity:0}m", "릴 권사량 · 고기가 이보다 멀리 가면 끊긴다");
+            Stat(rows, "장착 줄길이", $"{p.LineCapacity:0.0}m", p.Data.lineLost > 0f
+                    ? $"권사량 {reel.Capacity:0}m · 끊겨 {p.Data.lineLost:0}m 잃음 (수리하면 다시 감는다)" : "릴 권사량 · 고기가 이보다 멀리 가면 다 풀린다",
+                p.Data.lineLost > 0f ? UIFactory.Warn : (Color?)null);
             Stat(rows, "낚싯대 탄성", FlexName(rod.Flex), "연조일수록 충격을 흡수하고, 경조일수록 장력이 빨리 오른다");
             rows.Next(6);
 
@@ -227,6 +229,8 @@ namespace Fishing.UI
             bool broken = p.Data.rodDurability <= 0f;
             Stat(rows, "낚싯대 내구도", $"{p.Data.rodDurability:0}%", broken ? "낚시점에서 수리하세요 (데미지 절반)" : "파이팅할수록 닳는다 · 낚시점에서 수리",
                 broken ? UIFactory.Danger : p.Data.rodDurability < 30f ? UIFactory.Warn : (Color?)null);
+            Stat(rows, "릴 내구도", $"{p.Data.reelDurability:0}%", p.Data.reelDurability <= 0f ? "낚시점에서 수리하세요 (릴 속도 -20%)" : "놓칠 때마다 닳는다",
+                p.Data.reelDurability <= 0f ? UIFactory.Danger : p.Data.reelDurability < 30f ? UIFactory.Warn : (Color?)null);
             rows.Next(10);
 
             // 경험치 (원작 창 맨 아래 막대)

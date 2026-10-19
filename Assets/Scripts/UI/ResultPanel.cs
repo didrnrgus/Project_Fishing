@@ -15,8 +15,9 @@ namespace Fishing.UI
     /// </summary>
     public class ResultPanel : UIPanel
     {
-        TMP_Text _recordBar, _name, _exp, _length, _weight, _badge, _newRecord, _zone;
-        RectTransform _stamp;
+        TMP_Text _recordBar, _name, _exp, _length, _weight, _badge, _newRecord, _zone, _fightTime, _bonus, _grade, _eventBadge;
+        RectTransform _stamp, _eventStamp, _toastCol;
+        readonly List<(RectTransform rt, float delay)> _toastCards = new List<(RectTransform, float)>();
         bool _held;
         Image _fish, _emblem, _emblemFish;
         RectTransform _fishRoot;
@@ -86,6 +87,17 @@ namespace Fishing.UI
             _length.rectTransform.At(new Vector2(1, 0), new Vector2(-50, 162), new Vector2(560, 80));
             _weight = UIFactory.Text(root, "", 36, new Color(0.75f, 0.9f, 1f), TextAnchor.MiddleRight, FontStyle.BoldAndItalic);
             _weight.rectTransform.At(new Vector2(1, 0), new Vector2(-50, 116), new Vector2(560, 46));
+            // 원작 RESULT: 파이팅 시간 · BONUS 보상 GOLD/EXP · 등급(메달 색)
+            _fightTime = UIFactory.Text(root, "", 20, new Color(0.8f, 0.88f, 0.95f), TextAnchor.MiddleRight, FontStyle.Bold);
+            _fightTime.rectTransform.At(new Vector2(1, 0), new Vector2(-50, 88), new Vector2(560, 26));
+            _bonus = UIFactory.Text(root, "", 22, UIFactory.Gold, TextAnchor.MiddleRight, FontStyle.BoldAndItalic);
+            _bonus.rectTransform.At(new Vector2(1, 0), new Vector2(-50, 384), new Vector2(700, 30));
+            UIFactory.Outline(_bonus, new Color(0.2f, 0.1f, 0f, 0.9f), 0.25f);
+            _grade = UIFactory.Chip(root, "", new Color(0.04f, 0.07f, 0.09f, 0.9f), Color.white, 16, "GradeChip");
+            ((RectTransform)_grade.transform.parent).At(new Vector2(1, 0), new Vector2(-50, 334), new Vector2(70, 26), new Vector2(1, 0.5f));
+
+            // 오른쪽 위 말풍선 토스트 (원작: 노랑 보상형 · 하늘색 기록형, 위에서부터 차례로 뜬다)
+            _toastCol = UIFactory.Node("Toasts", root).At(new Vector2(1, 1), new Vector2(-40, -80), new Vector2(460, 600), new Vector2(1, 1));
 
             // 원작 월척·대물 도장: 오른쪽에 동그란 구릿빛 도장이 굴러 들어와 찍힌다
             _stamp = UIFactory.Shape(root, new Color(0.16f, 0.1f, 0.06f, 0.95f), UIFactory.Pill, "Stamp", 6f).rectTransform;
@@ -96,6 +108,15 @@ namespace Fishing.UI
             _badge.rectTransform.Fill(8, 8, 8, 8);
             _badge.rectTransform.localRotation = Quaternion.Euler(0, 0, -10f);
             UIFactory.Outline(_badge, new Color(0.25f, 0.1f, 0f, 0.9f), 2f);
+
+            // 원작 "EXP +200%" 이벤트 어종 도장 (월척 도장 위)
+            _eventStamp = UIFactory.Shape(root, new Color(0.08f, 0.12f, 0.2f, 0.95f), UIFactory.Pill, "EventStamp", 6f).rectTransform;
+            _eventStamp.At(new Vector2(1, 0.5f), new Vector2(-370, 70), new Vector2(160, 160));
+            UIFactory.AddBorder((LeTai.Asset.TranslucentImage.TranslucentImage)_eventStamp.GetComponent<Image>(), new Color(0.35f, 0.8f, 1f, 0.95f), 5f);
+            _eventBadge = UIFactory.Text(_eventStamp, "", 40, new Color(0.55f, 0.92f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            _eventBadge.rectTransform.Fill(8, 8, 8, 8);
+            _eventBadge.rectTransform.localRotation = Quaternion.Euler(0, 0, 8f);
+            UIFactory.Outline(_eventBadge, new Color(0f, 0.1f, 0.25f, 0.9f), 0.25f);
 
             _newRecord = UIFactory.Text(root, "", 30, new Color(1f, 0.5f, 0.6f), TextAnchor.MiddleLeft, FontStyle.Bold);
             _newRecord.rectTransform.At(new Vector2(0, 1), new Vector2(70, -196), new Vector2(600, 40));
@@ -186,7 +207,8 @@ namespace Fishing.UI
         }
 
         /// <param name="held">캐릭터가 고기를 손에 들어 보이는 중: 3D·그림 물고기와 물방울을 띄우지 않는다.</param>
-        public void Show(CaughtFish fish, int exp, bool record, float prevBest, int prevBestDay, bool firstGet, bool held, Action<bool> onChoose)
+        public void Show(CaughtFish fish, int exp, bool record, float prevBest, int prevBestDay, bool firstGet, bool held,
+            CatchRewards.Outcome extra, Action<bool> onChoose)
         {
             _held = held;
             var s = FishDatabase.Get(fish.speciesId);
@@ -244,11 +266,66 @@ namespace Fishing.UI
             _keepBtn.GetComponentInChildren<TMP_Text>().text = $"살림망에 넣기 ({PlayerProfile.SellPrice(fish):N0}G)";
             _releaseBtn.GetComponentInChildren<TMP_Text>().text = s.IsJunk ? "버리기" : "방생하기 (EXP+30%)";
 
+            ShowExtra(s, extra);
             if (!held) SpawnDrops();
             else ClearDrops();
             // 원작 결과 화면에는 파이팅 기록 차트가 없다
             _report.gameObject.SetActive(false);
             Open();
+        }
+
+        void ShowExtra(FishSpecies s, CatchRewards.Outcome extra)
+        {
+            foreach (var (rt, _) in _toastCards) UnityEngine.Object.Destroy(rt.gameObject);
+            _toastCards.Clear();
+            bool fishy = extra != null && !s.IsJunk;
+            _fightTime.text = fishy && extra.FightSeconds > 0f ? $"파이팅 시간  {FormatTime(extra.FightSeconds)}" : "";
+            _bonus.text = fishy && (extra.BonusGold > 0 || extra.BonusExp > 0)
+                ? $"<size=16><color=#fff2c0>BONUS 보상</color></size>  {extra.BonusGold:N0} GOLD  <color=#b8ff70>{extra.BonusExp:N0} EXP</color>" : "";
+            int g = s.IsJunk ? -1 : CatchRewards.Grade(s);
+            _grade.transform.parent.gameObject.SetActive(g >= 0);
+            if (g >= 0)
+            {
+                _grade.text = CatchRewards.GradeName(g);
+                _grade.color = CatchRewards.GradeColor(g);
+                _name.color = CatchRewards.GradeColor(g);
+                ((RectTransform)_grade.transform.parent).anchoredPosition = new Vector2(-50f - _name.preferredWidth - 14f, 324f);
+            }
+            int pct = fishy ? extra.EventPct : 0;
+            _eventStamp.gameObject.SetActive(pct > 0 || (fishy && extra.Revenge));
+            _eventBadge.text = pct > 0 ? $"이벤트\n<size=50%>EXP+{pct}%</size>" : fishy && extra.Revenge ? $"복수\n<size=50%>EXP X{extra.RevengeMult}</size>" : "";
+            if (!fishy) return;
+            // 말풍선 토스트: 최대 3개 (아래 월척·이벤트 도장과 안 겹치게), 0.25초 간격으로 위에서부터
+            float y = 0f;
+            int n = 0;
+            foreach (var t in extra.Toasts)
+            {
+                if (n++ >= 3) break;
+                var col = t.Reward ? new Color(1f, 0.82f, 0.3f) : new Color(0.45f, 0.85f, 1f);
+                var card = UIFactory.Shape(_toastCol, new Color(0.05f, 0.08f, 0.14f, 0.9f), 12f, "Toast", 3f);
+                UIFactory.AddBorder(card, new Color(col.r, col.g, col.b, 0.9f), 2f);
+                UIFactory.AddShadow(card, 16f, new Vector2(0, -4), 0.5f);
+                var rt = card.rectTransform.At(new Vector2(1, 1), new Vector2(0, -y), new Vector2(440, 84), new Vector2(1, 1));
+                UIFactory.Shape(rt, col, UIFactory.Pill, "Bar", 0f).rectTransform.At(new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(6, 58));
+                var title = UIFactory.Text(rt, t.Title, 19, col, TextAnchor.MiddleLeft, FontStyle.Bold);
+                title.rectTransform.At(new Vector2(0, 1), new Vector2(28, -8), new Vector2(400, 26));
+                var body = UIFactory.Text(rt, t.Body, 14, UIFactory.TextMain, TextAnchor.UpperLeft);
+                body.rectTransform.At(new Vector2(0, 1), new Vector2(28, -34), new Vector2(400, 30));
+                if (t.Reward && (t.Gold > 0 || t.Exp > 0))
+                {
+                    var rw = UIFactory.Text(rt, $"{t.Gold:N0} G / <color=#b8ff70>{t.Exp:N0} EXP</color>", 15, UIFactory.Gold, TextAnchor.LowerRight, FontStyle.Bold);
+                    rw.rectTransform.At(new Vector2(1, 0), new Vector2(-14, 6), new Vector2(260, 22), new Vector2(1, 0));
+                }
+                rt.gameObject.SetActive(false);
+                _toastCards.Add((rt, 0.55f + 0.25f * (n - 1)));
+                y += 92f;
+            }
+        }
+
+        static string FormatTime(float sec)
+        {
+            int t = Mathf.RoundToInt(sec);
+            return t >= 60 ? $"{t / 60}분 {t % 60}초" : $"{t}초";
         }
 
         static Color FishColor(string id) => id switch
@@ -301,6 +378,26 @@ namespace Fishing.UI
                 _stamp.anchoredPosition = new Vector2(Mathf.Lerp(260f, -150f, 1f - (1f - k) * (1f - k)), 70f);
                 _stamp.localRotation = Quaternion.Euler(0, 0, Mathf.Lerp(-200f, 0f, k));
                 _stamp.localScale = Vector3.one * (k < 1f ? 1f : 1f + Mathf.Max(0f, 0.65f - t) * 0.6f);
+            }
+
+            // 말풍선 토스트: 오른쪽에서 미끄러져 들어온다 (뜰 때마다 딸깍)
+            foreach (var (rt, delay) in _toastCards)
+            {
+                float k = Mathf.Clamp01((t - delay) / 0.22f);
+                if (k <= 0f) continue;
+                if (!rt.gameObject.activeSelf)
+                {
+                    rt.gameObject.SetActive(true);
+                    Game.Sound.Coin();
+                }
+                float e = 1f - (1f - k) * (1f - k);
+                rt.anchoredPosition = new Vector2(Mathf.Lerp(480f, 0f, e), rt.anchoredPosition.y);
+                rt.localScale = Vector3.one * Mathf.Lerp(0.85f, 1f, e);
+            }
+            if (_eventStamp.gameObject.activeSelf)
+            {
+                float k = Mathf.Clamp01((t - 0.3f) / 0.3f);
+                _eventStamp.localScale = Vector3.one * (k < 1f ? Mathf.Lerp(2.2f, 1f, k) : 1f);
             }
 
             for (int i = 0; i < _drops.Count; i++)

@@ -216,6 +216,13 @@ namespace Fishing.Angling
             AimRod();
             if (UiBlocking || PointerOverUI) return;
             if (!Input.GetMouseButtonDown(0)) return;
+            if (Game.Boat != null && Game.Boat.Summoning) return;
+            if (Game.Boat != null && Game.Boat.BlocksCasting)
+            {
+                // 원작: 엔진을 멈춰야 낚시한다
+                Game.Toast($"엔진이 켜져 있습니다. {Settings.KeyName(KeyAction.Engine)}로 엔진을 끄고 낚시하세요.", ToastKind.Warn);
+                return;
+            }
 
             var p = Game.Profile;
             if (p.Count(p.Bait.Id) <= 0)
@@ -375,7 +382,20 @@ namespace Fishing.Angling
                 p.y = Mathf.Lerp(start.y, target.y, t);
                 _aimArc.SetPosition(i, p);
             }
+            // 원작: 궤적을 따라 흰 별 파티클이 목표 지점으로 흘러간다
+            if (Time.time >= _nextSparkle)
+            {
+                _nextSparkle = Time.time + 0.03f;
+                for (int k = 0; k < 3; k++)
+                {
+                    float t = Mathf.Repeat(Time.time * 0.8f + k / 3f, 1f);
+                    var p = Vector3.Lerp(start, target, t) + right * Mathf.Sin(t * Mathf.PI) * distance * 0.06f + Vector3.up * 0.12f;
+                    Effects.Sparkle(p, Mathf.Lerp(0.16f, 0.32f, t));
+                }
+            }
         }
+
+        float _nextSparkle;
 
         /// <summary>
         /// 찌가 날아갈 궤적(Bobber.Launch와 같은 포물선)에 막는 것이 있는지. 등대·NPC·건물·나무·언덕 등.
@@ -547,9 +567,19 @@ namespace Fishing.Angling
             CastCellLabel = $"{_cellName} · {FieldMap.HabitatName(_ctx.Habitat)}" + (_ctx.School != null ? $" · {_ctx.School.Name}({_ctx.School.SizeLabel})" : "")
                 + (_waitInSpot ? " · 어군 한가운데!" : "") + (FieldMap.IsFarSea(_bobber.Position) ? " · 먼바다 (대물↑)" : "");
             PendingBite = BiteSelector.Pick(_ctx);
+            // 재도전(복수혈전): 놓친 그 고기가 다시 온다. 입질도 빠르다
+            FishSpecies rs = null;
+            float rl = 0f;
+            bool revenge = !_ctx.IceFishing && CatchRewards.TryRevengeBite(FieldMap.Id, out rs, out rl);
+            if (revenge)
+            {
+                PendingBite = new BiteResult { Species = rs, Length = rl };
+                CastCellLabel += $" · <color=#7fd8ff>재도전 X{CatchRewards.Mult}</color>";
+            }
             BigBite = false;
 
             _waitTimer = BiteSelector.WaitSeconds(_ctx) * slowdown * (_waitInSpot ? 0.7f : 1f) * Tide.WaitFactor * Game.Weather.WaitFactor; // 서해: 들물이면 빨리, 흐리거나 비 오면 빨리
+            if (revenge) _waitTimer *= 0.5f;
             _nibblesLeft = PendingBite.Species.Aggression > 0.75f ? Random.Range(0, 2) : Random.Range(0, 4);
             _lureMode = IsLureBait(Game.Profile.Bait.Kind);
             _bobber.SetLureLook(_lureMode, Game.Profile.Bait.Kind);
@@ -1133,6 +1163,7 @@ namespace Fishing.Angling
             float wear = Mathf.Lerp(0.5f, 3f, f.Length / 100f) * (f.Tension > 0.9f ? 1.5f : 1f);
             p.Data.rodDurability = Mathf.Max(0f, p.Data.rodDurability - wear);
             if (p.Data.rodDurability <= 0f) Game.Toast("낚싯대가 망가졌습니다! 상점에서 수리하세요.", ToastKind.Warn);
+            CatchRewards.OnFightEnded(f.CounterCount);
 
             FightEnded?.Invoke(outcome);
 
@@ -1140,14 +1171,26 @@ namespace Fishing.Angling
             {
                 Game.Sound.Snap();
                 Rumble.Pulse(1f, 1f, 0.45f);   // 줄 끊김
-                // 원작처럼 화면 위쪽 흰 경고 카드 (빨간 WARNING 표지)
-                Game.UI.Hud.ShowWarning(outcome switch
+                // 원작 실패 페널티 (경고 카드 문구 그대로): 낚싯대 내구도 1% · 릴 내구도 2% · 줄이 끊기면 줄 길이 7m
+                const float rodLoss = 1f, reelLoss = 2f;
+                float lineLoss = outcome == FightOutcome.LineBroken ? Mathf.Min(7f, p.LineCapacity - p.Reel.Capacity * 0.4f) : 0f;
+                p.Data.rodDurability = Mathf.Max(0f, p.Data.rodDurability - rodLoss);
+                p.Data.reelDurability = Mathf.Max(0f, p.Data.reelDurability - reelLoss);
+                p.Data.lineLost += Mathf.Max(0f, lineLoss);
+                string cause = outcome switch
                 {
                     FightOutcome.LineBroken => "낚싯줄이 끊어졌습니다! 장력이 HIGH를 넘지 않게 조심하세요.",
                     FightOutcome.HookOut => "바늘이 빠졌습니다! 줄을 너무 느슨하게 두었어요.",
                     FightOutcome.LineRunOut => "낚싯줄이 모두 풀려 버렸습니다! 거리를 좁히세요.",
                     _ => "물고기를 놓쳤습니다."
-                });
+                };
+                string penalty = $"낚싯대 내구도 감소 : {rodLoss:0.00} %  릴 내구도 감소 : {reelLoss:0.00} %"
+                                 + (lineLoss > 0f ? $"  줄 길이 감소 : {lineLoss:0.00}m" : "");
+                // 원작처럼 화면 위쪽 흰 경고 카드 (빨간 WARNING 표지)
+                Game.UI.Hud.ShowWarning(cause, penalty);
+                Game.SysLog($"{f.Species.Name}{Fishing.Data.QuestNpcs.Josa(f.Species.Name, "을", "를")} 놓쳤습니다.");
+                // 원작: 경고 뒤 오른쪽 아래 "재도전 하시겠습니까?" + 오른쪽 위 X2 재도전
+                if (CatchRewards.OnLost(f.Species, f.Length)) Game.UI.Hud.OfferRetry(f.Species.Name, CatchRewards.Mult);
                 Fight = null;
                 ToIdle();
                 // 줄이 툭 끊기면 움찔 (ToIdle이 낚싯대 자세를 돌린 뒤에 한 번짜리 동작)
@@ -1180,8 +1223,14 @@ namespace Fishing.Angling
             bool newSpecies = !species.IsJunk && p.Dex(species.Id) == null;
             bool record = p.RecordDex(species, caught.length, caught.weight, caught.day);
             int exp = Mathf.RoundToInt(species.Exp * Mathf.Sqrt(f.Length / species.MinLen) * (species.IsTrophy(f.Length) ? 2f : 1f));
+            // 원작 RESULT 오른쪽 토스트·BONUS·이벤트 어종(EXP +200%)·복수혈전
+            exp = CatchRewards.OnCatch(species, f.Length, exp, f.CounterCount, record, prevBest, f.Elapsed, out var rewards);
             p.Data.totalCatches++;
             p.AddExp(exp);
+            // 원작 시스템 줄: "[꽃돔] 19.28 cm, 0.15 kg 을 잡았습니다." "337 EXP 를 획득했습니다."
+            if (!species.IsJunk)
+                Game.SysLog($"[{species.Name}] {caught.length:0.00} cm, {caught.weight / 1000f:0.00} kg 을 잡았습니다.");
+            Game.SysLog($"{exp:N0} EXP 를 획득했습니다.", QuestSystem.ExpColor);
             Game.Quests.OnCatch(new CatchInfo { Species = species, Length = f.Length, Habitat = _ctx.Habitat, Band = Game.Clock.Band,
                 MapId = FieldMap.Id, NewSpecies = newSpecies, Combo = f.Combo });
             Game.Schools.OnCatch(_ctx.School, species.Id);
@@ -1189,7 +1238,7 @@ namespace Fishing.Angling
 
             State = FishingState.Result;
             Fight = null;
-            StartCoroutine(LandedSequence(f, caught, exp, record, prevBest, prevBestDay, species, p, newSpecies));
+            StartCoroutine(LandedSequence(f, caught, exp, record, prevBest, prevBestDay, species, p, newSpecies, rewards));
         }
 
         /// <summary>결과 화면에서 캐릭터가 손에 들어 보일 만한 크기인가 (원작: 작은 고기는 손에 들고, 큰 고기는 물 위로 튀어 오른다).</summary>
@@ -1209,7 +1258,7 @@ namespace Fishing.Angling
         ///  3. RESULT: 작은 고기는 얼굴 앞 정면 구도에서 왼손으로 들어 보이고, 큰 고기는 물 위로 튀어 오르는 모습 (결과 창의 3D 물고기)
         /// </summary>
         System.Collections.IEnumerator LandedSequence(FishFight f, CaughtFish caught, int exp, bool record, float prevBest, int prevBestDay,
-            FishSpecies species, PlayerProfile p, bool firstGet)
+            FishSpecies species, PlayerProfile p, bool firstGet, CatchRewards.Outcome rewards)
         {
             var rig = Game.CameraRig;
             // 1. 들어 올리기
@@ -1300,13 +1349,14 @@ namespace Fishing.Angling
                 if (species.Boss || species.Rarity >= 5) player.PlayExcited();
                 else player.PlayCheer();
             }
-            ShowResult(caught, exp, record, prevBest, prevBestDay, species, p, firstGet, held);
+            ShowResult(caught, exp, record, prevBest, prevBestDay, species, p, firstGet, held, rewards);
         }
 
         void ShowResult(CaughtFish caught, int exp, bool record, float prevBest, int prevBestDay,
-            FishSpecies species, PlayerProfile p, bool firstGet, bool held)
+            FishSpecies species, PlayerProfile p, bool firstGet, bool held, CatchRewards.Outcome rewards)
         {
-            Game.UI.Result.Show(caught, exp, record, prevBest, prevBestDay, firstGet, held, keep =>
+            if (rewards != null) CatchRewards.Pay(rewards);
+            Game.UI.Result.Show(caught, exp, record, prevBest, prevBestDay, firstGet, held, rewards, keep =>
             {
                 _cheering = false;
                 Game.Player.HoldFish(null);

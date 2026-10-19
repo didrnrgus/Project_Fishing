@@ -7,7 +7,6 @@ namespace Fishing.UI
     /// <summary>낚시점: 장비(낚싯대·릴·줄·배) 구매/장착, 미끼·김밥 구매, 물고기 판매, 낚싯대 수리, 배 연료.</summary>
     public class ShopPanel : UIPanel
     {
-        const int RepairCostPerPoint = 8;
 
         public ShopPanel(Transform canvas)
         {
@@ -102,10 +101,10 @@ namespace Fishing.UI
             Cell(sell, $"살림망 물고기 납품  <size=14><color=#a0b0c0>{p.Data.keepNet.Count}마리 · 모두 {total:N0}골드</color></size>", 10, 380, 18);
             RowButton(sell, "납품 창 열기", () => Game.UI.OpenExclusive(Game.UI.Delivery), 400, 200, UIFactory.TabOn, p.Data.keepNet.Count > 0);
 
-            float dur = p.Data.rodDurability;
-            int cost = Mathf.CeilToInt((100f - dur) * RepairCostPerPoint);
+            int cost = p.RepairCost;
             var repair = rows.Next(46, 4);
-            Cell(repair, $"낚싯대 수리  <size=14><color=#a0b0c0>내구도 {dur:0}/100</color></size>", 10, 380, 18);
+            Cell(repair, $"장비 수리  <size=14><color=#a0b0c0>낚싯대 {p.Data.rodDurability:0}% · 릴 {p.Data.reelDurability:0}%"
+                         + (p.Data.lineLost > 0f ? $" · 줄 -{p.Data.lineLost:0}m" : "") + "</color></size>", 10, 380, 18);
             RowButton(repair, cost > 0 ? $"{cost:N0}골드" : "수리 불필요", () => Repair(cost), 400, 200, null, cost > 0 && p.Data.gold >= cost);
 
             var up = rows.Next(46, 4);
@@ -159,12 +158,10 @@ namespace Fishing.UI
 
         void Repair(int cost)
         {
-            var p = Game.Profile;
-            if (!p.TrySpend(cost)) return;
-            p.Data.rodDurability = 100f;
+            if (!Game.Profile.RepairAll()) return;
             Game.Sound.Coin();
-            Game.Toast("낚싯대를 수리했습니다.", ToastKind.Good);
-            p.NotifyChanged();
+            Game.Toast("낚싯대·릴을 수리하고 줄을 새로 감았습니다.", ToastKind.Good);
+            Game.SysLog($"{cost:N0} GOLD 를 지불했습니다.");
         }
     }
 }

@@ -125,7 +125,7 @@ namespace Fishing.Core
         /// </summary>
         public float StaminaFactor => StaminaTier switch { 2 => 0.15f, 1 => 0.45f, _ => 1f };
         /// <summary>릴 감는 속도 배율 (원작: 20% 이하 20% 감소, 5% 이하 대폭 감소).</summary>
-        public float ReelFactor => StaminaTier switch { 2 => 0.35f, 1 => 0.8f, _ => 1f } * (HasCottonGloves ? 1.05f : 1f);
+        public float ReelFactor => StaminaTier switch { 2 => 0.35f, 1 => 0.8f, _ => 1f } * (HasCottonGloves ? 1.05f : 1f) * (Data.reelDurability <= 0f ? 0.8f : 1f);
         /// <summary>파이팅 데미지 배율 (내구도 × 의상 × 목장갑).</summary>
         public float FightPower => DurabilityFactor * (1f + Costume.Damage) * (HasCottonGloves ? 1.05f : 1f);
 
@@ -201,6 +201,26 @@ namespace Fishing.Core
         public bool HasCottonGloves => Data.specialFinds.Contains(CottonGlovesId);
         public float DurabilityFactor => Data.rodDurability <= 0f ? 0.5f : 1f;
 
+        /// <summary>지금 감겨 있는 줄 길이 m: 릴 권사량에서 끊겨 잃은 만큼 뺀다 (최소 40%).</summary>
+        public float LineCapacity => Mathf.Max(Reel.Capacity * 0.4f, Reel.Capacity - Data.lineLost);
+
+        const int RepairPerPoint = 8, RespoolPerMeter = 12;
+        /// <summary>낚싯대·릴 내구도를 100%로, 잃은 줄을 다시 감는 값.</summary>
+        public int RepairCost => Mathf.CeilToInt((100f - Data.rodDurability) * RepairPerPoint + (100f - Data.reelDurability) * RepairPerPoint
+                                                 + Data.lineLost * RespoolPerMeter);
+
+        /// <summary>수리: 골드가 모자라면 false.</summary>
+        public bool RepairAll()
+        {
+            int cost = RepairCost;
+            if (cost <= 0 || !TrySpend(cost)) return false;
+            Data.rodDurability = 100f;
+            Data.reelDurability = 100f;
+            Data.lineLost = 0f;
+            NotifyChanged();
+            return true;
+        }
+
         public void NotifyChanged() => Changed?.Invoke();
 
         // ---- 경험치 / 재화 ----
@@ -265,8 +285,14 @@ namespace Fishing.Core
                     if (Data.rodId != gear.Id) Data.rodDurability = 100f;
                     Data.rodId = gear.Id;
                     break;
-                case GearSlot.Reel: Data.reelId = gear.Id; break;
-                case GearSlot.Line: Data.lineId = gear.Id; break;
+                case GearSlot.Reel:
+                    if (Data.reelId != gear.Id) Data.reelDurability = 100f;
+                    Data.reelId = gear.Id;
+                    break;
+                case GearSlot.Line:
+                    if (Data.lineId != gear.Id) Data.lineLost = 0f;   // 새 줄을 감는다
+                    Data.lineId = gear.Id;
+                    break;
                 case GearSlot.Boat:
                     if (Data.boatId != gear.Id) Data.boatFuel = gear.FuelCapacity; // 새 배는 연료를 가득 채워 준다
                     Data.boatId = gear.Id;
