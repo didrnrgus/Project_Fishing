@@ -431,9 +431,9 @@ namespace Fishing.UI
                 var info = VrmCharacters.GetInfo(id);
                 var row = rows.Next(66, 4);
                 UIFactory.RowBg(row, id == cur);
-                string title = info?.Title ?? DisplayName(id);
+                string title = Printable(info?.Title) ?? DisplayName(id);
                 string sub = info == null ? "게임과 함께 온 캐릭터" : info.Loading ? "읽는 중…" : info.Error != null ? $"<color=#ff9070>읽기 실패: {info.Error}</color>"
-                    : $"{(string.IsNullOrEmpty(info.Author) ? "만든 사람 모름" : "만든 사람 " + info.Author)} · 키 {info.Height:0.00}m{PermissionNote(info)}";
+                    : $"{(Printable(info.Author) is string au ? "만든 사람 " + au : "만든 사람 모름")} · 키 {info.Height:0.00}m{PermissionNote(info)}";
                 string src = id.StartsWith("builtin/") ? "  <color=#80c0ff>기본 제공</color>" : "";
                 Cell(row, $"<b>{title}</b>{src}\n<size=14><color=#8090a0>{sub}</color></size>", 20, 560, 19).alignment = UIFactory.Align(TextAnchor.MiddleLeft);
                 if (id == cur) RowButton(row, "사용 중", null, 600, 210, UIFactory.TabOn, false);
@@ -464,7 +464,22 @@ namespace Fishing.UI
             _detailText.text = sel == null ? "<b>캐릭터 없음</b>\n기본 VRM 파일을 찾지 못했어요."
                 : sel.Loading ? "<b>읽는 중…</b>"
                 : sel.Error != null ? $"<b>읽기 실패</b>\n{sel.Error}"
-                : $"<b>{sel.Title}</b>{(cur.Length == 0 ? "  <size=13>(기본)</size>" : "")}\n{(string.IsNullOrEmpty(sel.Author) ? "" : "만든 사람: " + sel.Author + "\n")}{PermissionText(sel)}";
+                : $"<b>{Printable(sel.Title) ?? DisplayName(shown)}</b>{(cur.Length == 0 ? "  <size=13>(기본)</size>" : "")}\n{(Printable(sel.Author) is string author ? "만든 사람: " + author + "\n" : "")}{PermissionText(sel)}";
+        }
+
+        /// <summary>
+        /// 글꼴(잘난체)에 없는 글자를 뺀 이름. VRM 메타는 일본어가 많아(千駄ヶ谷渋, VRoidプロジェクト) □로 보였다. 다 빠지면 null → 파일 이름.
+        /// </summary>
+        static string Printable(string s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return null;
+            var font = UIFactory.Font;
+            if (font == null || font.HasCharacters(s, out _, true, true)) return s;
+            var sb = new System.Text.StringBuilder();
+            foreach (char c in s)
+                if (char.IsWhiteSpace(c) || font.HasCharacter(c, true, true)) sb.Append(c);
+            var t = sb.ToString().Trim();
+            return t.Length > 0 ? t : null;
         }
 
         /// <summary>"builtin/Sendagaya_Shino.vrm" → "Sendagaya Shino".</summary>

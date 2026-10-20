@@ -13,9 +13,9 @@
 | ![company](docs/images/00_intro_company.png) | ![title](docs/images/00_intro_title.png) |
 | **대기실 (한국 낚시 조합)** | **낚시터 목록** |
 | ![lobby](docs/images/00a_lobby.png) | ![areas](docs/images/00b_area_list.png) |
-| **캐릭터 (진짜 옷 메쉬, 반장갑)** | **의상 (능력치 레이더)** |
+| **캐릭터 (VRM, 기본 캐릭터 남자)** | **의상 (능력치만 — 몸에 보이는 장비는 낚싯대뿐)** |
 | ![character](docs/images/00_character.png) | ![costume](docs/images/21c_costume.png) |
-| **내가 만든 VRM 캐릭터로 낚시 (빌드 없이 폴더에 넣기, 시험 모델 Seed-san © VirtualCast)** | **캐릭터 모델 고르기 (VRoid 등 .vrm)** |
+| **다른 VRM으로 갈아입고 낚시 (기본 제공 11명 + 내가 만든 .vrm, 빌드 없이)** | **캐릭터 모델 고르기 (VRoid 등 .vrm, characters.json)** |
 | ![vrm](docs/images/02v_vrm_155.png) | ![vrm_panel](docs/images/21e_character_model.png) |
 | **홍현 앞바다 (남해)** | **서천 앞바다 (서해, 물때·갯벌)** |
 | ![honghyeon](docs/images/22_honghyeon_day.png) | ![seocheon](docs/images/35_seocheon_lowtide.png) |
@@ -43,10 +43,8 @@
 | ![kohsamui](docs/images/63_kohsamui_buddha.png) | ![zakynthos](docs/images/70_zakynthos_navagio.png) |
 | **플라우 티오만 (곡선 리조트 호텔·보라 파라솔)** | **플라우 탱글 (바다 위 데크 별장)** |
 | ![tioman](docs/images/67b_tioman_beach.png) | ![tenggol](docs/images/68_tenggol_deck.png) |
-| **버스킹 무대의 낚시 아이돌 유니티짱 (다가가면 손 흔들어 인사)** | **밤의 한강 다리 밑 귀신** |
-| ![idol](docs/images/00h_idol_greeting.png) | ![ghost](docs/images/00k_night_ghost.png) |
-| **한강 공원 벤치의 수다 (Mixamo 사람들)** | **밤 데크의 네온 댄서·좀비들** |
-| ![chat](docs/images/00l_park_chat.png) | ![dancer](docs/images/00m_night_dancer.png) |
+| **대기실의 내 캐릭터 (VRM)** | **NPC도 VRM (낚시점 사장)** |
+| ![lobby_vrm](docs/images/00a_lobby.png) | ![npc](docs/images/20_npc_dialog.png) |
 | **한강 둔치 공원 (실사 활엽수·소나무·풀)** | **삼척 바닷가 (실사 바위·풀)** |
 | ![park](docs/images/00g_park_trees.png) | ![samcheok](docs/images/45_samcheok_chuam.png) |
 | **거문도 등대** | **홍현 갯바위 섬 (반복 없는 지형 텍스처·실사 바위)** |
@@ -109,11 +107,12 @@
 - **생태**: 어종 **165종** + 잡동사니 6종. 서식지·미끼·시간대·날씨·**계절**(한 달 = 게임 7일, 제철 어종)에 따라 입질이 달라진다. 수면의 하얀 소용돌이 **어군**(큰/작은 어군), 고기떼를 모두 흩으면 나오는 **히든 어군**, 고기떼를 쫓는 **포식자 어군**, 지역 지도(M).
 - **괴물 어종**: 괴물잉어·괴물가물치·폭군삼치·황새치를 낚으면 대물 코인 → 풍림화산 낚싯대·릴로 교환.
 - **배 4종**: 고무보트·돛단배(바람)·고속보트·낚시 크루저. 원작처럼 B로 부르면 바다 쪽에서 달려와 서고, **Y로 엔진 START/STOP**(꺼야 낚시). 연료, 배마다 다른 흔들림(안정성 × 파도), 먼바다 포인트(대물 +8%).
-- **성장·수집**: 레벨 1~40(레벨 보상 장비), 장비(낚싯대·릴·줄·배) 강화 +15, 미끼 + 해체 미끼 5등급, 도감, 살림망, 이야기 퀘스트 87개(낚시터마다), **일일 의뢰**, **대물 도전**, **업적**·칭호, **빙고 5×5**, **출석 체크**, 낚시 일지, 소라고동 교환소, **납품소**(살림망 고기를 팔면 납품 게이지가 차고, 가득 차면 다음 납품 두 배), **통발**(낚시터에 설치해 두고 20시간 뒤 수거), **내 캐릭터 창**(장착 장비 칸 + 최종 능력치 표), **의상**(6부위 25벌, 부위별 능력치), 대기실 **수족관**.
+- **성장·수집**: 레벨 1~40(레벨 보상 장비), 장비(낚싯대·릴·줄·배) 강화 +15, 미끼 + 해체 미끼 5등급, 도감, 살림망, 이야기 퀘스트 87개(낚시터마다), **일일 의뢰**, **대물 도전**, **업적**·칭호, **빙고 5×5**, **출석 체크**, 낚시 일지, 소라고동 교환소, **납품소**(살림망 고기를 팔면 납품 게이지가 차고, 가득 차면 다음 납품 두 배), **통발**(낚시터에 설치해 두고 20시간 뒤 수거), **내 캐릭터 창**(장착 장비 칸 + 최종 능력치 표 + 캐릭터 모델), **의상**(6부위 25벌, 부위별 능력치), 대기실 **수족관**.
 - **조합 낚시 대회**: 매일 09~15시, AI 낚시꾼 7명과 마릿수·최장·길이 합계로 겨룬다. 계급 엠블럼, 우승 상품 거거 낚시대·나팔고둥 릴.
 - **손맛**: 마디를 펼치는 뽑기대가 줄 방향으로 휘고 출렁인다. 장비별 릴이 돌고, 릴·드랙·카운터 소리, 게임패드 진동.
 - **화면**: 원작풍 UI(짙은 남색 판·파란 빛 테두리·각진 모서리·파란 탭, Translucent Image + Paraform), EasyChart 차트, 후처리(블룸·톤매핑·AO), 낮밤(하루 24분)·노을·해달별(은하수·반짝이는 별), 날씨(흐린 날 층구름·비·겨울 눈), 물결 셰이더, 새벽 물안개. 바닥·지형은 반복 무늬를 깨는 셰이더(`Fishing/Ground`·`Fishing/Terrain`, 절벽은 옆 투영), 벽·호안·석상·집은 풍화 셰이더(`Fishing/Weathered`: 월드 트라이플래너 + 물 자국·빗물 줄·이끼), 테트라포드·등대·바위기둥·한옥 정자는 절차적 메쉬, 석상(머라이언·독수리·사자상·대불·돌하르방)은 Blender에서 한 덩어리로 깎은 조각, 배(한국 연안 어선·모터보트·고무보트·나무배·카이크·요트)는 Blender 로프트 선체, 나무·바위·풀은 실사풍 에셋(Conifers [BOTD], Realistic Tree 9·10, Rock and Boulders 2, Grass Flowers Pack Free).
-- **사람과 물고기는 직접 만든 3D 모델**: headless Blender 스크립트(`tools/blender`)로 Quaternius CC0 몸을 보통 체형으로 다듬고 진짜 옷 메쉬(체크 남방 깃·조끼·웨이더·운동화·반장갑…)를 입힌다. 물고기 165종도 어종별 모델·텍스처·헤엄 애니메이션(오징어·문어·갑오징어는 다리마다 뼈), 아이템 아이콘도 렌더.
+- **사람은 모두 VRM (애니풍)**: 내 캐릭터·낚시점 사장·조합 연락관·낚시꾼 NPC가 모두 VRM 파일이다. 기본 캐릭터(남/녀)와 NPC는 VRoid CC0 샘플 11명, [VRoid Studio](https://vroid.com/studio)로 만든 내 `.vrm`을 `문서\짭풍명월\Characters`에 넣으면 **빌드 없이** 캐릭터 창에서 골라 플레이한다. 기본 캐릭터·NPC도 `characters.json`만 고치면 빌드한 뒤에 갈아입힐 수 있다 → [캐릭터 바꾸기 설명서](docs/guide/07-characters.md). 의상은 능력치만 있고 몸에 보이는 장비는 낚싯대뿐.
+- **물고기는 직접 만든 3D 모델**: headless Blender 스크립트(`tools/blender`)로 물고기 165종의 어종별 모델·텍스처·헤엄 애니메이션(오징어·문어·갑오징어는 다리마다 뼈)을 만들고, 아이템 아이콘도 렌더.
 - **인트로**: Unity 스플래시 → 사업자 로고 「제쓰로네 게임공방」(낙관이 쾅 찍히고 이름이 붓으로 써진다) → 타이틀 「짭풍명월」(달밤 수묵 산수화 겹 그림이 시차·물안개·배·꽃잎으로 움직이고, 붓글씨·징·가야금풍 음악) → 아무 키 → 대기실. 아무 키로 건너뛸 수 있다. 그림은 `tools/intro/build_intro_art.py`, 소리는 절차적(`IntroAudio`).
 - **편의**: 옵션(O) — 음량·감도·해상도·그림자·후처리·진동·**키 설정**.
 
@@ -166,7 +165,7 @@ cd tools/fightsim && dotnet run -- report   # Unity 없이 파이팅 밸런스 (
 | [05-dev-guide.md](docs/05-dev-guide.md) | 개발 환경, 에디터 메뉴, 명령줄 도구, 단위 테스트, Blender 파이프라인, 자동 스크린샷 |
 | [06-roadmap.md](docs/06-roadmap.md) | 한 일과 다음 할 일 (v0.5 원작 자료집·해외 거점) |
 | [07-original-data.md](docs/07-original-data.md) | 원작 데이터 검증 (확인된 것 / 근거 없는 것) |
-| [08-quality-plan.md](docs/08-quality-plan.md) | 캐릭터 퀄리티: 보통 체형 + 진짜 옷 메쉬, 다시 만들기, 남은 개선점, 무료 에셋 계획 |
+| [08-quality-plan.md](docs/08-quality-plan.md) | (기록) 예전 Quaternius 캐릭터 퀄리티 계획 — 지금은 VRM(16 문서) |
 | [09-art-plan.md](docs/09-art-plan.md) | 어종별 물고기 모델·도감 그림·아이템 아이콘·해외 소품 (검색 → 설계 → Blender → 적용) |
 | [10-animation.md](docs/10-animation.md) | 캐릭터 애니메이션: UAL + Mixamo 낚시·상황 동작(Fishing Cast 구간 나누기, 임포트 함정 180°, Excited·Rallying·Scared) + Human Basic Motions 대기·걷기·뛰기·제자리 돌기 |
 | [11-original-crosscheck.md](docs/11-original-crosscheck.md) | 원작 자료집과 구현 대조표 (들어간 것 / 바꾼 것 / 안 넣은 것) |
@@ -174,6 +173,7 @@ cd tools/fightsim && dotnet run -- report   # Unity 없이 파이팅 밸런스 (
 | [13-original-lobby-video.md](docs/13-original-lobby-video.md) | 원작 대기실·퀘스트·배 영상 프레임 분석: NPC 퀘스트, 납품·생태조사, 통발, 로딩·날씨 알림·ESC·인벤토리를 맞춘 기록 |
 | [14-original-sea-video.md](docs/14-original-sea-video.md) | 원작 동남아 거점 영상 프레임 분석(앙코르와트·하롱베이·빈펄·돈콘·센토사·플라우 탱글·텔록 바텍·티오만)과 원작 전체 맵 목록 |
 | [15-original-clip-library.md](docs/15-original-clip-library.md) | 원작 기능별 클립 라이브러리(814개·문서 17개) 대조: WARNING·재도전·복수혈전, RESULT 토스트·BONUS·이벤트 어종, 조준 업적, 배 소환·엔진, 원작풍 UI 팔레트 |
+| [16-vrm-characters.md](docs/16-vrm-characters.md) | VRM 캐릭터: 모든 사람이 VRM, 실행 중 읽기·복제(UniVRM), characters.json(기본 캐릭터·NPC 배정, 빌드 뒤 교체), 걷어낸 옛 캐릭터 |
 | [fish-db/](docs/fish-db/00_README_어종DB_가이드.md) | **맵별 서식 어종 DB**: 한국·동남아·지중해 약 145종 (실제 서식 어종 기준, 희귀도·파워·경계심·파이팅 유형·낚시터 매핑) |
 | [WORK-IN-PROGRESS.md](docs/WORK-IN-PROGRESS.md) | 지금 상태, **사용자가 해야 할 일**(에셋 스토어 로그인이 필요한 것), 다음 후보 |
 | [guide/](docs/guide/README.md) | **레벨별 플레이 가이드**: Lv.1~40 구간마다 열리는 것, 장비 사는 순서, 낚시터·어군·퀘스트 요령, 기본기 |
@@ -185,28 +185,30 @@ cd tools/fightsim && dotnet run -- report   # Unity 없이 파이팅 밸런스 (
 Assets/Scripts
   Core/       진입점(GameBootstrap), 시계·날씨·조명·물때·후처리, 저장, 퀘스트, 대회, 설정
   Data/       어종·장비·의상·업적·퀘스트·계절·대회 규칙 정적 테이블
-  Characters/ 캐릭터 조립(CharacterFactory), Playables 애니메이션, NPC
+  Characters/ VRM 캐릭터(VrmCharacters·CharacterRoster·CharacterFactory), Playables 애니메이션, NPC
   World/      맵 정의(FieldMapDef: 한강·홍현·서천 + 해안 맵 틀 CoastMapDef 국내 9곳·해외 17곳, World/Maps 새 해외 맵·MapKit), 월드·지형·정적 배칭, 대기실·수족관, 수면·하늘, 어군, 계절 효과
   Player/     3인칭 캐릭터, 배, 카메라(3인칭 ↔ 1인칭 ↔ 고정)
   Fishing/    낚시 상태 머신, 파이팅 시뮬레이션(FishFight), 입질 선택, 찌·루어, 물고기 모델
   UI/         코드로 만든 UGUI: 대기실, 낚시터 목록, 지역 지도, HUD, 파이팅 HUD, 각종 창
   Audio/      절차적 낚시 소리 + Kenney CC0 UI·발소리
   Dev/        자동 연출·스크린샷
-Assets/Shaders  Fishing/Skin·Garment(캐릭터), Fish, Water(물결), Sky(달·별·구름)
-Assets/Resources  캐릭터·물고기·아이콘(tools/blender로 만든 것), Kenney·Quaternius 모델, Poly Haven 텍스처, 소리
+Assets/Shaders  Fish, Water(물결), Sky(달·별·구름), Weathered(풍화), Terrain
+Assets/Resources  물고기·아이콘(tools/blender로 만든 것), 동작 클립, Kenney·Quaternius 모델, Poly Haven 텍스처, 소리
+Assets/StreamingAssets/Characters  기본 VRM 11명 + characters.json + 읽어주세요.txt (빌드한 뒤에도 바꿀 수 있다)
 Assets/Editor  셋업·빌드 도구, 임포트 규칙, 밸런스 시뮬레이터, 단위 테스트
-tools/        build·autoshot·test·balance 스크립트, fightsim/(Unity 없는 밸런스), fish_table.py(02 문서 어종 표), blender/(캐릭터 옷·물고기·아이콘·해외 소품 생성)
+tools/        build·autoshot·test·balance 스크립트, fightsim/(Unity 없는 밸런스), fish_table.py(02 문서 어종 표), blender/(물고기·아이콘·해외 소품 생성)
 ```
 
-씬에는 `GameBootstrap` 하나만 있고, 나머지는 모두 코드로 만듭니다. 사람·물고기·아이콘은 `tools/blender`로 만든 모델, 건물·가로등·나무·배는 Kenney CC0 모델, 땅·물·다리·하늘은 프리미티브와 절차적 텍스처·셰이더(일부 바닥·지형은 Poly Haven CC0 텍스처)입니다. 낚시 소리는 절차적으로 만들고 UI·발소리만 Kenney CC0 녹음을 씁니다. 낚시 동작(들기·던지기·챔질·릴 감기·환호·박수)과 상황 동작(펄쩍 기뻐하기·손짓·움찔)은 Mixamo 동작을 쪼개 쓰고, 대기·걷기·뛰기·말하기·점프·제자리 돌기는 에셋 스토어 Human Basic Motions FREE를 씁니다([10 문서](docs/10-animation.md)). 흐린 날 하늘은 AllSky Free, 맑은 날 하늘 돔은 Fantasy Skybox FREE, 활엽수는 Nature Starter Kit 2(빌드 전에 일반 메쉬로 굽기)입니다. 에셋 스토어·Mixamo 원본이 들어 있어 **저장소는 비공개**로 둡니다. 실물 사진·다른 게임 그림은 참고만 하고 저장소에 넣지 않습니다.
+씬에는 `GameBootstrap` 하나만 있고, 나머지는 모두 코드로 만듭니다. 사람은 실행 중에 읽는 VRM(UniVRM), 물고기·아이콘은 `tools/blender`로 만든 모델, 건물·가로등·나무·배는 Kenney CC0 모델, 땅·물·다리·하늘은 프리미티브와 절차적 텍스처·셰이더(일부 바닥·지형은 Poly Haven CC0 텍스처)입니다. 낚시 소리는 절차적으로 만들고 UI·발소리만 Kenney CC0 녹음을 씁니다. 낚시 동작(들기·던지기·챔질·릴 감기·환호·박수)과 상황 동작(펄쩍 기뻐하기·손짓·움찔)은 Mixamo 동작을 쪼개 쓰고, 대기·걷기·뛰기·말하기·점프·제자리 돌기는 에셋 스토어 Human Basic Motions FREE를 씁니다([10 문서](docs/10-animation.md)). 흐린 날 하늘은 AllSky Free, 맑은 날 하늘 돔은 Fantasy Skybox FREE, 활엽수는 Nature Starter Kit 2(빌드 전에 일반 메쉬로 굽기)입니다. 에셋 스토어·Mixamo 원본이 들어 있어 **저장소는 비공개**로 둡니다. 실물 사진·다른 게임 그림은 참고만 하고 저장소에 넣지 않습니다.
 
 ## 크레딧
 
 - 원작: 「청풍명월」 개발 저스트나인, 서비스 네오위즈게임즈(피망). 이 프로젝트는 원작과 관련이 없는 개인 팬 프로젝트입니다.
-- 3D 모델: [Quaternius](https://quaternius.com) — Universal Base Characters(몸·머리카락), Universal Animation Library, Animated Fish Pack(어종 모델이 없을 때 대체) (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Quaternius/`.
+- 캐릭터: VRoid 프로젝트(pixiv)의 VRoid Studio 샘플 모델 11명 (CC0, [OpenGameArt 미러](https://opengameart.org/content/vroid-studio-cc0-models)) — 千駄ヶ谷渋·千駄ヶ谷篠·桜田史利矢·ビビ·ヴィータ·ヴィクトリア・ルービン 등. VRM 읽기: [UniVRM](https://github.com/vrm-c/UniVRM) v0.131.4 (MIT, VRM 컨소시엄).
+- 3D 모델: [Quaternius](https://quaternius.com) — Universal Animation Library, Animated Fish Pack(어종 모델이 없을 때 대체) (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Quaternius/`.
 - 낚시·상황 동작: [Mixamo](https://www.mixamo.com) (Adobe) — Fishing Idle, Fishing Cast, Cheering, Clapping, Excited, Rallying, Scared.
 - 흐린 하늘: AllSky Free (rpgwhitelock), 맑은 하늘: Fantasy Skybox FREE, 나무: Nature Starter Kit 2 (Shapes) — Unity Asset Store.
-- 캐릭터: [Unity-Chan! Model](https://unity-chan.com) © Unity Technologies Japan/UCL — 이 작품은 [유니티짱 라이선스 조항](https://unity-chan.com/contents/guideline/)으로 제공됩니다. Modern Zombie Free (Artalasky, Unity Asset Store), [Mixamo](https://www.mixamo.com) 사람 34종(군인·특공대·코스프레·좀비·흡혈귀·광대 …)과 동작(춤·인사·음주·헤엄·좀비 등).
+- 받은 동작: [Mixamo](https://www.mixamo.com) 춤·인사·음주·헤엄 등 (`Resources/Animations/MixamoExtra`).
 - 실사풍 식생·바위: Conifers [BOTD] (forst), Realistic Tree 9·10 (Pixel Games), Rock and Boulders 2, Grass Flowers Pack Free — Unity Asset Store.
 - 대기·걷기·뛰기: [Human Basic Motions FREE](https://assetstore.unity.com/packages/3d/animations/human-basic-motions-free-154271) (Kevin Iglesias, Unity Asset Store).
 - 배경·배 모델: [Kenney](https://kenney.nl) — City Kit Commercial, City Kit Roads, Nature Kit, Watercraft Kit (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Kenney/`.
