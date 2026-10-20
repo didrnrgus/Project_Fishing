@@ -99,7 +99,8 @@ Assets/
       FishFight.cs               파이팅 시뮬레이션 (순수 로직)
       BiteSelector.cs            어떤 고기가 몇 cm로 물지 결정 (맵·서식지·미끼·시간·날씨·어군·계절·얼음·먼바다)
       Bobber.cs                  찌 / 루어 모양, 비행·부유·예신·본신
-      FightRodView.cs            1인칭 낚싯대(손·팔 없음), 낚싯줄, 물고기 위치·몸체
+      FightRodView.cs            1인칭 낚싯대(화면 좌우 끝까지 쓸림·옆으로 휨), 낚싯줄, 물고기 위치·몸체
+      FirstPersonArms.cs         1인칭 두 팔 (맨살 아래팔 + 검정 반장갑·주황 손목띠, 손잡이·릴 노브를 쥔다)
       TelescopicRod.cs           뽑기대(마디 펼치기·휨 스프링) + 스피닝 릴
       FishModels.cs              어종별 물고기 모델 (Resources/Fish/Species, 길이 = 실제 cm), 잡동사니 모델, 아이콘
       FightBot.cs                자동 파이팅 입력 (밸런스 시뮬레이션·자동 스크린샷용)

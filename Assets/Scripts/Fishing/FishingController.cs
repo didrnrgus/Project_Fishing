@@ -111,6 +111,9 @@ namespace Fishing.Angling
         int _hookCombo;
         bool _cheering;
         float _swayYaw;
+        /// <summary>찌를 기다리며 마우스 좌우로 튼 낚싯대 방향(도). 위아래(_aimPitch)와 함께 원작처럼 사방으로 겨눈다.</summary>
+        float _aimYaw;
+        const float AimYawMax = 30f;
         // 마우스 위아래로 직접 세우고 눕히는 낚싯대 각도 (던지기 전·찌 기다리는 동안). 내리면 줄이 처진다
         float _aimPitch = 35f;
         const float AimMin = 6f, AimMax = 80f;
@@ -181,11 +184,16 @@ namespace Fishing.Angling
         /// <summary>
         /// 마우스를 위로 올리면 낚싯대를 세우고, 내리면 눕힌다 (오른쪽 드래그로 시점을 돌리는 중이나 창이 열렸을 땐 그대로).
         /// 예전에는 던지기 전 35도, 찌를 기다릴 때 28도로 고정이라 갑갑했다. 약 300px이면 끝에서 끝까지.
+        /// 찌를 기다릴 때는 마우스 좌우로 낚싯대를 옆으로도 튼다 (예전엔 위아래로만 움직였다). 좌클릭을 누른 채 흔드는 건 챔질 동작(SwayRod)이라 뺀다.
         /// </summary>
         float AimRod()
         {
             if (!UiBlocking && !Input.GetMouseButton(1))
+            {
                 _aimPitch = Mathf.Clamp(_aimPitch + Input.GetAxis("Mouse Y") * Settings.FightSensitivity * 2.5f, AimMin, AimMax);
+                if (State == FishingState.Waiting && !Input.GetMouseButton(0))
+                    _aimYaw = Mathf.Clamp(_aimYaw + Input.GetAxis("Mouse X") * Settings.FightSensitivity * 2.5f, -AimYawMax, AimYawMax);
+            }
             Game.Player.RodPitch = _aimPitch;
             Game.Player.RodPitchSpeed = 14f;
             return _aimPitch;
@@ -622,7 +630,10 @@ namespace Fishing.Angling
             var player = Game.Player;
             float mx = Input.GetMouseButton(0) && !UiBlocking ? Input.GetAxis("Mouse X") * Settings.FightSensitivity : 0f;
             _swayYaw = Mathf.Clamp(_swayYaw * Mathf.Exp(-5f * Time.deltaTime) + mx * 7f, -32f, 32f);
-            player.RodYaw = _swayYaw;
+            // 가만히 들고 있어도 손이 조금씩 흔들려 초릿대가 좌우로 살랑인다. 입질이면 물고기가 찌 쪽으로 툭툭 당긴다
+            float tremor = (Mathf.PerlinNoise(Time.time * 0.6f, 4.2f) - 0.5f) * 3f;
+            if (bite) tremor += Mathf.Sin(Time.time * 13f) * Mathf.Sin(Time.time * 2.3f) * 4f;
+            player.RodYaw = Mathf.Clamp(_aimYaw + _swayYaw + tremor, -45f, 45f);
             player.BodyLean = bite ? -6f + Mathf.Abs(_swayYaw) * 0.2f : 0f;
             if (bite) player.RodPitch = 40f + Mathf.Sin(Time.time * 7f) * 3f;
         }
@@ -913,6 +924,7 @@ namespace Fishing.Angling
             _cheering = false;
             _reeling = false;
             _swayYaw = 0f;
+            _aimYaw = 0f;
             Game.Player.RodYaw = 0f;
             Game.Player.BodyLean = 0f;
             Game.Player.RodPitchSpeed = 10f;

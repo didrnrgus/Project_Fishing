@@ -354,6 +354,18 @@ namespace Fishing.Dev
             yield return new WaitForSeconds(2f);
             yield return Shot("06_fight");
 
+            // 원작처럼 낚싯대·두 팔이 화면 왼쪽 끝 ↔ 오른쪽 끝으로 쓸려 가고, 초릿대는 물고기 쪽으로 옆으로 휜다
+            foreach (var (rodX, name) in new[] { (-0.95f, "06c_fight_rod_left"), (0.95f, "06d_fight_rod_right") })
+            {
+                for (float t = 0f; t < 0.9f; t += Time.deltaTime)
+                {
+                    fight.DebugSetRodX(rodX);
+                    fight.DebugSetTension(0.55f);
+                    yield return null;
+                }
+                yield return Shot(name);
+            }
+
             // 장력 위험: 화면 가장자리가 빨갛게
             for (float t = 0f; t < 0.35f; t += Time.deltaTime)
             {

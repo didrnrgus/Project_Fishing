@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Fishing.Angling
 {
     /// <summary>
-    /// 파이팅 중 1인칭 시점의 낚싯대(손·팔은 그리지 않는다). 장력에 따라 휘고, 마우스로 좌우를 튼다.
+    /// 파이팅 중 1인칭 시점의 낚싯대와 두 팔(<see cref="FirstPersonArms"/>). 장력에 따라 휘고, 마우스로 화면 끝에서 끝까지 좌우로 튼다.
     /// 물고기 위치에 물보라를 일으키고, 가까워지면 물고기 몸체가 수면에 보인다.
     /// </summary>
     public class FightRodView : MonoBehaviour
@@ -17,6 +17,7 @@ namespace Fishing.Angling
 
         Transform _root;
         TelescopicRod _rod;
+        FirstPersonArms _arms;
         string _rodId, _reelId;
         float _reelTurns, _lineOut;
         LineRenderer _line;
@@ -42,10 +43,11 @@ namespace Fishing.Angling
         {
             _root = new GameObject("RodRoot").transform;
             _root.SetParent(transform, false);
-            // 낚싯대는 왼쪽 아래에서 올라오고 큰 릴이 보인다. 손·팔은 그리지 않는다 (도형 같은 손이 오히려 어색했다)
+            // 낚싯대는 아래에서 올라오고 큰 릴이 보인다. 두 팔(FirstPersonArms)이 손잡이와 릴 노브를 쥔다
             _root.localPosition = new Vector3(-0.2f, -0.25f, 0.62f);
 
             BuildRod();
+            _arms = FirstPersonArms.Create(transform);
 
             // 밤에도 낚싯대와 릴이 보이도록 아주 약한 보조광
             var fill = new GameObject("RodFill").AddComponent<Light>();
@@ -95,6 +97,7 @@ namespace Fishing.Angling
             if (p != null && (p.Rod.Id != _rodId || p.Reel.Id != _reelId)) BuildRod();
             _fight = fight;
             _lateralK = 1f;
+            _side = _sideVel = 0f;
             _origin = origin;
             _forward = new Vector3(forward.x, 0f, forward.z).normalized;
             if (_fishBody != null) Destroy(_fishBody.gameObject);
@@ -129,7 +132,23 @@ namespace Fishing.Angling
             // 물고기가 날뛰면 초릿대가 떨린다
             float shake = f.Mood == FishMood.Burst ? 1f : f.Mood == FishMood.Run ? 0.5f : 0.15f;
             float jitter = (Mathf.PerlinNoise(Time.time * 11f, 0.3f) - 0.5f) * 2f * shake * (2f + Mathf.Clamp01(f.Tension) * 7f);
-            _rod.Drive(target * FirstPersonBend, fishPos - _rod.transform.position, jitter, Time.deltaTime);
+            _rod.Drive(target * FirstPersonBend, BendPull(fishPos), jitter, Time.deltaTime);
+        }
+
+        /// <summary>
+        /// 휘는 방향. 물고기는 20m 앞이라 실제 방향대로면 낚싯대가 화면에서 앞(위아래)으로만 휜다.
+        /// 원작은 낚싯대를 화면 끝으로 틀면 초릿대가 물고기(화면 가운데 물보라) 쪽으로 옆으로 활처럼 휜다 (0:44 ↔ 0:48) →
+        /// 카메라 공간에서 "낚싯대 → 물고기" 화면상 좌우 차이를 크게 키워 옆으로 휘게 한다.
+        /// </summary>
+        Vector3 BendPull(Vector3 fishPos)
+        {
+            var cam = transform;
+            var fishLocal = cam.InverseTransformPoint(fishPos);
+            var rodLocal = cam.InverseTransformPoint(_rod.transform.position);
+            // 낚싯대 깊이에서 본 물고기의 화면상 좌우 위치와 낚싯대의 차이
+            float fishX = fishLocal.x / Mathf.Max(1f, fishLocal.z) * rodLocal.z;
+            float lateral = Mathf.Clamp((fishX - rodLocal.x) * 3.2f, -1.6f, 1.6f);
+            return cam.TransformDirection(new Vector3(lateral, -0.25f, 0.75f));
         }
 
         Renderer[] _rodRenderers;
@@ -178,7 +197,7 @@ namespace Fishing.Angling
         /// 낚싯대가 화면 어느 쪽에 있는지 (-1 왼쪽 ~ 1 오른쪽). 원작 1인칭은 낚싯대를 트는 쪽으로 낚싯대 전체가 화면 끝까지 옮겨 간다:
         /// 왼쪽으로 당기면 낚싯대·릴이 화면 왼쪽 아래, 초릿대는 물고기(오른쪽) 쪽으로 활처럼 휜다 (0:44 ↔ 0:48).
         /// </summary>
-        float _side;
+        float _side, _sideVel;
         float _landK;
         /// <summary>랜딩 뒤 들어 올리기 0~1 (FishingController가 올린다). 0이면 평소 파이팅.</summary>
         public float Lift;
@@ -217,11 +236,19 @@ namespace Fishing.Angling
             bool reeling = _reelTurns > 0.1f;
             float pump = reeling ? Mathf.Sin(Time.time * 9f) * 3f : 0f;
             float tug = f.Mood == FishMood.Burst ? Mathf.Sin(Time.time * 23f) * 2.5f : 0f;
-            // 원작: 낚싯대는 거의 세워 들고(초릿대가 화면 위쪽까지), 트는 쪽 화면 끝으로 통째로 옮겨 간다
-            float wantSide = Mathf.Abs(f.RodX) > 0.12f ? Mathf.Sign(f.RodX) * Mathf.Lerp(0.55f, 1f, Mathf.InverseLerp(0.12f, 0.7f, Mathf.Abs(f.RodX))) : _side * 0.98f;
-            _side = Mathf.Lerp(_side, wantSide, 1f - Mathf.Exp(-4f * Time.deltaTime));
-            var pos = new Vector3(-0.02f + _side * 0.36f, -0.2f, 0.56f);
-            var euler = new Vector3(26f + t * 8f + pump + tug, _side * -14f + f.FishX * 10f, -_side * 18f - f.FishX * 5f);
+            // 원작: 낚싯대는 거의 세워 들고(초릿대가 화면 위쪽까지), 마우스로 트는 만큼 낚싯대·릴·두 팔이 통째로
+            // 화면 왼쪽 끝 ↔ 오른쪽 끝까지 쓸려 간다 (예전엔 오른쪽에 거의 붙어 있어 위아래로만 움직여 보였다).
+            // 덜 감쇠된 스프링으로 따라가서 휙 틀면 살짝 넘쳤다 돌아오고, 쓸려 가는 동안 초릿대가 뒤로 처진다
+            float dt = Mathf.Min(Time.deltaTime, 0.05f);
+            _sideVel += ((f.RodX - _side) * 90f - _sideVel * 2f * Mathf.Sqrt(90f) * 0.6f) * dt;
+            _side += _sideVel * dt;
+            float sweep = Mathf.Clamp(_sideVel, -4f, 4f);
+            // 물고기가 끄는 쪽으로 낚싯대가 조금 끌려간다 (장력이 높을수록)
+            float x = Mathf.Clamp(_side * 0.42f + f.FishX * 0.1f * t, -0.5f, 0.5f);
+            float bob = reeling ? Mathf.Sin(Time.time * 9f) * 0.006f : 0f;
+            var pos = new Vector3(x, -0.175f - Mathf.Abs(_side) * 0.03f + bob, 0.56f);
+            // 화면 끝으로 갈수록 바깥으로 눕고(롤), 쓸려 가는 쪽 반대로 초릿대가 처진다
+            var euler = new Vector3(24f + t * 8f + pump + tug, -_side * 12f + f.FishX * 6f, -_side * 24f + sweep * 3.5f - f.FishX * 4f);
             // 랜딩 찬스 (원작 1:52): 릴이 화면 가운데로 크게 다가온다
             _landK = Mathf.Lerp(_landK, f.Landing && Lift <= 0f ? 1f : 0f, 1f - Mathf.Exp(-6f * Time.deltaTime));
             pos = Vector3.Lerp(pos, new Vector3(-0.06f, -0.13f, 0.36f), _landK);
@@ -239,6 +266,7 @@ namespace Fishing.Angling
             var fishPos = FishWorldPos(f);
             BendRod(f, fishPos);
             _rod.SpinReel(_reelTurns, _lineOut, Time.deltaTime);
+            _arms.Follow(_rod);
 
             var tipPos = _rod.Tip.position;
             var lineEnd = Lift > 0f ? Vector3.Lerp(fishPos, transform.position + transform.forward * 2.2f + Vector3.up * 0.9f, Mathf.SmoothStep(0f, 1f, Lift) * 0.85f) : fishPos;

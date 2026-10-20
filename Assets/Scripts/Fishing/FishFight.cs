@@ -110,6 +110,8 @@ namespace Fishing.Angling
 
         /// <summary>개발용(자동 스크린샷): 장력을 강제로 정한다.</summary>
         public void DebugSetTension(float value) => Tension = value;
+        /// <summary>개발용(자동 스크린샷): 낚싯대 방향을 강제로 정한다.</summary>
+        public void DebugSetRodX(float value) => RodX = Mathf.Clamp(value, -1f, 1f);
         public bool AtEdge => Mathf.Abs(FishX) >= EdgeForCounter;
 
         public event Action Countered;
