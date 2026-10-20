@@ -417,6 +417,8 @@ namespace Fishing.World
         /// <summary>물 위에 떠 있는 배들 (정크선·펠루카). 낚시 칸 가운데는 피하고 가장자리·먼 쪽에 둔다.</summary>
         void Boats(string path, int count, float length)
         {
+            // 지중해 마을(키클라데스·베네치아풍)은 한국 어선 대신 그리스 카이크 (사진: 크레타·산토리니 항구의 칠한 나무배)
+            if (path.EndsWith("boat-fishing-small") && (S.Houses == HouseStyle.Cyclades || S.Houses == HouseStyle.Venetian)) path = "Props/boat_caique";
             int placed = 0;
             for (int i = 0; i < count * 6 && placed < count; i++)
             {

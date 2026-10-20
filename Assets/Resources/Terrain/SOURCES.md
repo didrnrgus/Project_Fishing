@@ -5,7 +5,7 @@ Poly Haven (https://polyhaven.com, CC0 1.0) 1K JPG, 디퓨즈(_diff) + OpenGL �
 | 파일 | Poly Haven 에셋 | 작가 |
 |---|---|---|
 | sand_* | Coast Sand 01 (coast_sand_01) | Rob Tuytel |
-| grass_* | Sparse Grass (sparse_grass) | Amal Kumar |
+| grass_* | Sparse Grass (sparse_grass)를 색상만 초록으로 옮긴 것 (2026-10-20, 원본은 갈색이라 언덕이 누렇게 보였다. 마른 풀 얼룩은 지형 셰이더가 월드 노이즈로) | Amal Kumar |
 | rock_* | Aerial Rocks 02 (aerial_rocks_02) | Rob Tuytel |
 | shore_* | Coast Sand Rocks 02 (coast_sand_rocks_02) | Rob Tuytel |
 | deck_* | Wood Floor Deck (wood_floor_deck) | Dimitrios Savva |

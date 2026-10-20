@@ -196,6 +196,7 @@ namespace Fishing.World
             // 다랭이논: 남쪽으로 올라가는 계단식 논두렁 비탈과 어촌 집들
             // 계단 논 자체는 지형(SeaTerrain.HeightAt)이 만든다. 여기서는 논 위 어촌 집과 나무를 지형 높이에 올린다
             if (!KenneyProps.Available) return;
+            var props = new CoastProps(_root, _rng, _lamps, _bulbs);
             for (int i = 0; i < 8; i++)
             {
                 float z = -80f - i * 12f;
@@ -204,7 +205,7 @@ namespace Fishing.World
                     float zz = z + R(-2f, 2f);
                     float y = SeaTerrain.HeightAt(x, zz) - 0.05f;
                     if (_rng.NextDouble() < 0.45)
-                        KenneyProps.Spawn("Kenney/City/building-" + "abcdeh"[_rng.Next(6)], _root, new Vector3(x, y, zz), 180f + R(-15f, 15f), R(5f, 8f));
+                        props.KoreanHouse(new Vector3(x, y, zz), R(-15f, 15f), false); // 다랭이 마을 집 (사진: 칠한 지붕의 단층·2층 시멘트 집)
                     else
                         KenneyProps.Spawn("Kenney/Nature/" + new[] { "tree_default", "tree_oak", "tree_pineRoundA", "tree_fat" }[_rng.Next(4)],
                             _root, new Vector3(x, y, zz), R(0f, 360f), R(4f, 7f));

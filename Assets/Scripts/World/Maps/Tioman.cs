@@ -70,8 +70,11 @@ namespace Fishing.World
             // --- 활처럼 휜 리조트 호텔: 바다를 안듯이 오목한 아홉 동, 층층 발코니 ---
             var facade = HanRiverLandmarks.Facade(9, 5, new Color(0.55f, 0.66f, 0.72f), new Color(0.3f, 0.36f, 0.4f), new Color(0.97f, 0.96f, 0.93f), 0.38f, 0.14f, 590, out var night, 0.55f);
             var hotelMat = HanRiverLandmarks.Mat(Color.white, facade, night, new Color(1f, 0.85f, 0.6f), 0.35f, 0f, Vector2.one);
-            var side = Mats.Lit(new Color(0.96f, 0.95f, 0.92f), 0.2f);
-            var roof = Mats.Lit(new Color(0.75f, 0.35f, 0.22f), 0.25f);
+            var side = Mats.Wall(new Color(0.96f, 0.95f, 0.92f), 0.2f);
+            var roof = Mats.Tile(new Color(0.75f, 0.35f, 0.22f), 0.25f);
+            var slab = Mats.Wall(new Color(0.98f, 0.97f, 0.95f), 0.2f);
+            var rail = Mats.Transparent(new Color(0.6f, 0.75f, 0.8f, 0.45f), 0.9f);
+            var railTop = Mats.Lit(new Color(0.85f, 0.86f, 0.88f), 0.6f, 0.6f);
             var center = new Vector3(0f, 0f, -12f);
             const float radius = 78f, blockW = 16f, blockD = 12f, floorH = 3.1f;
             for (int i = 0; i < 9; i++)
@@ -91,6 +94,16 @@ namespace Fishing.World
                 var front = Mats.Prim(PrimitiveType.Quad, "HotelFront", block, new Vector3(0f, h * 0.5f, blockD * 0.5f + 0.05f), new Vector3(blockW, h, 1f), hotelMat, false, Quaternion.Euler(0f, 180f, 0f));
                 front.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 Mats.Prim(PrimitiveType.Cube, "HotelRoof", block, new Vector3(0f, h + 0.5f, 0f), new Vector3(blockW + 1f, 1f, blockD + 1f), roof, false);
+                // 사진(리조트 호텔 정면): 층마다 튀어나온 발코니 판 + 유리 난간, 칸마다 칸막이 벽 → 정면에 깊이가 생긴다
+                for (int f = 1; f < floors; f++)
+                {
+                    float y = f * floorH;
+                    Mats.Prim(PrimitiveType.Cube, "Balcony", block, new Vector3(0f, y - 0.08f, blockD * 0.5f + 0.75f), new Vector3(blockW, 0.18f, 1.5f), slab, false);
+                    Mats.Prim(PrimitiveType.Cube, "BalconyGlass", block, new Vector3(0f, y + 0.5f, blockD * 0.5f + 1.48f), new Vector3(blockW, 1f, 0.03f), rail, false);
+                    Mats.Prim(PrimitiveType.Cube, "BalconyRail", block, new Vector3(0f, y + 1.02f, blockD * 0.5f + 1.48f), new Vector3(blockW, 0.05f, 0.06f), railTop, false);
+                }
+                for (int k = 0; k <= 5; k++)
+                    Mats.Prim(PrimitiveType.Cube, "BayWall", block, new Vector3(-blockW * 0.5f + k * blockW / 5f, h * 0.5f, blockD * 0.5f + 0.75f), new Vector3(0.22f, h, 1.5f), slab, false);
             }
 
             // --- 보라 파라솔 줄 + 선베드 ---

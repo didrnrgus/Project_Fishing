@@ -225,27 +225,65 @@ namespace Fishing.World
             float hgt = floors * fh;
             Mats.Prim(PrimitiveType.Cube, "Wall", h, new Vector3(0f, hgt * 0.5f - 0.6f, 0f), new Vector3(w, hgt + 1.2f, d), wall, false);
             Mats.Prim(PrimitiveType.Cube, "Base", h, new Vector3(0f, 0.4f, d * 0.5f + 0.02f), new Vector3(w, 0.8f, 0.05f), stone, false);
-            // 아치 문 (네모 + 반원)
-            Mats.Prim(PrimitiveType.Cube, "Door", h, new Vector3(0f, 1.1f, d * 0.5f + 0.03f), new Vector3(1.4f, 2.2f, 0.05f), dark, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Arch", h, new Vector3(0f, 2.2f, d * 0.5f + 0.03f), new Vector3(1.4f, 0.025f, 1.4f), dark, false, Quaternion.Euler(90f, 0f, 0f));
+            // 사진(하니아 베네치아 항구): 돌 테를 두른 아치 문, 돌 창틀 + 비늘살 나무 덧창, 철 난간 발코니, 층 띠·처마 장식띠, 물받이 홈통, 꽃 화분
+            float fz = d * 0.5f;
+            MapKit.Place(h, "DoorFrame", ArchPanel(1.8f, 2.9f), stone, new Vector3(0f, 0f, fz + 0.02f));
+            MapKit.Place(h, "Door", ArchPanel(1.4f, 2.6f), dark, new Vector3(0f, 0f, fz + 0.05f));
+            var iron = Mats.Lit(new Color(0.12f, 0.12f, 0.13f), 0.35f, 0.4f);
+            var slat = Mats.Lit(shutter.color * 0.7f, 0.25f);
             for (int f = 1; f < floors; f++)
+            {
+                // 층 띠 (얇은 돌 띠)
+                Mats.Prim(PrimitiveType.Cube, "FloorBand", h, new Vector3(0f, f * fh + 0.05f, fz + 0.05f), new Vector3(w + 0.06f, 0.14f, 0.1f), stone, false);
+                bool balcony = _rng.NextDouble() < 0.45;
                 for (int k = -1; k <= 1; k += 2)
                 {
                     float x = k * w * 0.27f, y = f * fh + 1.4f;
-                    Mats.Prim(PrimitiveType.Cube, "Window", h, new Vector3(x, y, d * 0.5f + 0.03f), new Vector3(0.8f, 1.4f, 0.05f), dark, false);
-                    Mats.Prim(PrimitiveType.Cube, "Shutter", h, new Vector3(x - 0.55f, y, d * 0.5f + 0.06f), new Vector3(0.3f, 1.45f, 0.04f), shutter, false);
-                    Mats.Prim(PrimitiveType.Cube, "Shutter", h, new Vector3(x + 0.55f, y, d * 0.5f + 0.06f), new Vector3(0.3f, 1.45f, 0.04f), shutter, false);
+                    Mats.Prim(PrimitiveType.Cube, "WinFrame", h, new Vector3(x, y, fz + 0.03f), new Vector3(1.05f, 1.68f, 0.06f), stone, false);
+                    Mats.Prim(PrimitiveType.Cube, "Window", h, new Vector3(x, y, fz + 0.05f), new Vector3(0.8f, 1.4f, 0.05f), dark, false);
+                    Mats.Prim(PrimitiveType.Cube, "Sill", h, new Vector3(x, y - 0.82f, fz + 0.12f), new Vector3(1.15f, 0.08f, 0.22f), stone, false);
+                    foreach (float sx in new[] { -0.6f, 0.6f })
+                    {
+                        Mats.Prim(PrimitiveType.Cube, "Shutter", h, new Vector3(x + sx, y, fz + 0.08f), new Vector3(0.38f, 1.45f, 0.04f), shutter, false);
+                        for (int sl = 0; sl < 5; sl++)
+                            Mats.Prim(PrimitiveType.Cube, "Louver", h, new Vector3(x + sx, y - 0.56f + sl * 0.28f, fz + 0.105f), new Vector3(0.32f, 0.035f, 0.02f), slat, false);
+                    }
+                    if (balcony)
+                    {
+                        // 철 난간 발코니: 돌 받침 판 + 위 손잡이 + 세로 살
+                        Mats.Prim(PrimitiveType.Cube, "BalconySlab", h, new Vector3(x, y - 0.9f, fz + 0.4f), new Vector3(1.5f, 0.1f, 0.75f), stone, false);
+                        Mats.Prim(PrimitiveType.Cube, "BalconyRail", h, new Vector3(x, y - 0.0f, fz + 0.76f), new Vector3(1.5f, 0.04f, 0.04f), iron, false);
+                        for (int bb = 0; bb < 9; bb++)
+                            Mats.Prim(PrimitiveType.Cube, "BalconyBar", h, new Vector3(x - 0.7f + bb * 0.175f, y - 0.45f, fz + 0.76f), new Vector3(0.02f, 0.85f, 0.02f), iron, false);
+                        if (_rng.NextDouble() < 0.6)
+                            Mats.Prim(PrimitiveType.Sphere, "Geranium", h, new Vector3(x + 0.45f, y - 0.65f, fz + 0.5f), new Vector3(0.4f, 0.3f, 0.3f),
+                                Mats.Lit(_rng.NextDouble() < 0.5 ? new Color(0.85f, 0.15f, 0.2f) : new Color(0.9f, 0.4f, 0.6f), 0.3f), false);
+                    }
                 }
-            if (floors >= 3 && _rng.NextDouble() < 0.4)
-            {
-                var wood = Mats.Wood(new Color(0.4f, 0.27f, 0.17f), 0.25f);
-                Mats.Prim(PrimitiveType.Cube, "Bay", h, new Vector3(0f, fh + 1.6f, d * 0.5f + 0.6f), new Vector3(w * 0.6f, 2.4f, 1.2f), wood, false);
             }
+            // 처마 장식띠 (톱니 돌림띠) + 옆 물받이 홈통
+            Mats.Prim(PrimitiveType.Cube, "Cornice", h, new Vector3(0f, hgt - 0.12f, fz + 0.08f), new Vector3(w + 0.2f, 0.24f, 0.16f), stone, false);
+            for (int k = 0; k < Mathf.RoundToInt(w / 0.4f); k++)
+                Mats.Prim(PrimitiveType.Cube, "Dentil", h, new Vector3(-w * 0.5f + 0.2f + k * 0.4f, hgt - 0.3f, fz + 0.1f), new Vector3(0.18f, 0.12f, 0.1f), stone, false);
+            Mats.Prim(PrimitiveType.Cylinder, "Downpipe", h, new Vector3(w * 0.5f - 0.15f, hgt * 0.5f, fz + 0.08f), new Vector3(0.1f, hgt * 0.5f, 0.1f), Mats.Lit(new Color(0.5f, 0.38f, 0.3f), 0.3f, 0.3f), false);
             Roof(h, new Vector3(0f, hgt, 0f), new Vector3(d + 0.6f, 1.6f, w + 0.6f), tile, 90f); // 박공 면이 앞(항구)을 본다
             if (sign)
             {
                 var board = Mats.Lit(new Color(0.15f, 0.25f, 0.45f), 0.3f);
                 Mats.Prim(PrimitiveType.Cube, "SignBoard", h, new Vector3(0f, 2.75f, d * 0.5f + 0.1f), new Vector3(w - 1f, 0.6f, 0.08f), board, false);
+                // 항구 타베르나: 크림색 천 차양 + 바깥 식탁·의자
+                var awning = Mats.Lit(new Color(0.92f, 0.88f, 0.76f), 0.2f);
+                Mats.Prim(PrimitiveType.Cube, "Awning", h, new Vector3(0f, 2.35f, d * 0.5f + 1.3f), new Vector3(w + 0.4f, 0.06f, 2.6f), awning, false, Quaternion.Euler(-12f, 0f, 0f));
+                Mats.Prim(PrimitiveType.Cube, "AwningValance", h, new Vector3(0f, 1.95f, d * 0.5f + 2.55f), new Vector3(w + 0.4f, 0.3f, 0.03f), awning, false);
+                var tabl = Mats.Wood(new Color(0.55f, 0.4f, 0.26f), 0.3f);
+                for (int k = -1; k <= 1; k += 2)
+                {
+                    var tp = new Vector3(k * w * 0.25f, 0f, d * 0.5f + 1.6f);
+                    Mats.Prim(PrimitiveType.Cylinder, "TableTop", h, tp + Vector3.up * 0.75f, new Vector3(0.8f, 0.03f, 0.8f), tabl, false);
+                    Mats.Prim(PrimitiveType.Cylinder, "TableLeg", h, tp + Vector3.up * 0.37f, new Vector3(0.06f, 0.37f, 0.06f), Mats.Lit(new Color(0.15f, 0.15f, 0.15f), 0.4f), false);
+                    foreach (float cx in new[] { -0.6f, 0.6f })
+                        Mats.Prim(PrimitiveType.Cube, "Chair", h, tp + new Vector3(cx, 0.25f, 0f), new Vector3(0.4f, 0.5f, 0.4f), Mats.Lit(new Color(0.2f, 0.42f, 0.6f), 0.3f), false);
+                }
                 var t = UIFactory.WorldText(h, TavernSigns[_rng.Next(TavernSigns.Length)], new Vector3(0f, 2.75f, d * 0.5f + 0.16f), new Color(1f, 0.92f, 0.7f), 4f, "Sign");
                 UIFactory.OneSided(t);
                 t.transform.localScale = Vector3.one * 0.8f;

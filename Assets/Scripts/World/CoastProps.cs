@@ -329,7 +329,8 @@ namespace Fishing.World
             // 벽: 칠한 미장(얼룩 셰이더) + 짙은 기단 띠 + 층 사이 띠
             Mats.Prim(PrimitiveType.Cube, "Wall", h, new Vector3(0f, wallH * 0.5f - 0.2f, 0f), new Vector3(w, wallH + 0.4f, d), Plaster(wallCol, w, wallH), false);
             var plinth = Mats.Weathered("concrete", new Color(0.45f, 0.45f, 0.43f), 2f, 0.1f, 0f, 0.4f, 0.3f, null, 0.7f, 0f, "wallconcrete");
-            Mats.Prim(PrimitiveType.Cube, "Plinth", h, new Vector3(0f, 0.15f, 0f), new Vector3(w + 0.1f, 0.5f, d + 0.1f), plinth, false);
+            // 기단: 비탈(다랭이 마을)에 서도 밑이 뜨지 않게 1.5m 아래까지
+            Mats.Prim(PrimitiveType.Cube, "Plinth", h, new Vector3(0f, -0.5f, 0f), new Vector3(w + 0.1f, 1.8f, d + 0.1f), plinth, false);
             if (twoStory)
                 Mats.Prim(PrimitiveType.Cube, "FloorBand", h, new Vector3(0f, floorH, 0f), new Vector3(w + 0.08f, 0.16f, d + 0.08f), Mats.Lit(wallCol * 0.82f, 0.2f), false);
 
@@ -405,6 +406,7 @@ namespace Fishing.World
                     Mats.Prim(PrimitiveType.Cube, "Fascia", h, new Vector3(0f, wallH - 0.05f, sz * (d + 0.9f) * 0.5f), new Vector3(w + 0.85f, 0.16f, 0.08f), fascia, false);
                 Mats.Prim(PrimitiveType.Cube, "Ridge", h, new Vector3(0f, wallH + rh + 0.03f, 0f), new Vector3(w + 0.85f, 0.12f, 0.24f), fascia, false);
             }
+            KoreanHouseLife(h, w, d, wallH, twoStory, rng);
             if (sign)
             {
                 string text = ShopSigns[_rng.Next(ShopSigns.Length)];
@@ -421,6 +423,93 @@ namespace Fishing.World
             col.center = new Vector3(0f, wallH * 0.5f, 0f);
             col.size = new Vector3(w, wallH + 1f, d);
             return h;
+        }
+
+        /// <summary>
+        /// 한국 바닷가 집의 살림살이 (사진: 남해·통영 어촌): 장독대(옹기 항아리 무리), 위성 안테나, 옥상 태양열 온수기·빨래 건조대,
+        /// 옆벽 LPG 가스통, 처마 홈통, 가끔 시멘트 블록 담장 + 철 대문. 배치는 집마다 정해진 난수(rng)라 맵 소품 배치가 바뀌지 않는다.
+        /// </summary>
+        static void KoreanHouseLife(Transform h, float w, float d, float wallH, bool flatRoof, System.Random rng)
+        {
+            float Rd(float a0, float a1) => (float)(a0 + rng.NextDouble() * (a1 - a0));
+            var onggi = Mats.Lit(new Color(0.32f, 0.2f, 0.12f), 0.75f);
+            var onggiLid = Mats.Lit(new Color(0.26f, 0.16f, 0.1f), 0.6f);
+            var metal = Mats.Lit(new Color(0.82f, 0.83f, 0.84f), 0.55f, 0.5f);
+            var dark = Mats.Lit(new Color(0.2f, 0.21f, 0.22f), 0.4f);
+            // 장독대: 옥상(평지붕) 또는 뒷마당 낮은 단 위에 크고 작은 항아리
+            Vector3 jarBase = flatRoof && rng.NextDouble() < 0.6 ? new Vector3(Rd(-w * 0.3f, w * 0.3f), wallH + 0.2f, d * 0.2f)
+                : new Vector3(Rd(-w * 0.3f, w * 0.3f), 0f, -d * 0.5f - 1.4f);
+            if (jarBase.y < 0.1f)
+                Mats.Prim(PrimitiveType.Cube, "JangdokDae", h, jarBase + new Vector3(0f, 0.15f, 0f), new Vector3(2.4f, 0.3f, 1.4f), Mats.Stone(new Color(0.55f, 0.53f, 0.5f)), false);
+            int jars = rng.Next(4, 8);
+            for (int k = 0; k < jars; k++)
+            {
+                float s = Rd(0.45f, 0.8f);
+                var p = jarBase + new Vector3((k % 4 - 1.5f) * 0.55f + Rd(-0.08f, 0.08f), 0.3f + s * 0.5f, (k / 4 - 0.3f) * 0.6f);
+                Mats.Prim(PrimitiveType.Sphere, "Onggi", h, p, new Vector3(s * 0.85f, s, s * 0.85f), onggi, false);
+                Mats.Prim(PrimitiveType.Cylinder, "OnggiLid", h, p + Vector3.up * s * 0.5f, new Vector3(s * 0.5f, 0.03f, s * 0.5f), onggiLid, false);
+            }
+            // 위성 안테나 (벽 모서리, 남쪽 하늘을 본다)
+            if (rng.NextDouble() < 0.5)
+            {
+                var at = new Vector3(w * 0.5f - 0.3f, wallH - 0.4f, d * 0.5f + 0.15f);
+                Mats.Prim(PrimitiveType.Cylinder, "Dish", h, at, new Vector3(0.6f, 0.03f, 0.6f), metal, false, Quaternion.Euler(60f, 0f, 0f));
+                Mats.Prim(PrimitiveType.Cylinder, "DishArm", h, at + new Vector3(0f, -0.1f, -0.1f), new Vector3(0.03f, 0.2f, 0.03f), dark, false);
+            }
+            // 옆벽 LPG 가스통 두 개 + 가스관
+            if (rng.NextDouble() < 0.6)
+            {
+                float sx = rng.NextDouble() < 0.5 ? -1f : 1f;
+                for (int k = 0; k < 2; k++)
+                {
+                    var p = new Vector3(sx * (w * 0.5f + 0.3f), 0.55f, -d * 0.2f + k * 0.45f);
+                    Mats.Prim(PrimitiveType.Cylinder, "GasTank", h, p, new Vector3(0.36f, 0.55f, 0.36f), Mats.Lit(new Color(0.75f, 0.76f, 0.78f), 0.5f, 0.3f), false);
+                    Mats.Prim(PrimitiveType.Cylinder, "GasCap", h, p + Vector3.up * 0.6f, new Vector3(0.18f, 0.06f, 0.18f), Mats.Lit(new Color(0.85f, 0.2f, 0.15f), 0.4f), false);
+                }
+                Mats.Prim(PrimitiveType.Cube, "GasPipe", h, new Vector3(sx * (w * 0.5f + 0.05f), 1.3f, -d * 0.1f), new Vector3(0.04f, 1.2f, 0.04f), Mats.Lit(new Color(0.85f, 0.75f, 0.2f), 0.4f), false);
+            }
+            if (flatRoof)
+            {
+                // 옥상 태양열 온수기 (비스듬한 판 + 위 원통 물통) · 빨래 건조대
+                if (rng.NextDouble() < 0.4)
+                {
+                    var p = new Vector3(Rd(-w * 0.25f, w * 0.25f), wallH + 0.9f, -d * 0.3f);
+                    Mats.Prim(PrimitiveType.Cube, "SolarPanel", h, p, new Vector3(1.8f, 0.06f, 1.4f), Mats.Lit(new Color(0.12f, 0.16f, 0.25f), 0.85f), false, Quaternion.Euler(-35f, 0f, 0f));
+                    Mats.Prim(PrimitiveType.Cylinder, "SolarTank", h, p + new Vector3(0f, 0.55f, -0.5f), new Vector3(0.4f, 0.9f, 0.4f), metal, false, Quaternion.Euler(0f, 0f, 90f));
+                }
+                if (rng.NextDouble() < 0.5)
+                {
+                    var p = new Vector3(Rd(-w * 0.3f, w * 0.3f), wallH + 0.2f, d * 0.05f);
+                    foreach (float sx in new[] { -1f, 1f })
+                        Mats.Prim(PrimitiveType.Cylinder, "LaundryPole", h, p + new Vector3(sx * 1.2f, 0.7f, 0f), new Vector3(0.04f, 0.7f, 0.04f), metal, false);
+                    Mats.Prim(PrimitiveType.Cube, "LaundryLine", h, p + new Vector3(0f, 1.35f, 0f), new Vector3(2.4f, 0.015f, 0.015f), metal, false);
+                    var cloth = new[] { new Color(0.9f, 0.9f, 0.88f), new Color(0.3f, 0.45f, 0.75f), new Color(0.85f, 0.4f, 0.45f) };
+                    for (int k = 0; k < 4; k++)
+                        Mats.Prim(PrimitiveType.Cube, "Laundry", h, p + new Vector3(-0.9f + k * 0.6f, 1.05f, 0f), new Vector3(0.45f, 0.55f, 0.02f), Mats.Lit(cloth[rng.Next(cloth.Length)], 0.3f), false);
+                }
+            }
+            else
+            {
+                // 박공지붕 처마 홈통 (앞뒤)
+                foreach (float sz in new[] { -1f, 1f })
+                    Mats.Prim(PrimitiveType.Cylinder, "Gutter", h, new Vector3(0f, wallH - 0.12f, sz * (d * 0.5f + 0.5f)), new Vector3(0.12f, (w + 0.8f) * 0.5f, 0.12f), metal, false, Quaternion.Euler(0f, 0f, 90f));
+            }
+            // 시멘트 블록 담장 + 철 대문 (앞마당을 두른다, 사진: 시골집 회색 블록 담)
+            if (rng.NextDouble() < 0.35)
+            {
+                var block = Mats.Weathered("wallconcrete", new Color(0.62f, 0.61f, 0.58f), 1.2f, 0.1f, 0f, 0.6f, 0.3f, null, 0.7f);
+                float fz = d * 0.5f + 2f, fw = w + 2f;
+                foreach (float sx in new[] { -1f, 1f })
+                {
+                    Mats.Prim(PrimitiveType.Cube, "FenceFront", h, new Vector3(sx * (fw * 0.25f + 0.75f), 0.65f, fz), new Vector3(fw * 0.5f - 1.5f, 1.3f, 0.2f), block, false);
+                    Mats.Prim(PrimitiveType.Cube, "FenceSide", h, new Vector3(sx * fw * 0.5f, 0.65f, d * 0.5f + 1f), new Vector3(0.2f, 1.3f, 2f), block, false);
+                    Mats.Prim(PrimitiveType.Cube, "GatePost", h, new Vector3(sx * 0.8f, 0.8f, fz), new Vector3(0.35f, 1.6f, 0.35f), block, false);
+                }
+                var gate = Mats.Lit(rng.NextDouble() < 0.5 ? new Color(0.2f, 0.42f, 0.32f) : new Color(0.25f, 0.35f, 0.6f), 0.4f, 0.4f);
+                Mats.Prim(PrimitiveType.Cube, "Gate", h, new Vector3(0f, 0.75f, fz), new Vector3(1.3f, 1.4f, 0.05f), gate, false);
+                for (int k = 0; k < 6; k++)
+                    Mats.Prim(PrimitiveType.Cube, "GateBar", h, new Vector3(-0.55f + k * 0.22f, 0.75f, fz + 0.04f), new Vector3(0.03f, 1.35f, 0.03f), dark, false);
+            }
         }
 
         /// <summary>칠한 미장 벽: 거친 회벽 텍스처(Fishing/Weathered)에 칠 색, 처마 밑부터 흘러내린 빗물 자국. 한 장 = 2.5m.</summary>

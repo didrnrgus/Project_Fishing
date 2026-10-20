@@ -73,6 +73,7 @@ Assets/
       CoastProps.cs              바닷가 공용 소품 (등대·큰 등대·테트라포드·정자·가로등·낚시점·바위·한국 바닷가 집)
       Hanok.cs                   한옥 부재: 팔작 기와지붕 메쉬(기와골·수막새·서까래·용마루·취두), 정자(기단·주춧돌·공포·단청 창방·계자 난간), 단청 텍스처
       TextureScroll.cs           재질 텍스처를 흐르게 (폭포 물줄기)
+      (배 모델은 tools/blender/boats.py → Resources/Props/boat_*.fbx·yacht.fbx, KenneyProps.BoatSwap이 Kenney 배 경로를 바꿔 끼운다)
       WorldBuilder.cs            한강 월드 (다리, 데크, 낚시점, 나무, 도시, NPC)
       HanRiverLandmarks.cs       한강에서 보이는 롯데월드타워·63빌딩·남산서울타워(로프트 메쉬 + 코드 텍스처), 먼 시가지, CU 편의점
       DriedPollock.cs            덕장에 거는 명태 한 쌍 메쉬·텍스처 (청진포구)

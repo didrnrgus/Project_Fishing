@@ -47,8 +47,22 @@ namespace Fishing.World
         static bool? _natureKit;
         public static bool NatureKitAvailable => _natureKit ??= Resources.Load<GameObject>(NatureKitTrees[0]) != null;
 
+        /// <summary>
+        /// Kenney 장난감 배 → tools/blender/boats.py 배 (사진 대조로 만든 한국 연안 어선·모터보트·나무배·요트). 둘 다 뱃머리 +Z, 기준점 용골 바닥이라 그대로 바꿔 끼운다.
+        /// </summary>
+        static readonly Dictionary<string, string> BoatSwap = new Dictionary<string, string>
+        {
+            { "Kenney/Watercraft/boat-fishing-small", "Props/boat_kr" }, { "Kenney/Watercraft/boat-speed-a", "Props/boat_speed" },
+            { "Kenney/Watercraft/boat-speed-c", "Props/boat_speed" }, { "Kenney/Watercraft/boat-row-large", "Props/boat_row" },
+            { "Kenney/Watercraft/boat-row-small", "Props/boat_row" }, { "Kenney/Watercraft/boat-sail-a", "Props/yacht" }, { "Kenney/Watercraft/boat-sail-b", "Props/yacht" },
+        };
+
+        /// <summary>true인 동안 놓는 소품은 풍화 결(월드 좌표)을 입히지 않는다 — 움직이는 플레이어 배는 결이 미끄러져 보인다.</summary>
+        public static bool NoSurface;
+
         public static GameObject Spawn(string path, Transform parent, Vector3 localPos, float yaw, float height = 0f, float length = 0f, bool solid = true)
         {
+            if (BoatSwap.TryGetValue(path, out var swap) && Resources.Load<GameObject>(swap) != null) path = swap;
             string leaf = path.Substring(path.LastIndexOf('/') + 1);
             // 실사 에셋이 있으면 먼저: 소나무 자리 → Conifers [BOTD], 활엽수 자리 → Realistic Tree 9·10
             if (leaf.StartsWith("tree_pine") && VegetationLibrary.HasConifers)
@@ -94,7 +108,10 @@ namespace Fishing.World
                 r.sharedMaterials = mats;
                 r.shadowCastingMode = city ? UnityEngine.Rendering.ShadowCastingMode.Off : UnityEngine.Rendering.ShadowCastingMode.On;
             }
-            if (path.StartsWith("Props/")) PropSurface(leaf, go);
+            if (path.StartsWith("Props/"))
+            {
+                if (NoSurface || !PropSurface(leaf, go)) GammaColors(go);
+            }
             if (solid) AddCollider(go, path);
             return go;
         }
@@ -283,6 +300,31 @@ namespace Fishing.World
             return m;
         }
 
+        static readonly Dictionary<Material, Material> GammaCache = new Dictionary<Material, Material>();
+
+        /// <summary>
+        /// 결을 입히지 않는 Blender 소품(움직이는 배·야자수·열기구…): FBX 색이 선형 값으로 들어와 감마 프로젝트에서 어둡게 보이므로 색만 감마로 바꾼 복사 재질로.
+        /// </summary>
+        static void GammaColors(GameObject go)
+        {
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+            {
+                var mats = r.sharedMaterials;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    var m = mats[i];
+                    if (m == null || !m.HasProperty("_Color")) continue;
+                    if (!GammaCache.TryGetValue(m, out var g))
+                    {
+                        g = new Material(m) { name = m.name + "_g", color = m.color.gamma };
+                        GammaCache[m] = g;
+                    }
+                    mats[i] = g;
+                }
+                r.sharedMaterials = mats;
+            }
+        }
+
         static bool Bright(Color c) => c.grayscale > 0.78f;
         static bool Vivid(Color c)
         {
@@ -294,29 +336,33 @@ namespace Fishing.World
         /// Blender 소품(Resources/Props)은 FBX 색만 있어 매끈한 플라스틱처럼 보인다 → 재질 결을 트라이플래너로 입힌다 (부위 색은 그대로).
         /// 석상은 돌 결·빗물 줄·이끼, 배·망루는 판재, 난파선은 녹. 금박·돛·리본처럼 반짝이거나 천인 부위는 건너뛴다.
         /// </summary>
-        static void PropSurface(string id, GameObject go)
+        static bool PropSurface(string id, GameObject go)
         {
             switch (id)
             {
                 case "buddha_white": // 푸켓 빅 부다: 흰 버마 대리석
-                    Mats.Weatherize(go, "marble", 3f, 0.35f, 0f, 0.45f, 0.12f, new Color(0.45f, 0.45f, 0.38f), null, 0.85f); break;
+                    Mats.Weatherize(go, "marble", 3f, 0.35f, 0f, 0.45f, 0.12f, new Color(0.45f, 0.45f, 0.38f), null, 0.85f); return true;
                 case "buddha_gold": // 금박은 그대로, 받침 돌만
-                    Mats.Weatherize(go, "sandstone", 2.5f, 0.2f, 0f, 0.4f, 0.15f, null, c => c.r > c.b * 1.5f); break; // (색은 선형 값이라 밝기로 거르면 금 받침이 빠졌다)
+                    Mats.Weatherize(go, "sandstone", 2.5f, 0.2f, 0f, 0.4f, 0.15f, null, c => c.r > c.b * 1.5f); return true; // (색은 선형 값이라 밝기로 거르면 금 받침이 빠졌다)
                 case "merlion": // 센토사 머라이언: 회색 GRC(유리섬유 보강 콘크리트), 비늘 위로 빗물 줄
-                    Mats.Weatherize(go, "concrete", 2.5f, 0.25f, 1f, 0.6f, 0.15f, null, null, 0.85f); break;
+                    Mats.Weatherize(go, "concrete", 2.5f, 0.25f, 1f, 0.6f, 0.15f, null, null, 0.85f); return true;
                 case "eagle": // 다타란 랑: 적갈색 칠한 조각 + 바위 받침
-                    Mats.Weatherize(go, "concrete", 1.8f, 0.3f, 1f, 0.35f, 0.05f, null, c => c.r > 0.85f && c.g > 0.7f, 0.9f); break;
+                    Mats.Weatherize(go, "concrete", 1.8f, 0.3f, 1f, 0.35f, 0.05f, null, c => c.r > 0.85f && c.g > 0.7f, 0.9f); return true;
                 case "hareubang": // 제주 현무암: 구멍 숭숭한 거친 돌
-                    Mats.Weatherize(go, "basalt", 0.6f, 0.15f, 0f, 0.25f, 0.2f, new Color(0.3f, 0.34f, 0.24f), null, 0.95f); break;
+                    Mats.Weatherize(go, "basalt", 0.6f, 0.15f, 0f, 0.25f, 0.2f, new Color(0.3f, 0.34f, 0.24f), null, 0.95f); return true;
                 case "singha": // 앙코르 사자상: 사암
-                    Mats.Weatherize(go, "sandstone", 1.6f, 0.15f, 0f, 0.5f, 0.45f, new Color(0.22f, 0.27f, 0.18f), null, 0.8f); break;
+                    Mats.Weatherize(go, "sandstone", 1.6f, 0.15f, 0f, 0.5f, 0.45f, new Color(0.22f, 0.27f, 0.18f), null, 0.8f); return true;
                 case "shipwreck": // 자킨토스 파나기오티스호: 녹슨 철
-                    Mats.Weatherize(go, "rust", 2.5f, 0.3f, 1f, 0.6f, 0f, null, null, 0.4f); break;
+                    Mats.Weatherize(go, "rust", 2.5f, 0.3f, 1f, 0.6f, 0f, null, null, 0.4f); return true;
+                case "boat_kr": case "boat_speed": case "yacht": // FRP 선체: 결은 옅게, 흘수선 물때·빗물 줄 (깃발·전구·유리는 그대로)
+                    Mats.Weatherize(go, "concrete", 2f, 0.45f, 1f, 0.45f, 0.05f, null, c => Vivid(c) || c.grayscale < 0.03f, 1f, 0.3f); return true;
+                case "boat_row": case "boat_caique":
                 case "longtail_a": case "longtail_b": case "felucca": case "junk": case "lifeguard": case "sunbed":
-                    Mats.Weatherize(go, "planks", 1.6f, 0.3f, 1f, 0.2f, 0.05f, null, c => Bright(c) || Vivid(c), 0.75f); break;
+                    Mats.Weatherize(go, "planks", 1.6f, 0.3f, 1f, 0.2f, 0.05f, null, c => Bright(c) || Vivid(c), 0.75f); return true;
                 case "parasol_thatch":
-                    Mats.Weatherize(go, "thatch", 1.2f, 0.05f, 0f, 0f, 0f, null, null, 0.7f); break;
+                    Mats.Weatherize(go, "thatch", 1.2f, 0.05f, 0f, 0f, 0f, null, null, 0.7f); return true;
             }
+            return false;
         }
 
         /// <summary>

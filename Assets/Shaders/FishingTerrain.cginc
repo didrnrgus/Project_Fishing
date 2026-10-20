@@ -89,6 +89,14 @@ void TerrainSurf(Input IN, inout SurfaceOutputStandard o)
         if (ctrl.b > 0.01) c2 = SideColor(_Splat2, _Splat2_ST, IN.worldPos, perM, tw, c2);
         if (ctrl.a > 0.01) c3 = SideColor(_Splat3, _Splat3_ST, IN.worldPos, perM, tw, c3);
     }
+    // 풀(첫 층): 사진의 한국 바닷가 언덕처럼 초록 풀밭에 마른 풀·흙이 드러난 얼룩이 수십 m 단위로 섞인다
+    // (텍스처에 얼룩을 넣으면 반복돼 물방울 무늬가 되므로 월드 좌표 노이즈로)
+    float dryN = FishNoise(w * 0.018 + 11.3) * 0.6 + FishNoise(w * 0.07 + 2.9) * 0.3 + FishNoise(w * 0.31) * 0.1;
+    float dryM = smoothstep(0.52, 0.72, dryN);
+    half l0 = dot(c0, half3(0.299, 0.587, 0.114));
+    half green = saturate((c0.g - c0.r) * 8.0); // 첫 층이 풀일 때만 (청진포구는 첫 층이 눈)
+    c0 = lerp(c0, l0 * half3(1.45, 1.12, 0.62), dryM * 0.75 * green);
+    c0 *= lerp(1.0, lerp(0.88, 1.08, FishNoise(w * 0.9 + 5.1)), green); // 잔 얼룩 (풀 포기마다 밝기)
     half3 col = c0 * ctrl.r * _DiffuseRemapScale0.rgb + c1 * ctrl.g * _DiffuseRemapScale1.rgb
               + c2 * ctrl.b * _DiffuseRemapScale2.rgb + c3 * ctrl.a * _DiffuseRemapScale3.rgb;
     half3 n = n0 * ctrl.r + n1 * ctrl.g + n2 * ctrl.b + n3 * ctrl.a;

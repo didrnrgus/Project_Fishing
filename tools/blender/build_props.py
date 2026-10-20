@@ -165,6 +165,8 @@ import props_sea  # noqa: E402
 PROPS.update(props_sea.PROPS)
 import sculpt  # noqa: E402  (석상·난파선을 한 덩어리 조각으로 다시 만든 판 — 같은 id를 덮어쓴다)
 PROPS.update(sculpt.PROPS)
+import boats  # noqa: E402  (배: 한국 연안 어선·모터보트·고무보트·나무배·카이크·요트·딩기)
+PROPS.update(boats.PROPS)
 
 
 def export(pid, objs):

@@ -539,8 +539,22 @@ namespace Fishing.PlayerSystems
             return t;
         }
 
+        /// <summary>움직이는 배 모델 (tools/blender/boats.py). 월드 좌표 풍화 결은 미끄러져 보이니 입히지 않는다. 없으면 null.</summary>
+        GameObject BoatModel(string id, Vector3 pos, float length)
+        {
+            KenneyProps.NoSurface = true;
+            var go = KenneyProps.Spawn("Props/" + id, _boat, pos, 0f, 0f, length, solid: false);
+            KenneyProps.NoSurface = false;
+            return go;
+        }
+
+        /// <summary>고무보트 (boats.py boat_rib: 주황 U자 튜브·고물 원뿔·손잡이 줄·나무 가로대·선외기). 없으면 예전 도형 판.</summary>
         void BuildRubberBoat()
         {
+            _seat = Point("Seat", new Vector3(0f, 0.05f, -0.75f));
+            _bow = Point("Bow", new Vector3(0f, 0.06f, 0.75f));
+            _stern = Point("Stern", new Vector3(0f, 0f, -1.7f));
+            if (BoatModel("boat_rib", new Vector3(0f, -0.08f, 0.05f), 3.9f) != null) return;
             var rubber = Mats.Lit(new Color(0.85f, 0.36f, 0.14f), 0.35f);
             var grey = Mats.Lit(new Color(0.3f, 0.32f, 0.35f), 0.2f);
             var wood = Mats.Lit(new Color(0.55f, 0.4f, 0.25f), 0.2f);
@@ -553,12 +567,6 @@ namespace Fishing.PlayerSystems
             Mats.Prim(PrimitiveType.Cube, "Seat", _boat, new Vector3(0f, 0.3f, -0.55f), new Vector3(1.05f, 0.06f, 0.32f), wood, false);
             Mats.Prim(PrimitiveType.Cube, "Transom", _boat, new Vector3(0f, 0.25f, -1.5f), new Vector3(1f, 0.35f, 0.08f), grey, false);
             Mats.Prim(PrimitiveType.Cube, "Motor", _boat, new Vector3(0f, 0.62f, -1.68f), new Vector3(0.26f, 0.36f, 0.3f), black, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Shaft", _boat, new Vector3(0f, 0.12f, -1.72f), new Vector3(0.06f, 0.32f, 0.06f), black, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Tiller", _boat, new Vector3(0f, 0.62f, -1.3f), new Vector3(0.035f, 0.25f, 0.035f), black, false,
-                Quaternion.Euler(80f, 0f, 0f));
-            _seat = Point("Seat", new Vector3(0f, 0.05f, -0.75f));
-            _bow = Point("Bow", new Vector3(0f, 0.06f, 0.75f));
-            _stern = Point("Stern", new Vector3(0f, 0f, -1.7f));
         }
 
         /// <summary>돛단배: Kenney 요트 몸통 + 바람 따라 도는 돛 (붐). 뱃머리가 +Z.</summary>
@@ -568,11 +576,15 @@ namespace Fishing.PlayerSystems
             var navy = Mats.Lit(new Color(0.12f, 0.22f, 0.45f), 0.5f);
             var wood = Mats.Lit(new Color(0.6f, 0.45f, 0.3f), 0.3f);
             var mast = Mats.Lit(new Color(0.85f, 0.85f, 0.88f), 0.7f, 0.6f);
-            Mats.Prim(PrimitiveType.Cube, "Hull", _boat, new Vector3(0f, 0.1f, -0.35f), new Vector3(1.8f, 0.6f, 3.6f), white, false);
-            Mats.Prim(PrimitiveType.Cube, "Bow", _boat, new Vector3(0f, 0.1f, 1.45f), new Vector3(1.28f, 0.6f, 1.28f), white, false, Quaternion.Euler(0f, 45f, 0f));
-            Mats.Prim(PrimitiveType.Cube, "Stripe", _boat, new Vector3(0f, -0.14f, -0.35f), new Vector3(1.82f, 0.14f, 3.62f), navy, false);
-            Mats.Prim(PrimitiveType.Cube, "Deck", _boat, new Vector3(0f, 0.41f, -0.2f), new Vector3(1.6f, 0.02f, 3.8f), wood, false);
-            Mats.Prim(PrimitiveType.Cube, "Keel", _boat, new Vector3(0f, -0.55f, 0f), new Vector3(0.12f, 0.7f, 1.4f), navy, false);
+            // 선체: boats.py boat_dinghy (흰 선체·남색 띠·나무 갑판·센터보드·키). 없으면 예전 상자
+            if (BoatModel("boat_dinghy", new Vector3(0f, -0.2f, -0.3f), 4.6f) == null)
+            {
+                Mats.Prim(PrimitiveType.Cube, "Hull", _boat, new Vector3(0f, 0.1f, -0.35f), new Vector3(1.8f, 0.6f, 3.6f), white, false);
+                Mats.Prim(PrimitiveType.Cube, "Bow", _boat, new Vector3(0f, 0.1f, 1.45f), new Vector3(1.28f, 0.6f, 1.28f), white, false, Quaternion.Euler(0f, 45f, 0f));
+                Mats.Prim(PrimitiveType.Cube, "Stripe", _boat, new Vector3(0f, -0.14f, -0.35f), new Vector3(1.82f, 0.14f, 3.62f), navy, false);
+                Mats.Prim(PrimitiveType.Cube, "Deck", _boat, new Vector3(0f, 0.41f, -0.2f), new Vector3(1.6f, 0.02f, 3.8f), wood, false);
+                Mats.Prim(PrimitiveType.Cube, "Keel", _boat, new Vector3(0f, -0.55f, 0f), new Vector3(0.12f, 0.7f, 1.4f), navy, false);
+            }
             Mats.Prim(PrimitiveType.Cylinder, "Mast", _boat, new Vector3(0f, 3.6f, 0.5f), new Vector3(0.1f, 3.2f, 0.1f), mast, false);
             _sail = Point("SailPivot", new Vector3(0f, 0.9f, 0.5f));
             Mats.Prim(PrimitiveType.Cylinder, "Boom", _sail, new Vector3(0f, 0.15f, -1.2f), new Vector3(0.07f, 1.2f, 0.07f), mast, false, Quaternion.Euler(90f, 0f, 0f));
@@ -588,9 +600,7 @@ namespace Fishing.PlayerSystems
         /// <summary>낚시 크루저: Kenney 어선 몸통(9m) + 선장·동행 꾼 NPC.</summary>
         void BuildCruiser()
         {
-            if (KenneyProps.Available)
-                KenneyProps.Spawn("Kenney/Watercraft/boat-fishing-small", _boat, new Vector3(0f, -0.55f, 0f), 0f, 0f, 9f, solid: false);
-            else
+            if (BoatModel("boat_kr", new Vector3(0f, -0.5f, 0f), 9f) == null)
                 Mats.Prim(PrimitiveType.Cube, "Hull", _boat, new Vector3(0f, 0.3f, 0f), new Vector3(3f, 1.2f, 8.6f), Mats.Lit(new Color(0.9f, 0.9f, 0.92f), 0.5f), false);
             Fishing.Characters.NpcAngler.Spawn(_boat, new Vector3(0.4f, 0.75f, -1.8f), 0f, new Fishing.Characters.CharacterLook
             {
@@ -611,7 +621,7 @@ namespace Fishing.PlayerSystems
         /// <summary>출석 보상 블랙스피어: Kenney 모터보트(c형)를 검게 칠한다 (선실 안이 비치지 않게 덧대는 판은 두지 않는다).</summary>
         void BuildBlackSpear()
         {
-            var go = KenneyProps.Available ? KenneyProps.Spawn("Kenney/Watercraft/boat-speed-c", _boat, new Vector3(0f, -0.4f, 0f), 0f, 0f, 5.4f, solid: false) : null;
+            var go = BoatModel("boat_speed", new Vector3(0f, -0.3f, 0f), 5.4f);
             if (go == null) { BuildSpeedBoat(); return; }
             foreach (var r in go.GetComponentsInChildren<Renderer>())
             {
@@ -630,7 +640,7 @@ namespace Fishing.PlayerSystems
             {
                 // Kenney Watercraft Kit 모터보트 (CC0). 길이 5.2m, 바닥이 물에 0.4m 잠긴다
                 // 뒤쪽에 수상스키 견인 아치가 있는 모터보트. 뱃머리가 +Z
-                KenneyProps.Spawn("Kenney/Watercraft/boat-speed-a", _boat, new Vector3(0f, -0.4f, 0f), 0f, 0f, 5.2f, solid: false);
+                BoatModel("boat_speed", new Vector3(0f, -0.3f, 0f), 5.2f);
                 _seat = Point("Seat", new Vector3(0f, 0.62f, -0.2f));
                 _bow = Point("Bow", new Vector3(0f, 0.72f, 1.6f));
                 _stern = Point("Stern", new Vector3(0f, 0f, -2.6f));

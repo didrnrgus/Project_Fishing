@@ -109,7 +109,7 @@ namespace Fishing.Core
             { "marble", new Color(0.696f, 0.615f, 0.477f) }, { "planks", new Color(0.313f, 0.264f, 0.23f) }, { "plaster", new Color(0.453f, 0.439f, 0.295f) },
             { "rock", new Color(0.431f, 0.363f, 0.205f) }, { "rooftile", new Color(0.57f, 0.313f, 0.168f) }, { "rust", new Color(0.673f, 0.563f, 0.354f) },
             { "sand", new Color(0.509f, 0.449f, 0.359f) }, { "sandstone", new Color(0.536f, 0.409f, 0.244f) }, { "stonewall", new Color(0.436f, 0.403f, 0.371f) },
-            { "thatch", new Color(0.331f, 0.313f, 0.286f) }, { "grass", new Color(0.311f, 0.241f, 0.083f) }, { "mud", new Color(0.287f, 0.261f, 0.221f) },
+            { "thatch", new Color(0.331f, 0.313f, 0.286f) }, { "grass", new Color(0.33f, 0.45f, 0.16f) }, { "mud", new Color(0.287f, 0.261f, 0.221f) },
             { "snow", new Color(0.835f, 0.862f, 0.901f) }, { "shore", new Color(0.294f, 0.268f, 0.177f) }, { "wallconcrete", new Color(0.359f, 0.316f, 0.271f) }, { "whitestone", new Color(0.536f, 0.5f, 0.433f) },
         };
 
@@ -185,7 +185,7 @@ namespace Fishing.Core
         /// skip에 걸리는 색(예: 눈·금박처럼 반짝여야 할 부위)은 그대로 둔다.
         /// </summary>
         public static void Weatherize(GameObject go, string name, float metersPerTile, float smoothness = 0.2f, float wet = 1f, float streaks = 0.5f,
-            float moss = 0.3f, Color? mossColor = null, System.Func<Color, bool> skip = null, float desat = 0.6f)
+            float moss = 0.3f, Color? mossColor = null, System.Func<Color, bool> skip = null, float desat = 0.6f, float contrast = 1f)
         {
             if (go == null) return;
             foreach (var r in go.GetComponentsInChildren<Renderer>())
@@ -198,7 +198,7 @@ namespace Fishing.Core
                     if (skip != null && skip(c)) continue;
                     // Blender FBX 색은 선형 값으로 들어온다 (감마 프로젝트에서 그대로 쓰면 미리보기보다 한참 어둡다: 베이지 머라이언이 짙은 회색)
                     c = c.gamma;
-                    mats[i] = Weathered(name, new Color(c.r, c.g, c.b, 1f), metersPerTile, smoothness, wet, streaks, moss, mossColor, desat);
+                    mats[i] = Weathered(name, new Color(c.r, c.g, c.b, 1f), metersPerTile, smoothness, wet, streaks, moss, mossColor, desat, 0f, null, contrast);
                 }
                 r.sharedMaterials = mats;
             }

@@ -453,14 +453,15 @@ namespace Fishing.World
             {
                 float z = R(-74f, -68f);
                 if (x > -30f && x < 10f) continue; // 낚시점 자리
-                KenneyProps.Spawn("Kenney/City/building-" + "abcdefgh"[_rng.Next(8)], _root, new Vector3(x, SeocheonTerrain.HeightAt(x, z) - 0.05f, z), 180f + R(-6f, 6f), R(5f, 8f));
+                // 횟집·민박 거리: 한국 바닷가 집 (Kenney 장난감 건물 대신, 간판이 자주)
+                _props.KoreanHouse(new Vector3(x, SeocheonTerrain.HeightAt(x, z) - 0.05f, z), R(-6f, 6f), _rng.NextDouble() < 0.6);
             }
             for (int i = 0; i < 40; i++)
             {
                 float x = R(-200f, 110f), z = R(-140f, -85f);
                 float y = SeocheonTerrain.HeightAt(x, z) - 0.05f;
                 if (_rng.NextDouble() < 0.35)
-                    KenneyProps.Spawn("Kenney/City/building-" + "abcdeh"[_rng.Next(6)], _root, new Vector3(x, y, z), 180f + R(-20f, 20f), R(5f, 7f));
+                    _props.KoreanHouse(new Vector3(x, y, z), R(-20f, 20f), false);
                 else
                     KenneyProps.Spawn("Kenney/Nature/" + new[] { "tree_pineRoundA", "tree_pineRoundC", "tree_default", "tree_oak" }[_rng.Next(4)], _root,
                         new Vector3(x, y, z), R(0f, 360f), R(5f, 9f));
