@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Fishing.Angling
 {
     /// <summary>
-    /// 파이팅 중 1인칭 시점의 낚싯대와 두 팔(<see cref="FirstPersonArms"/>). 장력에 따라 휘고, 마우스로 화면 끝에서 끝까지 좌우로 튼다.
+    /// 파이팅 중 1인칭 시점의 낚싯대 (손·팔은 그리지 않고 낚싯대·릴만). 장력에 따라 휘고, 마우스로 화면 끝에서 끝까지 좌우로 튼다.
     /// 물고기 위치에 물보라를 일으키고, 가까워지면 물고기 몸체가 수면에 보인다.
     /// </summary>
     public class FightRodView : MonoBehaviour
@@ -17,7 +17,6 @@ namespace Fishing.Angling
 
         Transform _root;
         TelescopicRod _rod;
-        FirstPersonArms _arms;
         string _rodId, _reelId;
         float _reelTurns, _lineOut;
         LineRenderer _line;
@@ -43,11 +42,10 @@ namespace Fishing.Angling
         {
             _root = new GameObject("RodRoot").transform;
             _root.SetParent(transform, false);
-            // 낚싯대는 아래에서 올라오고 큰 릴이 보인다. 두 팔(FirstPersonArms)이 손잡이와 릴 노브를 쥔다
+            // 낚싯대는 아래에서 올라오고 큰 릴이 보인다 (손·팔 없이 낚싯대만)
             _root.localPosition = new Vector3(-0.2f, -0.25f, 0.62f);
 
             BuildRod();
-            _arms = FirstPersonArms.Create(transform);
 
             // 밤에도 낚싯대와 릴이 보이도록 아주 약한 보조광
             var fill = new GameObject("RodFill").AddComponent<Light>();
@@ -266,7 +264,6 @@ namespace Fishing.Angling
             var fishPos = FishWorldPos(f);
             BendRod(f, fishPos);
             _rod.SpinReel(_reelTurns, _lineOut, Time.deltaTime);
-            _arms.Follow(_rod);
 
             var tipPos = _rod.Tip.position;
             var lineEnd = Lift > 0f ? Vector3.Lerp(fishPos, transform.position + transform.forward * 2.2f + Vector3.up * 0.9f, Mathf.SmoothStep(0f, 1f, Lift) * 0.85f) : fishPos;

@@ -113,7 +113,7 @@ Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.ex
 | 02_casting, 02b_cast_flight, 03_waiting, 04a_bite_alert, 04_bite_gauge | 밤 데크 캐스팅, 날아가는 찌, 찌 대기(원작 구도), 본신 머리 위 `!`, 어깨 뒤 챔질 클로즈업 |
 | 05_hook_perfect | PERFECT 챔질 → HIT → PERFECT!!! |
 | 06_fight, 06b_tension_danger, 06c_speedlines | 82cm 잉어 파이팅(1인칭 팔·장갑), 장력 위험 테두리, 카운터 집중선 |
-| 06c_fight_rod_left, 06d_fight_rod_right | 낚싯대·두 팔을 화면 왼쪽·오른쪽 끝으로 튼 모습 (초릿대가 물고기 쪽으로 옆으로 휨) |
+| 06c_fight_rod_left, 06d_fight_rod_right | 낚싯대를 화면 왼쪽·오른쪽 끝으로 튼 모습 (초릿대가 물고기 쪽으로 옆으로 휨) |
 | 07_counter_chance, 08_counter, 09_landing, 09c_lift, 09d_catch, 10_result | 카운터 찬스·성공(먹 글씨 COUNTER), 랜딩 찬스(릴 줌), 1인칭 들어 올리기, 3인칭 옆모습 줄 끝 고기, RESULT(82cm 잉어: 튀어 오르는 고기) |
 | 09e_catch_small, 10b_result_held | 30cm 붕어: 왼손으로 잡기, RESULT에서 고기를 들어 보인다 |
 | 10c_result_eel, 10d_result_shoe, 10e_result_trap | 긴 고기(뱀장어, S자 꿈틀)·잡동사니(운동화·통발, 비스듬히 돈다) RESULT — 결과 창을 바로 연다 |
