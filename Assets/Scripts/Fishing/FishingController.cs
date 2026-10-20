@@ -14,7 +14,7 @@ namespace Fishing.Angling
 
     /// <summary>
     /// 낚시 한 번의 흐름 (원작 조작을 따른다).
-    ///  캐스팅: 좌클릭을 누르고 마우스를 당긴 다음, 빠르게 밀면서 버튼을 놓는다. 미는 속도가 비거리.
+    ///  캐스팅: 던질 물을 좌클릭해 낚싯대를 꺼내 들고, 좌클릭을 누른 채 아래로 내려 젖혔다가 위로 쭉 올려 휘두른다. 휘두르는 속도가 비거리 (5m 미만은 실패).
     ///  챔질:   좌클릭을 누른 채 마우스를 좌우로 흔든다. 찌가 완전히 잠겼을 때 흔들면 PERFECT.
     ///  파이팅: 좌클릭 감기 / 우클릭 풀기 / 마우스 좌우 낚싯대 방향·카운터
     ///  랜딩:   랜딩 찬스가 뜨면 Space 또는 좌클릭 연타.
@@ -221,7 +221,7 @@ namespace Fishing.Angling
         void UpdateIdle()
         {
             Game.Player.MovementLocked = false;
-            AimRod();
+            Game.Player.RodHidden = true; // 원작: 돌아다닐 때는 낚싯대를 들고 있지 않다
             if (UiBlocking || PointerOverUI) return;
             if (!Input.GetMouseButtonDown(0)) return;
             if (Game.Boat != null && Game.Boat.Summoning) return;
@@ -251,68 +251,188 @@ namespace Fishing.Angling
                 return;
             }
 
+            // 원작: 던지고 싶은 물을 클릭하면 그쪽을 보고 낚싯대를 꺼내 든다 (아직 던지지 않는다)
+            if (!PickWater(out var aimPoint))
+            {
+                if (Time.time - _waterHintAt > 3f)
+                {
+                    _waterHintAt = Time.time;
+                    Game.Toast("던지고 싶은 물 위를 클릭하세요.");
+                }
+                return;
+            }
             _bobber.FloatOffset = 0f;
             State = FishingState.Charging;
-            PullBack = 0f;
-            CastPower = 0f;
-            _pushSamples.Clear();
+            ResetGesture();
+            _gestureArmed = false;   // 방향을 정한 이 클릭은 떼고 나서 다시 눌러야 제스처가 시작된다
+            SetAimPoint(aimPoint);
             Game.Player.MovementLocked = true;
-            Game.Player.FaceYaw(Game.CameraRig.Yaw);
+            Game.Player.RodHidden = false;
+            Game.Player.ExtendRod(0.4f);
+            Game.Player.RodPitch = ReadyPitch;
+            Game.Player.RodPitchSpeed = 10f;
+            Game.Player.RodYaw = 0f;
+            Game.Player.BodyLean = 0f;
             _marker.SetActive(true);
             _aimArc.enabled = true;
             _playerRing.SetActive(true);
-            Game.Player.RodPitchSpeed = 10f;
+        }
+
+        // ---------- 캐스팅 제스처 ----------
+        // 낚싯대를 꺼낸 뒤 좌클릭을 누른 채 마우스를 아래로 내리면 낚싯대가 어깨 너머로 올라가고,
+        // 그대로 위로 쭉 올리면 낚싯대가 앞으로 내려오며 던진다. 앞으로 휘두르는 속도가 곧 비거리 (5m가 안 되면 실패).
+        const float ReadyPitch = 40f;   // 꺼내 든 자세
+        const float MinPull = 2.5f;     // 이만큼은 젖혀야 휘두를 수 있다
+        const float FailDistance = 5f;
+        float _rodBack;                 // 지금 젖힌 양 (Mouse Y 단위)
+        float _peakBack;                // 이번 제스처에서 가장 많이 젖힌 양
+        float _peakPush;                // 앞으로 휘두르는 동안 가장 빨랐던 속도 (Mouse Y 단위/초)
+        float _swingStart = -1f;        // 앞으로 넘어오기 시작한 시각
+        const float PushSpeedFull = PushFull / PushWindow; // 이 속도(약 2100px/초)로 휘두르면 최대 비거리
+        bool _gestureArmed;
+        bool _gestureHeld;
+        Vector3 _aimPoint;
+        Vector3? _pressAim;
+        float _waterHintAt = -10f;
+
+        /// <summary>좌클릭을 누른 채 낚싯대를 뒤로 젖히고 있다 (캐릭터가 어깨 너머로 드는 자세).</summary>
+        public bool CastPulling => State == FishingState.Charging && _gestureHeld && _peakBack >= MinPull;
+
+        void ResetGesture()
+        {
+            _rodBack = _peakBack = _peakPush = 0f;
+            _swingStart = -1f;
+            _gestureHeld = false;
+            _pressAim = null;
+            PullBack = 0f;
+            CastPower = 0f;
+            CastDistance = 0f;
+            _pushSamples.Clear();
+        }
+
+        void SetAimPoint(Vector3 p)
+        {
+            _aimPoint = p;
+            var d = p - Game.Player.transform.position;
+            d.y = 0f;
+            if (d.sqrMagnitude > 0.01f) Game.Player.FaceYaw(Quaternion.LookRotation(d).eulerAngles.y);
+            _castDir = Game.Player.Model.forward;
+        }
+
+        /// <summary>마우스 커서 아래가 물이면 그 수면 위치. 땅·건물을 클릭했거나 발밑이면 false.</summary>
+        bool PickWater(out Vector3 point)
+        {
+            point = Vector3.zero;
+            var cam = Game.CameraRig != null ? Game.CameraRig.Cam : null;
+            if (cam == null) return false;
+            var ray = cam.ScreenPointToRay(Input.mousePosition);
+            var plane = new Plane(Vector3.up, new Vector3(0f, FieldMap.WaterY, 0f));
+            if (!plane.Raycast(ray, out float enter) || enter > 400f) return false;
+            // 수면보다 앞에서 땅·물체에 먼저 닿으면 물을 클릭한 게 아니다
+            foreach (var hit in Physics.RaycastAll(ray, enter - 0.2f, ~0, QueryTriggerInteraction.Ignore))
+                if (!Ignore(hit.collider) && hit.point.y > FieldMap.WaterY + 0.25f) return false;
+            point = ray.GetPoint(enter);
+            point.y = FieldMap.WaterY;
+            var flat = point - Game.Player.transform.position;
+            flat.y = 0f;
+            return flat.magnitude >= 1.5f && FieldMap.IsWater(point);
         }
 
         void UpdateCharging()
         {
-            float dy = Input.GetAxis("Mouse Y") * Settings.FightSensitivity;
-            float now = Time.time;
-            // 아래로 당긴 양(뒤로 젖히기)을 모으고, 위로 미는 순간 속도를 잰다
-            if (dy < 0f && PushSum(now) <= 1f) PullBack += -dy;
-            _pushSamples.Add((now, Mathf.Max(0f, dy)));
-            _pushSamples.RemoveAll(s => now - s.t > PushWindow);
-
-            float pullFactor = Mathf.Lerp(0.55f, 1f, Mathf.Clamp01(PullBack / PullFull));
-            CastPower = Mathf.Clamp01(PushSum(now) / PushFull) * pullFactor;
-
-            Game.Player.FaceYaw(Game.CameraRig.Yaw);
-            // 원작 0:01~0:02: 당길수록 낚싯대를 어깨 너머 뒤로 젖히고 상체도 뒤로. 밀기 시작하면 앞으로 넘어온다
-            float pull = Mathf.Clamp01(PullBack / PullFull);
-            Game.Player.RodPitch = Mathf.Lerp(70f, 155f, pull) - CastPower * 110f;
-            Game.Player.RodPitchSpeed = 16f;
-            Game.Player.BodyLean = Mathf.Lerp(4f, 20f, pull) - CastPower * 26f;
-            Game.Player.RodYaw = Mathf.Lerp(0f, -14f, pull);
-
-            _castDir = Game.Player.Model.forward;
+            var player = Game.Player;
             var rod = Game.Profile.Rod;
-            // 미리보기: 당긴 만큼 낼 수 있는 최대 비거리를 보여준다
-            float preview = Mathf.Max(CastPower, pullFactor * Mathf.Clamp01(PullBack / PullFull));
-            CastDistance = Mathf.Lerp(4f, rod.CastRange + Game.Profile.Costume.Cast, preview);
-            UpdateAim(CastDistance);
+            float maxRange = rod.CastRange + Game.Profile.Costume.Cast;
+            if (UiBlocking) { ToIdle(); return; }
+            // 이동하거나 R: 낚싯대를 거두고 다시 돌아다닌다
+            if (WantsRetrieve) { ToIdle(); return; }
 
-            if (Input.GetMouseButtonUp(0) || UiBlocking)
+            bool held = Input.GetMouseButton(0);
+            if (!held) _gestureArmed = true;
+            if (_gestureArmed && Input.GetMouseButtonDown(0) && !PointerOverUI)
             {
-                HideAim();
-                if (UiBlocking) { ToIdle(); return; }
+                ResetGesture();
+                _gestureHeld = true;
+                // 누르고 그냥 떼면 그 물로 방향을 다시 정한다
+                if (PickWater(out var p)) _pressAim = p;
+            }
 
-                CastDistance = Mathf.Lerp(4f, rod.CastRange + Game.Profile.Costume.Cast, CastPower);
-                _castTarget = Game.Player.transform.position + _castDir * CastDistance;
+            float dy = _gestureHeld ? Input.GetAxis("Mouse Y") * Settings.FightSensitivity : 0f;
+            float now = Time.time;
+            if (_gestureHeld)
+            {
+                // 아래로 내리면 젖히고, 위로 올리면 앞으로 넘어온다. 낚싯대가 마우스를 그대로 따라간다
+                _rodBack = Mathf.Clamp(_rodBack - dy, 0f, PullFull * 1.2f);
+                if (_rodBack >= _peakBack) { _peakBack = _rodBack; _swingStart = -1f; _peakPush = 0f; } // 아직 젖히는 중
+                _pushSamples.Add((now, Mathf.Max(0f, dy)));
+                _pushSamples.RemoveAll(s => now - s.t > PushWindow);
+                if (_peakBack >= MinPull && _rodBack < _peakBack - 0.3f)
+                {
+                    // 앞으로 넘어오는 속도 = 최근(최대 0.15초) 위로 올린 양 / 걸린 시간. 젖힌 양과 상관없이 빠를수록 멀리
+                    if (_swingStart < 0f) _swingStart = now - Time.deltaTime;
+                    float span = Mathf.Clamp(now - _swingStart, Mathf.Max(Time.deltaTime, 0.008f), PushWindow);
+                    _peakPush = Mathf.Max(_peakPush, PushSum(now) / span);
+                }
+            }
+            else _rodBack = Mathf.MoveTowards(_rodBack, 0f, Time.deltaTime * 20f);
+
+            PullBack = _peakBack;
+            float pullFactor = Mathf.Lerp(0.6f, 1f, Mathf.Clamp01(_peakBack / PullFull));
+            CastPower = Mathf.Clamp01(_peakPush / PushSpeedFull) * pullFactor;
+            // 휘두르는 중일 때만 비거리 숫자가 따라 올라간다
+            CastDistance = _peakPush > 0f ? maxRange * CastPower : 0f;
+
+            // 원작 0:01~0:02: 젖힐수록 낚싯대를 어깨 너머 뒤로, 상체도 뒤로
+            float back = Mathf.Clamp01(_rodBack / PullFull);
+            player.RodPitch = Mathf.Lerp(ReadyPitch, 155f, back);
+            player.RodPitchSpeed = 18f;
+            player.BodyLean = Mathf.Lerp(0f, 20f, back);
+            player.RodYaw = Mathf.Lerp(0f, -14f, back);
+            UpdateAim(_aimPoint);
+
+            if (!_gestureHeld) return;
+            bool released = !held;
+            // 젖혔다가 거의 다 넘어왔으면 그 순간 던진다. 휘두르다 놓아도 던진다
+            bool swung = _peakBack >= MinPull && _rodBack <= _peakBack * 0.3f;
+            bool flick = released && _peakBack >= MinPull && _peakPush > 5f;
+            if (!swung && !flick)
+            {
+                if (released)
+                {
+                    if (_peakBack < MinPull && _pressAim.HasValue) SetAimPoint(_pressAim.Value);
+                    _gestureHeld = false;
+                    _pressAim = null;
+                }
+                return;
+            }
+            _gestureHeld = false;
+            _gestureArmed = !held; // 던진 뒤에도 누르고 있으면 떼고 다시 눌러야 한다
+
+            if (CastDistance < FailDistance)
+            {
+                // 너무 느리게 휘둘렀다: 찌가 발 앞에 툭. 낚싯대는 든 채로 다시 시도한다
+                player.Rod.Kick(-120f);
+                Game.Sound.Whoosh();
+                Game.Toast($"캐스팅 실패! ({CastDistance:0.0}m) 낚싯대를 더 빠르게 휘두르세요.", ToastKind.Warn);
+                ResetGesture();
+                return;
+            }
+            {
+                _castTarget = player.transform.position + _castDir * CastDistance;
                 _castTarget.y = FieldMap.WaterY + 0.01f;
                 if (!FieldMap.IsWater(_castTarget))
                 {
-                    Game.Toast(CastPower < 0.05f
-                        ? "왼쪽 버튼을 누르고 당긴 다음, 빠르게 밀면서 놓으세요."
-                        : "물 위로 던져야 합니다.", ToastKind.Warn);
-                    ToIdle();
+                    Game.Toast("너무 멀리 던져 물 밖으로 나갑니다. 조금 약하게 휘두르세요.", ToastKind.Warn);
+                    ResetGesture();
                     return;
                 }
-                if (CastBlocked(Game.Player.RodTip.position, _castTarget, out string blocker))
+                if (CastBlocked(player.RodTip.position, _castTarget, out string blocker))
                 {
                     Game.Toast($"{blocker}에 걸려서 던질 수 없습니다. 앞이 트인 쪽으로 던지세요.", ToastKind.Warn);
-                    ToIdle();
+                    ResetGesture();
                     return;
                 }
+                HideAim();
                 Game.Player.RodPitch = 2f;
                 Game.Player.RodPitchSpeed = 40f;   // 채찍처럼 앞으로 휙
                 Game.Player.BodyLean = -16f;
@@ -338,6 +458,7 @@ namespace Fishing.Angling
         void StartIceFishing()
         {
             Game.Player.MovementLocked = true;
+            Game.Player.RodHidden = false;
             Game.Player.FaceYaw(Game.CameraRig.Yaw);
             _castDir = Game.Player.Model.forward;
             var hole = Game.Player.transform.position + _castDir * 1.4f;
@@ -369,11 +490,14 @@ namespace Fishing.Angling
             return sum;
         }
 
-        void UpdateAim(float distance)
+        /// <summary>클릭한 물 지점까지 하늘색 궤적과 표시. 실제 비거리는 휘두르는 속도로 정해진다.</summary>
+        void UpdateAim(Vector3 target)
         {
             var origin = Game.Player.transform.position;
-            var target = origin + _castDir * distance;
             target.y = FieldMap.WaterY + 0.03f;
+            var flatT = target - origin;
+            flatT.y = 0f;
+            float distance = flatT.magnitude;
             CastTargetIsWater = FieldMap.IsWater(target) && !CastBlocked(Game.Player.RodTip.position, target, out _);
 
             _marker.transform.position = target;
@@ -480,6 +604,7 @@ namespace Fishing.Angling
             FlyingDistance = Mathf.Max(FlyingDistance, flat.magnitude);
             if (!_bobber.Landed) return;
             FlyingDistance = CastDistance;
+            _lineLen = -1f; // 줄 길이는 착수한 뒤 첫 프레임에 잰다
             // 착수: 낚싯대를 거두며 숨 고르기. 카메라는 잠시 찌를 본 뒤 원래 자리로 (그다음은 마우스로 세우고 눕힌다)
             _aimPitch = 28f;
             Game.Player.RodPitch = 28f;
@@ -615,7 +740,8 @@ namespace Fishing.Angling
             if (State == FishingState.Waiting || State == FishingState.Bite || State == FishingState.Casting)
             {
                 var dir = _bobber.Position - player.RodTip.position;
-                float bend = State == FishingState.Bite ? 22f + Mathf.Sin(Time.time * 9f) * 6f : State == FishingState.Waiting ? 5f : 2f;
+                float bend = State == FishingState.Bite ? 22f + Mathf.Sin(Time.time * 9f) * 6f
+                           : State == FishingState.Waiting ? 2f + LineTension * 4f + LineStrain * 16f : 2f;
                 player.RodBendTarget = bend;
                 player.RodPullDir = dir;
             }
@@ -820,13 +946,17 @@ namespace Fishing.Angling
             var flat = player - _bobber.Position;
             flat.y = 0f;
             float step = Game.Profile.Reel.ReelSpeed * Time.deltaTime;
-            var next = _bobber.Position + flat.normalized * Mathf.Min(step, flat.magnitude);
-            if (flat.magnitude - step <= 3f || !FieldMap.IsWater(next))
+            // 먼저 느슨한 줄을 감아 들이고, 줄이 팽팽해진 다음부터 찌가 끌려온다
+            if (_lineLen > 0f) _lineLen = Mathf.Max(0.5f, _lineLen - step);
+            float excess = _lineLen > 0f ? LineSpan() - _lineLen : step;
+            float pull = Mathf.Clamp(excess, 0f, step * 1.5f);
+            var next = _bobber.Position + flat.normalized * Mathf.Min(pull, flat.magnitude);
+            if (flat.magnitude - pull <= 3f || !FieldMap.IsWater(next))
             {
                 Retrieve("찌를 다 감았습니다.");
                 return true;
             }
-            _bobber.DragTo(next);
+            if (pull > 0f) _bobber.DragTo(next);
             _nibbleActive = false;
             if (Time.time >= _reelFxAt)
             {
@@ -951,6 +1081,7 @@ namespace Fishing.Angling
             Fight.EscapeRun += OnEscapeRun;
 
             State = FishingState.Fighting;
+            Game.Player.RodHidden = false;
             _bobber.Hide();
             _line.enabled = false;
             _damagePopTimer = 0f;
@@ -992,6 +1123,7 @@ namespace Fishing.Angling
             _castDir = Game.Player.Model.forward;
             _castTarget = Game.Player.transform.position + _castDir * distance;
             Game.Player.MovementLocked = true;
+            Game.Player.RodHidden = false;
             Game.Player.RodPitch = 20f;
             _bobber.Launch(Game.Player.RodTip.position, _castTarget);
             Casted?.Invoke(distance);
@@ -1007,10 +1139,15 @@ namespace Fishing.Angling
             CastPower = power;
             PullBack = pullBack;
             CastDistance = Mathf.Lerp(4f, Game.Profile.Rod.CastRange, power);
+            _peakBack = PullFull;
+            _peakPush = power * PushSpeedFull;
+            _gestureHeld = true;
+            _aimPoint = Game.Player.transform.position + _castDir * CastDistance;
+            Game.Player.RodHidden = false;
             _marker.SetActive(true);
             _aimArc.enabled = true;
             _playerRing.SetActive(true);
-            UpdateAim(CastDistance);
+            UpdateAim(_aimPoint);
             // 당긴 자세와 어깨 근접 구도
             Game.Player.RodPitch = Mathf.Lerp(70f, 155f, Mathf.Clamp01(pullBack / PullFull)) - power * 110f;
             Game.Player.BodyLean = 20f - power * 26f;
@@ -1402,6 +1539,14 @@ namespace Fishing.Angling
 
         // ---------- 3인칭 낚싯줄 ----------
 
+        float _lineLen = -1f;
+        /// <summary>찌를 기다리는 동안 줄이 팽팽한 정도 0(축 늘어짐)~1(팽팽).</summary>
+        public float LineTension { get; private set; }
+        /// <summary>줄이 팽팽한 데서 더 당겨 낚싯대가 휘는 정도 0~1.</summary>
+        public float LineStrain { get; private set; }
+
+        float LineSpan() => Vector3.Distance(Game.Player.RodTip.position, _bobber.Position + Vector3.up * 0.3f);
+
         void UpdateLine()
         {
             if (State == FishingState.Result && _catchLineEnd.HasValue)
@@ -1419,12 +1564,21 @@ namespace Fishing.Angling
 
             var a = Game.Player.RodTip.position;
             var b = _bobber.Position + Vector3.up * 0.3f;
-            // 낚싯대를 세울수록 줄이 팽팽하고, 눕힐수록 처져 물 위에 늘어진다. 감는 중이면 팽팽
-            float tension = Mathf.InverseLerp(AimMin + 4f, AimMax - 6f, Game.Player.CurrentRodPitch);
-            if (_reeling || _lureReeling) tension = Mathf.Max(tension, 0.85f);
+            float d = Vector3.Distance(a, b);
+            // 찌는 그 자리에 있고 풀려 나간 줄 길이도 그대로라, 낚싯대를 찌 쪽으로 내리거나 숙이면 줄이 처지고
+            // 세우거나 반대로 틀면 팽팽해진다. 더 당기면 낚싯대가 휘고, 그보다 더 당기면 드랙이 줄을 조금 내준다
+            if (State == FishingState.Waiting || State == FishingState.Bite)
+            {
+                if (_lineLen < 0f) _lineLen = d * 1.05f + 0.6f;
+                if (_lureReeling || Trolling) _lineLen = d;
+                _lineLen = Mathf.Max(_lineLen, d - 1f);
+            }
+            float slack = Mathf.Max(0f, _lineLen - d);
+            LineTension = State == FishingState.Waiting ? Mathf.Clamp01(1f - slack / (0.5f + d * 0.06f)) : 0f;
+            LineStrain = State == FishingState.Waiting ? Mathf.Clamp01(d - _lineLen) : 0f;
             float sag = State == FishingState.Bite ? 0.1f
-                      : State == FishingState.Casting ? Vector3.Distance(a, b) * 0.06f
-                      : Vector3.Distance(a, b) * Mathf.Lerp(0.2f, 0.012f, Mathf.Pow(tension, 0.8f));
+                      : State == FishingState.Casting ? d * 0.06f
+                      : Mathf.Max(d * 0.006f, Mathf.Sqrt(3f * d * slack / 8f)); // 줄 길이 L, 거리 d인 포물선의 처짐
             var mid = (a + b) * 0.5f + Vector3.down * sag;
             float floor = FieldMap.WaterY + 0.02f;
             for (int i = 0; i < _line.positionCount; i++)

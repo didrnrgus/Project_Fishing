@@ -975,13 +975,13 @@ namespace Fishing.UI
         {
             var f = Game.Fishing;
             bool tips = Game.Profile.Data.showTips;
-            bool charging = f.State == FishingState.Charging;
+            bool charging = f.State == FishingState.Charging && f.CastDistance > 0f; // 휘두르는 동안만
             bool showNumber = charging || Time.time < _castShownUntil;
             _castDistance.gameObject.SetActive(showNumber);
             if (charging)
             {
                 _castDistance.text = $"{f.CastDistance:0.00}m";
-                _castDistance.color = f.CastTargetIsWater ? new Color(1, 1, 1, 0.92f) : new Color(1f, 0.5f, 0.45f, 0.92f);
+                _castDistance.color = f.CastDistance >= 5f ? new Color(1, 1, 1, 0.92f) : new Color(1f, 0.5f, 0.45f, 0.92f);
             }
             else if (f.State == FishingState.Casting)
             {
@@ -1126,13 +1126,13 @@ namespace Fishing.UI
             // 안내문 (원작 문구)
             string tip = f.State switch
             {
-                FishingState.Charging => "왼쪽 버튼을 누르고 당긴 다음 빠르게 밀면서 버튼을 놓으면 캐스팅 됩니다.",
+                FishingState.Charging => "왼쪽 버튼을 누른 채 마우스를 아래로 내려 낚싯대를 들고, 위로 빠르게 쭉 올리면 캐스팅! 빠를수록 멀리 (5m 미만은 실패)",
                 FishingState.Waiting when f.Trolling => "트롤링 중: 천천히 몰면 줄이 배 뒤로 끌려간다. 입질이 오면 배가 서고, 좌우로 흔들어 챔질!",
                 FishingState.Waiting when f.LureMode => "루어: 왼쪽 버튼을 꾹 눌러 감고, 감으면서 마우스를 위로 툭 치면 액션! 가만히 두면 잘 안 문다. 입질이 오면 좌우로 흔들어 챔질",
                 FishingState.Waiting when f.Trembling => "손 끝으로부터 미세한 떨림이 느껴집니다.",
                 FishingState.Waiting => "왼쪽 버튼을 누른 상태로 좌우로 흔들어 챔질하세요. 찌가 깔짝이는 건 예신이니 조심!",
                 FishingState.Bite => "왼쪽 버튼을 누른 상태로 좌우로 흔들어 챔질하세요. 물에 완전히 잠겼을 때 흔들면 퍼펙트",
-                FishingState.Idle => "왼쪽 버튼을 누르고 당긴 다음 빠르게 밀면서 버튼을 놓으면 캐스팅 됩니다.",
+                FishingState.Idle => "던지고 싶은 물을 왼쪽 버튼으로 클릭하면 낚싯대를 꺼내 듭니다.",
                 _ => ""
             };
             bool showTip = tips && !string.IsNullOrEmpty(tip) && f.State != FishingState.Idle;
@@ -1151,9 +1151,10 @@ namespace Fishing.UI
             {
                 FishingState.Idle when Game.Player.OnBoat => Game.Boat.Seated
                     ? "W/S 속도 · A/D 방향 · 멈추면 뱃머리에서 낚시 · 물가에서 B = 내리기"
-                    : "왼쪽 버튼 당겼다 밀기 = 캐스팅 · W = 출발 · 물가에서 B = 내리기",
-                FishingState.Idle => "WASD 이동 · Shift 달리기 · Space 점프 · 물가에서 B = 배 · 왼쪽 버튼 당겼다 밀기 = 캐스팅",
-                FishingState.Waiting => $"{f.CastCellLabel}   ·   왼쪽 버튼 꾹: 릴 감기 · R / 이동: 찌 회수",
+                    : "물 클릭 = 낚싯대 꺼내기 · W = 출발 · 물가에서 B = 내리기",
+                FishingState.Idle => "WASD 이동 · Shift 달리기 · Space 점프 · 물가에서 B = 배 · 물 클릭 = 낚싯대 꺼내기",
+                FishingState.Charging => "아래로 내려 들고 → 위로 쭉 올려 던지기 · 물 클릭 = 방향 바꾸기 · R / 이동: 낚싯대 넣기",
+                FishingState.Waiting => $"{f.CastCellLabel}   ·   마우스: 낚싯대 움직이기(줄 느슨/팽팽) · 왼쪽 버튼 꾹: 릴 감기 · R / 이동: 찌 회수",
                 FishingState.Bite => $"{f.CastCellLabel}",
                 _ => ""
             };

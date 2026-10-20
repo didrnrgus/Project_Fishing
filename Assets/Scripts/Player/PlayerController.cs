@@ -358,12 +358,28 @@ namespace Fishing.PlayerSystems
             if (_mountSeated) Model.rotation = Quaternion.Euler(0f, _mount.eulerAngles.y, 0f);
         }
 
-        /// <summary>접어 둔 낚싯대를 끝 마디부터 하나씩 뽑아 펼친다 (낚시터에 들어왔을 때).</summary>
-        public void ExtendRod()
+        /// <summary>접어 둔 낚싯대를 끝 마디부터 하나씩 뽑아 펼친다 (낚시터에 들어왔을 때, 던질 물을 정해 꺼내 들 때).</summary>
+        public void ExtendRod(float seconds = 1.2f)
         {
             Rod.SetExtension(0f);
             _extendedSections = 0;
             _extendTarget = 1f;
+            _extendSeconds = Mathf.Max(0.05f, seconds);
+        }
+
+        float _extendSeconds = 1.2f;
+
+        /// <summary>
+        /// 원작처럼 돌아다닐 때는 낚싯대를 들고 있지 않다. 던질 물을 클릭하면 꺼내 든다 (FishingController가 정한다).
+        /// </summary>
+        public bool RodHidden;
+        bool _rodHiddenApplied;
+        bool _modelVisible = true;
+
+        void ApplyRodVisibility()
+        {
+            _rodHiddenApplied = RodHidden;
+            foreach (var r in _rodPivot.GetComponentsInChildren<Renderer>(true)) r.enabled = !RodHidden && _modelVisible;
         }
 
         /// <summary>낚싯대를 접는다 (대기실로 나갈 때).</summary>
@@ -382,6 +398,7 @@ namespace Fishing.PlayerSystems
             _rodId = p.Rod.Id;
             _reelId = p.Reel.Id;
             Rod.Rebuild(p.Rod, p.Reel);
+            ApplyRodVisibility();
         }
 
         /// <summary>에셋이 없을 때의 프리미티브 캐릭터.</summary>
@@ -441,6 +458,8 @@ namespace Fishing.PlayerSystems
         public void SetVisible(bool visible)
         {
             foreach (var r in Model.GetComponentsInChildren<Renderer>()) r.enabled = visible;
+            _modelVisible = visible;
+            ApplyRodVisibility();
         }
 
         float _titleCheckAt;
@@ -549,7 +568,7 @@ namespace Fishing.PlayerSystems
         static string FishingPose()
         {
             var f = Game.Fishing;
-            if (f.State == Angling.FishingState.Charging) return CharacterAnimator.Windup;
+            if (f.CastPulling) return CharacterAnimator.Windup;
             return CharacterAnimator.HoldRod;
         }
 
@@ -593,7 +612,7 @@ namespace Fishing.PlayerSystems
             if (running) _anim.SetLoop(CharacterAnimator.Sprint, _speedNow / CharacterAnimator.SprintClipSpeed);
             else if (_speedNow > 2.6f) _anim.SetLoop(CharacterAnimator.Jog, _speedNow / CharacterAnimator.JogClipSpeed);
             else if (_speedNow > 0.5f) _anim.SetLoop(CharacterAnimator.Walk, Mathf.Max(0.6f, _speedNow / CharacterAnimator.WalkClipSpeed));
-            else if (fishing) _anim.SetLoop(FishingPose(), Game.Fishing.State == Angling.FishingState.Charging ? 1.5f : 1f);
+            else if (fishing) _anim.SetLoop(FishingPose(), Game.Fishing.CastPulling ? 1.5f : 1f);
             else _anim.SetLoop(CharacterAnimator.Idle);
         }
 
@@ -611,19 +630,21 @@ namespace Fishing.PlayerSystems
             // 손을 낚싯대 방향에 맞춰 돌리고, 릴 시트를 손바닥 앞에 두고 손가락으로 감싸 쥔다 (RodGrip). 뼈가 없는 단순 모델은 손목에
             if (_grip != null)
             {
-                _grip.AlignTo(_rodPivot.forward);
+                // 낚싯대를 넣어 둔 동안은 손을 애니메이션 그대로 둔다
+                if (!RodHidden) _grip.AlignTo(_rodPivot.forward);
                 _rodPivot.position = _grip.Grip;
-                _grip.Wrap(_rodPivot.position, _rodPivot.forward);
+                if (!RodHidden) _grip.Wrap(_rodPivot.position, _rodPivot.forward);
             }
             else if (_hand != null) _rodPivot.position = _hand.position;
 
             UpdateRodGear();
-            // 펼치기: 1.2초에 걸쳐 끝 마디부터. 마디가 하나 빠질 때마다 '착'
+            if (RodHidden != _rodHiddenApplied) ApplyRodVisibility();
+            // 펼치기: 끝 마디부터 (낚시터 입장 1.2초, 꺼내 들 때는 빠르게). 마디가 하나 빠질 때마다 '착'
             if (Rod.Extension < _extendTarget)
             {
-                Rod.SetExtension(Mathf.MoveTowards(Rod.Extension, _extendTarget, Time.deltaTime / 1.2f));
+                Rod.SetExtension(Mathf.MoveTowards(Rod.Extension, _extendTarget, Time.deltaTime / _extendSeconds));
                 int n = Rod.ExtendedSections;
-                if (n > _extendedSections && Game.Sound != null) Game.Sound.RodSnap(n);
+                if (n > _extendedSections && Game.Sound != null && !RodHidden) Game.Sound.RodSnap(n);
                 _extendedSections = n;
             }
             Rod.Drive(RodBendTarget, RodPullDir.sqrMagnitude > 0f ? RodPullDir : Model.forward, 0f, Time.deltaTime);
