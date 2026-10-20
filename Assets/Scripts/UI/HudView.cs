@@ -1126,6 +1126,7 @@ namespace Fishing.UI
             // 안내문 (원작 문구)
             string tip = f.State switch
             {
+                FishingState.Charging when f.IceReady => "얼음낚시: 왼쪽 버튼을 누른 채 마우스를 살짝 내리면 발 앞에 구멍을 뚫고 채비를 내립니다.",
                 FishingState.Charging => "왼쪽 버튼을 누른 채 마우스를 아래로 내려 낚싯대를 들고, 위로 빠르게 쭉 올리면 캐스팅! 빠를수록 멀리 (5m 미만은 실패)",
                 FishingState.Waiting when f.Trolling => "트롤링 중: 천천히 몰면 줄이 배 뒤로 끌려간다. 입질이 오면 배가 서고, 좌우로 흔들어 챔질!",
                 FishingState.Waiting when f.LureMode => "루어: 왼쪽 버튼을 꾹 눌러 감고, 감으면서 마우스를 위로 툭 치면 액션! 가만히 두면 잘 안 문다. 입질이 오면 좌우로 흔들어 챔질",
@@ -1153,6 +1154,7 @@ namespace Fishing.UI
                     ? "W/S 속도 · A/D 방향 · 멈추면 뱃머리에서 낚시 · 물가에서 B = 내리기"
                     : "물 클릭 = 낚싯대 꺼내기 · W = 출발 · 물가에서 B = 내리기",
                 FishingState.Idle => "WASD 이동 · Shift 달리기 · Space 점프 · 물가에서 B = 배 · 물 클릭 = 낚싯대 꺼내기",
+                FishingState.Charging when f.IceReady => "누른 채 살짝 내리기 = 구멍 뚫고 채비 내리기 · R / 이동: 낚싯대 넣기",
                 FishingState.Charging => "아래로 내려 들고 → 위로 쭉 올려 던지기 · 물 클릭 = 방향 바꾸기 · R / 이동: 낚싯대 넣기",
                 FishingState.Waiting => $"{f.CastCellLabel}   ·   마우스: 낚싯대 움직이기(줄 느슨/팽팽) · 왼쪽 버튼 꾹: 릴 감기 · R / 이동: 찌 회수",
                 FishingState.Bite => $"{f.CastCellLabel}",

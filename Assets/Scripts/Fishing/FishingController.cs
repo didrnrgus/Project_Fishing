@@ -244,15 +244,16 @@ namespace Fishing.Angling
                 return;
             }
 
-            // 겨울 한강 얼음 위: 캐스팅 대신 발 앞에 구멍을 뚫고 채비를 내린다
-            if (SeasonFx.OnIce(Game.Player.transform.position))
+            // 겨울 한강 얼음 위: 클릭하면 낚싯대만 꺼내 들고, 누른 채 살짝 내리면 발 앞에 구멍을 뚫고 채비를 내린다
+            _iceReady = SeasonFx.OnIce(Game.Player.transform.position);
+            Vector3 aimPoint;
+            if (_iceReady)
             {
-                StartIceFishing();
-                return;
+                Game.Player.FaceYaw(Game.CameraRig.Yaw);
+                aimPoint = Game.Player.transform.position + Game.Player.Model.forward * 1.4f;
             }
-
             // 원작: 던지고 싶은 물을 클릭하면 그쪽을 보고 낚싯대를 꺼내 든다 (아직 던지지 않는다)
-            if (!PickWater(out var aimPoint))
+            else if (!PickWater(out aimPoint))
             {
                 if (Time.time - _waterHintAt > 3f)
                 {
@@ -293,10 +294,15 @@ namespace Fishing.Angling
         bool _gestureHeld;
         Vector3 _aimPoint;
         Vector3? _pressAim;
+        bool _iceReady;                 // 얼음 위에서 꺼내 든 상태 (휘두르지 않고 살짝 내리면 구멍에 내린다)
+        const float IceDrop = 1f;       // 이만큼(약 10px) 내리면 채비를 내린다
         float _waterHintAt = -10f;
 
+        /// <summary>얼음 위에서 낚싯대를 꺼내 들고 구멍에 내리기를 기다린다.</summary>
+        public bool IceReady => State == FishingState.Charging && _iceReady;
+
         /// <summary>좌클릭을 누른 채 낚싯대를 뒤로 젖히고 있다 (캐릭터가 어깨 너머로 드는 자세).</summary>
-        public bool CastPulling => State == FishingState.Charging && _gestureHeld && _peakBack >= MinPull;
+        public bool CastPulling => State == FishingState.Charging && !_iceReady && _gestureHeld && _peakBack >= MinPull;
 
         void ResetGesture()
         {
@@ -392,6 +398,17 @@ namespace Fishing.Angling
 
             if (!_gestureHeld) return;
             bool released = !held;
+            if (_iceReady)
+            {
+                if (_rodBack >= IceDrop)
+                {
+                    _gestureHeld = false;
+                    HideAim();
+                    StartIceFishing();
+                }
+                else if (released) _gestureHeld = false;
+                return;
+            }
             // 젖혔다가 거의 다 넘어왔으면 그 순간 던진다. 휘두르다 놓아도 던진다
             bool swung = _peakBack >= MinPull && _rodBack <= _peakBack * 0.3f;
             bool flick = released && _peakBack >= MinPull && _peakPush > 5f;
@@ -459,8 +476,7 @@ namespace Fishing.Angling
         {
             Game.Player.MovementLocked = true;
             Game.Player.RodHidden = false;
-            Game.Player.FaceYaw(Game.CameraRig.Yaw);
-            _castDir = Game.Player.Model.forward;
+            _castDir = Game.Player.Model.forward; // 꺼내 들 때 본 방향 그대로
             var hole = Game.Player.transform.position + _castDir * 1.4f;
             hole.y = FieldMap.WaterY;
             SeasonFx.MakeHole(hole);
@@ -479,6 +495,7 @@ namespace Fishing.Angling
         public void DebugIceFish()
         {
             if (State != FishingState.Idle) ToIdle();
+            Game.Player.FaceYaw(Game.CameraRig.Yaw);
             StartIceFishing();
         }
 
@@ -1139,6 +1156,7 @@ namespace Fishing.Angling
             CastPower = power;
             PullBack = pullBack;
             CastDistance = Mathf.Lerp(4f, Game.Profile.Rod.CastRange, power);
+            _iceReady = false;
             _peakBack = PullFull;
             _peakPush = power * PushSpeedFull;
             _gestureHeld = true;
