@@ -11,7 +11,7 @@ namespace Fishing.EditorTools
         [MenuItem("Fishing/Inspect Imported Assets")]
         public static void Run()
         {
-            foreach (var folder in new[] { "Assets/Resources/Characters", "Assets/Resources/Animations", "Assets/Resources/Fish", "Assets/Resources/Kenney" })
+            foreach (var folder in new[] { "Assets/Resources/Animations", "Assets/Resources/Fish", "Assets/Resources/Kenney" })
                 AssetDatabase.ImportAsset(folder, ImportAssetOptions.ImportRecursive | ImportAssetOptions.ForceUpdate);
 
             var sb = new StringBuilder();

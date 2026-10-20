@@ -41,12 +41,12 @@ namespace Fishing.World
             },
             Spawn = new Vector3(0f, 1.1f, -47f), ShopPos = new Vector3(-26f, 1f, -54f),
             ShopRoof = new Color(0.72f, 0.32f, 0.2f),
-            ShopOwner = Local("나바지오 낚시점 스피로스", "나바지오 낚시점", new Color(0.92f, 0.92f, 0.95f), hat: 2),
+            ShopOwner = Local("나바지오 낚시점 스피로스", "나바지오 낚시점"),
             Npcs = new[]
             {
-                Npc(20f, -47f, 200f, Union("엘레나 지부장", "한국 낚시 조합 자킨토스 지부", true, false), NpcAngler.Role.Talker, "union"),
-                Npc(-28f, -18f, 0f, Local("관광선 선장 파블로스", "푸른 동굴 투어", new Color(0.2f, 0.3f, 0.55f), false, false, 1), NpcAngler.Role.Angler, y: 1f),
-                Npc(36f, -48f, 220f, Local("난파선 사진 찍는 여행객", "절벽 위 전망대에서 내려왔다", new Color(0.95f, 0.55f, 0.3f), true, false, 2), NpcAngler.Role.Talker),
+                Npc(20f, -47f, 200f, Union("엘레나 지부장", "한국 낚시 조합 자킨토스 지부", true), NpcAngler.Role.Talker, "union"),
+                Npc(-28f, -18f, 0f, Local("관광선 선장 파블로스", "푸른 동굴 투어", false), NpcAngler.Role.Angler, y: 1f),
+                Npc(36f, -48f, 220f, Local("난파선 사진 찍는 여행객", "절벽 위 전망대에서 내려왔다", true), NpcAngler.Role.Talker),
             },
             Signs = new[] { ("NAVAGIO", new Vector3(-6f, 6f, -60f), SignBlue) },
             // 난파선 자리

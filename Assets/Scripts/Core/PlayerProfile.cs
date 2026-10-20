@@ -301,7 +301,8 @@ namespace Fishing.Core
             NotifyChanged();
         }
 
-        // ---- 의상 ----
+        // ---- 의상 (능력치만) · 캐릭터 모델 ----
+        /// <summary>캐릭터 모델(VRM)·성별을 바꿨을 때 → 필드·대기실 캐릭터를 다시 세운다.</summary>
         public event Action LookChanged;
 
         public string Worn(CostumeSlot slot)
@@ -318,8 +319,7 @@ namespace Fishing.Core
             Worn(c.Slot);
             Data.costumes[(int)c.Slot] = c.Id;
             Stamina(0f);
-            NotifyChanged();
-            LookChanged?.Invoke();
+            NotifyChanged(); // 의상은 능력치만: 캐릭터를 다시 세우지 않는다
         }
 
         public void GiveCostume(string id)
@@ -378,36 +378,24 @@ namespace Fishing.Core
         public void SetTitle(string title)
         {
             Data.title = title;
-            NotifyChanged();
-            LookChanged?.Invoke();
+            NotifyChanged(); // 머리 위 이름표는 PlayerController가 Changed에서 바꾼다
         }
 
-        /// <summary>입은 의상을 반영한 내 캐릭터 외형.</summary>
+        /// <summary>
+        /// 내 캐릭터 외형: 고른 VRM(없으면 characters.json의 남/녀 기본)과 이름·칭호. 의상은 능력치만 있고 몸에 입히지 않는다.
+        /// </summary>
         public Fishing.Characters.CharacterLook BuildLook()
         {
             var look = Fishing.Characters.CharacterLook.Player;
             look.Title = CurrentTitle;
-            var hat = CostumeDatabase.Get(Worn(CostumeSlot.Hat));
-            look.Hat = hat != null && hat.Style >= 0;
-            if (look.Hat) { look.HatColor = hat.Color; look.HatStyle = hat.Style; }
-            var glass = CostumeDatabase.Get(Worn(CostumeSlot.Glasses));
-            look.Glasses = glass != null && glass.Style >= 0;
-            if (look.Glasses) look.GlassesColor = glass.Color;
-            var top = CostumeDatabase.Get(Worn(CostumeSlot.Top));
-            if (top != null) { look.Shirt = top.Color; look.TopModel = top.Model ?? look.TopModel; look.TopPattern = top.Pattern; }
-            var vest = CostumeDatabase.Get(Worn(CostumeSlot.Vest));
-            look.Vest = vest != null && vest.Style >= 0;
-            if (look.Vest) { look.VestColor = vest.Color; look.VestModel = vest.Model ?? look.VestModel; }
-            var bottom = CostumeDatabase.Get(Worn(CostumeSlot.Bottom));
-            if (bottom != null) { look.Pants = bottom.Color; look.BottomModel = bottom.Model ?? look.BottomModel; look.BottomPattern = bottom.Pattern; }
-            var shoes = CostumeDatabase.Get(Worn(CostumeSlot.Shoes));
-            if (shoes != null) { look.Shoes = shoes.Color; look.ShoeModel = shoes.Model ?? look.ShoeModel; }
-            look.Vrm = string.IsNullOrEmpty(Data.vrm) ? null : Data.vrm;
-            look.VrmFemale = Data.vrmFemale;
+            look.Female = Data.vrmFemale;
+            look.Vrm = !string.IsNullOrEmpty(Data.vrm) && Fishing.Characters.VrmCharacters.Exists(Data.vrm)
+                ? Data.vrm
+                : Fishing.Characters.CharacterRoster.PlayerDefault(Data.vrmFemale);
             return look;
         }
 
-        /// <summary>내 캐릭터 모델을 바꾼다 (null·빈 문자열 = 기본 캐릭터, 아니면 VRM id). 의상 능력치는 그대로 붙는다.</summary>
+        /// <summary>내 캐릭터 모델을 바꾼다 (null·빈 문자열 = 기본 캐릭터, 아니면 VRM id). female = 기본 캐릭터 성별이자 걸음걸이.</summary>
         public void SetCharacterModel(string vrmId, bool female)
         {
             Data.vrm = vrmId ?? "";

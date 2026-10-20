@@ -45,12 +45,12 @@ namespace Fishing.World
             },
             Spawn = new Vector3(-2f, 1.1f, -47f), ShopPos = new Vector3(-28f, 1f, -54f),
             ShopRoof = new Color(0.6f, 0.45f, 0.3f),
-            ShopOwner = Local("수상 별장 낚시점 이브라힘", "수상 별장 낚시점", new Color(0.35f, 0.55f, 0.4f), false, true, 1),
+            ShopOwner = Local("수상 별장 낚시점 이브라힘", "수상 별장 낚시점", false),
             Npcs = new[]
             {
-                Npc(12f, -47f, 200f, Union("아이샤 지부장", "한국 낚시 조합 탱글 연락소", true, false), NpcAngler.Role.Talker, "union"),
-                Npc(20f, 20f, 0f, Local("별장 주인 다툭", "이 데크가 내 자랑", new Color(0.2f, 0.3f, 0.5f), false, true, 1), NpcAngler.Role.Angler, y: 1f),
-                Npc(-26f, 18f, 10f, Local("해양 연구원", "산호 백화를 조사 중", new Color(0.9f, 0.9f, 0.85f), true, false, 0), NpcAngler.Role.Talker, y: 1f),
+                Npc(12f, -47f, 200f, Union("아이샤 지부장", "한국 낚시 조합 탱글 연락소", true), NpcAngler.Role.Talker, "union"),
+                Npc(20f, 20f, 0f, Local("별장 주인 다툭", "이 데크가 내 자랑", false), NpcAngler.Role.Angler, y: 1f),
+                Npc(-26f, 18f, 10f, Local("해양 연구원", "산호 백화를 조사 중", true), NpcAngler.Role.Talker, y: 1f),
             },
             Signs = new[] { ("PULAU TENGGOL", new Vector3(-12f, 6.5f, -60f), SignGold) },
             FarIslands = new[] { new Vector4(-340f, 420f, 160f, 70f), new Vector4(320f, 500f, 120f, 40f) },

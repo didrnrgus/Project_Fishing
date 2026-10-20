@@ -35,13 +35,13 @@ namespace Fishing.World
             },
             Spawn = new Vector3(6f, 1.1f, -47f), ShopPos = new Vector3(-22f, 1f, -54f),
             ShopRoof = new Color(0.72f, 0.32f, 0.2f),
-            ShopOwner = Local("라라 해안 낚시점 아이셰", "라라 해안 낚시점", new Color(0.75f, 0.2f, 0.25f), true, false, 1),
+            ShopOwner = Local("라라 해안 낚시점 아이셰", "라라 해안 낚시점", true),
             Npcs = new[]
             {
-                Npc(22f, -47f, 200f, Union("메흐메트 지부장", "한국 낚시 조합 안탈리아 지부", false, false), NpcAngler.Role.Talker, "union"),
-                Npc(-46f, -42f, 330f, Local("폭포 공원 차 장수", "차이 한 잔 하고 가요", new Color(0.55f, 0.15f, 0.15f), false, false, -1), NpcAngler.Role.Talker),
-                Npc(60f, -43f, 10f, Local("쏠배감펭 사냥꾼 무랏", "침입종은 잡아서 먹는다", new Color(0.2f, 0.4f, 0.3f), false, false, 1), NpcAngler.Role.Angler),
-                Npc(-20f, -43f, 350f, Local("폭포 보러 온 신혼부부", "물보라에 무지개가 떴다", new Color(0.95f, 0.8f, 0.85f), true, false, -1), NpcAngler.Role.Angler),
+                Npc(22f, -47f, 200f, Union("메흐메트 지부장", "한국 낚시 조합 안탈리아 지부", false), NpcAngler.Role.Talker, "union"),
+                Npc(-46f, -42f, 330f, Local("폭포 공원 차 장수", "차이 한 잔 하고 가요", false), NpcAngler.Role.Talker),
+                Npc(60f, -43f, 10f, Local("쏠배감펭 사냥꾼 무랏", "침입종은 잡아서 먹는다", false), NpcAngler.Role.Angler),
+                Npc(-20f, -43f, 350f, Local("폭포 보러 온 신혼부부", "물보라에 무지개가 떴다", true), NpcAngler.Role.Angler),
             },
             Signs = new[] { ("DÜDEN ŞELALESİ", new Vector3(-40f, 6.5f, -62f), SignGold) },
             Areas = new[] { (new Rect(-110f, -40f, 40f, 70f), "폭포 아래") },

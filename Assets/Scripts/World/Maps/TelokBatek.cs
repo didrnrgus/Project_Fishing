@@ -35,13 +35,13 @@ namespace Fishing.World
             },
             Spawn = new Vector3(6f, 1.1f, -50f), ShopPos = new Vector3(-24f, 1f, -58f),
             ShopRoof = new Color(0.62f, 0.5f, 0.32f),
-            ShopOwner = Local("어촌 잔교 낚시점 하산", "어촌 잔교 낚시점", new Color(0.3f, 0.5f, 0.35f), false, true, 2),
+            ShopOwner = Local("어촌 잔교 낚시점 하산", "어촌 잔교 낚시점", false),
             Npcs = new[]
             {
-                Npc(22f, -50f, 200f, Union("로즈나 지부장", "한국 낚시 조합 텔록 바텍 연락소", true, false), NpcAngler.Role.Talker, "union"),
-                Npc(-6f, 2f, 0f, Local("송콕 쓴 어부", "롱테일로 새벽 조업", new Color(0.55f, 0.3f, 0.25f), false, true, 2), NpcAngler.Role.Angler, y: 1f),
-                Npc(54f, -50f, 30f, Local("망루 아저씨", "고기 떼가 지나가는 게 보여", new Color(0.85f, 0.2f, 0.18f), false, true, 1), NpcAngler.Role.Talker),
-                Npc(-70f, -46f, 340f, Local("그물 깁는 할머니", "바틱 두건", new Color(0.4f, 0.3f, 0.6f), true, false, -1), NpcAngler.Role.Angler),
+                Npc(22f, -50f, 200f, Union("로즈나 지부장", "한국 낚시 조합 텔록 바텍 연락소", true), NpcAngler.Role.Talker, "union"),
+                Npc(-6f, 2f, 0f, Local("송콕 쓴 어부", "롱테일로 새벽 조업", false), NpcAngler.Role.Angler, y: 1f),
+                Npc(54f, -50f, 30f, Local("망루 아저씨", "고기 떼가 지나가는 게 보여", false), NpcAngler.Role.Talker),
+                Npc(-70f, -46f, 340f, Local("그물 깁는 할머니", "바틱 두건", true), NpcAngler.Role.Angler),
             },
             Signs = new[] { ("TELOK BATEK", new Vector3(14f, 6.5f, -68f), SignGold) },
             Schools = () => new List<FishSchool>

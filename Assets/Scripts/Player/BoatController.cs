@@ -602,17 +602,8 @@ namespace Fishing.PlayerSystems
         {
             if (BoatModel("boat_kr", new Vector3(0f, -0.5f, 0f), 9f) == null)
                 Mats.Prim(PrimitiveType.Cube, "Hull", _boat, new Vector3(0f, 0.3f, 0f), new Vector3(3f, 1.2f, 8.6f), Mats.Lit(new Color(0.9f, 0.9f, 0.92f), 0.5f), false);
-            Fishing.Characters.NpcAngler.Spawn(_boat, new Vector3(0.4f, 0.75f, -1.8f), 0f, new Fishing.Characters.CharacterLook
-            {
-                Name = "김선장", Title = "크루저 선장", TopModel = "Top_Long", Hair = "Hair_Buzzed", Beard = true, HairColor = new Color(0.3f, 0.3f, 0.3f),
-                Shirt = new Color(0.9f, 0.9f, 0.92f), VestModel = "Vest_Life", VestColor = new Color(0.95f, 0.5f, 0.1f), Pants = new Color(0.15f, 0.18f, 0.3f),
-                HatStyle = 1, HatColor = new Color(0.15f, 0.2f, 0.4f)
-            }, Fishing.Characters.NpcAngler.Role.Sitter, false);
-            Fishing.Characters.NpcAngler.Spawn(_boat, new Vector3(-1.1f, 0.75f, 0.5f), -90f, new Fishing.Characters.CharacterLook
-            {
-                Name = "동행 꾼", Title = "", TopModel = "Top_Rash", VestModel = "Vest_Life", VestColor = new Color(0.95f, 0.75f, 0.1f),
-                Shirt = new Color(0.2f, 0.3f, 0.45f), Pants = new Color(0.2f, 0.2f, 0.22f), HatStyle = 0
-            }, Fishing.Characters.NpcAngler.Role.Angler, false);
+            Fishing.Characters.NpcAngler.Spawn(_boat, new Vector3(0.4f, 0.75f, -1.8f), 0f, new Fishing.Characters.CharacterLook { Name = "김선장", Title = "크루저 선장" }, Fishing.Characters.NpcAngler.Role.Sitter, false);
+            Fishing.Characters.NpcAngler.Spawn(_boat, new Vector3(-1.1f, 0.75f, 0.5f), -90f, new Fishing.Characters.CharacterLook { Name = "동행 꾼", Title = "" }, Fishing.Characters.NpcAngler.Role.Angler, false);
             _seat = Point("Seat", new Vector3(0f, 0.75f, -1.2f));
             _bow = Point("Bow", new Vector3(0f, 0.85f, 3f));
             _stern = Point("Stern", new Vector3(0f, 0f, -4.4f));

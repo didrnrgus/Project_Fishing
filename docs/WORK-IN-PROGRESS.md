@@ -2,6 +2,15 @@
 
 세션이 끊겨도 이 파일만 보고 이어서 작업할 수 있게 남기는 메모. 끝난 일은 로드맵·각 문서에 합쳤다.
 
+## 2026-10-20 (7): 모든 사람을 VRM으로 → [16-vrm-characters.md](16-vrm-characters.md), [가이드 07](guide/07-characters.md)
+
+사용자 요청: "기존 캐릭터들 싹 버리고 새 캐릭터 시스템으로" = 빌드에 박혀 있던 캐릭터 모델을 걷어내고 커스터마이징(VRM)만. 결정(사용자): 기본 캐릭터는 CC0 VRoid 샘플, NPC도 VRM(장식 NPC·유니티짱·좀비 정리), 의상은 **능력치만**이고 몸에 보이는 장비는 **낚싯대뿐**, 빌드한 뒤에도 교체할 수 있게 설명서. 끝나면 문서 → 스테이징 → 커밋·푸시, 빌드 → README 사진·내용 → 커밋·푸시.
+- 걷어냄: Quaternius Angler(몸 + 옷 메쉬)·머리카락·`build_characters.py`·`garments.py`·Skin/Garment/Ghost 셰이더·Universal Base Characters, 받은 캐릭터 36명(유니티짱·Modern Zombie·Mixamo 사람 3GB)·`CharacterLibrary`·`ExternalCharacters`, 장식 NPC `ExtraNpcs`·`Wanderer`, 해당 자동 촬영 16장
+- 새로: `CharacterRoster`(characters.json, 문서 폴더가 게임 폴더를 덮음, NPC는 이름 지정 → 성별 목록에서 이름 해시), `VrmLoader.Load`(ImmediateCaller 동기 읽기) + `VrmCharacters.LoadNow`, `CharacterLook` = 이름·칭호·성별·VRM, 못 읽으면 마네킹
+- 기본 VRM 11개: OpenGameArt의 VRoid CC0 샘플 미러 → `Assets/StreamingAssets/Characters/` (Git LFS `*.vrm`) + `characters.json` + `읽어주세요.txt`(빌드에 같이 나감)
+- 캐릭터 창 [캐릭터 모델]: 기본 캐릭터(남/녀) + 기본 제공·내 VRM 목록, [새로고침]이 characters.json도 다시 읽음, 설정 경고 노란 글씨
+- 다음: 사용자가 만든 기본 캐릭터로 교체(VRoid), 남자 NPC 모델 더(지금 2개), VRAM 보기(텍스처 압축 후보)
+
 ## 2026-10-20 (6): 팔 IK · VRM 캐릭터 → [10-animation.md 5장](10-animation.md), [16-vrm-characters.md](16-vrm-characters.md)
 
 사용자 요청: 캐스팅·챔질 때 낚싯대를 쥔 팔이 어색하다 → IK로. 캐릭터를 ReadyPlayerMe로 바꾸고 싶다 → RPM은 2026-01-31 종료라 **애니풍 VRM**으로(사용자 결정: 서브컬처, 자기가 만든 캐릭터를 빌드 없이). 끝나면 문서 → 스테이징 → 커밋·푸시.
@@ -9,7 +18,7 @@
 - **VRM 1단계**: UniVRM v0.131.4, 문서 폴더의 .vrm을 실행 중에 읽어 캐릭터 창 [캐릭터 모델] 탭에서 고른다. 동작·팔 IK·손가락 쥐기 그대로. Seed-san으로 확인(필드·젖힘·챔질·대기실·초상화·캐릭터 창).
 - 확인: 빌드 에러 0, `autoshot.sh 21e_character_model` 예외 0, 60 FPS.
 - **다음 (16 문서 3장)**: ① 기본 캐릭터 VRM 만들기(사용자, VRoid) ② 의상 능력치 → 덧입히는 장비(모자·안경·조끼는 VRM 뼈에 붙이고 나머지는 장비로, 사용자 동의) ③ Quaternius 기본 캐릭터 걷어내기 ④ NPC도 VRM.
-- **아직 안 한 사용자 요청**: 퀘스트·정보와 상관없는 장식 NPC 모두 걷어내기, 유니티짱은 남겨 NPC 역할 주기(역할은 사용자에게 물어볼 것: 팁·어군 정보 / 일일 퀘스트 / 대회 안내 후보).
+- ~~아직 안 한 사용자 요청: 장식 NPC 걷어내기, 유니티짱에 역할 주기~~ → (7)에서 장식 NPC는 걷어냈고, 유니티짱도 사용자 결정으로 뺐다(NPC 모두 VRM).
 
 ## 2026-10-20 (5): 낚시 모습 — 낚싯대 좌우 이동·1인칭 두 팔 (원작 클립 대조)
 

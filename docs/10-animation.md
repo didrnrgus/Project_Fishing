@@ -8,7 +8,7 @@
 | **Mixamo** (Adobe) | `Resources/Animations/Mixamo/*.fbx` | 낚싯대 들고 대기, 들어 올리기, 던지기, 챔질, 릴 감기, 환호, NPC 낚시 한 벌 |
 | **Human Basic Motions FREE** (Kevin Iglesias, Asset Store) | `Resources/Animations/KevinIglesias/*.fbx` | 맨손 대기, 걷기, 뛰기, 질주, 말하기, 점프·낙하 (남·녀 따로, 7장) |
 
-두 FBX 모두 휴머노이드로 임포트해서(`AssetImportRules`) 어떤 캐릭터(Angler_Male·Female, NPC)에도 그대로 붙는다.
+모두 휴머노이드로 임포트해서(`AssetImportRules`) 어떤 VRM 캐릭터(내 캐릭터·NPC, 16 문서)에도 그대로 붙는다.
 
 ## 1. Mixamo 파일
 
@@ -149,6 +149,8 @@ UAL의 `Idle_Loop`는 주먹 쥔 슈퍼히어로 자세라서, 에셋 스토어 
 - **아직 화면 확인 전**: 자동 촬영에 이 네 동작이 나오는 장면을 넣어 어색하지 않은지 볼 것 ([WORK-IN-PROGRESS.md](WORK-IN-PROGRESS.md)).
 
 ## 9. 배경 사람 걷기 (2026-10-16)
+
+> 2026-10-20: 장식 NPC(`Wanderer`)를 모두 걷어내서 아래는 기록으로만 남긴다 (16 문서 4장). 걷기 배속 규칙(`CharacterAnimator.BasicWalkSpeed`)은 그대로다.
 
 사용자 지적: 한강 둔치를 걷는 의사가 이상하다. 자동 촬영 `00o_doctor_walk`(0.25초 간격 두 장)로 보니 셋이 겹쳤다.
 

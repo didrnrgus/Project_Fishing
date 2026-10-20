@@ -34,13 +34,13 @@ namespace Fishing.World
             },
             Spawn = new Vector3(4f, 1.1f, -47f), ShopPos = new Vector3(-22f, 1f, -54f),
             ShopRoof = new Color(0.82f, 0.38f, 0.16f),
-            ShopOwner = Local("짜오프라야 낚시점 쏨삭", "짜오프라야 낚시점", new Color(0.95f, 0.8f, 0.25f), hat: 1),
+            ShopOwner = Local("짜오프라야 낚시점 쏨삭", "짜오프라야 낚시점"),
             Npcs = new[]
             {
-                Npc(22f, -47f, 200f, Union("니란 지부장", "한국 낚시 조합 방콕 지부", true, false), NpcAngler.Role.Talker, "union"),
-                Npc(15f, -22f, 0f, Local("수상 버스 차장", "다음 배는 10분 뒤", new Color(0.95f, 0.55f, 0.15f), false, false, 1), NpcAngler.Role.Angler, y: 1f),
-                Npc(-40f, -48f, 140f, Local("사원 가는 스님", "강을 건너려고", new Color(0.95f, 0.52f, 0.12f), false, false, -1), NpcAngler.Role.Talker),
-                Npc(-72f, -44f, 10f, Local("낚시공원 단골", "피라루쿠 사진이 자랑", new Color(0.3f, 0.5f, 0.7f), false, false, 0), NpcAngler.Role.Angler),
+                Npc(22f, -47f, 200f, Union("니란 지부장", "한국 낚시 조합 방콕 지부", true), NpcAngler.Role.Talker, "union"),
+                Npc(15f, -22f, 0f, Local("수상 버스 차장", "다음 배는 10분 뒤", false), NpcAngler.Role.Angler, y: 1f),
+                Npc(-40f, -48f, 140f, Local("사원 가는 스님", "강을 건너려고", false), NpcAngler.Role.Talker),
+                Npc(-72f, -44f, 10f, Local("낚시공원 단골", "피라루쿠 사진이 자랑", false), NpcAngler.Role.Angler),
             },
             Signs = new[] { ("THA TIEN PIER", new Vector3(30f, 6.5f, -62f), SignGold) },
             // 왓 아룬 터

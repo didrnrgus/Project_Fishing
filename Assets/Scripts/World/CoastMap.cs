@@ -1277,7 +1277,7 @@ namespace Fishing.World
 
         void BuildShop()
         {
-            var owner = S.ShopOwner ?? new CharacterLook { Name = S.ShopName + " 사장", Title = S.ShopName, TopModel = "Top_Shirt", Hair = "Hair_Buzzed" };
+            var owner = S.ShopOwner ?? new CharacterLook { Name = S.ShopName + " 사장", Title = S.ShopName };
             _props.TackleShop(S.ShopPos, S.ShopYaw, S.ShopName, owner, S.ShopRoof);
         }
 

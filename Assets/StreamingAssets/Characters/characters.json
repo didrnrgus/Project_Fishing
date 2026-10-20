@@ -1,0 +1,21 @@
+{
+    "_설명": "누구에게 어떤 VRM을 입힐지 정하는 파일. 고치는 법은 같은 폴더의 읽어주세요.txt",
+    "playerMale": "HairSample_Male.vrm",
+    "playerFemale": "Sendagaya_Shino.vrm",
+    "npcMale": [
+        "Sakurada_Fumiriya.vrm",
+        "Base_Male.vrm"
+    ],
+    "npcFemale": [
+        "AvatarSample_D.vrm",
+        "AvatarSample_E.vrm",
+        "AvatarSample_F.vrm",
+        "AvatarSample_G.vrm",
+        "HairSample_Female.vrm",
+        "Base_Female.vrm"
+    ],
+    "npc": [
+        { "name": "김선장", "file": "Base_Male.vrm" },
+        { "name": "동행 꾼", "file": "Sakurada_Fumiriya.vrm" }
+    ]
+}

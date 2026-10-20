@@ -40,13 +40,13 @@ namespace Fishing.World
             },
             Spawn = new Vector3(8f, 1.1f, -48f), ShopPos = new Vector3(-20f, 1f, -56f),
             ShopRoof = new Color(0.66f, 0.54f, 0.34f),
-            ShopOwner = Local("혼째 섬 낚시점 반 사장", "혼째 섬 낚시점", new Color(0.95f, 0.95f, 0.9f), hat: 2),
+            ShopOwner = Local("혼째 섬 낚시점 반 사장", "혼째 섬 낚시점"),
             Npcs = new[]
             {
-                Npc(22f, -48f, 200f, Union("레 티 마이 지부장", "한국 낚시 조합 나트랑 지부", true, false), NpcAngler.Role.Talker, "union"),
-                Npc(36f, 18f, 0f, Local("정자의 낚시꾼", "해 뜨면 여기 앉는다", new Color(0.3f, 0.55f, 0.75f), false, false, 1), NpcAngler.Role.Angler, y: 1f),
-                Npc(-34f, -50f, 150f, Local("논라 쓴 과일 장수", "망고 사세요!", new Color(0.85f, 0.6f, 0.75f), true, false, 2), NpcAngler.Role.Talker),
-                Npc(-78f, -45f, 10f, Local("신혼여행 온 부부", "카약 빌리러 왔다", new Color(0.95f, 0.85f, 0.4f), false, false, -1), NpcAngler.Role.Angler),
+                Npc(22f, -48f, 200f, Union("레 티 마이 지부장", "한국 낚시 조합 나트랑 지부", true), NpcAngler.Role.Talker, "union"),
+                Npc(36f, 18f, 0f, Local("정자의 낚시꾼", "해 뜨면 여기 앉는다", false), NpcAngler.Role.Angler, y: 1f),
+                Npc(-34f, -50f, 150f, Local("논라 쓴 과일 장수", "망고 사세요!", true), NpcAngler.Role.Talker),
+                Npc(-78f, -45f, 10f, Local("신혼여행 온 부부", "카약 빌리러 왔다", false), NpcAngler.Role.Angler),
             },
             Signs = new[] { ("VINPEARL", new Vector3(-6f, 6.5f, -66f), SignGold) },
             FarIslands = new[] { new Vector4(-330f, 430f, 170f, 46f), new Vector4(260f, 470f, 110f, 34f), new Vector4(60f, 520f, 80f, 22f) },

@@ -165,7 +165,7 @@ namespace Fishing.Core
         public List<string> ownedCostumes = new List<string>();
         /// <summary>입은 의상 (CostumeSlot 순서: 모자, 안경, 상의, 조끼, 하의, 신발).</summary>
         public List<string> costumes = new List<string>();
-        /// <summary>내 캐릭터 모델: 비우면 기본 캐릭터(의상), 아니면 VRM id ("user/파일.vrm").</summary>
+        /// <summary>내 캐릭터 모델: 비우면 기본 캐릭터(characters.json의 playerMale/playerFemale), 아니면 VRM id ("user/파일.vrm").</summary>
         public string vrm = "";
         /// <summary>VRM 캐릭터 걸음걸이를 여자 클립으로.</summary>
         public bool vrmFemale;

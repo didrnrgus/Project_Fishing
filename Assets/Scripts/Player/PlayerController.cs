@@ -84,18 +84,10 @@ namespace Fishing.PlayerSystems
             Model = new GameObject("Model").transform;
             Model.SetParent(transform, false);
 
-            if (CharacterFactory.Available)
-            {
-                // Quaternius 캐릭터 (CC0) + 코드로 입힌 옷
-                var look = Game.Profile != null ? Game.Profile.BuildLook() : CharacterLook.Player;
-                BuildCharacter(look);
-                SetNameTag(look);
-            }
-            else
-            {
-                BuildPrimitiveModel();
-                _nameTag = CharacterFactory.AddNameTag(transform, "강태공", "초보 조사", 2.3f);
-            }
+            // VRM 캐릭터 (캐릭터 창에서 고른 것, 없으면 characters.json의 기본). 못 읽으면 도형 사람
+            var look = Game.Profile != null ? Game.Profile.BuildLook() : CharacterLook.Player;
+            BuildCharacter(look);
+            SetNameTag(look);
 
             // 낚싯대: 손 위치를 따라가고 기울기는 코드로 정한다 (손 뼈의 축 방향에 의존하지 않게)
             _rodPivot = new GameObject("RodPivot").transform;
@@ -112,12 +104,7 @@ namespace Fishing.PlayerSystems
             _reelId = p?.Reel.Id;
 
             // 초상화 카메라가 내 캐릭터만 비추도록 전용 레이어에 둔다
-            foreach (var t in Model.GetComponentsInChildren<Transform>(true))
-            {
-                t.gameObject.layer = Fishing.UI.PortraitCamera.Layer;
-                if (t.name == "Head") Head = t;
-            }
-            if (Head == null) Head = Model;
+            foreach (var t in Model.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = Fishing.UI.PortraitCamera.Layer;
             // 낚싯대는 초상화에 비치지 않게 (얼굴 앞을 가로지른다)
             foreach (var t in _rodPivot.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = 0;
         }
@@ -127,27 +114,34 @@ namespace Fishing.PlayerSystems
         void BuildCharacter(CharacterLook look)
         {
             if (_character != null) Destroy(_character);
-            _character = CharacterFactory.Create(look, Model);
-            _anim = _character.GetComponent<CharacterAnimator>();
-            _sitSeat = SitSeat.Attach(_character.transform);
-            _grip = RodGrip.Find(_character.transform);
-            _gripL = RodGrip.Find(_character.transform, true);
-            Head = null;
+            _character = CharacterFactory.Create(look, Model, npc: false);
+            _hand = Head = _spine = null;
+            if (_character == null)
+            {
+                _anim = null;
+                _grip = _gripL = null;
+                _sitSeat = null;
+                _character = new GameObject("PrimitiveModel");
+                _character.transform.SetParent(Model, false);
+                BuildPrimitiveModel(_character.transform);
+            }
+            else
+            {
+                _anim = _character.GetComponent<CharacterAnimator>();
+                _sitSeat = SitSeat.Attach(_character.transform);
+                _grip = RodGrip.Find(_character.transform);
+                _gripL = RodGrip.Find(_character.transform, true);
+                // VRM은 뼈 이름이 제각각이라 휴머노이드 매핑으로 찾는다
+                var an = _character.GetComponentInChildren<Animator>();
+                if (an != null && an.isHuman)
+                {
+                    _hand = an.GetBoneTransform(HumanBodyBones.RightHand);
+                    Head = an.GetBoneTransform(HumanBodyBones.Head);
+                    _spine = an.GetBoneTransform(HumanBodyBones.Chest) ?? an.GetBoneTransform(HumanBodyBones.Spine);
+                }
+            }
             foreach (var t in _character.GetComponentsInChildren<Transform>(true))
-            {
-                if (t.name == "hand_r") _hand = t;
-                if (t.name == "Head") Head = t;
-                if (t.name == "spine_02") _spine = t;
                 t.gameObject.layer = Fishing.UI.PortraitCamera.Layer;
-            }
-            // VRM·받은 캐릭터는 뼈 이름이 달라서 휴머노이드 매핑으로 찾는다
-            var an = _character.GetComponentInChildren<Animator>();
-            if (an != null && an.isHuman)
-            {
-                if (_hand == null) _hand = an.GetBoneTransform(HumanBodyBones.RightHand);
-                if (Head == null) Head = an.GetBoneTransform(HumanBodyBones.Head);
-                if (_spine == null) _spine = an.GetBoneTransform(HumanBodyBones.Chest) ?? an.GetBoneTransform(HumanBodyBones.Spine);
-            }
             if (Head == null) Head = Model;
             FindLeftArm();
             // 팔 길이 비율: 낚싯대 쥔 손 자리 표(GripCurve)는 기본 캐릭터 팔에 맞춘 값이라, 팔이 짧은 캐릭터는 그만큼 줄인다
@@ -160,7 +154,7 @@ namespace Fishing.PlayerSystems
             }
         }
 
-        /// <summary>기본 캐릭터(Angler) 오른팔 길이 (어깨~손목, m).</summary>
+        /// <summary>손 자리 표(GripCurve)를 맞춘 예전 기본 캐릭터의 오른팔 길이 (어깨~손목, m). VRM 팔 길이를 이것과 비교해 늘이거나 줄인다.</summary>
         const float RefArmLength = 0.453f;
         float _armScale = 1f;
 
@@ -186,17 +180,8 @@ namespace Fishing.PlayerSystems
 
         void FindLeftArm()
         {
-            _upperArmL = _lowerArmL = _handL = null;
+            _upperArmL = _lowerArmL = _handL = _upperArmR = _lowerArmR = _handR = null;
             if (_character == null) return;
-            var all = _character.GetComponentsInChildren<Transform>(true);
-            Transform Bone(string n) => System.Array.Find(all, t => t.name == n);
-            _upperArmL = Bone("upperarm_l");
-            _lowerArmL = Bone("lowerarm_l");
-            _handL = Bone("hand_l");
-            _upperArmR = Bone("upperarm_r");
-            _lowerArmR = Bone("lowerarm_r");
-            _handR = Bone("hand_r");
-            if (_upperArmL != null && _lowerArmL != null && _handL != null && _upperArmR != null && _lowerArmR != null && _handR != null) return;
             var an = _character.GetComponentInChildren<Animator>();
             if (an == null || !an.isHuman) return;
             _upperArmL = an.GetBoneTransform(HumanBodyBones.LeftUpperArm);
@@ -412,7 +397,7 @@ namespace Fishing.PlayerSystems
         /// <summary>의상을 바꾸면 캐릭터를 다시 입힌다 (초상화도 따라 바뀐다).</summary>
         public void ApplyLook()
         {
-            if (!CharacterFactory.Available || Game.Profile == null) return;
+            if (Game.Profile == null) return;
             var look = Game.Profile.BuildLook();
             BuildCharacter(look);
             SetNameTag(look);
@@ -433,7 +418,7 @@ namespace Fishing.PlayerSystems
             if (Game.Profile != null)
                 Game.Profile.Changed += () =>
                 {
-                    if (this == null || !CharacterFactory.Available || Game.Profile.CurrentTitle == _tagTitle) return;
+                    if (this == null || Game.Profile.CurrentTitle == _tagTitle) return;
                     SetNameTag(Game.Profile.BuildLook());
                 };
         }
@@ -507,19 +492,15 @@ namespace Fishing.PlayerSystems
         }
 
         /// <summary>에셋이 없을 때의 프리미티브 캐릭터.</summary>
-        void BuildPrimitiveModel()
+        /// <summary>VRM을 못 읽었을 때 대신 서 있는 도형 사람.</summary>
+        void BuildPrimitiveModel(Transform parent)
         {
             var skin = Mats.Lit(new Color(0.98f, 0.82f, 0.7f));
             var shirt = Mats.Lit(new Color(0.95f, 0.95f, 0.97f));
-            var vest = Mats.Lit(new Color(0.3f, 0.45f, 0.32f));
             var pants = Mats.Lit(new Color(0.25f, 0.3f, 0.45f));
-            var hat = Mats.Lit(new Color(0.92f, 0.85f, 0.65f));
-            Mats.Prim(PrimitiveType.Capsule, "Legs", Model, new Vector3(0f, 0.5f, 0f), new Vector3(0.5f, 0.5f, 0.45f), pants, false);
-            Mats.Prim(PrimitiveType.Capsule, "Body", Model, new Vector3(0f, 1.1f, 0f), new Vector3(0.62f, 0.42f, 0.5f), shirt, false);
-            Mats.Prim(PrimitiveType.Cube, "Vest", Model, new Vector3(0f, 1.15f, 0.02f), new Vector3(0.6f, 0.5f, 0.5f), vest, false);
-            Mats.Prim(PrimitiveType.Sphere, "Head", Model, new Vector3(0f, 1.65f, 0f), Vector3.one * 0.42f, skin, false);
-            Mats.Prim(PrimitiveType.Cylinder, "HatBrim", Model, new Vector3(0f, 1.82f, 0f), new Vector3(0.7f, 0.01f, 0.7f), hat, false);
-            Mats.Prim(PrimitiveType.Cylinder, "HatTop", Model, new Vector3(0f, 1.9f, 0f), new Vector3(0.38f, 0.09f, 0.38f), hat, false);
+            Mats.Prim(PrimitiveType.Capsule, "Legs", parent, new Vector3(0f, 0.5f, 0f), new Vector3(0.5f, 0.5f, 0.45f), pants, false);
+            Mats.Prim(PrimitiveType.Capsule, "Body", parent, new Vector3(0f, 1.1f, 0f), new Vector3(0.62f, 0.42f, 0.5f), shirt, false);
+            Mats.Prim(PrimitiveType.Sphere, "Head", parent, new Vector3(0f, 1.65f, 0f), Vector3.one * 0.42f, skin, false);
         }
 
         /// <summary>낚아 올렸을 때 (두 팔 들고 환호).</summary>
@@ -565,7 +546,7 @@ namespace Fishing.PlayerSystems
 
         void Update()
         {
-            if (Time.time >= _titleCheckAt && Game.Profile != null && CharacterFactory.Available)
+            if (Time.time >= _titleCheckAt && Game.Profile != null)
             {
                 _titleCheckAt = Time.time + 1f;
                 if (Game.Profile.CurrentTitle != _tagTitle) SetNameTag(Game.Profile.BuildLook());

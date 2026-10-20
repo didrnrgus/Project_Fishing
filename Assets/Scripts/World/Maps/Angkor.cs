@@ -34,13 +34,13 @@ namespace Fishing.World
             },
             Spawn = new Vector3(8f, 1.1f, -47f), ShopPos = new Vector3(-22f, 1f, -54f),
             ShopRoof = new Color(0.62f, 0.5f, 0.32f),
-            ShopOwner = Local("시엠립 낚시점 소피읍", "시엠립 낚시점", new Color(0.9f, 0.85f, 0.6f), hat: 2),
+            ShopOwner = Local("시엠립 낚시점 소피읍", "시엠립 낚시점"),
             Npcs = new[]
             {
-                Npc(22f, -47f, 200f, Union("속 찬나 지부장", "한국 낚시 조합 앙코르 지부", false, false), NpcAngler.Role.Talker, "union"),
-                Npc(-1.5f, -29f, 0f, Local("크로마 두른 아주머니", "해자 어부", new Color(0.72f, 0.3f, 0.3f), true, false, 2), NpcAngler.Role.Angler, y: 1f),
-                Npc(-12f, -46f, 160f, Local("사원 스님", "새벽 공양을 마치고", new Color(0.95f, 0.52f, 0.12f), false, false, -1), NpcAngler.Role.Talker),
-                Npc(62f, -43f, 10f, Local("사진 찍는 여행객", "일출 명당을 찾는 중", new Color(0.4f, 0.6f, 0.85f), true, false, 1), NpcAngler.Role.Angler),
+                Npc(22f, -47f, 200f, Union("속 찬나 지부장", "한국 낚시 조합 앙코르 지부", false), NpcAngler.Role.Talker, "union"),
+                Npc(-1.5f, -29f, 0f, Local("크로마 두른 아주머니", "해자 어부", true), NpcAngler.Role.Angler, y: 1f),
+                Npc(-12f, -46f, 160f, Local("사원 스님", "새벽 공양을 마치고", false), NpcAngler.Role.Talker),
+                Npc(62f, -43f, 10f, Local("사진 찍는 여행객", "일출 명당을 찾는 중", true), NpcAngler.Role.Angler),
             },
             Signs = new[] { ("ANGKOR WAT", new Vector3(30f, 6.5f, -62f), SignGold) },
             // 건너편은 해자 안쪽 잔디밭 (회랑 앞에 나무·집을 두지 않는다, 양 끝만 숲), 중앙 사원 터도 비운다

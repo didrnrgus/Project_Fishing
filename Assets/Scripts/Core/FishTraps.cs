@@ -329,15 +329,7 @@ namespace Fishing.Core
                 break;
             }
             var pos = at ?? basePos + right * 3.2f;
-            var look = new CharacterLook
-            {
-                Name = FisherName(map.Id), Title = FisherTitle(map.Id),
-                TopModel = "Top_Long", VestModel = "Vest_Fishing", BottomModel = "Pants_Cargo", ShoeModel = "Shoes_Boots",
-                Hair = "Hair_Buzzed", HairColor = new Color(0.2f, 0.18f, 0.16f), Glasses = true, Gloves = true,
-                Shirt = new Color(0.82f, 0.8f, 0.72f), Vest = true, VestColor = new Color(0.36f, 0.38f, 0.26f),
-                Pants = new Color(0.18f, 0.18f, 0.2f), Shoes = new Color(0.9f, 0.4f, 0.12f),
-                Hat = true, HatStyle = 1, HatColor = new Color(0.3f, 0.32f, 0.3f),
-            };
+            var look = new CharacterLook { Name = FisherName(map.Id), Title = FisherTitle(map.Id) };
             var npc = NpcAngler.Spawn(world, world.InverseTransformPoint(pos), yaw - world.eulerAngles.y, look, NpcAngler.Role.Talker);
             npc.NpcId = FisherId;
             npc.gameObject.AddComponent<TrapFisherMarker>();

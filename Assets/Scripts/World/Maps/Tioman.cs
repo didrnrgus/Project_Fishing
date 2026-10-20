@@ -35,13 +35,13 @@ namespace Fishing.World
             },
             Spawn = new Vector3(6f, 1.1f, -47f), ShopPos = new Vector3(-22f, 1f, -55f),
             ShopRoof = new Color(0.55f, 0.3f, 0.65f),
-            ShopOwner = Local("리조트 낚시점 누르", "티오만 리조트 낚시점", new Color(0.6f, 0.35f, 0.7f), true, false, 2),
+            ShopOwner = Local("리조트 낚시점 누르", "티오만 리조트 낚시점", true),
             Npcs = new[]
             {
-                Npc(26f, -47f, 200f, Union("파리다 지부장", "한국 낚시 조합 티오만 지부", true, false), NpcAngler.Role.Talker, "union"),
-                Npc(19f, -2f, 0f, Local("다이빙 강사", "산호초 지킴이", new Color(0.2f, 0.65f, 0.75f), false, false, -1), NpcAngler.Role.Angler, y: 1f),
-                Npc(-44f, -50f, 120f, Local("리조트 지배인", "보라 파라솔이 자랑", new Color(0.95f, 0.95f, 0.92f), false, false, -1), NpcAngler.Role.Talker),
-                Npc(80f, -44f, 0f, Local("허니문 부부", "해먹에서 일몰을", new Color(0.95f, 0.75f, 0.85f), true, false, 2), NpcAngler.Role.Angler),
+                Npc(26f, -47f, 200f, Union("파리다 지부장", "한국 낚시 조합 티오만 지부", true), NpcAngler.Role.Talker, "union"),
+                Npc(19f, -2f, 0f, Local("다이빙 강사", "산호초 지킴이", false), NpcAngler.Role.Angler, y: 1f),
+                Npc(-44f, -50f, 120f, Local("리조트 지배인", "보라 파라솔이 자랑", false), NpcAngler.Role.Talker),
+                Npc(80f, -44f, 0f, Local("허니문 부부", "해먹에서 일몰을", true), NpcAngler.Role.Angler),
             },
             Signs = new[] { ("PULAU TIOMAN", new Vector3(0f, 6.5f, -64f), SignGold) },
             FarIslands = new[] { new Vector4(-300f, 450f, 120f, 40f), new Vector4(280f, 480f, 90f, 30f) },

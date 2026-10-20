@@ -34,13 +34,13 @@ namespace Fishing.World
             },
             Spawn = new Vector3(4f, 1.1f, -47f), ShopPos = new Vector3(-24f, 1f, -56f),
             ShopRoof = new Color(0.15f, 0.48f, 0.5f),
-            ShopOwner = Local("마리나 낚시점 림 사장", "센토사 마리나 낚시점", new Color(0.95f, 0.95f, 0.92f), hat: 1),
+            ShopOwner = Local("마리나 낚시점 림 사장", "센토사 마리나 낚시점"),
             Npcs = new[]
             {
-                Npc(22f, -47f, 200f, Union("탄 지부장", "한국 낚시 조합 싱가포르 지부", false, false), NpcAngler.Role.Talker, "union"),
-                Npc(38f, -2f, 0f, Local("요트 선장 라즈", "주말엔 GT 원정", new Color(0.15f, 0.25f, 0.45f), false, true, 1), NpcAngler.Role.Angler, y: 1f),
-                Npc(-58f, -48f, 300f, Local("머라이언 기념사진 작가", "한 장에 10달러", new Color(0.9f, 0.3f, 0.3f), true, false, -1), NpcAngler.Role.Talker),
-                Npc(-140f, -44f, 20f, Local("해양 스포츠 강사", "카이트서핑 하러 왔다", new Color(0.2f, 0.75f, 0.7f), false, false, -1), NpcAngler.Role.Angler),
+                Npc(22f, -47f, 200f, Union("탄 지부장", "한국 낚시 조합 싱가포르 지부", false), NpcAngler.Role.Talker, "union"),
+                Npc(38f, -2f, 0f, Local("요트 선장 라즈", "주말엔 GT 원정", false), NpcAngler.Role.Angler, y: 1f),
+                Npc(-58f, -48f, 300f, Local("머라이언 기념사진 작가", "한 장에 10달러", true), NpcAngler.Role.Talker),
+                Npc(-140f, -44f, 20f, Local("해양 스포츠 강사", "카이트서핑 하러 왔다", false), NpcAngler.Role.Angler),
             },
             Signs = new[] { ("SENTOSA", new Vector3(10f, 6.5f, -64f), SignGold) },
             // 머라이언 언덕

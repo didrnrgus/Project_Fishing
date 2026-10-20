@@ -14,8 +14,8 @@ namespace Fishing.UI
     /// 내 캐릭터(C). 원작 "내 캐릭터" 창처럼 왼쪽은 전신 미리보기, 탭은 [일반 슬롯]·[아바타 슬롯].
     ///  - 일반 슬롯: 미리보기 양옆에 장착한 낚싯대·릴·원줄 / 미끼·장신구·배 칸 (마우스를 올리면 아래 카드에 자세히),
     ///    오른쪽은 장비·강화·의상·목장갑·음식·체력 상태를 모두 합친 최종 능력치 표와 경험치
-    ///  - 아바타 슬롯: 부위별 의상 목록 (사서 입으면 바로 캐릭터·초상화·대기실에 반영) + 입은 의상 능력치 레이더
-    ///  - 캐릭터 모델: 기본 캐릭터 / VRM 파일(문서/짭풍명월/Characters에 넣은 .vrm, 빌드 없이) 고르기. 의상 능력치는 모델과 상관없이 붙는다
+    ///  - 아바타 슬롯: 부위별 의상 목록 + 입은 의상 능력치 레이더. 의상은 능력치만 있고 몸에 입히지 않는다 (몸에 보이는 건 낚싯대뿐)
+    ///  - 캐릭터 모델: 기본 캐릭터(남/여, characters.json) / VRM 파일(게임과 함께 온 것 + 문서/짭풍명월/Characters에 넣은 .vrm, 빌드 없이) 고르기
     /// </summary>
     public class CharacterPanel : UIPanel
     {
@@ -396,34 +396,43 @@ namespace Fishing.UI
         {
             var p = Game.Profile;
             string cur = p.Data.vrm ?? "";
+            if (cur.Length > 0 && !VrmCharacters.Exists(cur)) cur = ""; // 파일을 지웠으면 기본 캐릭터로 서 있다
             var rows = new RowCursor(_list);
             var head = rows.Next(42, 10);
-            Cell(head, "<size=15><color=#a0b0c0>VRoid Studio 등에서 만든 <b>.vrm</b> 파일을 폴더에 넣으면 바로 고를 수 있어요. 의상 능력치는 그대로 붙어요.</color></size>", 0, 520, 15)
+            Cell(head, "<size=15><color=#a0b0c0>VRoid Studio 등에서 만든 <b>.vrm</b> 파일을 폴더에 넣으면 바로 고를 수 있어요. 의상은 능력치만 붙어요.</color></size>", 0, 520, 15)
                 .alignment = UIFactory.Align(TextAnchor.MiddleLeft);
             RowButton(head, "폴더 열기", () => Application.OpenURL("file:///" + VrmCharacters.EnsureUserFolder().Replace('\\', '/')), 530, 138, null, true, 15);
             RowButton(head, "새로고침", () =>
             {
                 foreach (var id in VrmCharacters.List()) VrmCharacters.Forget(id);
-                if (cur.Length > 0) VrmCharacters.Request(cur);
-                Refresh();
+                CharacterRoster.Reload();
+                p.SetCharacterModel(p.Data.vrm, p.Data.vrmFemale); // 바뀐 파일·기본 캐릭터로 다시 입힌다
             }, 676, 138, null, true, 15);
+            foreach (var w in CharacterRoster.Warnings)
+            {
+                var warn = rows.Next(30, 2);
+                Cell(warn, $"<size=14><color=#ffc060>{w}</color></size>", 20, 760, 14).alignment = UIFactory.Align(TextAnchor.MiddleLeft);
+            }
 
-            // 기본 캐릭터
+            // 기본 캐릭터 (남/여): characters.json의 playerMale/playerFemale
             var row0 = rows.Next(66, 4);
             UIFactory.RowBg(row0, cur.Length == 0);
-            Cell(row0, "<b>기본 캐릭터</b>\n<size=14><color=#8090a0>아바타 슬롯에서 고른 옷을 입어요</color></size>", 20, 560, 19).alignment = UIFactory.Align(TextAnchor.MiddleLeft);
+            string defId = CharacterRoster.PlayerDefault(p.Data.vrmFemale);
+            Cell(row0, $"<b>기본 캐릭터</b>  <size=14><color=#80c0ff>{(p.Data.vrmFemale ? "여자" : "남자")}</color></size>\n<size=14><color=#8090a0>{(defId == null ? "기본 VRM 파일이 없어요" : DisplayName(defId))} · 아래에서 남자/여자를 골라요</color></size>", 20, 560, 19)
+                .alignment = UIFactory.Align(TextAnchor.MiddleLeft);
             if (cur.Length == 0) RowButton(row0, "사용 중", null, 600, 210, UIFactory.TabOn, false);
             else RowButton(row0, "고르기", () => { p.SetCharacterModel(null, p.Data.vrmFemale); Game.Sound.Coin(); }, 600, 210);
 
             var ids = VrmCharacters.List();
             foreach (var id in ids)
             {
-                VrmCharacters.Request(id); // 이름·만든 사람·키를 보여 주려고 미리 읽는다
+                // 이름·만든 사람·키를 보여 주려고 뒤에서 읽는다. 게임과 함께 온 모델은 고를 때만 읽는다 (11개를 다 읽으면 메모리가 크다)
+                if (id.StartsWith("user/") || id == cur) VrmCharacters.Request(id);
                 var info = VrmCharacters.GetInfo(id);
                 var row = rows.Next(66, 4);
                 UIFactory.RowBg(row, id == cur);
-                string title = info?.Title ?? System.IO.Path.GetFileNameWithoutExtension(id);
-                string sub = info == null || info.Loading ? "읽는 중…" : info.Error != null ? $"<color=#ff9070>읽기 실패: {info.Error}</color>"
+                string title = info?.Title ?? DisplayName(id);
+                string sub = info == null ? "게임과 함께 온 캐릭터" : info.Loading ? "읽는 중…" : info.Error != null ? $"<color=#ff9070>읽기 실패: {info.Error}</color>"
                     : $"{(string.IsNullOrEmpty(info.Author) ? "만든 사람 모름" : "만든 사람 " + info.Author)} · 키 {info.Height:0.00}m{PermissionNote(info)}";
                 string src = id.StartsWith("builtin/") ? "  <color=#80c0ff>기본 제공</color>" : "";
                 Cell(row, $"<b>{title}</b>{src}\n<size=14><color=#8090a0>{sub}</color></size>", 20, 560, 19).alignment = UIFactory.Align(TextAnchor.MiddleLeft);
@@ -433,32 +442,33 @@ namespace Fishing.UI
             if (ids.Count == 0)
             {
                 var empty = rows.Next(60, 4);
-                Cell(empty, "<size=15><color=#8090a0>아직 VRM 파일이 없어요. [폴더 열기]를 눌러 .vrm 파일을 넣고 [새로고침]을 누르세요.</color></size>", 20, 760, 15)
+                Cell(empty, "<size=15><color=#8090a0>VRM 파일이 하나도 없어요. [폴더 열기]를 눌러 .vrm 파일을 넣고 [새로고침]을 누르세요.</color></size>", 20, 760, 15)
                     .alignment = UIFactory.Align(TextAnchor.MiddleLeft);
             }
 
-            if (cur.Length > 0)
-            {
-                var gait = rows.Next(50, 10);
-                Cell(gait, "걸음걸이", 20, 140, 17).alignment = UIFactory.Align(TextAnchor.MiddleLeft);
-                RowButton(gait, "남자", () => p.SetCharacterModel(cur, false), 170, 120, p.Data.vrmFemale ? UIFactory.TabOff : UIFactory.TabOn, true, 16);
-                RowButton(gait, "여자", () => p.SetCharacterModel(cur, true), 298, 120, p.Data.vrmFemale ? UIFactory.TabOn : UIFactory.TabOff, true, 16);
-            }
+            // 남/여: 기본 캐릭터면 어느 모델인지, 고른 VRM이면 걸음걸이(대기·걷기 클립)
+            var gait = rows.Next(50, 10);
+            Cell(gait, cur.Length == 0 ? "성별" : "걸음걸이", 20, 140, 17).alignment = UIFactory.Align(TextAnchor.MiddleLeft);
+            RowButton(gait, "남자", () => p.SetCharacterModel(cur, false), 170, 120, p.Data.vrmFemale ? UIFactory.TabOff : UIFactory.TabOn, true, 16);
+            RowButton(gait, "여자", () => p.SetCharacterModel(cur, true), 298, 120, p.Data.vrmFemale ? UIFactory.TabOn : UIFactory.TabOff, true, 16);
 
-            // 왼쪽 카드: 고른 모델 썸네일·사용 허락
-            var sel = cur.Length > 0 ? VrmCharacters.GetInfo(cur) : null;
+            // 왼쪽 카드: 지금 모델 썸네일·사용 허락
+            string shown = cur.Length > 0 ? cur : defId;
+            var sel = shown != null ? VrmCharacters.GetInfo(shown) : null;
             var thumb = sel?.Thumbnail;
             if (_thumbSprite != null && (_thumbSprite.texture != thumb)) { Object.Destroy(_thumbSprite); _thumbSprite = null; }
             if (thumb != null && _thumbSprite == null) _thumbSprite = Sprite.Create(thumb, new Rect(0, 0, thumb.width, thumb.height), new Vector2(0.5f, 0.5f));
             _detailIcon.sprite = _thumbSprite;
             _detailIcon.enabled = _thumbSprite != null;
             _detailText.rectTransform.offsetMin = new Vector2(_thumbSprite != null ? 100 : 16, _detailText.rectTransform.offsetMin.y);
-            _detailText.text = cur.Length == 0
-                ? "<b>기본 캐릭터</b>\n아바타 슬롯의 옷을 입은 모습이에요."
-                : sel == null || sel.Loading ? "<b>읽는 중…</b>"
+            _detailText.text = sel == null ? "<b>캐릭터 없음</b>\n기본 VRM 파일을 찾지 못했어요."
+                : sel.Loading ? "<b>읽는 중…</b>"
                 : sel.Error != null ? $"<b>읽기 실패</b>\n{sel.Error}"
-                : $"<b>{sel.Title}</b>\n{(string.IsNullOrEmpty(sel.Author) ? "" : "만든 사람: " + sel.Author + "\n")}{PermissionText(sel)}";
+                : $"<b>{sel.Title}</b>{(cur.Length == 0 ? "  <size=13>(기본)</size>" : "")}\n{(string.IsNullOrEmpty(sel.Author) ? "" : "만든 사람: " + sel.Author + "\n")}{PermissionText(sel)}";
         }
+
+        /// <summary>"builtin/Sendagaya_Shino.vrm" → "Sendagaya Shino".</summary>
+        static string DisplayName(string id) => System.IO.Path.GetFileNameWithoutExtension(id).Replace('_', ' ');
 
         Sprite _thumbSprite;
 

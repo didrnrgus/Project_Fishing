@@ -31,6 +31,23 @@ namespace Fishing.Vrm
         public static async Task<(GameObject root, VrmMeta meta)> LoadAsync(string path)
         {
             var inst = await Vrm10.LoadPathAsync(path, canLoadVrm0X: true, controlRigGenerationOption: ControlRigGenerationOption.None);
+            return Finish(inst);
+        }
+
+        /// <summary>
+        /// 같은 일을 이 프레임 안에 끝낸다 (ImmediateCaller: 기다리는 단계 없이 바로 이어서 돈다). 맵을 지을 때 NPC·내 캐릭터가
+        /// 바로 서 있어야 해서 쓴다. 한 파일에 수백 ms가 걸리니 로딩 화면 뒤에서만 부른다.
+        /// </summary>
+        public static (GameObject root, VrmMeta meta) Load(string path)
+        {
+            var task = Vrm10.LoadPathAsync(path, canLoadVrm0X: true, controlRigGenerationOption: ControlRigGenerationOption.None,
+                awaitCaller: new ImmediateCaller());
+            if (!task.IsCompleted) throw new Exception("VRM을 바로 읽지 못했습니다");
+            return Finish(task.GetAwaiter().GetResult());
+        }
+
+        static (GameObject root, VrmMeta meta) Finish(Vrm10Instance inst)
+        {
             if (inst == null) throw new Exception("VRM을 읽지 못했습니다");
             var meta = new VrmMeta();
             var m = inst.Vrm != null ? inst.Vrm.Meta : null;

@@ -49,13 +49,13 @@ namespace Fishing.World
             },
             Spawn = new Vector3(4f, 1.1f, -47f), ShopPos = new Vector3(-22f, 1f, -54f),
             ShopRoof = new Color(0.55f, 0.6f, 0.63f),
-            ShopOwner = Local("돈콘 수상 낚시점 캄펑", "돈콘 수상 낚시점", new Color(0.55f, 0.65f, 0.45f), hat: 2),
+            ShopOwner = Local("돈콘 수상 낚시점 캄펑", "돈콘 수상 낚시점"),
             Npcs = new[]
             {
-                Npc(20f, -47f, 200f, Union("분미 지부장", "한국 낚시 조합 메콩 지부", false, false), NpcAngler.Role.Talker, "union"),
-                Npc(-10f, -14f, 10f, Local("삿갓 쓴 할아버지", "투망 60년", new Color(0.45f, 0.4f, 0.32f), false, false, 2), NpcAngler.Role.Angler, y: 1f),
-                Npc(-40f, -48f, 120f, Local("사롱 입은 아주머니", "쌀국수 가게 주인", new Color(0.62f, 0.25f, 0.4f), true, false, -1), NpcAngler.Role.Talker),
-                Npc(-118f, 70f, 90f, Local("배낭여행객", "해먹에서 막 일어났다", new Color(0.3f, 0.55f, 0.4f), false, false, 0), NpcAngler.Role.Angler),
+                Npc(20f, -47f, 200f, Union("분미 지부장", "한국 낚시 조합 메콩 지부", false), NpcAngler.Role.Talker, "union"),
+                Npc(-10f, -14f, 10f, Local("삿갓 쓴 할아버지", "투망 60년", false), NpcAngler.Role.Angler, y: 1f),
+                Npc(-40f, -48f, 120f, Local("사롱 입은 아주머니", "쌀국수 가게 주인", true), NpcAngler.Role.Talker),
+                Npc(-118f, 70f, 90f, Local("배낭여행객", "해먹에서 막 일어났다", false), NpcAngler.Role.Angler),
             },
             Signs = new[] { ("DON KHONE · 돈콘", new Vector3(18f, 6.5f, -62f), SignGold) },
             Reserved = new[] { new Rect(40f, -75f, 24f, 24f) },

@@ -6,7 +6,8 @@
 - Windows Build Support 모듈
 - 패키지: `com.unity.ugui 2.0.0`, `com.unity.burst`, `com.unity.collections`(Translucent Image가 씀), `com.unity.postprocessing 3.4.0`(후처리), `com.unity.inputsystem 1.14.2`(패드 진동만), `com.unity.test-framework 1.5.1` + 기본 모듈
 - 외부 에셋
-  - Quaternius CC0 모델 (`Assets/Resources/Characters` 원본 몸·머리카락, `Animations`). 임포트 설정은 `Assets/Editor/AssetImportRules.cs`가 자동으로 맞춘다.
+  - 동작 클립(`Assets/Resources/Animations`: Quaternius UAL CC0, Mixamo, Kevin Iglesias). 임포트 설정은 `Assets/Editor/AssetImportRules.cs`가 자동으로 맞춘다.
+  - 사람은 모두 VRM: `Assets/StreamingAssets/Characters`(기본 11개, Git LFS — `git lfs pull`로 받는다) + `characters.json`. 바꾸는 법은 [가이드 07](guide/07-characters.md).
   - **Mixamo** 낚시 동작 (`Assets/MixamoAnimation` 원본, 쓰는 3개만 `Resources/Animations/Mixamo`): Fishing Cast를 들기·던지기·챔질·릴 감기 클립으로 쪼갠다 → [10 문서](10-animation.md).
   - 에셋 스토어 패키지(2026-10-14 커밋, 아직 게임에 연결 안 함): `Kevin Iglesias`(Human Basic Motions FREE), `AllSkyFree`, `Fantasy Skybox FREE`, `NatureStarterKit2`, `BigRookGames`.
   - Kenney CC0 모델(`Resources/Kenney`)·소리(`Resources/Audio/Kenney`), Poly Haven CC0 텍스처(`Resources/Terrain`). 출처는 각 폴더의 SOURCES.md·라이선스 사본.
@@ -85,8 +86,6 @@ bpyenv/Scripts/pip install bpy pillow numpy
 ```
 | 명령 | 결과 |
 |---|---|
-| `bpyenv/Scripts/python -I tools/blender/build_characters.py` | `Resources/Characters/Angler_Male·Female.fbx` (몸 + 옷 메쉬) |
-| `... build_characters.py --preview [--closeup] --only male --out Screenshots/pv` | 렌더로 확인 (08 문서 3장) |
 | `... build_fish.py [--only carp,dotdom]` | `Resources/Fish/Species/*.fbx`, `Fish/Textures`, `Icons/Fish` (09 문서) |
 | `... build_fish.py --preview --only carp --out Screenshots/fish` | 물고기 미리보기 |
 | `... build_icons.py` | `Resources/Icons/Items`, `Icons/Junk`, `Resources/Junk` |
@@ -108,7 +107,7 @@ Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.ex
 | 파일 | 장면 |
 |---|---|
 | 00a_lobby, 00b_area_list | 대기실(한국 낚시 조합) → 낚시터 목록 → 한강 CH.1 입장 |
-| 01_field_morning, 00c_rod_extend, 00_character | 시작 위치(새벽), 낚싯대 펼치기, 한낮 캐릭터 정면(옷·반장갑·운동화) |
+| 01_field_morning, 00c_rod_extend, 00_character | 시작 위치(새벽), 낚싯대 펼치기, 한낮 캐릭터 정면(기본 캐릭터 VRM) |
 | 01b_fish_school | 데크 앞 수면의 어군 소용돌이 |
 | 02_casting, 02b_cast_flight, 03_waiting, 04a_bite_alert, 04_bite_gauge | 밤 데크 캐스팅, 날아가는 찌, 찌 대기(원작 구도), 본신 머리 위 `!`, 어깨 뒤 챔질 클로즈업 |
 | 05_hook_perfect | PERFECT 챔질 → HIT → PERFECT!!! |
@@ -117,13 +116,14 @@ Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.ex
 | 07_counter_chance, 08_counter, 09_landing, 09c_lift, 09d_catch, 10_result | 카운터 찬스·성공(먹 글씨 COUNTER), 랜딩 찬스(릴 줌), 1인칭 들어 올리기, 3인칭 옆모습 줄 끝 고기, RESULT(82cm 잉어: 튀어 오르는 고기) |
 | 09e_catch_small, 10b_result_held | 30cm 붕어: 왼손으로 잡기, RESULT에서 고기를 들어 보인다 |
 | 10c_result_eel, 10d_result_shoe, 10e_result_trap | 긴 고기(뱀장어, S자 꿈틀)·잡동사니(운동화·통발, 비스듬히 돈다) RESULT — 결과 창을 바로 연다 |
-| 00h_idol_greeting, 00i_idol_stage, 00l_park_chat, 00o_doctor_walk(_b), 00p_pier_entrance | 버스킹 무대 아이돌(인사·멀리서), 벤치 수다, 산책하는 의사 0.25초 간격 두 장(걸음), 데크와 둔치·석축 경계 |
+| 00p_pier_entrance | 데크와 둔치·석축 경계 |
+| 02v_vrm_35·82·155, 02v_vrm_front, 21e_character_model | 목록 첫 VRM으로 갈아입은 낚싯대 자세·정면, 캐릭터 창 [캐릭터 모델] 탭 (16 문서) |
 | 11_dex, 11b_dex_detail, 12_keepnet | 도감(아이콘), 도감 상세(3D 물고기), 살림망 |
 | 13_quest, 13b_daily, 13c_achievements, 13d_exchange, 14_shop | 퀘스트, 일일 의뢰, 업적, 소라고동 교환소, 상점 |
 | 16_help, 16b_options | 도움말, 옵션(키 설정) |
 | 05c_lure_action | 루어 감기·저킹 액션 표시 |
 | 30_tournament_hud, 31_tournament_rank | 대회 진행 HUD 순위표, 대회 탭 |
-| 20_npc_dialog, 21_rod_upgrade, 21b_inventory, 21c_costume | NPC 대화, 강화, 가방, 내 캐릭터 아바타 슬롯(체크 남방·구명조끼) |
+| 20_npc_dialog, 21_rod_upgrade, 21b_inventory, 21c_costume | NPC 대화, 강화, 가방, 내 캐릭터 아바타 슬롯(의상 능력치) |
 | 17_area_map | 지역 지도(M), 작은 어군 |
 | 18_boat_drive, 19_boat_stop | 노을 고무보트 운전, 멈춘 배 뱃머리 |
 | 15b_cloudy_day, 15_night_rain | 흐린 낮(층구름), 비 오는 밤 |

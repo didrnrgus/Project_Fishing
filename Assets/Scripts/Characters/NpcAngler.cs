@@ -63,25 +63,17 @@ namespace Fishing.Characters
         void Build(CharacterLook look, Role role, bool showNameTag)
         {
             _role = role;
-            if (CharacterFactory.Available)
+            var character = CharacterFactory.Create(look, transform);
+            if (character != null)
             {
-                var character = CharacterFactory.Create(look, transform);
                 _anim = character.GetComponentInChildren<CharacterAnimator>();
-                foreach (var t in character.GetComponentsInChildren<Transform>(true))
-                    if (t.name == "hand_r") _hand = t;
-                if (_hand == null) // 받은 휴머노이드 캐릭터: 뼈 이름이 달라 휴머노이드 매핑으로
-                {
-                    var an = character.GetComponentInChildren<Animator>();
-                    if (an != null && an.isHuman) _hand = an.GetBoneTransform(HumanBodyBones.RightHand);
-                }
+                var an = character.GetComponentInChildren<Animator>();
+                if (an != null && an.isHuman) _hand = an.GetBoneTransform(HumanBodyBones.RightHand);
                 if (role == Role.Angler) _grip = RodGrip.Find(character.transform);
                 // 앉아 있는 NPC(크루저 선장 등)는 엉덩이 밑에 아이스박스
                 if (role == Role.Sitter) { var seat = SitSeat.Attach(character.transform); if (seat != null) seat.Active = true; }
             }
-            else
-            {
-                Mats.Prim(PrimitiveType.Capsule, "Body", transform, Vector3.up * 0.9f, new Vector3(0.55f, 0.9f, 0.5f), Mats.Lit(look.Shirt), false);
-            }
+            else CharacterFactory.Placeholder(transform, look.Name);
 
             if (role == Role.Angler)
             {

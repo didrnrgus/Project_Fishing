@@ -31,25 +31,11 @@ namespace Fishing.World
         static FishSchool Special(string name, string id, params (TimeBand, int, int)[] schedule) =>
             new FishSchool { Name = name, SpeciesIds = new[] { id }, Special = true, Schedule = schedule };
 
-        static CharacterLook Union(string name, string title, bool female, Color vest) => new CharacterLook
-        {
-            Name = name, Title = title, Female = female, VestModel = "Vest_Life", ShoeModel = "Shoes_Boots", Hair = female ? "Hair_SimpleParted" : "Hair_Buzzed",
-            HairColor = new Color(0.15f, 0.12f, 0.1f), Shirt = new Color(0.9f, 0.9f, 0.88f), Vest = true, VestColor = vest,
-            Pants = new Color(0.2f, 0.25f, 0.35f), Hat = true, HatStyle = 1, HatColor = new Color(0.2f, 0.3f, 0.55f)
-        };
+        static CharacterLook Union(string name, string title, bool female) => new CharacterLook { Name = name, Title = title, Female = female };
 
-        static CharacterLook Angler(string name, string title, Color shirt, int hatStyle, bool female = false, bool winter = false) => new CharacterLook
-        {
-            Name = name, Title = title, Female = female, TopModel = winter ? "Top_Long" : "Top_Tee", Hair = female ? "Hair_Buns" : "Hair_Buzzed",
-            Shirt = shirt, VestColor = new Color(0.3f, 0.36f, 0.3f), Pants = new Color(0.22f, 0.24f, 0.26f), HatStyle = hatStyle,
-            HatColor = new Color(0.85f, 0.8f, 0.6f), ShoeModel = winter ? "Shoes_Boots" : "Shoes_Sneaker"
-        };
+        static CharacterLook Angler(string name, string title, bool female = false) => new CharacterLook { Name = name, Title = title, Female = female };
 
-        static CharacterLook Owner(string name, string title, Color shirt) => new CharacterLook
-        {
-            Name = name, Title = title, TopModel = "Top_Shirt", Hair = "Hair_Buzzed", HairColor = new Color(0.3f, 0.3f, 0.3f),
-            Shirt = shirt, VestColor = new Color(0.7f, 0.6f, 0.4f), Pants = new Color(0.25f, 0.25f, 0.28f), Hat = true, HatStyle = 1, HatColor = new Color(0.85f, 0.3f, 0.2f)
-        };
+        static CharacterLook Owner(string name, string title) => new CharacterLook { Name = name, Title = title };
 
         static NpcSpec Npc(float x, float z, float yaw, CharacterLook look, NpcAngler.Role role, string id = null, float y = NaN) =>
             new NpcSpec { Pos = new Vector3(x, y, z), Yaw = yaw, Look = look, Role = role, Id = id };
@@ -86,13 +72,13 @@ namespace Fishing.World
                 { D, D, D, D, D, D, D, D },
             },
             Spawn = new Vector3(62f, 1.1f, -47f), ShopPos = new Vector3(48f, 1f, -52f),
-            ShopOwner = Owner("영흥 낚시점 노사장", "영흥 낚시점", new Color(0.55f, 0.4f, 0.3f)),
+            ShopOwner = Owner("영흥 낚시점 노사장", "영흥 낚시점"),
             Npcs = new[]
             {
-                Npc(90f, -47f, 200f, Union("어촌계 최계장", "한국 낚시 조합 영흥 지부", false, new Color(0.95f, 0.5f, 0.12f)), NpcAngler.Role.Talker, "union"),
-                Npc(80f, 18.8f, 0f, Angler("우럭 삼촌", "선상 20년", new Color(0.3f, 0.45f, 0.6f), 1), NpcAngler.Role.Angler, y: 1f),
-                Npc(-40f, -44f, 0f, Angler("해변 꼬마 낚시꾼", "망둥어 전문", new Color(0.95f, 0.75f, 0.2f), 2), NpcAngler.Role.Angler),
-                Npc(-110f, -50f, 20f, Angler("갯벌 할머니", "바지락 캐는 법 알려 줌", new Color(0.75f, 0.5f, 0.55f), 2, true), NpcAngler.Role.Talker),
+                Npc(90f, -47f, 200f, Union("어촌계 최계장", "한국 낚시 조합 영흥 지부", false), NpcAngler.Role.Talker, "union"),
+                Npc(80f, 18.8f, 0f, Angler("우럭 삼촌", "선상 20년"), NpcAngler.Role.Angler, y: 1f),
+                Npc(-40f, -44f, 0f, Angler("해변 꼬마 낚시꾼", "망둥어 전문"), NpcAngler.Role.Angler),
+                Npc(-110f, -50f, 20f, Angler("갯벌 할머니", "바지락 캐는 법 알려 줌", true), NpcAngler.Role.Talker),
             },
             Signs = new[] { ("진두항", new Vector3(62f, 6.5f, -60f), SignBlue), ("십리포 해수욕장", new Vector3(-25f, 5f, -60f), SignGold), ("영흥대교", new Vector3(-190f, 6f, -62f), SignGold) },
             Areas = new[] { (new Rect(-65f, -52f, 83f, 16f), "십리포 해변"), (new Rect(-200f, -45f, 135f, 120f), "영흥 갯벌") },
@@ -140,13 +126,13 @@ namespace Fishing.World
                 { D, D, D, D, D, D, D, D },
             },
             Spawn = new Vector3(78f, 1.1f, -47f), ShopPos = new Vector3(62f, 1f, -52f),
-            ShopOwner = Owner("만리포 낚시점 윤사장", "만리포 낚시점", new Color(0.3f, 0.55f, 0.75f)),
+            ShopOwner = Owner("만리포 낚시점 윤사장", "만리포 낚시점"),
             Npcs = new[]
             {
-                Npc(96f, -47f, 200f, Union("어촌계 한계장", "한국 낚시 조합 태안 지부", true, new Color(0.95f, 0.5f, 0.12f)), NpcAngler.Role.Talker, "union"),
-                Npc(85f, 14.8f, 0f, Angler("쭈갑 전문가", "에기 색깔 30종 보유", new Color(0.85f, 0.4f, 0.5f), 1, true), NpcAngler.Role.Angler, y: 1f),
-                Npc(-130f, -46f, 10f, Angler("원투 아저씨", "만리포 광어 지킴이", new Color(0.35f, 0.6f, 0.4f), 0), NpcAngler.Role.Angler),
-                Npc(-60f, -54f, 30f, Angler("노을 사진가", "꽃지 노을 1000장", new Color(0.9f, 0.88f, 0.8f), 2), NpcAngler.Role.Talker),
+                Npc(96f, -47f, 200f, Union("어촌계 한계장", "한국 낚시 조합 태안 지부", true), NpcAngler.Role.Talker, "union"),
+                Npc(85f, 14.8f, 0f, Angler("쭈갑 전문가", "에기 색깔 30종 보유", true), NpcAngler.Role.Angler, y: 1f),
+                Npc(-130f, -46f, 10f, Angler("원투 아저씨", "만리포 광어 지킴이"), NpcAngler.Role.Angler),
+                Npc(-60f, -54f, 30f, Angler("노을 사진가", "꽃지 노을 1000장"), NpcAngler.Role.Talker),
             },
             Signs = new[] { ("만리포항", new Vector3(78f, 6.5f, -60f), SignBlue), ("만리포 해수욕장", new Vector3(-100f, 5f, -62f), SignGold), ("신두리 해안사구", new Vector3(-120f, 9f, -96f), SignGold) },
             Areas = new[] { (new Rect(-200f, -54f, 178f, 22f), "만리포 해수욕장"), (new Rect(-195f, -128f, 150f, 58f), "신두리 해안사구") },
@@ -196,13 +182,13 @@ namespace Fishing.World
                 { D, D, D, D, D, D, D, D },
             },
             Spawn = new Vector3(26f, 1.1f, -47f), ShopPos = new Vector3(10f, 1f, -52f),
-            ShopOwner = Owner("삼척 낚시점 정사장", "삼척 낚시점", new Color(0.2f, 0.35f, 0.6f)),
+            ShopOwner = Owner("삼척 낚시점 정사장", "삼척 낚시점"),
             Npcs = new[]
             {
-                Npc(58f, -47f, 200f, Union("수협 강과장", "한국 낚시 조합 삼척 지부", false, new Color(0.95f, 0.5f, 0.12f)), NpcAngler.Role.Talker, "union"),
-                Npc(52f, 28.8f, 0f, Angler("임연수 형님", "동해 원투 30년", new Color(0.25f, 0.3f, 0.45f), 1, false, true), NpcAngler.Role.Angler, y: 1f),
-                Npc(-9.6f, 0f, -80f, Angler("등대 낚시꾼", "학꽁치 채비 장인", new Color(0.8f, 0.3f, 0.25f), 0), NpcAngler.Role.Angler, y: 1f),
-                Npc(30f, -46f, 160f, Angler("오징어배 선장", "집어등 20년", new Color(0.9f, 0.9f, 0.88f), 1, false, true), NpcAngler.Role.Talker),
+                Npc(58f, -47f, 200f, Union("수협 강과장", "한국 낚시 조합 삼척 지부", false), NpcAngler.Role.Talker, "union"),
+                Npc(52f, 28.8f, 0f, Angler("임연수 형님", "동해 원투 30년", false), NpcAngler.Role.Angler, y: 1f),
+                Npc(-9.6f, 0f, -80f, Angler("등대 낚시꾼", "학꽁치 채비 장인"), NpcAngler.Role.Angler, y: 1f),
+                Npc(30f, -46f, 160f, Angler("오징어배 선장", "집어등 20년", false), NpcAngler.Role.Talker),
             },
             Signs = new[] { ("삼척항", new Vector3(26f, 6.5f, -60f), SignBlue), ("새천년해안도로", new Vector3(-150f, 5.5f, -64f), SignGold), ("추암 촛대바위", new Vector3(125f, 6f, -66f), SignGold) },
             Areas = new[] { (new Rect(-92f, -52f, 70f, 16f), "삼척해수욕장") },
@@ -247,13 +233,13 @@ namespace Fishing.World
                 { D, D, D, D, D, D, D, D },
             },
             Spawn = new Vector3(48f, 1.1f, -47f), ShopPos = new Vector3(30f, 1f, -52f),
-            ShopOwner = Owner("등대섬 매점 할머니", "등대섬 매점", new Color(0.75f, 0.5f, 0.55f)),
+            ShopOwner = Owner("등대섬 매점 할머니", "등대섬 매점"),
             Npcs = new[]
             {
-                Npc(70f, -47f, 220f, Union("등대섬 이장님", "한국 낚시 조합 등대섬 연락소", false, new Color(0.2f, 0.55f, 0.85f)), NpcAngler.Role.Talker, "union"),
-                Npc(-55f, -20f, 0f, Angler("등대지기 윤씨", "등대를 지킨 지 25년", new Color(0.2f, 0.25f, 0.4f), 1, false, true), NpcAngler.Role.Talker),
-                Npc(-118f, 100f, 0f, Angler("갯바위 독조사", "혼자가 편하다", new Color(0.15f, 0.15f, 0.18f), 0), NpcAngler.Role.Angler),
-                Npc(52f, -2f, 0f, Angler("열기 할아버지", "카드채비 10단", new Color(0.7f, 0.6f, 0.45f), 2), NpcAngler.Role.Angler, y: 1f),
+                Npc(70f, -47f, 220f, Union("등대섬 이장님", "한국 낚시 조합 등대섬 연락소", false), NpcAngler.Role.Talker, "union"),
+                Npc(-55f, -20f, 0f, Angler("등대지기 윤씨", "등대를 지킨 지 25년", false), NpcAngler.Role.Talker),
+                Npc(-118f, 100f, 0f, Angler("갯바위 독조사", "혼자가 편하다"), NpcAngler.Role.Angler),
+                Npc(52f, -2f, 0f, Angler("열기 할아버지", "카드채비 10단"), NpcAngler.Role.Angler, y: 1f),
             },
             Signs = new[] { ("등대섬 선착장", new Vector3(48f, 6.5f, -60f), SignBlue) },
             FarIslands = new[] { new Vector4(-380f, 520f, 200f, 70f), new Vector4(260f, 640f, 160f, 40f) },
@@ -299,13 +285,13 @@ namespace Fishing.World
                 { D, D, D, D, D, D, D, D },
             },
             Spawn = new Vector3(-78f, 1.1f, -46f), ShopPos = new Vector3(-96f, 1f, -57f),
-            ShopOwner = Owner("심곡 낚시점 조사장", "심곡 낚시점", new Color(0.65f, 0.35f, 0.3f)),
+            ShopOwner = Owner("심곡 낚시점 조사장", "심곡 낚시점"),
             Npcs = new[]
             {
-                Npc(-66f, -46f, 200f, Union("어촌계 김계장", "한국 낚시 조합 강릉 지부", false, new Color(0.95f, 0.5f, 0.12f)), NpcAngler.Role.Talker, "union"),
-                Npc(-2f, 4f, 0f, Angler("갯바위 감생이꾼", "새벽 4시 출조", new Color(0.2f, 0.2f, 0.25f), 1, false, true), NpcAngler.Role.Angler),
-                Npc(128f, 10f, 10f, Angler("문어 할아버지", "대문어 30kg 기록", new Color(0.6f, 0.5f, 0.4f), 2), NpcAngler.Role.Angler),
-                Npc(60f, -41f, 20f, Angler("부채길 산책객", "헌화가를 외운다", new Color(0.95f, 0.6f, 0.7f), 0, true), NpcAngler.Role.Talker, y: 1.4f),
+                Npc(-66f, -46f, 200f, Union("어촌계 김계장", "한국 낚시 조합 강릉 지부", false), NpcAngler.Role.Talker, "union"),
+                Npc(-2f, 4f, 0f, Angler("갯바위 감생이꾼", "새벽 4시 출조", false), NpcAngler.Role.Angler),
+                Npc(128f, 10f, 10f, Angler("문어 할아버지", "대문어 30kg 기록"), NpcAngler.Role.Angler),
+                Npc(60f, -41f, 20f, Angler("부채길 산책객", "헌화가를 외운다", true), NpcAngler.Role.Talker, y: 1.4f),
             },
             Signs = new[] { ("헌화로", new Vector3(-160f, 5.5f, -52f), SignGold), ("심곡항", new Vector3(-92f, 6f, -50f), SignBlue), ("바다부채길", new Vector3(60f, 5f, -47f), SignGold) },
             Schools = () => new List<FishSchool>
@@ -347,13 +333,13 @@ namespace Fishing.World
             },
             Spawn = new Vector3(28f, 1.1f, -47f), ShopPos = new Vector3(10f, 1f, -54f),
             ShopRoof = new Color(0.55f, 0.2f, 0.18f),
-            ShopOwner = Owner("청진 낚시점 리사장", "청진 낚시점", new Color(0.35f, 0.32f, 0.3f)),
+            ShopOwner = Owner("청진 낚시점 리사장", "청진 낚시점"),
             Npcs = new[]
             {
-                Npc(40f, -47f, 200f, Union("어로반장 박씨", "한국 낚시 조합 청진 연락소", false, new Color(0.85f, 0.2f, 0.15f)), NpcAngler.Role.Talker, "union"),
-                Npc(120f, 47.8f, 0f, Angler("명태잡이 노인", "명태 3만 마리", new Color(0.3f, 0.3f, 0.32f), 1, false, true), NpcAngler.Role.Angler, y: 1f),
-                Npc(-40f, 17.8f, 0f, Angler("도루묵 아주머니", "알배기만 노린다", new Color(0.6f, 0.3f, 0.35f), 0, true, true), NpcAngler.Role.Angler, y: 1f),
-                Npc(-60f, -70f, 160f, Angler("덕장 주인", "황태 만드는 사람", new Color(0.5f, 0.42f, 0.35f), 1, false, true), NpcAngler.Role.Talker),
+                Npc(40f, -47f, 200f, Union("어로반장 박씨", "한국 낚시 조합 청진 연락소", false), NpcAngler.Role.Talker, "union"),
+                Npc(120f, 47.8f, 0f, Angler("명태잡이 노인", "명태 3만 마리", false), NpcAngler.Role.Angler, y: 1f),
+                Npc(-40f, 17.8f, 0f, Angler("도루묵 아주머니", "알배기만 노린다", true), NpcAngler.Role.Angler, y: 1f),
+                Npc(-60f, -70f, 160f, Angler("덕장 주인", "황태 만드는 사람", false), NpcAngler.Role.Talker),
             },
             Signs = new[] { ("청진포구", new Vector3(28f, 7f, -62f), SignBlue) },
             FarIslands = new[] { new Vector4(-300f, 560f, 220f, 50f), new Vector4(200f, 620f, 260f, 60f) },
@@ -410,13 +396,13 @@ namespace Fishing.World
                 { D, D, D, D, D, D, D, D },
             },
             Spawn = new Vector3(26f, 1.1f, -47f), ShopPos = new Vector3(10f, 1f, -52f),
-            ShopOwner = Owner("욕지 낚시점 하사장", "욕지 낚시점", new Color(0.85f, 0.55f, 0.3f)),
+            ShopOwner = Owner("욕지 낚시점 하사장", "욕지 낚시점"),
             Npcs = new[]
             {
-                Npc(40f, -47f, 200f, Union("어촌계 서계장", "한국 낚시 조합 통영 지부", true, new Color(0.95f, 0.5f, 0.12f)), NpcAngler.Role.Talker, "union"),
-                Npc(-149.2f, 30f, 270f, Angler("가두리 단골", "참돔 손맛 중독", new Color(0.85f, 0.35f, 0.3f), 1), NpcAngler.Role.Angler, y: 0.65f),
-                Npc(-105f, 49f, 180f, Angler("가두리 사장", "고등어 키운 지 15년", new Color(0.3f, 0.5f, 0.7f), 0, false), NpcAngler.Role.Talker, y: 0.75f),
-                Npc(40f, 18.8f, 0f, Angler("방어 사냥꾼", "지깅 전문", new Color(0.2f, 0.25f, 0.3f), 1), NpcAngler.Role.Angler, y: 1f),
+                Npc(40f, -47f, 200f, Union("어촌계 서계장", "한국 낚시 조합 통영 지부", true), NpcAngler.Role.Talker, "union"),
+                Npc(-149.2f, 30f, 270f, Angler("가두리 단골", "참돔 손맛 중독"), NpcAngler.Role.Angler, y: 0.65f),
+                Npc(-105f, 49f, 180f, Angler("가두리 사장", "고등어 키운 지 15년", false), NpcAngler.Role.Talker, y: 0.75f),
+                Npc(40f, 18.8f, 0f, Angler("방어 사냥꾼", "지깅 전문"), NpcAngler.Role.Angler, y: 1f),
             },
             Signs = new[] { ("욕지항", new Vector3(26f, 6.5f, -60f), SignBlue), ("욕지 고구마", new Vector3(-20f, 6f, -76f), SignGold), ("가두리 낚시터", new Vector3(-126f, 4f, -46f), SignBlue) },
             FarIslands = new[] { new Vector4(-280f, 480f, 180f, 50f), new Vector4(120f, 600f, 220f, 55f), new Vector4(330f, 430f, 120f, 40f) },
@@ -465,17 +451,13 @@ namespace Fishing.World
             },
             Spawn = new Vector3(26f, 1.1f, -47f), ShopPos = new Vector3(10f, 1f, -52f),
             ShopRoof = new Color(0.9f, 0.5f, 0.15f),
-            ShopOwner = Owner("서귀포 낚시점 오사장", "서귀포 낚시점", new Color(0.95f, 0.6f, 0.2f)),
+            ShopOwner = Owner("서귀포 낚시점 오사장", "서귀포 낚시점"),
             Npcs = new[]
             {
-                Npc(50f, -47f, 200f, Union("어촌계 고계장", "한국 낚시 조합 제주 지부", true, new Color(0.95f, 0.5f, 0.12f)), NpcAngler.Role.Talker, "union"),
-                Npc(-30f, -46f, 20f, new CharacterLook
-                {
-                    Name = "해녀 할망", Title = "물질 50년", Female = true, TopModel = "Top_Rash", BottomModel = "Pants_Wader", ShoeModel = "Shoes_Boots", Hair = "Hair_Buns",
-                    HairColor = new Color(0.8f, 0.8f, 0.78f), Shirt = new Color(0.08f, 0.08f, 0.1f), Vest = false, Pants = new Color(0.08f, 0.08f, 0.1f), Hat = false
-                }, NpcAngler.Role.Talker),
-                Npc(60f, 16.8f, 0f, Angler("벵에돔 꾼", "크릴 밑밥 장인", new Color(0.1f, 0.35f, 0.5f), 1), NpcAngler.Role.Angler, y: 1f),
-                Npc(-82f, -4f, 0f, Angler("무늬오징어 에깅러", "가을엔 서귀포", new Color(0.9f, 0.85f, 0.75f), 0, true), NpcAngler.Role.Angler),
+                Npc(50f, -47f, 200f, Union("어촌계 고계장", "한국 낚시 조합 제주 지부", true), NpcAngler.Role.Talker, "union"),
+                Npc(-30f, -46f, 20f, new CharacterLook { Name = "해녀 할망", Title = "물질 50년", Female = true }, NpcAngler.Role.Talker),
+                Npc(60f, 16.8f, 0f, Angler("벵에돔 꾼", "크릴 밑밥 장인"), NpcAngler.Role.Angler, y: 1f),
+                Npc(-82f, -4f, 0f, Angler("무늬오징어 에깅러", "가을엔 서귀포", true), NpcAngler.Role.Angler),
             },
             Signs = new[] { ("서귀포항", new Vector3(26f, 6.5f, -60f), SignBlue), ("외돌개", new Vector3(-40f, 5.5f, -60f), SignGold), ("주상절리대", new Vector3(-70f, 9f, -78f), SignGold) },
             FarIslands = new[] { new Vector4(-200f, 330f, 60f, 26f), new Vector4(-90f, 380f, 40f, 18f), new Vector4(260f, 520f, 120f, 30f) },
@@ -524,13 +506,13 @@ namespace Fishing.World
                 { D, D, D, D, D, D, D, D },
             },
             Spawn = new Vector3(26f, 1.1f, -47f), ShopPos = new Vector3(8f, 1f, -52f),
-            ShopOwner = Owner("거문도 낚시점 문사장", "거문도 낚시점", new Color(0.25f, 0.45f, 0.4f)),
+            ShopOwner = Owner("거문도 낚시점 문사장", "거문도 낚시점"),
             Npcs = new[]
             {
-                Npc(48f, -47f, 200f, Union("어촌계 문계장", "한국 낚시 조합 거문도 지부", false, new Color(0.95f, 0.5f, 0.12f)), NpcAngler.Role.Talker, "union"),
-                Npc(60f, 134f, 0f, Angler("부시리 헌터", "미터급 7마리", new Color(0.2f, 0.25f, 0.3f), 1), NpcAngler.Role.Angler),
-                Npc(40f, 13.8f, 0f, Angler("갈치 아저씨", "밤낚시 전문", new Color(0.85f, 0.85f, 0.88f), 0, false), NpcAngler.Role.Angler, y: 1f),
-                Npc(-118f, -20f, 300f, Angler("등대 해설사", "거문도 등대는 1905년생", new Color(0.9f, 0.9f, 0.88f), 2, true), NpcAngler.Role.Talker),
+                Npc(48f, -47f, 200f, Union("어촌계 문계장", "한국 낚시 조합 거문도 지부", false), NpcAngler.Role.Talker, "union"),
+                Npc(60f, 134f, 0f, Angler("부시리 헌터", "미터급 7마리"), NpcAngler.Role.Angler),
+                Npc(40f, 13.8f, 0f, Angler("갈치 아저씨", "밤낚시 전문", false), NpcAngler.Role.Angler, y: 1f),
+                Npc(-118f, -20f, 300f, Angler("등대 해설사", "거문도 등대는 1905년생", true), NpcAngler.Role.Talker),
             },
             Signs = new[] { ("거문항", new Vector3(26f, 6.5f, -60f), SignBlue), ("백도 →", new Vector3(150f, 6f, -48f), SignGold) },
             FarIslands = new[] { new Vector4(-330f, 420f, 180f, 60f), new Vector4(-80f, 640f, 240f, 50f) },

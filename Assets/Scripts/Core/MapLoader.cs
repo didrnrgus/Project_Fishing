@@ -22,7 +22,6 @@ namespace Fishing.Core
             Shader.SetGlobalFloat("_FishingWetY", map.BaseWaterY + Mathf.Max(map.TideAmplitude, 0.25f));
             Game.World = map.BuildWorld(lamps, bulbs);
             GrassField.Plant(Game.World, map.BaseWaterY, map.Id.GetHashCode());
-            Fishing.Characters.ExtraNpcs.Populate(map, Game.World);
             FishTraps.SpawnFisher(map, Game.World);   // 통발 어부 (조합 연락관 옆)
             DeliveryKiosk.Place(map, Game.World);    // 납품소 (조합 연락관 옆, 원작 빨간 우체통 모양 기계)
             WorldBatcher.Batch(Game.World);

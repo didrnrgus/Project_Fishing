@@ -335,11 +335,7 @@ namespace Fishing.World
             light.color = new Color(1f, 0.85f, 0.6f);
             light.shadows = LightShadows.None;
 
-            var owner = NpcAngler.Spawn(shop, new Vector3(1.2f, 0f, 2.75f), 0f, new CharacterLook
-            {
-                Name = "홍현 낚시점 최사장", Title = "홍현 낚시점", TopModel = "Top_Shirt", Female = true, Hair = "Hair_Buns", HairColor = new Color(0.12f, 0.1f, 0.09f),
-                Shirt = new Color(0.95f, 0.9f, 0.8f), VestColor = new Color(0.2f, 0.4f, 0.6f), Pants = new Color(0.25f, 0.25f, 0.3f), Hat = false
-            }, NpcAngler.Role.Talker);
+            var owner = NpcAngler.Spawn(shop, new Vector3(1.2f, 0f, 2.75f), 0f, new CharacterLook { Name = "홍현 낚시점 최사장", Title = "홍현 낚시점", Female = true }, NpcAngler.Role.Talker);
             owner.NpcId = "shop";
             WorldBuilder.AddSign(shop, "홍현 낚시점", new Vector3(0f, 3.9f, 2.3f), new Color(0.6f, 0.85f, 1f));
         }
@@ -360,31 +356,14 @@ namespace Fishing.World
             var parent = new GameObject("SeaNpcs").transform;
             parent.SetParent(_root, false);
             var b = HonghyeonDef.Breakwater;
-            var union = NpcAngler.Spawn(parent, new Vector3(b.xMin - 3f, _map.LandY, HonghyeonDef.ShoreZ - 4f), 200f, new CharacterLook
-            {
-                Name = "어촌계 정계장", Title = "한국 낚시 조합 홍현 지부", VestModel = "Vest_Life", ShoeModel = "Shoes_Boots", HatStyle = 1, Hair = "Hair_Buzzed", Beard = true, HairColor = new Color(0.25f, 0.25f, 0.25f),
-                Shirt = new Color(0.3f, 0.35f, 0.45f), Vest = true, VestColor = new Color(0.9f, 0.55f, 0.15f), Pants = new Color(0.2f, 0.2f, 0.22f), Hat = true,
-                HatColor = new Color(0.15f, 0.2f, 0.35f)
-            }, NpcAngler.Role.Talker);
+            var union = NpcAngler.Spawn(parent, new Vector3(b.xMin - 3f, _map.LandY, HonghyeonDef.ShoreZ - 4f), 200f, new CharacterLook { Name = "어촌계 정계장", Title = "한국 낚시 조합 홍현 지부" }, NpcAngler.Role.Talker);
             union.NpcId = "union";
 
             // 방파제와 섬의 갯바위 꾼들
-            NpcAngler.Spawn(parent, new Vector3(b.xMax - 1f, _map.LandY, b.yMin + 18f), 70f, new CharacterLook
-            {
-                Name = "감생이사냥꾼", Title = "5짜 감성돔 2회", TopModel = "Top_Rash", VestModel = "Vest_Life", BottomModel = "Pants_Wader", ShoeModel = "Shoes_Boots", HatStyle = 1, Hair = "Hair_Buzzed", Shirt = new Color(0.15f, 0.2f, 0.3f),
-                VestColor = new Color(0.95f, 0.5f, 0.1f), Pants = new Color(0.2f, 0.2f, 0.22f), HatColor = new Color(0.9f, 0.9f, 0.85f)
-            }, NpcAngler.Role.Angler);
-            NpcAngler.Spawn(parent, new Vector3(b.xMin + 1.2f, _map.LandY, b.yMax - 8f), -20f, new CharacterLook
-            {
-                Name = "밤볼락", Title = "볼락 루어 고수", TopModel = "Top_Rash", BottomModel = "Pants_Jeans", BottomPattern = 2, Female = true, Hair = "Hair_SimpleParted", Shirt = new Color(0.85f, 0.3f, 0.35f),
-                Vest = false, Pants = new Color(0.15f, 0.15f, 0.2f), Hat = false
-            }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(parent, new Vector3(b.xMax - 1f, _map.LandY, b.yMin + 18f), 70f, new CharacterLook { Name = "감생이사냥꾼", Title = "5짜 감성돔 2회" }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(parent, new Vector3(b.xMin + 1.2f, _map.LandY, b.yMax - 8f), -20f, new CharacterLook { Name = "밤볼락", Title = "볼락 루어 고수", Female = true }, NpcAngler.Role.Angler);
             var isl = HonghyeonDef.Islands[0];
-            NpcAngler.Spawn(parent, new Vector3(isl.x + 4f, _map.LandY, isl.z + 8f), 10f, new CharacterLook
-            {
-                Name = "홍현토박이", Title = "갯바위 40년", TopModel = "Top_Long", BottomModel = "Pants_Wader", ShoeModel = "Shoes_Boots", HatStyle = 2, Hair = "Hair_Buzzed", Beard = true, HairColor = new Color(0.8f, 0.8f, 0.78f),
-                Shirt = new Color(0.5f, 0.45f, 0.35f), VestColor = new Color(0.3f, 0.35f, 0.25f), Pants = new Color(0.3f, 0.28f, 0.25f)
-            }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(parent, new Vector3(isl.x + 4f, _map.LandY, isl.z + 8f), 10f, new CharacterLook { Name = "홍현토박이", Title = "갯바위 40년" }, NpcAngler.Role.Angler);
         }
     }
 }

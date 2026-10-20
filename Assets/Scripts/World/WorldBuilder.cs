@@ -223,11 +223,7 @@ namespace Fishing.World
             shopLight.shadows = LightShadows.None;
 
             // 낚시점 주인: 벽과 카운터 사이에 선다 (건물 상자는 z ±2.25)
-            var owner = NpcAngler.Spawn(shop, new Vector3(1.2f, 0f, 2.75f), 0f, new CharacterLook
-            {
-                Name = "낚시점 김사장", Title = "반포 낚시점", TopModel = "Top_Shirt", Hair = "Hair_Buzzed", Beard = true, HairColor = new Color(0.3f, 0.3f, 0.3f),
-                Shirt = new Color(0.85f, 0.85f, 0.8f), VestColor = new Color(0.55f, 0.35f, 0.2f), Pants = new Color(0.3f, 0.28f, 0.25f), Hat = false
-            }, NpcAngler.Role.Talker);
+            var owner = NpcAngler.Spawn(shop, new Vector3(1.2f, 0f, 2.75f), 0f, new CharacterLook { Name = "낚시점 김사장", Title = "반포 낚시점" }, NpcAngler.Role.Talker);
             owner.NpcId = "shop";
 
             AddSign(shop, "낚시점", new Vector3(0f, 3.9f, 2.3f), new Color(1f, 0.9f, 0.4f));
@@ -482,16 +478,8 @@ namespace Fishing.World
             // 무릎까지 갑판에 파묻혀 보였다 (NPC는 갑판 높이에 바로 놓여 멀쩡했다). 배도 뗏목을 뚫지 않는다
             Mats.Prim(PrimitiveType.Cube, "Deck", raft, new Vector3(0f, 0.75f, 0f), new Vector3(6.4f, 0.12f, 3.4f), Mats.Lit(Wood), true);
             // 뗏목 위의 다른 낚시꾼들 (원작 영상의 "월척대소녀", "낚자마자회친다" 같은 유저들 느낌)
-            NpcAngler.Spawn(raft, new Vector3(-1.4f, 0.81f, 0.6f), 0f, new CharacterLook
-            {
-                Female = true, Name = "월척대소녀", Title = "붕어 사냥꾼", BottomModel = "Pants_Jeans", HatStyle = 2, Hair = "Hair_Long", HairColor = new Color(0.35f, 0.22f, 0.15f),
-                Shirt = new Color(0.9f, 0.35f, 0.45f), Pants = new Color(0.9f, 0.9f, 0.88f), Vest = false, HatColor = new Color(0.95f, 0.95f, 0.95f)
-            }, NpcAngler.Role.Angler);
-            NpcAngler.Spawn(raft, new Vector3(1.2f, 0.81f, 0.6f), 15f, new CharacterLook
-            {
-                Name = "낚자마자회친다", Title = "한강 터줏대감", TopModel = "Top_Long", ShoeModel = "Shoes_Boots", HatStyle = 1, Hair = "Hair_SimpleParted", Shirt = new Color(0.3f, 0.45f, 0.8f),
-                VestColor = new Color(0.85f, 0.6f, 0.15f), Pants = new Color(0.2f, 0.22f, 0.26f), HatColor = new Color(0.2f, 0.3f, 0.25f)
-            }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(raft, new Vector3(-1.4f, 0.81f, 0.6f), 0f, new CharacterLook { Female = true, Name = "월척대소녀", Title = "붕어 사냥꾼" }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(raft, new Vector3(1.2f, 0.81f, 0.6f), 15f, new CharacterLook { Name = "낚자마자회친다", Title = "한강 터줏대감" }, NpcAngler.Role.Angler);
 
             // 요트
             var hull = Mats.Lit(new Color(0.92f, 0.92f, 0.94f), 0.6f);
@@ -543,29 +531,12 @@ namespace Fishing.World
             var parent = new GameObject("BankAnglers").transform;
             parent.SetParent(_root, false);
             // 한국 낚시 조합 연락관: 데크 입구에서 퀘스트를 주고 보고를 받는다
-            var union = NpcAngler.Spawn(parent, new Vector3(HanRiverMap.Pier.center.x - 4f, HanRiverMap.LandY, HanRiverMap.RiverMinZ - 5f), 200f, new CharacterLook
-            {
-                Name = "박주임", Title = "한국 낚시 조합 연락관", TopModel = "Top_Long", BottomModel = "Pants_Jeans", Hair = "Hair_SimpleParted", HairColor = new Color(0.1f, 0.08f, 0.07f),
-                Shirt = new Color(0.92f, 0.93f, 0.95f), Vest = true, VestColor = new Color(0.12f, 0.2f, 0.42f), Pants = new Color(0.15f, 0.16f, 0.2f),
-                Shoes = new Color(0.08f, 0.08f, 0.08f), Hat = false
-            }, NpcAngler.Role.Talker);
+            var union = NpcAngler.Spawn(parent, new Vector3(HanRiverMap.Pier.center.x - 4f, HanRiverMap.LandY, HanRiverMap.RiverMinZ - 5f), 200f, new CharacterLook { Name = "박주임", Title = "한국 낚시 조합 연락관" }, NpcAngler.Role.Talker);
             union.NpcId = "union";
             float z = HanRiverMap.RiverMinZ - 1.6f;
-            NpcAngler.Spawn(parent, new Vector3(-46f, HanRiverMap.LandY, z), 0f, new CharacterLook
-            {
-                Name = "한강도사", Title = "대물 전문", TopModel = "Top_Long", BottomModel = "Pants_Wader", ShoeModel = "Shoes_Boots", Hair = "Hair_Buzzed", Beard = true, HairColor = new Color(0.15f, 0.12f, 0.1f),
-                Shirt = new Color(0.2f, 0.2f, 0.22f), VestColor = new Color(0.6f, 0.55f, 0.4f), Pants = new Color(0.35f, 0.33f, 0.28f)
-            }, NpcAngler.Role.Angler);
-            NpcAngler.Spawn(parent, new Vector3(72f, HanRiverMap.LandY, z), -10f, new CharacterLook
-            {
-                Female = true, DarkSkin = true, Name = "수초요정", Title = "가물치 킬러", BottomModel = "Pants_Jeans", BottomPattern = 2, Hair = "Hair_Buns", HairColor = new Color(0.1f, 0.08f, 0.07f),
-                Shirt = new Color(0.95f, 0.85f, 0.3f), Vest = false, Pants = new Color(0.25f, 0.3f, 0.45f), Hat = false
-            }, NpcAngler.Role.Angler);
-            NpcAngler.Spawn(parent, new Vector3(110f, HanRiverMap.LandY, z), 5f, new CharacterLook
-            {
-                Name = "새벽조사", Title = "월척 3회", TopModel = "Top_Long", HatStyle = 1, DarkSkin = true, Hair = "Hair_SimpleParted", Shirt = new Color(0.4f, 0.6f, 0.4f),
-                VestColor = new Color(0.2f, 0.25f, 0.35f), Pants = new Color(0.2f, 0.2f, 0.2f), HatColor = new Color(0.85f, 0.85f, 0.8f)
-            }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(parent, new Vector3(-46f, HanRiverMap.LandY, z), 0f, new CharacterLook { Name = "한강도사", Title = "대물 전문" }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(parent, new Vector3(72f, HanRiverMap.LandY, z), -10f, new CharacterLook { Female = true, Name = "수초요정", Title = "가물치 킬러" }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(parent, new Vector3(110f, HanRiverMap.LandY, z), 5f, new CharacterLook { Name = "새벽조사", Title = "월척 3회" }, NpcAngler.Role.Angler);
         }
 
         void BuildCity()

@@ -34,13 +34,13 @@ namespace Fishing.World
             },
             Spawn = new Vector3(6f, 1.1f, -46f), ShopPos = new Vector3(-24f, 1f, -50f),
             ShopRoof = new Color(0.72f, 0.32f, 0.2f),
-            ShopOwner = Local("하니아 낚시점 코스타스", "하니아 항구 낚시점", new Color(0.25f, 0.35f, 0.6f), hat: 1),
+            ShopOwner = Local("하니아 낚시점 코스타스", "하니아 항구 낚시점"),
             Npcs = new[]
             {
-                Npc(22f, -46f, 200f, Union("디미트리스 지부장", "한국 낚시 조합 크레타 지부", false, false), NpcAngler.Role.Talker, "union"),
-                Npc(40f, 23f, 270f, Local("등대 앞 낚시꾼 니코스", "덴텍스만 30년", new Color(0.45f, 0.4f, 0.35f), false, false, 0), NpcAngler.Role.Angler, y: 1f),
-                Npc(-60f, -46f, 160f, Local("타베르나 주인 엘레니", "오늘의 생선 요리", new Color(0.15f, 0.15f, 0.18f), true, false, -1), NpcAngler.Role.Talker),
-                Npc(83f, -10f, 90f, Local("방파제 산책객", "해 질 녘 사진을 찍는다", new Color(0.85f, 0.6f, 0.3f), true, false, 2), NpcAngler.Role.Angler, y: 1f),
+                Npc(22f, -46f, 200f, Union("디미트리스 지부장", "한국 낚시 조합 크레타 지부", false), NpcAngler.Role.Talker, "union"),
+                Npc(40f, 23f, 270f, Local("등대 앞 낚시꾼 니코스", "덴텍스만 30년", false), NpcAngler.Role.Angler, y: 1f),
+                Npc(-60f, -46f, 160f, Local("타베르나 주인 엘레니", "오늘의 생선 요리", true), NpcAngler.Role.Talker),
+                Npc(83f, -10f, 90f, Local("방파제 산책객", "해 질 녘 사진을 찍는다", true), NpcAngler.Role.Angler, y: 1f),
             },
             Signs = new[] { ("CHANIA · ΧΑΝΙΑ", new Vector3(-2f, 6.5f, -60f), SignBlue) },
             // 모스크 자리

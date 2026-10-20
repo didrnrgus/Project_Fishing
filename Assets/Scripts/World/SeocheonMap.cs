@@ -472,12 +472,7 @@ namespace Fishing.World
 
         void BuildShop()
         {
-            _props.TackleShop(_map.ShopPos, 0f, "서천 낚시점", new CharacterLook
-            {
-                Name = "서천 낚시점 박사장", Title = "서천 낚시점", TopModel = "Top_Shirt", Hair = "Hair_Buzzed", HairColor = new Color(0.3f, 0.3f, 0.3f),
-                Shirt = new Color(0.35f, 0.5f, 0.65f), VestColor = new Color(0.7f, 0.6f, 0.4f), Pants = new Color(0.25f, 0.25f, 0.28f), Hat = true, HatStyle = 1,
-                HatColor = new Color(0.85f, 0.3f, 0.2f)
-            }, new Color(0.2f, 0.45f, 0.35f));
+            _props.TackleShop(_map.ShopPos, 0f, "서천 낚시점", new CharacterLook { Name = "서천 낚시점 박사장", Title = "서천 낚시점" }, new Color(0.2f, 0.45f, 0.35f));
         }
 
         void BuildFarIslands()
@@ -495,30 +490,13 @@ namespace Fishing.World
         {
             var parent = new GameObject("SeocheonNpcs").transform;
             parent.SetParent(_root, false);
-            var union = NpcAngler.Spawn(parent, new Vector3(SeocheonDef.RedStem.xMin - 4f, _map.LandY, SeocheonDef.ShoreZ - 5f), 200f, new CharacterLook
-            {
-                Name = "어촌계 이계장", Title = "한국 낚시 조합 서천 지부", VestModel = "Vest_Life", ShoeModel = "Shoes_Boots", Hair = "Hair_SimpleParted", Female = true,
-                HairColor = new Color(0.15f, 0.12f, 0.1f), Shirt = new Color(0.9f, 0.9f, 0.88f), Vest = true, VestColor = new Color(0.95f, 0.5f, 0.12f),
-                Pants = new Color(0.2f, 0.25f, 0.35f), Hat = true, HatStyle = 1, HatColor = new Color(0.2f, 0.3f, 0.55f)
-            }, NpcAngler.Role.Talker);
+            var union = NpcAngler.Spawn(parent, new Vector3(SeocheonDef.RedStem.xMin - 4f, _map.LandY, SeocheonDef.ShoreZ - 5f), 200f, new CharacterLook { Name = "어촌계 이계장", Title = "한국 낚시 조합 서천 지부", Female = true }, NpcAngler.Role.Talker);
             union.NpcId = "union";
 
-            NpcAngler.Spawn(parent, new Vector3(SeocheonDef.RedArm.center.x + 6f, _map.LandY, SeocheonDef.RedArm.yMax - 1.2f), 0f, new CharacterLook
-            {
-                Name = "주꾸미 아줌마", Title = "에기 30년", TopModel = "Top_Long", Female = true, Hair = "Hair_Buns", Shirt = new Color(0.8f, 0.45f, 0.55f),
-                VestColor = new Color(0.3f, 0.35f, 0.3f), Pants = new Color(0.25f, 0.22f, 0.25f), HatStyle = 2, HatColor = new Color(0.85f, 0.8f, 0.6f)
-            }, NpcAngler.Role.Angler);
-            NpcAngler.Spawn(parent, new Vector3(SeocheonDef.WhiteBw.xMin + 1.2f, _map.LandY, SeocheonDef.WhiteBw.yMax - 8f), -60f, new CharacterLook
-            {
-                Name = "갑오징어 헌터", Title = "먹물 세례 100회", TopModel = "Top_Rash", BottomModel = "Pants_Wader", ShoeModel = "Shoes_Boots", Hair = "Hair_Buzzed",
-                Shirt = new Color(0.15f, 0.15f, 0.2f), Vest = false, Pants = new Color(0.15f, 0.2f, 0.18f), HatStyle = 1, HatColor = new Color(0.1f, 0.1f, 0.12f)
-            }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(parent, new Vector3(SeocheonDef.RedArm.center.x + 6f, _map.LandY, SeocheonDef.RedArm.yMax - 1.2f), 0f, new CharacterLook { Name = "주꾸미 아줌마", Title = "에기 30년", Female = true }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(parent, new Vector3(SeocheonDef.WhiteBw.xMin + 1.2f, _map.LandY, SeocheonDef.WhiteBw.yMax - 8f), -60f, new CharacterLook { Name = "갑오징어 헌터", Title = "먹물 세례 100회" }, NpcAngler.Role.Angler);
             var top = new Vector2(SeocheonDef.CapeBase.x, -8f);
-            NpcAngler.Spawn(parent, new Vector3(top.x + 5f, SeocheonTerrain.HeightAt(top.x + 5f, top.y + 9f), top.y + 9f), 0f, new CharacterLook
-            {
-                Name = "동백정 할아버지", Title = "서해 노을 지킴이", TopModel = "Top_Long", Hair = "Hair_Buzzed", Beard = true, HairColor = new Color(0.85f, 0.85f, 0.82f),
-                Shirt = new Color(0.7f, 0.65f, 0.55f), Vest = false, Pants = new Color(0.3f, 0.3f, 0.28f), Hat = false
-            }, NpcAngler.Role.Talker);
+            NpcAngler.Spawn(parent, new Vector3(top.x + 5f, SeocheonTerrain.HeightAt(top.x + 5f, top.y + 9f), top.y + 9f), 0f, new CharacterLook { Name = "동백정 할아버지", Title = "서해 노을 지킴이" }, NpcAngler.Role.Talker);
         }
     }
 }

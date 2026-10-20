@@ -42,13 +42,13 @@ namespace Fishing.World
             },
             Spawn = new Vector3(8f, 1.1f, -47f), ShopPos = new Vector3(-24f, 1f, -54f),
             ShopRoof = new Color(0.82f, 0.38f, 0.16f),
-            ShopOwner = Local("찰롱 낚시점 위라 사장", "찰롱 낚시점", new Color(0.4f, 0.65f, 0.85f), hat: 1),
+            ShopOwner = Local("찰롱 낚시점 위라 사장", "찰롱 낚시점"),
             Npcs = new[]
             {
-                Npc(22f, -47f, 200f, Union("솜차이 지부장", "한국 낚시 조합 푸켓 지부", false, false), NpcAngler.Role.Talker, "union"),
-                Npc(-5f, 12f, 0f, Local("롱테일 선장 분", "먼바다 돛새치 투어", new Color(0.95f, 0.65f, 0.2f), false, true, 1), NpcAngler.Role.Angler, y: 1f),
-                Npc(-36f, -48f, 140f, Local("팟타이 노점 아주머니", "매운맛 조절 가능", new Color(0.85f, 0.3f, 0.35f), true, false, -1), NpcAngler.Role.Talker),
-                Npc(70f, -44f, 0f, Local("게임 낚시 유튜버", "구독과 좋아요", new Color(0.2f, 0.2f, 0.25f), false, false, 1), NpcAngler.Role.Angler),
+                Npc(22f, -47f, 200f, Union("솜차이 지부장", "한국 낚시 조합 푸켓 지부", false), NpcAngler.Role.Talker, "union"),
+                Npc(-5f, 12f, 0f, Local("롱테일 선장 분", "먼바다 돛새치 투어", false), NpcAngler.Role.Angler, y: 1f),
+                Npc(-36f, -48f, 140f, Local("팟타이 노점 아주머니", "매운맛 조절 가능", true), NpcAngler.Role.Talker),
+                Npc(70f, -44f, 0f, Local("게임 낚시 유튜버", "구독과 좋아요", false), NpcAngler.Role.Angler),
             },
             Signs = new[] { ("CHALONG PIER", new Vector3(10f, 6.5f, -62f), SignBlue) },
             FarIslands = new[] { new Vector4(-280f, 420f, 120f, 40f), new Vector4(300f, 460f, 140f, 44f) },

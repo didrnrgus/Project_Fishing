@@ -3,13 +3,10 @@ using UnityEditor;
 namespace Fishing.EditorTools
 {
     /// <summary>
-    /// 외부 에셋(Quaternius, CC0) 임포트 규칙.
-    ///  - Resources/Characters, Resources/Animations: 휴머노이드 리그 (애니메이션 리타깃)
-    ///  - Resources/Characters/Angler_*.fbx: tools/blender/build_characters.py가 만든 낚시꾼(몸 + 옷 메쉬)
-    ///  - ThirdParty/Quaternius/Source: 그 원본 Superhero FBX. 런타임에는 안 쓰므로 가볍게(애니메이션·머티리얼 없음)
+    /// 외부 에셋 임포트 규칙. (캐릭터 모델은 에셋이 아니라 실행 중에 읽는 VRM — Characters/VrmCharacters)
+    ///  - Resources/Animations: 휴머노이드 리그 (애니메이션 리타깃, 동작 클립만)
     ///  - Resources/Animations/Mixamo: Mixamo FBX를 MixamoClips 표대로 쪼갠다 (낚시 동작)
     ///  - Resources/Animations/MixamoExtra: 받은 Mixamo 동작(파일 하나 = 클립 하나, MixamoExtraClips 표의 이름) — 춤·인사·노인 대기·좀비 동작 등
-    ///  - MixamoCharacters/XBot.fbx: Mixamo 마네킹 (귀신 NPC 몸), 휴머노이드
     ///  - Resources/Animations/KevinIglesias: Human Basic Motions FREE의 대기·걷기·뛰기 (남·녀). 아바타는 패키지 모델(HumanM/F_Model)에서 복사
     ///  - 이름에 "Loop"가 들어간 클립은 반복 재생
     ///  - Resources/Fish: 레거시 애니메이션 (Animation 컴포넌트). Fish/Species는 build_fish.py가 만든 어종별 모델(클립 5개)
@@ -19,8 +16,7 @@ namespace Fishing.EditorTools
     /// </summary>
     public class AssetImportRules : AssetPostprocessor
     {
-        static bool IsHumanoid(string path) =>
-            path.Contains("Resources/Characters/") && !path.Contains("/Hair/") || path.Contains("Resources/Animations/");
+        static bool IsHumanoid(string path) => path.Contains("Resources/Animations/");
 
         void OnPreprocessModel()
         {
@@ -39,16 +35,7 @@ namespace Fishing.EditorTools
                 importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
                 importer.isReadable = false;
                 importer.materialImportMode = ModelImporterMaterialImportMode.None;
-                importer.importAnimation = assetPath.Contains("Resources/Animations/");
-            }
-            else if (assetPath.Contains("Assets/MixamoCharacters/"))
-            {
-                // Mixamo 캐릭터: 휴머노이드, 재질은 FBX 설명대로 (텍스처는 CharacterLibraryBake가 꺼내 1024로 줄인다)
-                importer.animationType = ModelImporterAnimationType.Human;
-                importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
-                importer.importAnimation = false;
-                importer.materialImportMode = assetPath.EndsWith("XBot.fbx") ? ModelImporterMaterialImportMode.None : ModelImporterMaterialImportMode.ImportViaMaterialDescription;
-                importer.materialLocation = ModelImporterMaterialLocation.InPrefab;
+                importer.importAnimation = true;
             }
             else if (assetPath.Contains("Assets/MixamoAnimation/Extra/"))
             {
@@ -56,18 +43,6 @@ namespace Fishing.EditorTools
                 importer.animationType = ModelImporterAnimationType.Human;
                 importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
                 importer.importAnimation = true;
-                importer.materialImportMode = ModelImporterMaterialImportMode.None;
-            }
-            else if (assetPath.Contains("Resources/Characters/Hair/"))
-            {
-                importer.animationType = ModelImporterAnimationType.Generic;
-                importer.importAnimation = false;
-                importer.materialImportMode = ModelImporterMaterialImportMode.None;
-            }
-            else if (assetPath.Contains("ThirdParty/Quaternius/Source/"))
-            {
-                importer.animationType = ModelImporterAnimationType.None;
-                importer.importAnimation = false;
                 importer.materialImportMode = ModelImporterMaterialImportMode.None;
             }
             else if (assetPath.Contains("Resources/Fish/"))
@@ -129,13 +104,6 @@ namespace Fishing.EditorTools
                 importer.wrapMode = UnityEngine.TextureWrapMode.Repeat;
                 importer.maxTextureSize = 1024;
                 importer.anisoLevel = 4;
-            }
-            else if (assetPath.Contains("Assets/MixamoCharacters/Textures/"))
-            {
-                // Mixamo 캐릭터에서 꺼낸 텍스처 (원본 4K). 사람 하나에 1024면 충분하다
-                if (assetPath.ToLower().Contains("normal")) importer.textureType = TextureImporterType.NormalMap;
-                importer.maxTextureSize = 1024;
-                importer.textureCompression = TextureImporterCompression.Compressed;
             }
             else if (assetPath.Contains("Resources/Intro/"))
             {

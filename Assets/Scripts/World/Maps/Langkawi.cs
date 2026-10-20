@@ -39,13 +39,13 @@ namespace Fishing.World
             },
             Spawn = new Vector3(4f, 1.1f, -47f), ShopPos = new Vector3(30f, 1f, -54f),
             ShopRoof = new Color(0.78f, 0.36f, 0.22f),
-            ShopOwner = Local("쿠아 낚시점 하리스", "쿠아 낚시점", new Color(0.25f, 0.45f, 0.65f), false, true, 1),
+            ShopOwner = Local("쿠아 낚시점 하리스", "쿠아 낚시점", false),
             Npcs = new[]
             {
-                Npc(-6f, -47f, 160f, Union("아지즈 지부장", "한국 낚시 조합 랑카위 지부", false, true), NpcAngler.Role.Talker, "union"),
-                Npc(17f, -6f, 0f, Local("바틱 셔츠 낚시꾼", "타폰 손맛에 빠졌다", new Color(0.75f, 0.45f, 0.2f), false, true, 1), NpcAngler.Role.Angler, y: 1f),
-                Npc(-100f, -46f, 300f, Local("맹그로브 투어 가이드", "독수리 먹이 주기 투어", new Color(0.3f, 0.6f, 0.35f), true, false, 2), NpcAngler.Role.Talker),
-                Npc(70f, -44f, 0f, Local("면세 쇼핑 온 여행객", "초콜릿 한 보따리", new Color(0.9f, 0.5f, 0.6f), true, false, -1), NpcAngler.Role.Angler),
+                Npc(-6f, -47f, 160f, Union("아지즈 지부장", "한국 낚시 조합 랑카위 지부", false), NpcAngler.Role.Talker, "union"),
+                Npc(17f, -6f, 0f, Local("바틱 셔츠 낚시꾼", "타폰 손맛에 빠졌다", false), NpcAngler.Role.Angler, y: 1f),
+                Npc(-100f, -46f, 300f, Local("맹그로브 투어 가이드", "독수리 먹이 주기 투어", true), NpcAngler.Role.Talker),
+                Npc(70f, -44f, 0f, Local("면세 쇼핑 온 여행객", "초콜릿 한 보따리", true), NpcAngler.Role.Angler),
             },
             Signs = new[] { ("DATARAN LANG", new Vector3(-40f, 6.5f, -64f), SignGold) },
             Areas = new[] { (new Rect(-200f, -60f, 110f, 90f), "맹그로브 숲") },

@@ -3,7 +3,7 @@
 ## 원칙
 
 - **씬에는 `GameBootstrap` 하나만 둔다.** 월드, 플레이어, 카메라, UI를 모두 코드로 만든다. 씬에 없어도 `RuntimeInitializeOnLoadMethod`로 자동 생성된다.
-- **월드 아트는 코드로 만든다.** 프리미티브, 런타임 머티리얼(`Mats`), 절차적 텍스처/스프라이트, 절차적 사운드(`SoundFx`) + CC0 에셋(Quaternius·Kenney 모델, Poly Haven 텍스처, Kenney 소리). 캐릭터 옷·물고기·아이콘은 `tools/blender`의 headless Blender 스크립트로 만들어 FBX/PNG로 커밋한다. 나중에 에셋으로 바꿀 때는 `WorldBuilder`, `PlayerController.BuildModel`, `FightRodView.Build`, `Bobber.Create`만 교체하면 된다.
+- **월드 아트는 코드로 만든다.** 프리미티브, 런타임 머티리얼(`Mats`), 절차적 텍스처/스프라이트, 절차적 사운드(`SoundFx`) + CC0 에셋(Quaternius·Kenney 모델, Poly Haven 텍스처, Kenney 소리). 사람은 모두 실행 중에 읽는 VRM(`StreamingAssets/Characters` + 문서 폴더, 16 문서), 물고기·아이콘은 `tools/blender`의 headless Blender 스크립트로 만들어 FBX/PNG로 커밋한다. 나중에 에셋으로 바꿀 때는 `WorldBuilder`, `PlayerController.BuildModel`, `FightRodView.Build`, `Bobber.Create`만 교체하면 된다.
 - **UI도 코드로 만들지만 외부 에셋을 쓴다**: Translucent Image + Paraform(유리·둥근 도형), EasyChart(차트), TextMeshPro(Jalnan2 글꼴). 프리팹 없이 `UIFactory`/`UIStyle`/`UIChart`로 조립한다.
 - **게임 규칙은 MonoBehaviour와 분리한다.** `FishFight`, `BiteSelector`, `PlayerProfile`, `QuestSystem`은 순수 C#이라서 에디터에서 밸런스 시뮬레이션을 돌릴 수 있다.
 - **데이터는 C# 정적 테이블이다** (`FishDatabase`, `GearDatabase`, `QuestDatabase`, `CostumeDatabase`, `AchievementDatabase` …). 텍스트 diff로 리뷰하기 쉽다. 데이터가 많아지면 ScriptableObject나 JSON으로 옮길 수 있다.
@@ -54,7 +54,9 @@ Assets/
       TournamentRules.cs         대회 규칙 (미션 점수, 엠블럼, 대회 맵 순서 — 6일 주기, 해안 낚시터 지역 대회)
       FishingAreas.cs            낚시터 목록 (한국 12곳 + 해외 17곳), 거점 4개(Hubs), 경위도, 입장 레벨, 맵 id
     Characters/
-      CharacterFactory.cs        Angler FBX(몸 + 옷 메쉬)에서 입은 옷만 남기고 색 입히기, 머리카락·이름표 (CharacterLook)
+      CharacterFactory.cs        CharacterLook(이름·칭호·성별·VRM id) → VRM 복제 + 동작, 못 읽으면 마네킹, 이름표
+      CharacterRoster.cs         characters.json: 기본 캐릭터 남/녀, NPC 모델 고르기(이름 지정 → 성별 목록), 문서 폴더가 게임 폴더를 덮음
+      VrmCharacters.cs           VRM 폴더 훑기·바로 읽기(LoadNow)·뒤에서 읽기(Request)·원본 선반에서 복제 (16 문서)
       CharacterAnimator.cs       Playables 믹서로 클립 재생 (AnimatorController 없이 SetLoop/PlayOnce). "이름_M/_F" 클립은 성별로 고른다
       NpcAngler.cs               NPC (Angler/Talker/Sitter). NpcId로 대화 종류, 대화 상대 바라보기, 조합 연락관 머리 위 퀘스트 표시(? !)
     World/
@@ -123,15 +125,12 @@ Assets/
     Audio/IntroAudio.cs          인트로 소리 (절차적): 낙관 쿵, 종, 붓, 징, 가야금풍 타이틀 음악(Karplus-Strong 평조 선율 + 바람·물결) — 작업 스레드에서 계산
     Dev/DevAutomation.cs         -autoshot 자동 연출 + 스크린샷
   Shaders/
-    Skin.shader                  몸: 입은 옷 속 피부를 버텍스 컬러 마스크(R 상의, G 하의, B 신발, A 긴소매)로 잘라냄
-    Garment.shader               옷: 트림(R)·음영(G)·보조 원단(B), 무늬(체크·데님·줄무늬·밀짚 엮음), 장화 속 바지 자르기
     Fish.shader                  물고기 (알파 컷 지느러미: clip(), 렌더 텍스처에서도 알파 유지)
     UIInkReveal.shader           인트로 UI: 붓으로 쓰듯 왼쪽부터 번지며 드러남(_Progress), 지나가는 빛줄기(_Shine), 더하기 섞기(물에 비친 달빛)
     Water.shader                 버텍스 파도 + 흐르는 노멀맵, 하늘 반사, 밤 불빛 반짝임(WaterGlints), 물가 거품·얕은 물 (해저 높이 텍스처)
     Sky.shader                   Mode 0 달·별, Mode 1 구름(덮임 정도·노을색, 흐림·비 층구름)
     SkyCube.shader               흐림·비 하늘 큐브맵 돔 (AllSky "Overcast Low", 스카이박스 뒤 Transparent-300에 그린다)
   Resources/
-    Characters/                  Angler_Male·Female.fbx (tools/blender/build_characters.py), 머리카락, 텍스처
     Animations/                  Quaternius UAL1_Standard, Mixamo/(낚시 동작·환호·박수, AssetImportRules가 쪼갬), KevinIglesias/(대기·걷기·뛰기·질주·말하기·점프 남·녀) → 10 문서
     Sky/Overcast.png             흐린 하늘 큐브맵 (AllSky Free에서 옮김, 1024)
     NatureKit/Baked/             Nature Starter Kit 2 나무·덤불을 일반 메쉬 프리팹으로 구운 것 (Editor/NatureKitBake)
@@ -144,10 +143,11 @@ Assets/
     UI/, Fonts/                  Paraform 재질, Jalnan2 SDF (TMP)
     PostFxConfig.asset           후처리 리소스 참조
   EasyChart/, Le Tai's Asset/, TextMesh Pro/   외부 UI 에셋 (데모 폴더 포함 그대로)
-  ThirdParty/Quaternius/, ThirdParty/Kenney/   라이선스 사본, 원본 FBX(빌드에 안 들어감)
+  ThirdParty/Quaternius/, ThirdParty/Kenney/   라이선스 사본 (UAL 동작·Kenney)
+  StreamingAssets/Characters/   기본 VRM 11개(VRoid CC0 샘플, Git LFS) + characters.json + 읽어주세요.txt — 빌드 뒤에도 바꿀 수 있다 (가이드 07)
   Editor/
     ProjectTools.cs              Setup(씬·빌드 설정·셰이더·후처리), BuildWindows, DeleteSave
-    AssetImportRules.cs          캐릭터·애니메이션 휴머노이드, 머리 Generic, 물고기, 텍스처 크기, Loop 클립
+    AssetImportRules.cs          애니메이션 휴머노이드, 물고기, 텍스처 크기, Loop 클립
     AssetInspector.cs            임포트된 에셋 정보 → Logs/asset-inspect.txt
     FishModelCheck.cs            물고기 모델 확인 → Logs/fish-check.txt, 강제 재임포트
     FontSetup.cs                 Jalnan2 TMP 폰트 에셋 생성
@@ -159,7 +159,7 @@ tools/
   build.sh, autoshot.sh, test.sh, balance.sh    배치모드 빌드 / 자동 스크린샷 / 테스트 / 밸런스
   fish_table.py                  FishDatabase*.cs(지역별 partial·이름 붙은 맵 배열·MapAdds 포함) → 02 문서 11장 어종 표 (--write)
   fightsim/                      Unity 없이 파이팅 밸런스 재기 (.NET 8, 게임 소스 + UnityEngine 대체 Stubs.cs) — 04 문서
-  blender/                       headless Blender(bpy) 파이프라인: 캐릭터 옷(garments.py), 물고기(build_fish.py, 어종 설계는 fish_species.py + 지역별 species_*.py), 아이콘(build_icons.py), 해외 소품(build_props.py + props_sea.py)
+  blender/                       headless Blender(bpy) 파이프라인: 물고기(build_fish.py, 어종 설계는 fish_species.py + 지역별 species_*.py), 아이콘(build_icons.py), 해외 소품(build_props.py + props_sea.py)
   intro/build_intro_art.py       인트로 그림 → Resources/Intro (numpy·PIL로 그린 달밤 수묵 산수화 겹, 붓글씨 타이틀, 낙관). 글꼴 intro/fonts (SIL OFL)
 ```
 
@@ -295,9 +295,9 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 5. 자동 스크린샷(`DevAutomation`)에 장면을 추가하고 문서 02(맵 절)·06을 갱신한다.
 
 ### 아트 교체
-- 캐릭터: `CharacterFactory.Create(look, parent)`가 Angler FBX(몸 `Body` + 옷 메쉬, `tools/blender/build_characters.py`)를 만든다. 옷을 고치거나 더하려면 `garments.py`에 함수를 추가하고 `build()`에 등록 → `CharacterFactory.Garments`·`GarmentMaterial`에 이름을 넣는다(08 문서 3장). 몸은 `Fishing/Skin`, 옷은 `Fishing/Garment` 셰이더.
+- 캐릭터: 모든 사람이 VRM이다. `CharacterFactory.Create(look, parent)` → `CharacterRoster`가 고른(또는 `look.Vrm`) 파일을 `VrmCharacters`가 읽어 복제한다. 바꾸려면 코드가 아니라 `characters.json`·`.vrm`을 바꾼다(가이드 07, 16 문서). 의상은 능력치만이고 몸에 입히지 않는다.
 - 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/Jog/Sprint/HoldRod/Windup/Cast/Hook/Reel/Cheer…)가 클립 이름이다. 클립은 `Resources/Animations/UAL1_Standard`, `Mixamo`, `KevinIglesias`에서 찾고, `이름_M`/`이름_F`가 있으면 캐릭터 성별(`CharacterAnimator.Female`)로 고른다. Mixamo FBX는 `AssetImportRules.MixamoClips`, Kevin Iglesias는 `KevinClips` 표대로 임포트한다(10 문서). 낚시 중 몸은 늘 HoldRod이고 두 팔은 낚싯대 각도를 따라가는 IK다(10 문서 5장). 이동 중 클립과 배속은 `UpdateAnimation()`이 속도로 고른다.
-- VRM 캐릭터: `CharacterLook.Vrm`이 있으면 `VrmCharacters`가 읽어 둔 VRM을 복제한다(16 문서). UniVRM은 `Scripts/Vrm`(asmdef `Fishing.Vrm`)만 직접 참조한다.
+- UniVRM은 `Scripts/Vrm`(asmdef `Fishing.Vrm`)만 직접 참조한다.
 - 물고기: `tools/blender/fish_species.py`에 어종(체형 템플릿 A~H·두족류 O 문어/Q 갑오징어/S 오징어, 색·무늬·지느러미)을 넣고 `build_fish.py --only <id>` → `Resources/Fish/Species/<id>.fbx`·텍스처·아이콘. `FishModels.CreateSpecies`가 길이(cm/100)로 키운다(09 문서).
 - 물: `WaterSurface` + `Fishing/Water` 셰이더 (`_WaveAmp`, `_WaveLen`, 노멀 타일·속도). 하늘 반사는 `DayNightCycle`의 리얼타임 반사 프로브(하늘만, 2초마다).
   - **물가 거품**: 맵을 불러올 때 `FieldMapDef.SeabedAt(x, z)`(물 밑 땅 높이, 방파제는 땅 높이)를 `SeabedArea`에 1m 간격(최대 512칸) RFloat 텍스처로 굽는다(`WaterSurface.SetSeabed`). 셰이더는 `수심 = 수면 높이(파도 포함) − 해저`, 이웃 텍셀로 해저 경사를 구해 `물가까지 거리 ≈ 수심 / 경사`를 어림하고, 그 거리 4.5m 안에 노이즈로 끊긴 흰 띠가 밀려오게 그린다. 기둥 위에 뜬 잔교(한강 낚시 데크)는 `SeabedAt`에서 깊은 물로 돌려 둘레에 해변 같은 거품 띠가 생기지 않게 한다. 수심 2.5m보다 얕으면 바닥이 비치게 밝힌다. 깊이 텍스처를 쓰지 않아 그림자·AO와 부딪치지 않는다. 새 맵은 `SeabedAt`만 지형 높이 함수로 바꿔 주면 된다(기본값은 물이면 수심 3m).
@@ -323,9 +323,7 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 | `World/VegetationLibrary.cs` + `Editor/VegetationBake.cs` | 받은 실사풍 소나무·활엽수·바위·풀 참조 묶음 (`Resources/VegetationLibrary.asset`, 빌드 때 채움). `KenneyProps.Spawn`(나무)·`Rocks.Prim`(바위, 눈 맵은 `Rocks.Snowy`)이 있으면 먼저 쓴다 |
 | `World/GrassField.cs` + `Shaders/Grass.shader` | 풀·들꽃 포기: 지형 풀 층·풀 텍스처 바닥을 레이캐스트로 훑어 심고 48m 칸 메쉬로 굽는다, 바람 흔들림, 130m 밖 칸은 끔(`GrassCuller`). `MapLoader`가 월드를 지은 직후 부른다 |
 | `Characters/RodGrip.cs` | 3인칭 오른손이 낚싯대를 쥔다: 릴 시트를 손바닥 가운데에, 손가락 마디를 낚싯대 축으로 감는다 (플레이어·NPC 낚시꾼) |
-| `Characters/CharacterLibrary.cs` · `ExternalCharacters.cs` · `ExtraNpcs.cs` + `Shaders/Ghost.shader` | 받은 휴머노이드 캐릭터(유니티짱·좀비·X Bot)를 같은 동작 시스템으로 움직인다. `CharacterLook.External`, 낚시 아이돌(`IdolRoutine`: 공원 버스킹 무대 `HanRiverMap.IdolStage` 위, 낮에만 — 무대는 풀보다 먼저 지어야 해서 `WorldBuilder.BuildIdolStage`), 밤 손님(`NightVisitor`: 좀비·귀신). 같은 인물은 한 맵에 한 번만 |
-| `Characters/VrmCharacters.cs` · `Vrm/VrmLoader.cs`(`Fishing.Vrm` asmdef) | VRM 캐릭터(문서/짭풍명월/Characters의 .vrm, 빌드 없이): 폴더 훑기·실행 중 읽기(UniVRM)·원본 선반에서 복제·메타(사용 허락)·눈 깜빡임 (16 문서) |
-| `Characters/Wanderer.cs` | 받은 사람으로 만든 배경 NPC: 점 사이 걷기·쉬기, 땅 레이캐스트, 반응 동작, 낮/밤 표시(렌더러만 끔), 헤엄(골반을 수면에), 앉기. 기본 걷기는 이동 속도에 맞춘 배속(`CharacterAnimator.BasicWalkSpeed` 2 m/s 기준), 돌아설 때는 먼저 제자리에서 몸을 돌린 뒤 걷는다 |
+| `Characters/VrmCharacters.cs` · `CharacterRoster.cs` · `Vrm/VrmLoader.cs`(`Fishing.Vrm` asmdef) | 모든 사람이 VRM (게임 폴더 `StreamingAssets/Characters` + 문서/짭풍명월/Characters, 빌드 없이): 폴더 훑기·실행 중 읽기(UniVRM, 맵을 지을 땐 동기)·원본 선반에서 복제·메타(사용 허락)·눈 깜빡임, characters.json으로 누구에게 어떤 모델 (16 문서, 가이드 07) |
 | `UIPanel.RowCursor` | 창 목록을 쌓으면 자동으로 잘라내기 + 휠 스크롤 + 스크롤바 (key로 스크롤 위치 기억) |
 
 새 셰이더는 코드에서 `Shader.Find`로 찾으므로 `ProjectSettings/GraphicsSettings.asset` Always Included와 `ProjectTools.RuntimeShaders`에 넣었다 (meta의 guid를 고정해 두었다).

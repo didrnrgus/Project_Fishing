@@ -1,9 +1,14 @@
-# 16. VRM 캐릭터 (내가 만든 캐릭터로 플레이)
+# 16. VRM 캐릭터 (모든 사람이 VRM)
 
 2026-10-20 사용자 결정: 캐릭터를 **애니풍(서브컬처)** 으로 바꾸고, 플레이어가 직접 만든 캐릭터를 **빌드 없이** 넣어 플레이할 수 있게 한다.
 처음엔 ReadyPlayerMe를 원했지만 Netflix 인수 뒤 **2026-01-31에 아바타 생성기·공개 API가 종료**되어 쓸 수 없다. 그래서 VRM(VRoid Studio 등에서 만드는 휴머노이드 아바타 표준 형식)으로 간다.
 
-| 실제 낚시 화면 (Seed-san, 젖힘) | 캐릭터 창 [캐릭터 모델] 탭 |
+같은 날 2단계: **빌드에 박혀 있던 캐릭터 모델을 모두 걷어냈다.** 내 캐릭터·낚시점 사장·조합 연락관·낚시꾼 NPC·배 선장이 전부 VRM이다.
+- 의상은 **능력치만** 남는다. 몸에 덧입히는 것은 없고, 몸에 붙여 보이는 장비는 **낚싯대 하나**다(사용자 결정).
+- 퀘스트·정보와 상관없는 장식 NPC(산책하는 의사, 벤치 수다, 버스킹 아이돌 유니티짱, 밤의 좀비·귀신·광대·댄서, 코스프레 낚시꾼 등)는 모두 뺐다.
+- 빌드한 뒤에도 파일만 바꿔 내 캐릭터·기본 캐릭터·NPC를 갈아입힐 수 있다 → 설명서 [가이드 07](guide/07-characters.md), 게임 폴더의 `StreamingAssets/Characters/읽어주세요.txt`.
+
+| 실제 낚시 화면 (VRM, 젖힘) | 캐릭터 창 [캐릭터 모델] 탭 |
 |---|---|
 | ![vrm](images/02v_vrm_155.png) | ![panel](images/21e_character_model.png) |
 
@@ -13,32 +18,68 @@
 2. 캐릭터 창(C) → **[캐릭터 모델]** → **[폴더 열기]** → 열린 폴더에 `.vrm` 파일을 넣는다.
    - 폴더: `문서\짭풍명월\Characters` (Windows 문서 폴더. OneDrive로 옮겨 둔 PC는 그 아래)
 3. **[새로고침]** → 목록에서 **[고르기]**. 필드·대기실·초상화가 바로 그 캐릭터로 바뀐다.
-4. 걸음걸이(남자/여자 대기·걷기 클립)를 고른다.
+4. 아래 [남자]/[여자]: 기본 캐릭터면 남/녀 기본 모델, 고른 VRM이면 걸음걸이(대기·걷기 클립).
 
-- 의상 능력치는 모델과 상관없이 그대로 붙는다(아바타 슬롯에서 입은 옷). VRM 캐릭터에는 옷이 보이지 않는다 → 3장 남은 일.
+- 게임과 함께 온 모델 11개도 목록에 `기본 제공`으로 나온다 → 그대로 골라 쓸 수 있다.
 - 고른 모델은 세이브(`SaveData.vrm`, `vrmFemale`)에 남는다. 파일이 없어지면 기본 캐릭터로 서 있다.
 
-## 2. 구조
+## 2. 기본 제공 캐릭터 (CC0)
+
+`Assets/StreamingAssets/Characters/` (빌드: `ProjectFishing_Data/StreamingAssets/Characters/`). Git LFS(`*.vrm`).
+VRoid 프로젝트(pixiv)가 VRoid Studio 알파 시절 샘플로 **CC0** 공개한 모델을 [OpenGameArt 미러](https://opengameart.org/content/vroid-studio-cc0-models)에서 받았다. 파일 안 VRM 메타도 "누구나 사용·재배포·상업 이용 허락, 표기 불필요"(VRoid Hub 조건 URL)다. 현재 VRoid Studio의 AvatarSample A~C는 조건이 달라 쓰지 않는다.
+
+| 파일 | 역할 |
+|---|---|
+| `HairSample_Male.vrm` | 기본 캐릭터 (남자) |
+| `Sendagaya_Shino.vrm` (千駄ヶ谷篠) | 기본 캐릭터 (여자) |
+| `Sakurada_Fumiriya.vrm` (桜田史利矢), `Base_Male.vrm` | 남자 NPC |
+| `AvatarSample_D`(千駄ヶ谷渋)·`E`(ビビ)·`F`(ヴィータ)·`G`(ヴィクトリア・ルービン), `HairSample_Female`, `Base_Female` | 여자 NPC |
+| `AvatarSample_D_Darkness.vrm` | 목록에서 고를 수만 있다 (엘프 귀라 NPC 목록에선 뺐다) |
+
+남자 모델이 둘뿐이라 남자 NPC는 두 얼굴이 돌아가며 나온다(키만 이름에 따라 ±4%). 더 넣으려면 `characters.json`의 `npcMale`에 파일을 더한다.
+
+## 3. 구조
 
 | 파일 | 하는 일 |
 |---|---|
 | `Packages/manifest.json` | **UniVRM v0.131.4** (MIT, VRM 컨소시엄): `com.vrmc.gltf`(UniGLTF) + `com.vrmc.vrm`(VRM-1.0 로더, 0.x는 읽으면서 1.0으로 바꾼다) |
-| `Scripts/Vrm/VrmLoader.cs` + `Fishing.Vrm.asmdef` | UniVRM을 감싼 얇은 어셈블리. UniVRM의 `UniGLTF.Utils`가 자동 참조되지 않아 게임 코드(Assembly-CSharp)에서 `Vrm10.LoadPathAsync`를 바로 부를 수 없어서 따로 뺐다. 메타(이름·만든 사람·썸네일·사용 허락)는 `VrmMeta`로 넘긴다. 눈 깜빡임 `VrmBlink` |
-| `Scripts/Characters/VrmCharacters.cs` | 폴더 훑기(`List`), 읽기(`Request` → `Loaded` 이벤트), 복제(`Create`). id는 `user/파일.vrm`(문서 폴더) · `builtin/파일.vrm`(`StreamingAssets/Characters`, 게임에 넣어 배포할 기본 캐릭터) |
-| `CharacterLook.Vrm`·`VrmFemale` → `CharacterFactory.Create` | VRM이 읽혀 있으면 그 복제본, 아니면 읽기 시작하고 기본 캐릭터 |
-| `GameUI` | `VrmCharacters.Loaded`를 듣고 고른 모델이면 필드·대기실 캐릭터를 다시 입힌다 |
-| `PlayerProfile.SetCharacterModel` | 모델·걸음걸이 저장 + `LookChanged` |
-| `CharacterPanel` [캐릭터 모델] 탭 | 기본 캐릭터 / 폴더의 VRM 목록(이름·만든 사람·키·허락), 폴더 열기·새로고침, 걸음걸이, 왼쪽 카드에 썸네일·사용 허락 |
+| `Scripts/Vrm/VrmLoader.cs` + `Fishing.Vrm.asmdef` | UniVRM을 감싼 얇은 어셈블리. `LoadAsync`(뒤에서), `Load`(ImmediateCaller로 이 프레임 안에), 메타(이름·만든 사람·썸네일·사용 허락) → `VrmMeta`, 눈 깜빡임 `VrmBlink` |
+| `Scripts/Characters/VrmCharacters.cs` | 폴더 훑기(`List`), 바로 읽기(`LoadNow`), 뒤에서 읽기(`Request` → `Loaded`), 복제(`Create`). id는 `builtin/파일.vrm`(게임 폴더) · `user/파일.vrm`(문서 폴더) |
+| `Scripts/Characters/CharacterRoster.cs` | `characters.json`을 읽어 누구에게 어떤 파일을 입힐지 정한다: 기본 캐릭터 남/녀(`PlayerDefault`), NPC(`ForNpc`: 이름 지정 → 성별 목록에서 이름 해시로 고르기). 문서 폴더 것이 게임 폴더 것을 덮는다 |
+| `CharacterLook` → `CharacterFactory.Create` | 이름·칭호·성별·VRM id만 남았다. VRM id가 비면 `CharacterRoster`가 고르고, 처음 쓰는 파일은 `LoadNow`로 그 자리에서 읽는다. 못 읽으면 null → 플레이어는 도형 사람, NPC는 회색 마네킹(`CharacterFactory.Placeholder`) |
+| `PlayerProfile.BuildLook` | 고른 VRM(파일이 있으면) 또는 기본 캐릭터(`vrmFemale`로 남/녀). 의상은 넣지 않는다 |
+| `PlayerProfile.SetCharacterModel` | 모델·성별 저장 + `LookChanged` (의상 입기·칭호 바꾸기는 더 이상 캐릭터를 다시 세우지 않는다) |
+| `GameUI` | 캐릭터 창이 뒤에서 읽던 VRM이 다 읽히면(`VrmCharacters.Loaded`) 필드·대기실 캐릭터를 다시 세운다 |
+| `CharacterPanel` [캐릭터 모델] 탭 | 기본 캐릭터 + 폴더의 VRM 목록(이름·만든 사람·키·허락), 폴더 열기·새로고침(`characters.json`도 다시 읽음), 남/녀, 설정 경고(노란 글씨), 왼쪽 카드에 썸네일·사용 허락 |
 | `ProjectTools.RuntimeShaders` | `VRM10/MToon10`, `UniGLTF/UniUnlit`을 Always Included에 (실행 중 `Shader.Find`) |
 
 ### 읽기·복제
 
-- 한 파일은 **한 번만 읽어** 숨긴 선반(`VrmShelf`, 꺼짐·DontDestroyOnLoad)에 원본으로 두고, 필드·대기실이 **복제**해서 쓴다. 텍스처·메쉬는 원본이 가진다.
+- 한 파일은 **한 번만 읽어** 숨긴 선반(`VrmShelf`, 꺼짐·DontDestroyOnLoad)에 원본으로 두고, 필드·대기실·NPC가 **복제**해서 쓴다. 텍스처·메쉬는 원본이 가진다.
+- 맵을 지을 때(로딩 화면 뒤) NPC·내 캐릭터가 바로 서 있어야 해서 **동기로 읽는다** (`VrmLoader.Load`, UniVRM `ImmediateCaller`). 한 파일에 수백 ms. 처음 그 모델이 나오는 맵에서만 걸리고 이후엔 복제만 한다.
+- 캐릭터 창 목록은 문서 폴더 파일과 지금 쓰는 모델만 뒤에서 읽는다(`Request`). 기본 제공 11개를 다 읽으면 메모리가 커서다. `LoadNow`는 `Loaded`를 내지 않는다(부른 쪽이 바로 입히는 중이라 GameUI가 또 입히면 캐릭터가 둘 생긴다).
 - 복제본은 `RuntimeGltfInstance`를 뗀다 → UniVRM이 "씬에 놓인 프리팹"으로 보고 지금 자세(원본의 T 자세)를 초기 자세로 잡는다. 떼지 않으면 복제본의 초기 자세 표가 비어 있다(직렬화되지 않는 필드). 원본이 꺼진 채 복제하니 복제본 `OnDestroy`가 원본 자원을 지우지 않는다.
 - **컨트롤 리그 없이** (`ControlRigGenerationOption.None`): 휴머노이드 Animator가 뼈를 바로 움직인다 → 우리 동작 클립(UAL·Mixamo·Kevin Iglesias, 모두 휴머노이드)·팔 IK(10 문서 5장)·손가락 쥐기(`RodGrip`의 휴머노이드 경로)가 그대로 붙는다.
-- VRM은 +Z를 보지만 우리 클립은 −Z에 맞춰 두어서 받은 캐릭터(`ExternalCharacters`)처럼 **180° 돌린다**.
-- 키는 VRM 그대로(1.0~2.2m 밖이면 1.6m로 맞춤). `PlayerController`가 팔 길이(어깨~손목)를 재서 낚싯대 쥔 손 자리 표를 기본 캐릭터 팔(0.453m) 대비로 줄이거나 늘인다(`_armScale`).
-- 뼈 이름이 달라서 `PlayerController`는 손·머리·가슴을 이름으로 못 찾으면 휴머노이드 매핑(`Animator.GetBoneTransform`)으로 찾는다.
+- VRM은 +Z를 보지만 우리 클립은 −Z에 맞춰 두어서 **180° 돌린다**.
+- 키는 VRM 그대로(1.0~2.2m 밖이면 1.6m로 맞춤). `PlayerController`가 팔 길이(어깨~손목)를 재서 낚싯대 쥔 손 자리 표를 예전 기본 캐릭터 팔(0.453m) 대비로 줄이거나 늘인다(`_armScale`).
+- 뼈는 모두 휴머노이드 매핑(`Animator.GetBoneTransform`)으로 찾는다 (예전 Quaternius 뼈 이름 `hand_r`·`spine_02` 경로는 지웠다).
+
+### characters.json
+
+```json
+{
+    "playerMale": "HairSample_Male.vrm",
+    "playerFemale": "Sendagaya_Shino.vrm",
+    "npcMale": ["Sakurada_Fumiriya.vrm", "Base_Male.vrm"],
+    "npcFemale": ["AvatarSample_D.vrm", "..."],
+    "npc": [{ "name": "김선장", "file": "Base_Male.vrm" }]
+}
+```
+
+- 게임 폴더(`StreamingAssets/Characters/characters.json`)가 기본, 문서 폴더에 같은 이름 파일이 있으면 **적은 항목만** 덮는다 (`npc`는 합치고 같은 이름은 문서 폴더가 이긴다).
+- 파일 이름 → id: 문서 폴더에 있으면 `user/`, 없으면 `builtin/`. 그래서 같은 이름의 `.vrm`을 문서 폴더에 넣기만 해도 기본 캐릭터가 바뀐다.
+- NPC는 `npc` 이름 지정 → 성별 목록에서 이름의 FNV 해시로 고르기(실행마다 같다) → 다른 성별 목록 → 기본 캐릭터.
+- JSON이 깨졌거나 적힌 파일이 없으면 `CharacterRoster.Warnings` → 캐릭터 창 맨 위 노란 글씨 + 로그.
 
 ### 사용 허락 (VRM 메타)
 
@@ -47,15 +88,26 @@ VRM 파일에는 만든 사람이 정한 허락이 들어 있다. 캐릭터 창�
 - **만든 사람 표기 필요**면 그렇다고 알린다. 목록·카드에 만든 사람을 늘 보여 준다.
 - 낚시는 폭력·성적 표현이 아니라 그 항목은 보지 않는다.
 
-## 3. 남은 일 (순서대로)
+## 4. 걷어낸 것 (2026-10-20)
 
-1. **기본 캐릭터를 VRM으로**: 남·녀 기본 캐릭터(와 의상별 변형)를 VRoid Studio로 만들어 `StreamingAssets/Characters/`에 넣는다(사용자 작업 — Claude는 VRoid GUI를 못 쓴다). 넣으면 처음 시작할 때 고를 수 있게 한다.
-2. **의상 능력치 → 덧입히는 장비**: VRM은 옷까지 한 덩어리라, 모자·선글라스·조끼처럼 위에 덧입힐 수 있는 것만 VRM 뼈(머리·가슴)에 붙이고, 상의·하의·신발 능력치는 장비/장신구로 옮긴다(사용자 동의, 2026-10-20).
-3. **Quaternius 기본 캐릭터 걷어내기**: 1·2가 끝나면 `Resources/Characters/Angler_*`, `garments.py`, `Fishing/Skin`·`Fishing/Garment`, `CharacterFactory` 옷 조합을 지운다.
-4. **NPC도 VRM으로**, 장식 NPC 정리, 유니티짱에 역할 주기 (WORK-IN-PROGRESS 참고).
+| 걷어낸 것 | 대신 |
+|---|---|
+| Quaternius 낚시꾼 `Resources/Characters/Angler_*`(몸 + 옷 메쉬 16종 + 머리카락), `tools/blender/build_characters.py`·`garments.py`, `Fishing/Skin`·`Fishing/Garment` 셰이더, `Universal Base Characters`, `ThirdParty/Quaternius/Source` | VRM |
+| `CharacterLook`의 옷·머리·모자·피부 필드, `CostumeDef.Model`·`Pattern` | 의상은 능력치만 (색·모양은 목록 아이콘용으로 남김) |
+| 받은 캐릭터 36명 `ExternalCharacters`·`CharacterLibrary`(+ `Editor/CharacterLibraryBake`): 유니티짱, Modern Zombie, Mixamo 사람 34종(3GB), 귀신 `Fishing/Ghost` 셰이더 | — |
+| 장식 NPC `ExtraNpcs`(아이돌 `IdolRoutine`, 밤 손님 `NightVisitor`)·`Wanderer` | 퀘스트·대화 NPC(`NpcAngler`)만 남김. 한강 버스킹 무대는 빈 무대로 남았다 |
+| 자동 촬영 `00h_idol_greeting`·`00i_idol_stage`·`00l_park_chat`·`00o_doctor_walk`·`00j_night_zombie`·`00k_night_ghost`·`00m_night_dancer`·`00n_night_clown` | — |
+
+동작 클립(UAL, Mixamo·MixamoExtra, Kevin Iglesias)은 캐릭터 모델이 아니라 그대로 둔다(좀비·춤 클립은 지금 안 쓴다).
+
+## 5. 남은 일
+
+- 사용자가 만든 남·녀 기본 캐릭터로 바꾸기 (VRoid Studio — Claude는 VRoid GUI를 못 쓴다). `characters.json`의 `playerMale`/`playerFemale`만 바꾸면 된다.
+- 남자 NPC 모델 더 넣기 (지금 2개).
+- 텍스처 메모리: VRoid 텍스처는 압축 없이 올라온다. 한 맵에 모델이 많아지면 VRAM을 본다(`Texture2D.Compress` 후보).
 - 나중에: VRoid Hub에서 바로 불러오기(pixiv에 앱 신청 필요), 표정(입질·환호 때 웃음).
 
-## 4. 확인
+## 6. 확인
 
-- 자동 촬영: 폴더(`문서\짭풍명월\Characters`)에 `.vrm`이 있으면 첫 번째로 갈아입고 `02v_vrm_35`·`_82`·`_155`·`02v_vrm_front`, 캐릭터 창 `21e_character_model`을 찍고 원래대로 돌린다. 없으면 건너뛴다(창은 빈 목록 안내).
-- 시험용 모델: VRM 컨소시엄 샘플 [Seed-san](https://github.com/vrm-c/vrm-specification/tree/master/samples/Seed-san) (VRM Public License 1.0). **저장소에는 넣지 않았다** — 받아서 문서 폴더에 넣어 시험한다.
+- 자동 촬영: 목록 첫 VRM(`builtin/AvatarSample_D.vrm`)으로 갈아입고 `02v_vrm_35`·`_82`·`_155`·`02v_vrm_front`, 캐릭터 창 `21e_character_model`을 찍고 원래대로 돌린다. 나머지 장면의 내 캐릭터는 기본 캐릭터(남자).
+- 시험용 모델: VRM 컨소시엄 샘플 [Seed-san](https://github.com/vrm-c/vrm-specification/tree/master/samples/Seed-san) (VRM Public License 1.0)도 문서 폴더에 넣어 시험할 수 있다. **저장소에는 넣지 않았다.**

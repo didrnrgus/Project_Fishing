@@ -42,3 +42,6 @@
 *.dll filter=lfs diff=lfs merge=lfs -text
 *.so filter=lfs diff=lfs merge=lfs -text
 *.a filter=lfs diff=lfs merge=lfs -text
+
+# VRM 캐릭터 (StreamingAssets/Characters)
+*.vrm filter=lfs diff=lfs merge=lfs -text

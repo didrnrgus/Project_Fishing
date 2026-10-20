@@ -44,13 +44,13 @@ namespace Fishing.World
             },
             Spawn = new Vector3(8f, 1.1f, -47f), ShopPos = new Vector3(-24f, 1f, -54f),
             ShopRoof = new Color(0.15f, 0.48f, 0.5f),
-            ShopOwner = Local("보풋 낚시점 쁘라섯", "보풋 낚시점", new Color(0.3f, 0.6f, 0.8f), hat: 2),
+            ShopOwner = Local("보풋 낚시점 쁘라섯", "보풋 낚시점"),
             Npcs = new[]
             {
-                Npc(22f, -47f, 200f, Union("찻차이 지부장", "한국 낚시 조합 코사무이 지부", false, false), NpcAngler.Role.Talker, "union"),
-                Npc(-1.5f, -12f, 0f, Local("보풋 어부 할머니", "새벽 장에 고기를 낸다", new Color(0.6f, 0.35f, 0.55f), true, false, 2), NpcAngler.Role.Angler, y: 1f),
-                Npc(110f, -46f, 60f, Local("탁발 나온 스님", "대불 섬에서 왔다", new Color(0.95f, 0.52f, 0.12f), false, false, -1), NpcAngler.Role.Talker),
-                Npc(-96f, -44f, 20f, Local("코코넛 줍는 원숭이 주인", "원숭이 이름은 롱", new Color(0.8f, 0.7f, 0.4f), false, true, 0), NpcAngler.Role.Angler),
+                Npc(22f, -47f, 200f, Union("찻차이 지부장", "한국 낚시 조합 코사무이 지부", false), NpcAngler.Role.Talker, "union"),
+                Npc(-1.5f, -12f, 0f, Local("보풋 어부 할머니", "새벽 장에 고기를 낸다", true), NpcAngler.Role.Angler, y: 1f),
+                Npc(110f, -46f, 60f, Local("탁발 나온 스님", "대불 섬에서 왔다", false), NpcAngler.Role.Talker),
+                Npc(-96f, -44f, 20f, Local("코코넛 줍는 원숭이 주인", "원숭이 이름은 롱", false), NpcAngler.Role.Angler),
             },
             Signs = new[] { ("BOPHUT", new Vector3(4f, 6.5f, -62f), SignBlue), ("BIG BUDDHA", new Vector3(118f, 6f, -50f), SignGold) },
             FarIslands = new[] { new Vector4(-220f, 460f, 150f, 50f), new Vector4(240f, 520f, 200f, 60f) },

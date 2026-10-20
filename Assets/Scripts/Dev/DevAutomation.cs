@@ -168,102 +168,40 @@ namespace Fishing.Dev
             yield return new WaitForSeconds(1.5f);
             yield return Shot("00t_cu_store");
 
-            // 받은 캐릭터 (ExtraNpcs): 버스킹 무대의 낚시 아이돌 유니티짱, 밤의 좀비·귀신
-            if (Fishing.Characters.CharacterLibrary.Lib != null)
-            {
-                float day0 = Game.Clock.Minutes;
-                Game.Player.Teleport(new Vector3(10f, 1.1f, -65f), 180f);
-                Game.CameraRig.Yaw = 150f;
-                Game.CameraRig.Pitch = 8f;
-                Game.CameraRig.Distance = 5f;
-                yield return new WaitForSeconds(2.2f);
-                yield return Shot("00h_idol_greeting");
-                // 무대 멀리서 (인사하지 않고 춤·포즈 중)
-                Game.Player.Teleport(new Vector3(19f, 1.1f, -62f), -138f);
-                Game.CameraRig.Yaw = -138f;
-                Game.CameraRig.Pitch = 10f;
-                Game.CameraRig.Distance = 4f;
-                yield return new WaitForSeconds(1.5f);
-                yield return Shot("00i_idol_stage");
-                // 공원 벤치(아이스박스)에서 수다 떠는 두 사람
-                Game.Player.Teleport(new Vector3(-46.5f, 1.1f, -80.2f), -90f);
-                Game.CameraRig.Yaw = -70f;
-                Game.CameraRig.Pitch = 8f;
-                Game.CameraRig.Distance = 5f;
-                yield return new WaitForSeconds(2f);
-                yield return Shot("00l_park_chat");
-                // 산책하는 의사: 걷는 발이 미끄러지지 않는지 0.25초 간격 두 장
-                var doctor = GameObject.Find("Wanderer_doctor");
-                if (doctor != null)
-                {
-                    var dp = doctor.transform.position;
-                    Game.Player.Teleport(new Vector3(dp.x + 1.5f, 1.1f, dp.z - 5.5f), 0f);
-                    Game.CameraRig.Yaw = -12f;
-                    Game.CameraRig.Pitch = 6f;
-                    Game.CameraRig.Distance = 3.5f;
-                    yield return new WaitForSeconds(1.2f);
-                    yield return Shot("00o_doctor_walk");
-                    yield return new WaitForSeconds(0.25f);
-                    yield return Shot("00o_doctor_walk_b");
-                }
-                // 데크 입구: 데크 판과 둔치 땅·석축이 만나는 곳
-                Game.Player.Teleport(new Vector3(19.5f, 1.1f, -64.5f), 40f);
-                Game.CameraRig.Yaw = 40f;
-                Game.CameraRig.Pitch = 22f;
-                Game.CameraRig.Distance = 4f;
-                yield return new WaitForSeconds(1.2f);
-                yield return Shot("00p_pier_entrance");
-                // 밤 스카이라인 (창 불빛·푸른 남산타워·흰 왕관)과 별
-                Game.Clock.Set(Game.Clock.Day, 22 * 60);
-                var weather0 = Game.Weather.Current;
-                Game.Weather.Force(Weather.Clear);
-                Game.Player.Teleport(new Vector3(25f, 1.1f, -30f), 15f);
-                Game.CameraRig.Yaw = 22f;
-                Game.CameraRig.Pitch = -5f;
-                Game.CameraRig.Distance = 7f;
-                yield return new WaitForSeconds(3f);
-                yield return Shot("00s_skyline_night");
-                var cuN = Fishing.World.HanRiverMap.StorePos;
-                Game.Player.Teleport(new Vector3(cuN.x + 3f, 1.1f, cuN.z + 13f), 180f);
-                Game.CameraRig.Yaw = 200f;
-                Game.CameraRig.Pitch = 8f;
-                Game.CameraRig.Distance = 9f;
-                yield return new WaitForSeconds(1.5f);
-                yield return Shot("00u_cu_night");
-                // 별이 총총한 밤하늘 (위를 올려다본다)
-                Game.Player.Teleport(new Vector3(25f, 1.1f, -40f), 0f);
-                Game.CameraRig.Yaw = 0f;
-                Game.CameraRig.Pitch = -5f;
-                Game.CameraRig.Distance = 3f;
-                yield return new WaitForSeconds(1.5f);
-                yield return Shot("00v_night_stars");
-                Game.Weather.Force(weather0);
-                Game.Clock.Set(Game.Clock.Day, 23 * 60);
-                Game.Player.Teleport(new Vector3(-4f, 1.1f, -64.5f), 200f);
-                Game.CameraRig.Yaw = 170f;
-                Game.CameraRig.Pitch = 10f;
-                Game.CameraRig.Distance = 6f;
-                yield return new WaitForSeconds(3f);
-                yield return Shot("00j_night_zombie");
-                Game.Player.Teleport(new Vector3(Fishing.World.HanRiverMap.BridgeX + 15f, 1.1f, Fishing.World.HanRiverMap.RiverMinZ - 10f), -34f);
-                Game.CameraRig.Yaw = -34f;
-                Game.CameraRig.Pitch = 6f;
-                Game.CameraRig.Distance = 5f;
-                yield return new WaitForSeconds(3.5f);
-                yield return Shot("00k_night_ghost");
-                Game.Player.Teleport(new Vector3(27f, 1.1f, -70f), 0f);
-                Game.CameraRig.Yaw = 10f;
-                Game.CameraRig.Pitch = 8f;
-                Game.CameraRig.Distance = 6f;
-                yield return new WaitForSeconds(2.5f);
-                yield return Shot("00m_night_dancer");
-                Game.Player.Teleport(new Vector3(-75f, 1.1f, -67.5f), -90f);
-                Game.CameraRig.Yaw = -80f;
-                Game.CameraRig.Distance = 6f;
-                yield return new WaitForSeconds(3f);
-                yield return Shot("00n_night_clown");
-                Game.Clock.Set(Game.Clock.Day, day0);
-            }
+            float day0 = Game.Clock.Minutes;
+            // 데크 입구: 데크 판과 둔치 땅·석축이 만나는 곳
+            Game.Player.Teleport(new Vector3(19.5f, 1.1f, -64.5f), 40f);
+            Game.CameraRig.Yaw = 40f;
+            Game.CameraRig.Pitch = 22f;
+            Game.CameraRig.Distance = 4f;
+            yield return new WaitForSeconds(1.2f);
+            yield return Shot("00p_pier_entrance");
+            // 밤 스카이라인 (창 불빛·푸른 남산타워·흰 왕관)과 별
+            Game.Clock.Set(Game.Clock.Day, 22 * 60);
+            var weather0 = Game.Weather.Current;
+            Game.Weather.Force(Weather.Clear);
+            Game.Player.Teleport(new Vector3(25f, 1.1f, -30f), 15f);
+            Game.CameraRig.Yaw = 22f;
+            Game.CameraRig.Pitch = -5f;
+            Game.CameraRig.Distance = 7f;
+            yield return new WaitForSeconds(3f);
+            yield return Shot("00s_skyline_night");
+            var cuN = Fishing.World.HanRiverMap.StorePos;
+            Game.Player.Teleport(new Vector3(cuN.x + 3f, 1.1f, cuN.z + 13f), 180f);
+            Game.CameraRig.Yaw = 200f;
+            Game.CameraRig.Pitch = 8f;
+            Game.CameraRig.Distance = 9f;
+            yield return new WaitForSeconds(1.5f);
+            yield return Shot("00u_cu_night");
+            // 별이 총총한 밤하늘 (위를 올려다본다)
+            Game.Player.Teleport(new Vector3(25f, 1.1f, -40f), 0f);
+            Game.CameraRig.Yaw = 0f;
+            Game.CameraRig.Pitch = -5f;
+            Game.CameraRig.Distance = 3f;
+            yield return new WaitForSeconds(1.5f);
+            yield return Shot("00v_night_stars");
+            Game.Weather.Force(weather0);
+            Game.Clock.Set(Game.Clock.Day, day0);
             Game.CameraRig.Yaw = Game.Player.Yaw;
             Game.CameraRig.Distance = 7f;
 
@@ -1102,31 +1040,23 @@ namespace Fishing.Dev
                 ("yeongheung", "43_yeongheung_harbor", new Vector3(62f, 1.1f, -47f), 0f, 20f, 14f, 14f, 10 * 60, Weather.Clear),
                 ("yeongheung", "43b_yeongheung_fog", new Vector3(-22f, 1.1f, -44f), 0f, -10f, 10f, 12f, 6 * 60 + 20, Weather.Cloudy),
                 ("taean", "44_taean_beach", new Vector3(-75f, 1.1f, -48f), 0f, -15f, 10f, 12f, 17 * 60 + 20, Weather.Clear),
-                ("taean", "44c_taean_swimmers", new Vector3(-77f, 1.1f, -12f), 0f, 5f, 10f, 7f, 12 * 60, Weather.Clear),
                 ("taean", "44b_taean_noon", new Vector3(-110f, 1.1f, -60f), 0f, 20f, 18f, 18f, 12 * 60, Weather.Clear),
                 ("samcheok", "45_samcheok_chuam", new Vector3(110f, 1.1f, -44f), 60f, 60f, 8f, 20f, 9 * 60, Weather.Clear),
-                ("samcheok", "45c_samcheok_ninja", new Vector3(16f, 1.1f, -47f), -60f, -70f, 10f, 6f, 10 * 60, Weather.Clear),
                 ("samcheok", "45b_samcheok_night", new Vector3(72f, 1.1f, 20f), 0f, 0f, 8f, 10f, 21 * 60, Weather.Clear),
                 ("deungdae", "46_deungdae_lighthouse", new Vector3(48f, 1.1f, -47f), 300f, 290f, 14f, 22f, 11 * 60, Weather.Clear),
-                ("deungdae", "46b_deungdae_patrol", new Vector3(38f, 1.1f, -47.5f), 270f, 250f, 8f, 7f, 13 * 60, Weather.Clear),
-                ("deungdae", "46c_deungdae_vampire", new Vector3(38f, 1.1f, -47.5f), 270f, 250f, 8f, 7f, 23 * 60, Weather.Clear),
                 ("heonhwa", "47_heonhwa_road", new Vector3(-40f, 1.1f, -47f), 90f, 140f, 12f, 16f, 13 * 60, Weather.Clear),
                 ("yokji", "48_yokji_farm", new Vector3(-126.5f, 1.4f, 0f), 0f, -20f, 22f, 20f, 15 * 60, Weather.Clear),
                 ("yokji", "48b_yokji_bridge", new Vector3(140f, 1.1f, -16f), 40f, 20f, 16f, 18f, 16 * 60, Weather.Clear),
                 ("jeju", "54_jeju_harbor", new Vector3(14f, 1.1f, -45f), 180f, 160f, 10f, 13f, 11 * 60, Weather.Clear),
                 ("jeju", "54b_jeju_oedolgae", new Vector3(-60f, 1.1f, -44f), 330f, 320f, 12f, 22f, 16 * 60 + 30, Weather.Clear),
                 ("cheongjin", "49_cheongjin_port", new Vector3(28f, 1.1f, -47f), 0f, 30f, 16f, 20f, 10 * 60, Weather.Clear),
-                ("cheongjin", "49c_cheongjin_swat", new Vector3(18f, 1.1f, -47.5f), 270f, 250f, 8f, 8f, 11 * 60, Weather.Clear),
-                ("cheongjin", "49d_cheongjin_night", new Vector3(18f, 1.1f, -47.5f), 90f, 110f, 8f, 8f, 23 * 60, Weather.Clear),
                 ("cheongjin", "49b_cheongjin_racks", new Vector3(-60f, 1.1f, -68f), 0f, 200f, 12f, 14f, 14 * 60, Weather.Cloudy),
                 ("geomun", "50_geomun_lighthouse", new Vector3(-90f, 1.1f, -45f), 300f, 300f, 12f, 24f, 17 * 60 + 30, Weather.Clear),
                 // 해외 거점
                 ("halong", "55_halong_bay", new Vector3(4f, 1.1f, -47f), 0f, 10f, 12f, 16f, 9 * 60, Weather.Clear),
-                ("halong", "55c_halong_pirate", new Vector3(-3f, 1.1f, -47f), 200f, 200f, 8f, 6f, 11 * 60, Weather.Clear),
                 ("halong", "55b_halong_karst", new Vector3(-70f, 1.1f, -46f), 0f, -20f, 8f, 14f, 16 * 60 + 30, Weather.Clear),
                 ("halong", "55d_halong_karst_close", new Vector3(-100f, 1.1f, -44f), 0f, -10f, 2f, 10f, 11 * 60, Weather.Clear),
                 ("santorini", "56_santorini_cliff", new Vector3(-6f, 1.1f, -42f), 180f, 165f, 16f, 34f, 11 * 60, Weather.Clear),
-                ("santorini", "56c_santorini_village", new Vector3(14f, 1.1f, -48f), 270f, 250f, 8f, 7f, 10 * 60, Weather.Clear),
                 ("santorini", "56b_santorini_caldera", new Vector3(39f, 1.1f, -28f), 0f, -10f, 6f, 13f, 17 * 60 + 30, Weather.Clear),
                 ("nile", "57_nile_bank", new Vector3(6f, 1.1f, -47f), 0f, 10f, 10f, 14f, 10 * 60, Weather.Clear),
                 ("nile", "57b_nile_sunset", new Vector3(-2f, 1.1f, -42f), 0f, -15f, 6f, 12f, 17 * 60 + 40, Weather.Clear),

@@ -118,13 +118,13 @@ namespace Fishing.UI
         void Start()
         {
             Game.Profile.Changed += RefreshOpenPanels;
-            // 의상을 바꾸면 필드 캐릭터·대기실 캐릭터를 다시 입힌다
+            // 캐릭터 모델을 바꾸면 필드 캐릭터·대기실 캐릭터를 다시 세운다
             Game.Profile.LookChanged += () =>
             {
                 Game.Player.ApplyLook();
                 if (Game.Lobby != null) Game.Lobby.RefreshPlayer();
             };
-            // 고른 VRM이 다 읽히면 (처음엔 기본 캐릭터로 서 있다) 그 모델로 다시 입힌다
+            // 캐릭터 창이 뒤에서 읽던 VRM이 다 읽히면 (그동안은 도형 사람으로 서 있다) 그 모델로 다시 세운다
             Fishing.Characters.VrmCharacters.Loaded += id =>
             {
                 if (this == null) return;
