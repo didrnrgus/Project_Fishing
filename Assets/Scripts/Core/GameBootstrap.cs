@@ -44,6 +44,9 @@ namespace Fishing.Core
                 if (string.IsNullOrEmpty(data.boatId)) { data.boatId = "boat_rubber"; data.boatFuel = 20f; }
             }
 
+            // 예전 저장 파일 (lookVersion 0): 주인공 기본을 여자로 (2026-10-21). 이후에 캐릭터 창에서 남자로 고르면 그대로 남는다
+            if (data.lookVersion < 1) { data.vrmFemale = true; data.lookVersion = 1; }
+
             Game.Clock = gameObject.AddComponent<GameClock>();
             Game.Clock.Set(data.clockDay, data.clockMinutes);
             Game.Weather = gameObject.AddComponent<WeatherSystem>();

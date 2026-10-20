@@ -28,7 +28,7 @@ namespace Fishing.Characters
     public static class CharacterFactory
     {
         /// <summary>NPC 키를 이름으로 조금씩 다르게 (같은 모델이 여럿이어도 덜 똑같아 보이게).</summary>
-        const float NpcScaleJitter = 0.04f;
+        const float NpcScaleJitter = 0.06f;
 
         /// <summary>캐릭터를 만든다. 반환값의 루트에 Animator와 CharacterAnimator가 붙어 있다. 발이 원점, 게임 정면(+Z)을 본다. 실패하면 null.</summary>
         public static GameObject Create(CharacterLook look, Transform parent, bool npc = true)
@@ -40,6 +40,8 @@ namespace Fishing.Characters
             {
                 float j = (CharacterRoster.StableHash(look.Name ?? "") % 1000u) / 999f * 2f - 1f;
                 go.transform.localScale *= 1f + j * NpcScaleJitter;
+                // 목록에서 고른 NPC는 머리·옷 색도 이름으로 바꾼다 (characters.json에서 이름으로 정한 사람은 그대로)
+                if (!CharacterRoster.IsAssigned(look.Name)) NpcLooks.Apply(go, look.Name);
             }
             return go;
         }

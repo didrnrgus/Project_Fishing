@@ -2,6 +2,15 @@
 
 세션이 끊겨도 이 파일만 보고 이어서 작업할 수 있게 남기는 메모. 끝난 일은 로드맵·각 문서에 합쳤다.
 
+## 2026-10-21: 여자 주인공 · NPC 다양화 · NPC 릴 감는 손 → [16 문서](16-vrm-characters.md), [10 문서 10장](10-animation.md)
+
+사용자 요청: 주인공은 여캐로, NPC 등 더 다양하게, 다른 NPC를 보면 낚싯대와 릴 감는 손이 반대 같다. 끝나면 문서 → 스테이징 → 커밋·푸시.
+- 주인공 기본 = 여자(`Sendagaya_Shino`): `SaveData.vrmFemale` 기본 true, 예전 세이브는 `lookVersion` 0이면 한 번 여자로
+- NPC 다양화: `NpcLooks`(머리 9·상의 10·하의 6색, 텍스처를 밝기만 남겨 새 색을 입힌 렌더 텍스처, `Resources/Shaders/Recolor`), 키 ±6%, 남자 NPC 목록에 `HairSample_Male`(3명). 더 받을 CC0 애니풍 VRM은 못 찾았다(Seed-san·Orion은 화풍이 안 맞아 뺌)
+- NPC 손: `Fishing_Sequence`는 던지기까지만, 릴 감기는 왼손 IK(`ArmIK`로 뺀 공용 코드) + 평소 왼손은 손잡이 끝
+- inspect: NPC는 몸만으로 경계, `@reel`
+- 다음: 남자 NPC 모델 더(사용자 VRoid), 표정
+
 ## 2026-10-20 (7): 모든 사람을 VRM으로 → [16-vrm-characters.md](16-vrm-characters.md), [가이드 07](guide/07-characters.md)
 
 사용자 요청: "기존 캐릭터들 싹 버리고 새 캐릭터 시스템으로" = 빌드에 박혀 있던 캐릭터 모델을 걷어내고 커스터마이징(VRM)만. 결정(사용자): 기본 캐릭터는 CC0 VRoid 샘플, NPC도 VRM(장식 NPC·유니티짱·좀비 정리), 의상은 **능력치만**이고 몸에 보이는 장비는 **낚싯대뿐**, 빌드한 뒤에도 교체할 수 있게 설명서. 끝나면 문서 → 스테이징 → 커밋·푸시, 빌드 → README 사진·내용 → 커밋·푸시.

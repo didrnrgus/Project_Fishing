@@ -44,6 +44,7 @@ sh tools/build.sh                 # 윈도우 빌드
 sh tools/autoshot.sh              # 빌드 실행 → Screenshots/ 에 약 150장 자동 촬영 후 종료, 맵별 평균 FPS 출력
 sh tools/autoshot.sh 06_fight     # 그 장면까지만 찍고 끝낸다 (한 장면 빨리 확인, -autoshotStop)
 sh tools/inspect.sh "seocheon:Pavilion:200:12:1.3;sentosa:merlion:210:5:1.0"   # 맵:물체이름:방위각:고도각:거리배수[:시각] — HUD 없이 물체 가까이 → Screenshots/i_*.png
+sh tools/inspect.sh "hangang:NPC_새벽조사@reel:120:15:1.1"   # NPC는 몸만으로 거리를 잡는다, 이름 뒤 @reel = 바로 릴 감기 (10 문서 10장)
 bpyenv/Scripts/python -I tools/blender/build_props.py --only merlion --preview3 Screenshots/props   # 소품 앞·3/4·옆 미리보기
 sh tools/balance.sh               # 밸런스 리포트 (전체)
 sh tools/balance.sh -simSummary   # 밸런스 리포트 (대물급만)

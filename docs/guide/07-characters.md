@@ -31,8 +31,8 @@ VRM은 [VRoid Studio](https://vroid.com/studio)(무료) 같은 프로그램으�
 | 항목 | 뜻 |
 |---|---|
 | `playerMale` / `playerFemale` | 기본 캐릭터 (남자 / 여자) |
-| `npcMale` / `npcFemale` | 남자 / 여자 NPC가 고를 모델 목록. NPC마다 **이름으로** 하나를 골라 늘 같은 모델을 입는다 |
-| `npc` | 특정 NPC에게 정해서 입히기. `name`은 머리 위 이름표 그대로 (예: `"홍현 낚시점 최사장"`) |
+| `npcMale` / `npcFemale` | 남자 / 여자 NPC가 고를 모델 목록. NPC마다 **이름으로** 하나를 골라 늘 같은 모델을 입는다. 같은 모델이라도 머리·옷 색과 키가 사람마다 다르다 |
+| `npc` | 특정 NPC에게 정해서 입히기. `name`은 머리 위 이름표 그대로 (예: `"홍현 낚시점 최사장"`). 이렇게 정한 사람은 색을 바꾸지 않고 모델 그대로 나온다 |
 
 ### 방법 ① 내 폴더에 `characters.json` 만들기 (권장)
 
@@ -80,8 +80,8 @@ VRoid 프로젝트(pixiv)가 VRoid Studio 샘플로 **CC0**(누구나 자유롭�
 
 | 파일 | 쓰임 |
 |---|---|
-| `HairSample_Male.vrm` | 기본 캐릭터 (남자) |
-| `Sendagaya_Shino.vrm` (千駄ヶ谷篠) | 기본 캐릭터 (여자) |
+| `Sendagaya_Shino.vrm` (千駄ヶ谷篠) | 기본 캐릭터 (여자) — 처음 시작하면 이 캐릭터 |
+| `HairSample_Male.vrm` | 기본 캐릭터 (남자), 남자 NPC |
 | `Sakurada_Fumiriya.vrm` (桜田史利矢), `Base_Male.vrm` | 남자 NPC |
 | `AvatarSample_D`(千駄ヶ谷渋)·`E`(ビビ)·`F`(ヴィータ)·`G`(ヴィクトリア・ルービン), `HairSample_Female`, `Base_Female` | 여자 NPC |
 | `AvatarSample_D_Darkness.vrm` | 목록에서 고를 수만 있음 |

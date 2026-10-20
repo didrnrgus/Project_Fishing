@@ -126,6 +126,16 @@ namespace Fishing.Characters
             return Pick(female ? _cfg.npcFemale : _cfg.npcMale, name) ?? Pick(female ? _cfg.npcMale : _cfg.npcFemale, name) ?? PlayerDefault(female);
         }
 
+        /// <summary>characters.json의 npc에 이름으로 정해 둔 사람 (색을 바꾸지 않는다).</summary>
+        public static bool IsAssigned(string name)
+        {
+            Ensure();
+            if (_cfg.npc == null || name == null) return false;
+            foreach (var a in _cfg.npc)
+                if (a.name == name && IdOf(a.file) != null) return true;
+            return false;
+        }
+
         static string Pick(string[] files, string name)
         {
             if (files == null) return null;

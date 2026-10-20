@@ -6,6 +6,7 @@
 같은 날 2단계: **빌드에 박혀 있던 캐릭터 모델을 모두 걷어냈다.** 내 캐릭터·낚시점 사장·조합 연락관·낚시꾼 NPC·배 선장이 전부 VRM이다.
 - 의상은 **능력치만** 남는다. 몸에 덧입히는 것은 없고, 몸에 붙여 보이는 장비는 **낚싯대 하나**다(사용자 결정).
 - 퀘스트·정보와 상관없는 장식 NPC(산책하는 의사, 벤치 수다, 버스킹 아이돌 유니티짱, 밤의 좀비·귀신·광대·댄서, 코스프레 낚시꾼 등)는 모두 뺐다.
+- 2026-10-21: **주인공은 여자가 기본** (사용자 결정, `SaveData.vrmFemale` 기본 true, 예전 세이브는 `lookVersion`으로 한 번 바꾼다). NPC는 머리·옷 색을 이름으로 바꿔 더 다양하게(`NpcLooks`), 낚시꾼 NPC는 릴을 왼손으로 감는다.
 - 빌드한 뒤에도 파일만 바꿔 내 캐릭터·기본 캐릭터·NPC를 갈아입힐 수 있다 → 설명서 [가이드 07](guide/07-characters.md), 게임 폴더의 `StreamingAssets/Characters/읽어주세요.txt`.
 
 | 실제 낚시 화면 (VRM, 젖힘) | 캐릭터 창 [캐릭터 모델] 탭 |
@@ -30,13 +31,15 @@ VRoid 프로젝트(pixiv)가 VRoid Studio 알파 시절 샘플로 **CC0** 공개
 
 | 파일 | 역할 |
 |---|---|
-| `HairSample_Male.vrm` | 기본 캐릭터 (남자) |
-| `Sendagaya_Shino.vrm` (千駄ヶ谷篠) | 기본 캐릭터 (여자) |
+| `Sendagaya_Shino.vrm` (千駄ヶ谷篠) | 기본 캐릭터 (여자) — 주인공 기본 |
+| `HairSample_Male.vrm` | 기본 캐릭터 (남자), 남자 NPC |
 | `Sakurada_Fumiriya.vrm` (桜田史利矢), `Base_Male.vrm` | 남자 NPC |
 | `AvatarSample_D`(千駄ヶ谷渋)·`E`(ビビ)·`F`(ヴィータ)·`G`(ヴィクトリア・ルービン), `HairSample_Female`, `Base_Female` | 여자 NPC |
 | `AvatarSample_D_Darkness.vrm` | 목록에서 고를 수만 있다 (엘프 귀라 NPC 목록에선 뺐다) |
 
-남자 모델이 둘뿐이라 남자 NPC는 두 얼굴이 돌아가며 나온다(키만 이름에 따라 ±4%). 더 넣으려면 `characters.json`의 `npcMale`에 파일을 더한다.
+남자 모델은 셋뿐이라 같은 얼굴이 되풀이된다. 대신 NPC마다 이름으로 **머리색(9)·상의(10)·하의(6) 색**과 **키(±6%)** 를 바꾼다(`NpcLooks`, 아래). 모델을 더 넣으려면 `characters.json`의 `npcMale`/`npcFemale`에 파일을 더한다.
+
+다른 후보도 찾아봤다: [madjin/vrm-samples](https://github.com/madjin/vrm-samples)는 같은 VRoid CC0 세트, Seed-san(VRM Public License, 재배포 허용·표기 필요)은 SF 슈트·배낭 차림이라 낚시꾼으로 어색해서, Orion(Polygonal Mind, CC0)은 로우폴리 화풍이 달라서 넣지 않았다.
 
 ## 3. 구조
 
@@ -46,6 +49,7 @@ VRoid 프로젝트(pixiv)가 VRoid Studio 알파 시절 샘플로 **CC0** 공개
 | `Scripts/Vrm/VrmLoader.cs` + `Fishing.Vrm.asmdef` | UniVRM을 감싼 얇은 어셈블리. `LoadAsync`(뒤에서), `Load`(ImmediateCaller로 이 프레임 안에), 메타(이름·만든 사람·썸네일·사용 허락) → `VrmMeta`, 눈 깜빡임 `VrmBlink` |
 | `Scripts/Characters/VrmCharacters.cs` | 폴더 훑기(`List`), 바로 읽기(`LoadNow`), 뒤에서 읽기(`Request` → `Loaded`), 복제(`Create`). id는 `builtin/파일.vrm`(게임 폴더) · `user/파일.vrm`(문서 폴더) |
 | `Scripts/Characters/CharacterRoster.cs` | `characters.json`을 읽어 누구에게 어떤 파일을 입힐지 정한다: 기본 캐릭터 남/녀(`PlayerDefault`), NPC(`ForNpc`: 이름 지정 → 성별 목록에서 이름 해시로 고르기). 문서 폴더 것이 게임 폴더 것을 덮는다 |
+| `Scripts/Characters/NpcLooks.cs` + `Resources/Shaders/Recolor.shader` | NPC 머리·옷 색 바꾸기: VRoid 재질 이름(`_HAIR`, `_Tops_`·`_Onepice_`, `_Bottoms_` + `_CLOTH`)으로 부위를 찾아, 텍스처를 밝기만 남기고 색을 입힌 렌더 텍스처(최대 1024, 밉맵)로 바꾼다. 평균 밝기(16×16로 줄여 한 번 읽음)가 새 색이 되게 맞춰 어두운 머리도 금발이 된다. 그림자 색(`_ShadeColor`)은 색조를 빼 회색으로. 같은 텍스처 + 같은 색은 한 번만 만든다. 부위마다 1/6은 원래 색. 이름으로 정해 둔 사람(`characters.json` npc)과 내 캐릭터는 그대로 |
 | `CharacterLook` → `CharacterFactory.Create` | 이름·칭호·성별·VRM id만 남았다. VRM id가 비면 `CharacterRoster`가 고르고, 처음 쓰는 파일은 `LoadNow`로 그 자리에서 읽는다. 못 읽으면 null → 플레이어는 도형 사람, NPC는 회색 마네킹(`CharacterFactory.Placeholder`) |
 | `PlayerProfile.BuildLook` | 고른 VRM(파일이 있으면) 또는 기본 캐릭터(`vrmFemale`로 남/녀). 의상은 넣지 않는다 |
 | `PlayerProfile.SetCharacterModel` | 모델·성별 저장 + `LookChanged` (의상 입기·칭호 바꾸기는 더 이상 캐릭터를 다시 세우지 않는다) |

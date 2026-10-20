@@ -1254,6 +1254,8 @@ namespace Fishing.Dev
                 var f = item.Split(':');
                 if (f.Length < 5) continue;
                 string map = f[0], name = f[1];
+                bool reel = name.EndsWith("@reel");
+                if (reel) name = name.Substring(0, name.Length - 5);
                 float yaw = float.Parse(f[2], System.Globalization.CultureInfo.InvariantCulture);
                 float pitch = float.Parse(f[3], System.Globalization.CultureInfo.InvariantCulture);
                 float mult = float.Parse(f[4], System.Globalization.CultureInfo.InvariantCulture);
@@ -1276,7 +1278,12 @@ namespace Fishing.Dev
                     Debug.Log($"[Dev] 찾을 수 없음: {map}:{name}");
                     continue;
                 }
-                var rs = target.GetComponentsInChildren<Renderer>();
+                // "NPC_이름@reel": NPC 낚시꾼이 지금 릴을 감게 (왼손이 릴 손잡이를 돌리는지 확인)
+                if (reel) target.GetComponent<Fishing.Characters.NpcAngler>()?.DebugReel();
+                // 사람(NPC)은 몸만 — 낚싯줄·찌까지 넣으면 경계가 물 위로 늘어나 카메라가 엉뚱한 곳을 본다
+                Renderer[] rs = target.GetComponent<Fishing.Characters.NpcAngler>() != null
+                    ? target.GetComponentsInChildren<SkinnedMeshRenderer>()
+                    : target.GetComponentsInChildren<Renderer>();
                 var b = rs.Length > 0 ? rs[0].bounds : new Bounds(target.position, Vector3.one);
                 foreach (var r in rs) b.Encapsulate(r.bounds);
                 // 정적 배칭 뒤에는 Renderer.bounds가 합친 메쉬 전체라, 너무 크면 물체 위치 둘레 기본 크기로

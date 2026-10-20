@@ -164,6 +164,9 @@ namespace Fishing.Characters
         }
 
         /// <summary>캐스팅·챔질 같은 한 번짜리 동작. 끝나면 반복 상태로 돌아간다.</summary>
+        /// <summary>PlayOnce로 튼 클립이 아직 도는 중 (그동안은 팔 IK를 끈다).</summary>
+        public bool PlayingOnce => Time.time < _oneShotUntil;
+
         public void PlayOnce(string clipName, float speed = 1f, float cutAt = 1f)
         {
             if (!TryGetClip(clipName, out var clip)) return;

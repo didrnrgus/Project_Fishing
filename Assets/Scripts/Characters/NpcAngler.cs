@@ -17,7 +17,11 @@ namespace Fishing.Characters
 
         CharacterAnimator _anim;
         Transform _hand, _rod, _nameTag;
-        RodGrip _grip;
+        RodGrip _grip, _gripL;
+        Transform _upperArmL, _lowerArmL, _handL;
+        /// <summary>릴을 감는 동안 (그 시각까지). 왼손이 릴 손잡이를 돌린다.</summary>
+        float _reelUntil, _reelAt = -1f;
+        float _leftWeight, _crankWeight;
         TelescopicRod _rodModel;
         // 낚싯줄과 물에 뜬 찌 (앞이 트인 물이 있을 때만)
         LineRenderer _line;
@@ -68,8 +72,18 @@ namespace Fishing.Characters
             {
                 _anim = character.GetComponentInChildren<CharacterAnimator>();
                 var an = character.GetComponentInChildren<Animator>();
-                if (an != null && an.isHuman) _hand = an.GetBoneTransform(HumanBodyBones.RightHand);
-                if (role == Role.Angler) _grip = RodGrip.Find(character.transform);
+                if (an != null && an.isHuman)
+                {
+                    _hand = an.GetBoneTransform(HumanBodyBones.RightHand);
+                    _upperArmL = an.GetBoneTransform(HumanBodyBones.LeftUpperArm);
+                    _lowerArmL = an.GetBoneTransform(HumanBodyBones.LeftLowerArm);
+                    _handL = an.GetBoneTransform(HumanBodyBones.LeftHand);
+                }
+                if (role == Role.Angler)
+                {
+                    _grip = RodGrip.Find(character.transform);
+                    _gripL = RodGrip.Find(character.transform, true);
+                }
                 // 앉아 있는 NPC(크루저 선장 등)는 엉덩이 밑에 아이스박스
                 if (role == Role.Sitter) { var seat = SitSeat.Attach(character.transform); if (seat != null) seat.Active = true; }
             }
@@ -165,8 +179,15 @@ namespace Fishing.Characters
                 if (_role == Role.Angler && !Idle && Time.time > _nextCast)
                 {
                     _nextCast = Time.time + Random.Range(20f, 45f);
-                    // 들기 → 던지기 → 기다리기 → 릴 감기 → 처음 자세 (Mixamo 한 벌, 약 8.8초)
-                    _anim.PlayOnce(CharacterAnimator.FishingSequence);
+                    // 들기 → 던지기만 Mixamo 한 벌의 앞 절반(낚싯대 쥔 오른손이 던진다). 뒤 절반의 릴 감기는 낚싯대 쥔 오른손이 돌아서
+                    // 손이 반대로 보였다 → 몇 초 기다렸다가 왼손 IK로 릴 손잡이를 돌린다 (내 캐릭터 UpdateCrank와 같다)
+                    _anim.PlayOnce(CharacterAnimator.FishingSequence, 1f, CastPart);
+                    _reelAt = Time.time + 4.3f + Random.Range(2f, 6f);
+                }
+                if (_reelAt > 0f && Time.time >= _reelAt)
+                {
+                    _reelAt = -1f;
+                    _reelUntil = Time.time + Random.Range(3f, 5f);
                 }
             }
 
@@ -214,6 +235,44 @@ namespace Fishing.Characters
             _questMark.transform.localPosition = new Vector3(0f, 0.62f + (pop ? Mathf.Sin(Time.time * 4f) * 0.08f : 0f), 0f);
             _questMark.transform.localScale = Vector3.one * (pop ? 1.15f : 0.9f);
         }
+
+        /// <summary>FishingSequence(약 8.8초)에서 들기·던지기까지 (130/265프레임, 10 문서 2장).</summary>
+        const float CastPart = 0.49f;
+        /// <summary>왼손이 쥐는 손잡이 끝: 릴 시트에서 이만큼 뒤 (PlayerController.LeftGripBehind와 같다).</summary>
+        const float LeftGripBehind = 0.24f;
+
+        /// <summary>
+        /// 왼손: 평소엔 손잡이 끝을 감싸 쥐고, 릴을 감을 땐 릴 손잡이(노브)를 돌린다. 던지는 동작(Mixamo) 중에는 클립 그대로.
+        /// 낚싯대는 오른손(_grip)에 붙어 있다 — 원작·내 캐릭터와 같은 손.
+        /// </summary>
+        void UpdateLeftHand()
+        {
+            if (_rodModel == null || _upperArmL == null || _lowerArmL == null || _handL == null || _rod == null) return;
+            bool casting = _anim != null && _anim.PlayingOnce;
+            bool reeling = !casting && Time.time < _reelUntil;
+            _leftWeight = Mathf.MoveTowards(_leftWeight, casting ? 0f : 1f, Time.deltaTime * 3f);
+            _crankWeight = Mathf.MoveTowards(_crankWeight, reeling ? 1f : 0f, Time.deltaTime * 5f);
+            if (reeling) _rodModel.SpinReel(2.2f, 0f, Time.deltaTime);
+            if (_leftWeight <= 0.001f) return;
+
+            var fwd = _rod.forward;
+            var knob = _rodModel.HandleKnob;
+            var butt = _rod.position - fwd * LeftGripBehind;
+            var pole = transform.rotation * new Vector3(-0.7f, -0.7f, -0.1f);
+            var target = knob != null ? Vector3.Lerp(butt, knob.position, _crankWeight) : butt;
+            var axis = knob != null ? Vector3.Slerp(fwd, knob.up, _crankWeight) : fwd;
+            float w = Mathf.SmoothStep(0f, 1f, _leftWeight);
+            ArmIK.Solve(_upperArmL, _lowerArmL, _handL, Vector3.Lerp(_handL.position, target, w), pole, w);
+            if (_gripL == null) return;
+            // 손목이 아니라 손바닥 앞(쥐는 자리)이 손잡이에 오게
+            _gripL.AlignTo(axis, w);
+            ArmIK.Solve(_upperArmL, _lowerArmL, _handL, _handL.position + (target - _gripL.Grip) * w, pole, w);
+            _gripL.AlignTo(axis, w);
+            _gripL.Wrap(target, axis, _crankWeight > 0.5f ? 0.016f : 0.032f);
+        }
+
+        /// <summary>자동 촬영: 지금부터 10초 릴을 감는다.</summary>
+        public void DebugReel() { _reelUntil = Time.time + 10f; _nextCast = Time.time + 60f; }
 
         /// <summary>대기실처럼 낚싯대를 접어 들고 있게 한다 (빗자루 길이).</summary>
         public void CollapseRod()
@@ -269,6 +328,7 @@ namespace Fishing.Characters
                 _grip.Wrap(_rod.position, _rod.forward);
             }
             else if (_rod != null && _hand != null) _rod.position = _hand.position;
+            UpdateLeftHand();
             // 줄 무게로 초릿대가 살짝 숙여지고, 바람에 조금 흔들린다
             if (_rodModel != null)
                 _rodModel.Drive(6f + Mathf.PerlinNoise(Time.time * 0.7f, transform.position.x) * 6f, transform.forward - Vector3.up, 0f, Time.deltaTime);

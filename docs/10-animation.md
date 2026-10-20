@@ -50,7 +50,7 @@
 | `Fishing_Windup` | FishingCast | 0~45 | | (내 캐릭터는 안 씀, 2026-10-20) 시간대로 움직여 마우스로 젖히는 낚싯대와 따로 놀았다. 5장 팔 IK로 바꿈 |
 | `Fishing_Cast` | FishingCast | 45~95 | | (내 캐릭터는 안 씀, 2026-10-20) 5장 팔 IK |
 | `Fishing_Hook` | FishingCast | 0~30 | | (내 캐릭터는 안 씀, 2026-10-20) 5장 팔 IK |
-| `Fishing_Reel_Loop` | FishingCast | 207~238 | ○ | (안 씀, 2026-10-19) 오른손이 원을 그려 낚싯대 쥔 손이 돌았다. 감는 동안은 `HoldRod` + 왼손 IK로 3인칭 릴 손잡이를 돌린다 (`PlayerController.UpdateCrank`) |
+| `Fishing_Reel_Loop` | FishingCast | 207~238 | ○ | (안 씀, 2026-10-19) 오른손이 원을 그려 낚싯대 쥔 손이 돌았다. 감는 동안은 `HoldRod` + 왼손 IK로 3인칭 릴 손잡이를 돌린다 (`PlayerController.UpdateCrank`, NPC는 `NpcAngler.UpdateLeftHand`) |
 | `Fishing_Sequence` | FishingCast | 0~263 | | NPC 낚시꾼이 20~45초마다 한 벌 통째로 (끝 자세 = `HoldRod` 첫 자세라 이음새가 없다) |
 | `Cheer_ArmsUp` | Cheering | 0~87 | | 랜딩 환호 `PlayCheer()` (두 팔 들고 흔들기, 얼굴 클로즈업) |
 | `Clap_Loop` | Clapping | 0~35 | ○ | 근처에서 대물(대물 기준 이상 또는 ★4 이상)을 낚으면 22m 안 대화 NPC가 돌아보며 약 3초 박수 (`NpcAngler.Applaud`) |
@@ -162,4 +162,14 @@ UAL의 `Idle_Loop`는 주먹 쥔 슈퍼히어로 자세라서, 에셋 스토어 
 
 - 의사 길은 풀밭(z −69)에서 산책로(z −66.6)로 옮겼다.
 - 좀비·취객·헤엄은 자기 클립 배속을 그대로 쓴다(`WalkAnimSpeed`를 직접 준다).
+
+## 10. NPC 낚시꾼의 손 (2026-10-21)
+
+사용자 지적: 다른 NPC를 보면 낚싯대와 릴 감는 손이 반대 같다.
+NPC는 20~45초마다 `Fishing_Sequence`(들기 → 던지기 → 기다리기 → 릴 감기, Mixamo 한 벌)를 통째로 틀었는데, 뒤 절반의 릴 감기는 **낚싯대 쥔 오른손이** 원을 그린다(2장 표). 내 캐릭터는 10-19에 이 클립을 빼고 왼손 IK로 바꿨지만 NPC는 그대로였다.
+
+- `Fishing_Sequence`는 던지기까지(`PlayOnce(…, cutAt: 0.49)`, 130/265프레임)만 튼다. 낚싯대는 오른손(`RodGrip`)에 붙어 있으니 던지는 손은 맞다.
+- 4.3초 + 2~6초 뒤 3~5초 동안 릴을 감는다: 왼손을 2관절 IK(`ArmIK`, 내 캐릭터와 같은 코드)로 릴 손잡이(`TelescopicRod.HandleKnob`)에 붙이고 `SpinReel`.
+- 평소엔 왼손이 릴 시트 0.24m 뒤 손잡이 끝을 감싸 쥔다(내 캐릭터 `UpdateRodArmLeft`와 같다). 던지는 클립이 도는 동안(`CharacterAnimator.PlayingOnce`)은 IK를 끈다.
+- 확인: `sh tools/inspect.sh "hangang:NPC_새벽조사@reel:120:15:1.1"` — 이름 뒤 `@reel`이면 그 NPC가 바로 릴을 감는다. NPC는 몸(SkinnedMeshRenderer)만으로 경계를 잡는다(줄·찌까지 넣으면 카메라가 물 위를 봤다).
 

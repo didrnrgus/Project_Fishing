@@ -167,8 +167,10 @@ namespace Fishing.Core
         public List<string> costumes = new List<string>();
         /// <summary>내 캐릭터 모델: 비우면 기본 캐릭터(characters.json의 playerMale/playerFemale), 아니면 VRM id ("user/파일.vrm").</summary>
         public string vrm = "";
-        /// <summary>VRM 캐릭터 걸음걸이를 여자 클립으로.</summary>
-        public bool vrmFemale;
+        /// <summary>여자: 기본 캐릭터면 여자 모델(characters.json playerFemale), 고른 VRM이면 여자 걸음걸이. 주인공은 여자가 기본 (2026-10-21 사용자 결정).</summary>
+        public bool vrmFemale = true;
+        /// <summary>1 = 주인공 기본을 여자로 바꾼 뒤의 세이브. 그 전 세이브는 불러올 때 한 번 여자로 바꾼다 (GameBootstrap).</summary>
+        public int lookVersion;
         public List<DailyQuest> daily = new List<DailyQuest>();
         public int dailyDay = -1;
         public int dailyCompleted;

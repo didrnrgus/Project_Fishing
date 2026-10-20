@@ -4,7 +4,8 @@
     "playerFemale": "Sendagaya_Shino.vrm",
     "npcMale": [
         "Sakurada_Fumiriya.vrm",
-        "Base_Male.vrm"
+        "Base_Male.vrm",
+        "HairSample_Male.vrm"
     ],
     "npcFemale": [
         "AvatarSample_D.vrm",
@@ -15,7 +16,6 @@
         "Base_Female.vrm"
     ],
     "npc": [
-        { "name": "김선장", "file": "Base_Male.vrm" },
-        { "name": "동행 꾼", "file": "Sakurada_Fumiriya.vrm" }
+        { "name": "김선장", "file": "Base_Male.vrm" }
     ]
 }

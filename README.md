@@ -13,7 +13,7 @@
 | ![company](docs/images/00_intro_company.png) | ![title](docs/images/00_intro_title.png) |
 | **대기실 (한국 낚시 조합)** | **낚시터 목록** |
 | ![lobby](docs/images/00a_lobby.png) | ![areas](docs/images/00b_area_list.png) |
-| **캐릭터 (VRM, 기본 캐릭터 남자)** | **의상 (능력치만 — 몸에 보이는 장비는 낚싯대뿐)** |
+| **캐릭터 (VRM, 기본 주인공 여자)** | **의상 (능력치만 — 몸에 보이는 장비는 낚싯대뿐)** |
 | ![character](docs/images/00_character.png) | ![costume](docs/images/21c_costume.png) |
 | **다른 VRM으로 갈아입고 낚시 (기본 제공 11명 + 내가 만든 .vrm, 빌드 없이)** | **캐릭터 모델 고르기 (VRoid 등 .vrm, characters.json)** |
 | ![vrm](docs/images/02v_vrm_155.png) | ![vrm_panel](docs/images/21e_character_model.png) |
@@ -43,7 +43,7 @@
 | ![kohsamui](docs/images/63_kohsamui_buddha.png) | ![zakynthos](docs/images/70_zakynthos_navagio.png) |
 | **플라우 티오만 (곡선 리조트 호텔·보라 파라솔)** | **플라우 탱글 (바다 위 데크 별장)** |
 | ![tioman](docs/images/67b_tioman_beach.png) | ![tenggol](docs/images/68_tenggol_deck.png) |
-| **대기실의 내 캐릭터 (VRM)** | **NPC도 VRM (낚시점 사장)** |
+| **대기실의 내 캐릭터 (VRM)** | **NPC도 VRM (사람마다 머리·옷 색이 다르다)** |
 | ![lobby_vrm](docs/images/00a_lobby.png) | ![npc](docs/images/20_npc_dialog.png) |
 | **한강 둔치 공원 (실사 활엽수·소나무·풀)** | **삼척 바닷가 (실사 바위·풀)** |
 | ![park](docs/images/00g_park_trees.png) | ![samcheok](docs/images/45_samcheok_chuam.png) |
@@ -111,7 +111,7 @@
 - **조합 낚시 대회**: 매일 09~15시, AI 낚시꾼 7명과 마릿수·최장·길이 합계로 겨룬다. 계급 엠블럼, 우승 상품 거거 낚시대·나팔고둥 릴.
 - **손맛**: 마디를 펼치는 뽑기대가 줄 방향으로 휘고 출렁인다. 장비별 릴이 돌고, 릴·드랙·카운터 소리, 게임패드 진동.
 - **화면**: 원작풍 UI(짙은 남색 판·파란 빛 테두리·각진 모서리·파란 탭, Translucent Image + Paraform), EasyChart 차트, 후처리(블룸·톤매핑·AO), 낮밤(하루 24분)·노을·해달별(은하수·반짝이는 별), 날씨(흐린 날 층구름·비·겨울 눈), 물결 셰이더, 새벽 물안개. 바닥·지형은 반복 무늬를 깨는 셰이더(`Fishing/Ground`·`Fishing/Terrain`, 절벽은 옆 투영), 벽·호안·석상·집은 풍화 셰이더(`Fishing/Weathered`: 월드 트라이플래너 + 물 자국·빗물 줄·이끼), 테트라포드·등대·바위기둥·한옥 정자는 절차적 메쉬, 석상(머라이언·독수리·사자상·대불·돌하르방)은 Blender에서 한 덩어리로 깎은 조각, 배(한국 연안 어선·모터보트·고무보트·나무배·카이크·요트)는 Blender 로프트 선체, 나무·바위·풀은 실사풍 에셋(Conifers [BOTD], Realistic Tree 9·10, Rock and Boulders 2, Grass Flowers Pack Free).
-- **사람은 모두 VRM (애니풍)**: 내 캐릭터·낚시점 사장·조합 연락관·낚시꾼 NPC가 모두 VRM 파일이다. 기본 캐릭터(남/녀)와 NPC는 VRoid CC0 샘플 11명, [VRoid Studio](https://vroid.com/studio)로 만든 내 `.vrm`을 `문서\짭풍명월\Characters`에 넣으면 **빌드 없이** 캐릭터 창에서 골라 플레이한다. 기본 캐릭터·NPC도 `characters.json`만 고치면 빌드한 뒤에 갈아입힐 수 있다 → [캐릭터 바꾸기 설명서](docs/guide/07-characters.md). 의상은 능력치만 있고 몸에 보이는 장비는 낚싯대뿐.
+- **사람은 모두 VRM (애니풍)**: 내 캐릭터·낚시점 사장·조합 연락관·낚시꾼 NPC가 모두 VRM 파일이다. 기본 캐릭터(주인공은 여자, 남자로 바꿀 수 있다)와 NPC는 VRoid CC0 샘플 11명(NPC는 사람마다 머리·옷 색·키를 바꿔 다양하게), [VRoid Studio](https://vroid.com/studio)로 만든 내 `.vrm`을 `문서\짭풍명월\Characters`에 넣으면 **빌드 없이** 캐릭터 창에서 골라 플레이한다. 기본 캐릭터·NPC도 `characters.json`만 고치면 빌드한 뒤에 갈아입힐 수 있다 → [캐릭터 바꾸기 설명서](docs/guide/07-characters.md). 의상은 능력치만 있고 몸에 보이는 장비는 낚싯대뿐.
 - **물고기는 직접 만든 3D 모델**: headless Blender 스크립트(`tools/blender`)로 물고기 165종의 어종별 모델·텍스처·헤엄 애니메이션(오징어·문어·갑오징어는 다리마다 뼈)을 만들고, 아이템 아이콘도 렌더.
 - **인트로**: Unity 스플래시 → 사업자 로고 「제쓰로네 게임공방」(낙관이 쾅 찍히고 이름이 붓으로 써진다) → 타이틀 「짭풍명월」(달밤 수묵 산수화 겹 그림이 시차·물안개·배·꽃잎으로 움직이고, 붓글씨·징·가야금풍 음악) → 아무 키 → 대기실. 아무 키로 건너뛸 수 있다. 그림은 `tools/intro/build_intro_art.py`, 소리는 절차적(`IntroAudio`).
 - **편의**: 옵션(O) — 음량·감도·해상도·그림자·후처리·진동·**키 설정**.

@@ -247,7 +247,7 @@ namespace Fishing.PlayerSystems
             // 자리가 바뀌면 (잡기 → 들어 보이기) 휙 튀지 않고 0.3초쯤에 걸쳐 옮긴다
             _holdWant = _holdWeight < 0.05f ? want : Vector3.Lerp(_holdWant, want, Time.deltaTime * 7f);
             var target = Vector3.Lerp(_handL.position, _holdWant, Mathf.SmoothStep(0f, 1f, _holdWeight));
-            SolveTwoBone(_upperArmL, _lowerArmL, _handL, target);
+            ArmIK.Solve(_upperArmL, _lowerArmL, _handL, target);
             if (_heldFish == null) return;
             if (_tinyFish && _gripL != null)
             {
@@ -286,7 +286,7 @@ namespace Fishing.PlayerSystems
             _showWeight = Mathf.MoveTowards(_showWeight, ShowOff ? 1f : 0f, Time.deltaTime * 2.5f);
             if (_showWeight <= 0.001f || _upperArmR == null) return;
             var want = _upperArmR.position + Model.right * 0.2f - Vector3.up * 0.4f + Model.forward * 0.2f;
-            SolveTwoBone(_upperArmR, _lowerArmR, _handR, Vector3.Lerp(_handR.position, want, Mathf.SmoothStep(0f, 1f, _showWeight)));
+            ArmIK.Solve(_upperArmR, _lowerArmR, _handR, Vector3.Lerp(_handR.position, want, Mathf.SmoothStep(0f, 1f, _showWeight)));
         }
 
         // ---------------- 낚싯대를 쥔 두 팔 (IK) ----------------
@@ -340,7 +340,7 @@ namespace Fishing.PlayerSystems
             // 팔꿈치: 들고 있을 때는 아래 바깥, 어깨 너머로 젖힐수록 앞 바깥으로 든다
             float up = Mathf.InverseLerp(70f, 155f, _currentRodPitch);
             var pole = Model.rotation * Vector3.Lerp(new Vector3(0.7f, -0.7f, -0.1f), new Vector3(0.75f, 0.05f, 0.65f), up);
-            SolveTwoBone(_upperArmR, _lowerArmR, _handR, Vector3.Lerp(_handR.position, want, w), pole, w);
+            ArmIK.Solve(_upperArmR, _lowerArmR, _handR, Vector3.Lerp(_handR.position, want, w), pole, w);
         }
 
         /// <summary>왼손으로 낚싯대 손잡이 끝을 감싸 쥔다 (낚싯대를 손에 붙인 뒤에).</summary>
@@ -352,49 +352,16 @@ namespace Fishing.PlayerSystems
             var butt = _rodPivot.position - fwd * LeftGripBehind;
             float up = Mathf.InverseLerp(70f, 155f, _currentRodPitch);
             var pole = Model.rotation * Vector3.Lerp(new Vector3(-0.7f, -0.7f, -0.1f), new Vector3(-0.5f, -0.3f, 0.8f), up);
-            SolveTwoBone(_upperArmL, _lowerArmL, _handL, Vector3.Lerp(_handL.position, butt, w), pole, w);
+            ArmIK.Solve(_upperArmL, _lowerArmL, _handL, Vector3.Lerp(_handL.position, butt, w), pole, w);
             if (_gripL == null) return;
             // 손목이 아니라 손바닥 앞(쥐는 자리)이 손잡이에 오게 (UpdateCrank와 같은 방법)
             _gripL.AlignTo(fwd, w);
-            SolveTwoBone(_upperArmL, _lowerArmL, _handL, _handL.position + (butt - _gripL.Grip) * w, pole, w);
+            ArmIK.Solve(_upperArmL, _lowerArmL, _handL, _handL.position + (butt - _gripL.Grip) * w, pole, w);
             _gripL.AlignTo(fwd, w);
             _gripL.Wrap(butt, fwd);
         }
 
-        /// <summary>2관절 IK: 위팔·아래팔 길이는 그대로 두고 손이 target에 닿게 돌린다 (팔꿈치는 지금 굽은 면 그대로).</summary>
-        static void SolveTwoBone(Transform a, Transform b, Transform c, Vector3 target)
-        {
-            var pa = a.position;
-            var pb = b.position;
-            var pc = c.position;
-            float lab = (pb - pa).magnitude, lcb = (pc - pb).magnitude;
-            float lat = Mathf.Clamp((target - pa).magnitude, 0.01f, lab + lcb - 0.002f);
-            float acab0 = Mathf.Acos(Mathf.Clamp(Vector3.Dot((pc - pa).normalized, (pb - pa).normalized), -1f, 1f));
-            float babc0 = Mathf.Acos(Mathf.Clamp(Vector3.Dot((pa - pb).normalized, (pc - pb).normalized), -1f, 1f));
-            float acab1 = Mathf.Acos(Mathf.Clamp((lcb * lcb - lab * lab - lat * lat) / (-2f * lab * lat), -1f, 1f));
-            float babc1 = Mathf.Acos(Mathf.Clamp((lat * lat - lab * lab - lcb * lcb) / (-2f * lab * lcb), -1f, 1f));
-            var axis = Vector3.Cross(pc - pa, pb - pa);
-            if (axis.sqrMagnitude < 1e-8f) axis = Vector3.Cross(pc - pa, Vector3.up);
-            axis.Normalize();
-            a.rotation = Quaternion.AngleAxis((acab1 - acab0) * Mathf.Rad2Deg, axis) * a.rotation;
-            b.rotation = Quaternion.AngleAxis((babc1 - babc0) * Mathf.Rad2Deg, axis) * b.rotation;
-            a.rotation = Quaternion.FromToRotation(c.position - pa, target - pa) * a.rotation;
-        }
-
-        /// <summary>2관절 IK + 팔꿈치 방향: 풀고 나서 어깨→손 축을 중심으로 팔을 돌려 팔꿈치가 pole(방향) 쪽을 보게 한다 (weight만큼).</summary>
-        static void SolveTwoBone(Transform a, Transform b, Transform c, Vector3 target, Vector3 pole, float weight)
-        {
-            SolveTwoBone(a, b, c, target);
-            var axis = c.position - a.position;
-            if (axis.sqrMagnitude < 1e-6f) return;
-            var elbow = Vector3.ProjectOnPlane(b.position - a.position, axis);
-            var want = Vector3.ProjectOnPlane(pole, axis);
-            if (elbow.sqrMagnitude < 1e-8f || want.sqrMagnitude < 1e-8f) return;
-            float angle = Vector3.SignedAngle(elbow, want, axis) * Mathf.Clamp01(weight);
-            a.rotation = Quaternion.AngleAxis(angle, axis.normalized) * a.rotation;
-        }
-
-        /// <summary>의상을 바꾸면 캐릭터를 다시 입힌다 (초상화도 따라 바뀐다).</summary>
+        /// <summary>캐릭터 모델을 바꾸면 다시 세운다 (초상화도 따라 바뀐다).</summary>
         public void ApplyLook()
         {
             if (Game.Profile == null) return;
@@ -658,12 +625,12 @@ namespace Fishing.PlayerSystems
             var knob = Rod.HandleKnob;
             if (_crankWeight <= 0.001f || knob == null || _upperArmL == null) return;
             float w = Mathf.SmoothStep(0f, 1f, _crankWeight);
-            SolveTwoBone(_upperArmL, _lowerArmL, _handL, Vector3.Lerp(_handL.position, knob.position, w));
+            ArmIK.Solve(_upperArmL, _lowerArmL, _handL, Vector3.Lerp(_handL.position, knob.position, w));
             if (_gripL == null) return;
             // 손목이 아니라 손바닥 앞(쥐는 자리)이 노브에 오게: 손을 노브 축에 맞춰 돌리고, 남은 차이만큼 한 번 더 뻗는다
             var axis = knob.up; // 캡슐 노브의 길이 방향
             _gripL.AlignTo(axis, w);
-            SolveTwoBone(_upperArmL, _lowerArmL, _handL, _handL.position + (knob.position - _gripL.Grip) * w);
+            ArmIK.Solve(_upperArmL, _lowerArmL, _handL, _handL.position + (knob.position - _gripL.Grip) * w);
             _gripL.AlignTo(axis, w);
             _gripL.Wrap(knob.position, axis, 0.016f);
         }
