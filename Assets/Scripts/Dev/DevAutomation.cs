@@ -307,6 +307,32 @@ namespace Fishing.Dev
                     yield return new WaitForSeconds(0.8f);
                     yield return Shot($"02s_rod_arms_{pitch:0}");
                 }
+                // VRM 캐릭터: 폴더(문서/짭풍명월/Characters)에 .vrm이 있으면 첫 번째로 갈아입고 같은 자세를 찍는다 (세이브는 안 건드린다)
+                var vrms = Fishing.Characters.VrmCharacters.List();
+                if (vrms.Count > 0)
+                {
+                    var (prevVrm, prevFemale) = (Game.Profile.Data.vrm, Game.Profile.Data.vrmFemale);
+                    Game.Profile.SetCharacterModel(vrms[0], true);
+                    float until = Time.realtimeSinceStartup + 30f;
+                    while (!Fishing.Characters.VrmCharacters.IsReady(vrms[0]) && Fishing.Characters.VrmCharacters.GetInfo(vrms[0])?.Error == null
+                           && Time.realtimeSinceStartup < until) yield return null;
+                    Debug.Log($"[Dev] VRM 촬영: {vrms[0]} 준비 {Fishing.Characters.VrmCharacters.IsReady(vrms[0])}");
+                    foreach (var pitch in new[] { 35f, 82f, 155f })
+                    {
+                        Game.Player.RodPitch = pitch;
+                        Game.Player.BodyLean = pitch > 120f ? 20f : pitch > 70f ? 14f : 0f;
+                        yield return new WaitForSeconds(0.8f);
+                        yield return Shot($"02v_vrm_{pitch:0}");
+                    }
+                    var front = c + pm.forward * 2.3f + pm.right * 0.5f;
+                    Game.CameraRig.SetFixed(front, Quaternion.LookRotation(c - front));
+                    Game.Player.RodPitch = 35f;
+                    Game.Player.BodyLean = 0f;
+                    yield return new WaitForSeconds(0.8f);
+                    yield return Shot("02v_vrm_front");
+                    Game.Profile.SetCharacterModel(prevVrm, prevFemale);
+                    yield return new WaitForSeconds(0.3f);
+                }
                 Game.CameraRig.ClearFixed();
             }
             Game.Fishing.DebugResume();
@@ -724,6 +750,22 @@ namespace Fishing.Dev
             yield return new WaitForSeconds(0.5f);
             yield return Shot("21d_character_gear");
             Game.UI.Character.Close();
+            // 캐릭터 모델 탭: 폴더의 VRM을 골라 입은 모습 (VRM이 없으면 빈 목록 안내)
+            {
+                var vrms = Fishing.Characters.VrmCharacters.List();
+                var (prevVrm, prevFemale) = (p.Data.vrm, p.Data.vrmFemale);
+                if (vrms.Count > 0) p.SetCharacterModel(vrms[0], true);
+                Game.UI.Character.ShowModelTab();
+                Game.UI.OpenExclusive(Game.UI.Character);
+                Fishing.UI.PortraitCamera.FullBody.Spin = 25f;
+                float until = Time.realtimeSinceStartup + 30f;
+                while (vrms.Count > 0 && !Fishing.Characters.VrmCharacters.IsReady(vrms[0]) && Time.realtimeSinceStartup < until) yield return null;
+                yield return new WaitForSeconds(0.8f);
+                yield return Shot("21e_character_model");
+                Game.UI.Character.Close();
+                Game.UI.Character.ShowTab(false);
+                p.SetCharacterModel(prevVrm, prevFemale);
+            }
 
             // 지역 지도(M): 어군 하나는 3마리를 낚아 작은 어군으로 만든다
             var shrink = Game.Schools.Schools[1];

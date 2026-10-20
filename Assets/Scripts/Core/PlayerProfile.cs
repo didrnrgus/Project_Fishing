@@ -402,7 +402,18 @@ namespace Fishing.Core
             if (bottom != null) { look.Pants = bottom.Color; look.BottomModel = bottom.Model ?? look.BottomModel; look.BottomPattern = bottom.Pattern; }
             var shoes = CostumeDatabase.Get(Worn(CostumeSlot.Shoes));
             if (shoes != null) { look.Shoes = shoes.Color; look.ShoeModel = shoes.Model ?? look.ShoeModel; }
+            look.Vrm = string.IsNullOrEmpty(Data.vrm) ? null : Data.vrm;
+            look.VrmFemale = Data.vrmFemale;
             return look;
+        }
+
+        /// <summary>내 캐릭터 모델을 바꾼다 (null·빈 문자열 = 기본 캐릭터, 아니면 VRM id). 의상 능력치는 그대로 붙는다.</summary>
+        public void SetCharacterModel(string vrmId, bool female)
+        {
+            Data.vrm = vrmId ?? "";
+            Data.vrmFemale = female;
+            NotifyChanged();
+            LookChanged?.Invoke();
         }
 
         public void SelectBait(string baitId)

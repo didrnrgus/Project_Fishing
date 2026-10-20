@@ -140,9 +140,29 @@ namespace Fishing.PlayerSystems
                 if (t.name == "spine_02") _spine = t;
                 t.gameObject.layer = Fishing.UI.PortraitCamera.Layer;
             }
+            // VRM·받은 캐릭터는 뼈 이름이 달라서 휴머노이드 매핑으로 찾는다
+            var an = _character.GetComponentInChildren<Animator>();
+            if (an != null && an.isHuman)
+            {
+                if (_hand == null) _hand = an.GetBoneTransform(HumanBodyBones.RightHand);
+                if (Head == null) Head = an.GetBoneTransform(HumanBodyBones.Head);
+                if (_spine == null) _spine = an.GetBoneTransform(HumanBodyBones.Chest) ?? an.GetBoneTransform(HumanBodyBones.Spine);
+            }
             if (Head == null) Head = Model;
             FindLeftArm();
+            // 팔 길이 비율: 낚싯대 쥔 손 자리 표(GripCurve)는 기본 캐릭터 팔에 맞춘 값이라, 팔이 짧은 캐릭터는 그만큼 줄인다
+            _armScale = 1f;
+            if (_upperArmR != null && _lowerArmR != null && _handR != null)
+            {
+                float arm = (_lowerArmR.position - _upperArmR.position).magnitude + (_handR.position - _lowerArmR.position).magnitude;
+                if (arm > 0.1f) _armScale = Mathf.Clamp(arm / RefArmLength, 0.6f, 1.3f);
+                Debug.Log($"[Dev] 내 캐릭터 {_character.name}: 팔 길이 {arm:0.000}m → 손 자리 ×{_armScale:0.00}");
+            }
         }
+
+        /// <summary>기본 캐릭터(Angler) 오른팔 길이 (어깨~손목, m).</summary>
+        const float RefArmLength = 0.453f;
+        float _armScale = 1f;
 
         // ---------------- 낚은 고기 들어 보이기 (원작 결과 화면 1:55~1:58) ----------------
 
@@ -331,7 +351,7 @@ namespace Fishing.PlayerSystems
             float w = Mathf.SmoothStep(0f, 1f, _rodArmWeight);
             // 낚싯대를 좌우로 틀면 손도 어깨를 축으로 따라 돈다
             var rot = Model.rotation * Quaternion.Euler(0f, _currentRodYaw * 0.6f, 0f);
-            var want = _upperArmR.position + rot * GripOffset(_currentRodPitch);
+            var want = _upperArmR.position + rot * (GripOffset(_currentRodPitch) * _armScale);
             // 팔꿈치: 들고 있을 때는 아래 바깥, 어깨 너머로 젖힐수록 앞 바깥으로 든다
             float up = Mathf.InverseLerp(70f, 155f, _currentRodPitch);
             var pole = Model.rotation * Vector3.Lerp(new Vector3(0.7f, -0.7f, -0.1f), new Vector3(0.75f, 0.05f, 0.65f), up);

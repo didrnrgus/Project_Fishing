@@ -37,6 +37,10 @@ namespace Fishing.Characters
         public string Title;
         /// <summary>받은 휴머노이드 캐릭터 id ("unitychan", "zombie", "ghost"). 있으면 옷 조합 대신 그 모델을 쓴다 (ExternalCharacters).</summary>
         public string External;
+        /// <summary>VRM 캐릭터 id ("user/파일.vrm", VrmCharacters). 있고 읽혀 있으면 옷 조합 대신 그 모델을 쓴다.</summary>
+        public string Vrm;
+        /// <summary>VRM 캐릭터의 대기·걷기 동작을 여자 클립(_F)으로.</summary>
+        public bool VrmFemale;
 
         public static CharacterLook Player => new CharacterLook { Name = "강태공", Title = "초보 조사", Gloves = true };
     }
@@ -70,6 +74,12 @@ namespace Fishing.Characters
         /// <summary>캐릭터를 만든다. 반환값의 루트에 Animator와 CharacterAnimator가 붙어 있다. 발이 원점.</summary>
         public static GameObject Create(CharacterLook look, Transform parent)
         {
+            if (!string.IsNullOrEmpty(look.Vrm))
+            {
+                // 아직 안 읽혔으면 기본 캐릭터로 두었다가, 다 읽히면 다시 입힌다 (GameUI가 VrmCharacters.Loaded를 듣는다)
+                var vrm = VrmCharacters.Create(look.Vrm, parent, look.Name, look.VrmFemale);
+                if (vrm != null) return vrm;
+            }
             if (!string.IsNullOrEmpty(look.External))
             {
                 var ext = ExternalCharacters.Create(look.External, parent, look.Name);

@@ -15,6 +15,8 @@
 | ![lobby](docs/images/00a_lobby.png) | ![areas](docs/images/00b_area_list.png) |
 | **캐릭터 (진짜 옷 메쉬, 반장갑)** | **의상 (능력치 레이더)** |
 | ![character](docs/images/00_character.png) | ![costume](docs/images/21c_costume.png) |
+| **내가 만든 VRM 캐릭터로 낚시 (빌드 없이 폴더에 넣기, 시험 모델 Seed-san © VirtualCast)** | **캐릭터 모델 고르기 (VRoid 등 .vrm)** |
+| ![vrm](docs/images/02v_vrm_155.png) | ![vrm_panel](docs/images/21e_character_model.png) |
 | **홍현 앞바다 (남해)** | **서천 앞바다 (서해, 물때·갯벌)** |
 | ![honghyeon](docs/images/22_honghyeon_day.png) | ![seocheon](docs/images/35_seocheon_lowtide.png) |
 | **겨울 한강 얼음낚시** | **낚시 크루저 (먼바다)** |

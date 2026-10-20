@@ -20,7 +20,9 @@ namespace Fishing.EditorTools
 
         static readonly string[] RuntimeShaders =
         {
-            "Standard", "Unlit/Color", "Skybox/Procedural", "Legacy Shaders/Particles/Alpha Blended", "UI/Default", "Fishing/Skin", "Fishing/Garment", "Fishing/Water", "Fishing/Sky", "Fishing/SkyCube", "Fishing/Fish", "Fishing/FishFin", "Fishing/Ground", "Fishing/Weathered", "Fishing/Karst", "Fishing/Landmark", "Fishing/Grass", "Fishing/Ghost", "Fishing/UIInkReveal", "Fishing/Terrain", "Hidden/Fishing/Terrain-AddPass", "Nature/Terrain/Standard"
+            "Standard", "Unlit/Color", "Skybox/Procedural", "Legacy Shaders/Particles/Alpha Blended", "UI/Default", "Fishing/Skin", "Fishing/Garment", "Fishing/Water", "Fishing/Sky", "Fishing/SkyCube", "Fishing/Fish", "Fishing/FishFin", "Fishing/Ground", "Fishing/Weathered", "Fishing/Karst", "Fishing/Landmark", "Fishing/Grass", "Fishing/Ghost", "Fishing/UIInkReveal", "Fishing/Terrain", "Hidden/Fishing/Terrain-AddPass", "Nature/Terrain/Standard",
+            // VRM 캐릭터 (UniVRM이 실행 중에 Shader.Find로 머티리얼을 만든다)
+            "VRM10/MToon10", "UniGLTF/UniUnlit"
         };
 
         [MenuItem("Fishing/Setup Project")]

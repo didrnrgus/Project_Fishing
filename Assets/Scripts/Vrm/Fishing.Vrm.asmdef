@@ -1,0 +1,19 @@
+{
+    "name": "Fishing.Vrm",
+    "rootNamespace": "Fishing.Vrm",
+    "references": [
+        "UniGLTF",
+        "UniGLTF.Utils",
+        "UniHumanoid",
+        "VRM10"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

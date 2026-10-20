@@ -1,4 +1,5 @@
 using System.Linq;
+using Fishing.Characters;
 using Fishing.Core;
 using Fishing.Data;
 using LeTai.Asset.TranslucentImage;
@@ -14,10 +15,11 @@ namespace Fishing.UI
     ///  - 일반 슬롯: 미리보기 양옆에 장착한 낚싯대·릴·원줄 / 미끼·장신구·배 칸 (마우스를 올리면 아래 카드에 자세히),
     ///    오른쪽은 장비·강화·의상·목장갑·음식·체력 상태를 모두 합친 최종 능력치 표와 경험치
     ///  - 아바타 슬롯: 부위별 의상 목록 (사서 입으면 바로 캐릭터·초상화·대기실에 반영) + 입은 의상 능력치 레이더
+    ///  - 캐릭터 모델: 기본 캐릭터 / VRM 파일(문서/짭풍명월/Characters에 넣은 .vrm, 빌드 없이) 고르기. 의상 능력치는 모델과 상관없이 붙는다
     /// </summary>
     public class CharacterPanel : UIPanel
     {
-        bool _avatar;
+        bool _avatar, _model;
         CostumeSlot _slot = CostumeSlot.Hat;
         int _selected, _hover = -1;
 
@@ -125,6 +127,15 @@ namespace Fishing.UI
         public void ShowTab(bool avatar)
         {
             _avatar = avatar;
+            _model = false;
+            if (IsOpen) Refresh();
+        }
+
+        /// <summary>다음에 열 때 캐릭터 모델 탭으로 (자동 촬영).</summary>
+        public void ShowModelTab()
+        {
+            _model = true;
+            _avatar = false;
             if (IsOpen) Refresh();
         }
 
@@ -147,14 +158,17 @@ namespace Fishing.UI
             Title.text = $"내 캐릭터   <size=20><color=#a0b0c0>Lv.{p.Data.level} {p.CurrentTitle}</color>   <color=#ffd060>{p.Data.gold:N0} 골드</color></size>";
 
             UIFactory.ClearChildren(_tabs);
-            RowButton(_tabs, "일반 슬롯", () => { _avatar = false; Refresh(); }, 0, 206, _avatar ? UIFactory.TabOff : UIFactory.TabOn, true, 18);
-            RowButton(_tabs, "아바타 슬롯", () => { _avatar = true; Refresh(); }, 214, 206, _avatar ? UIFactory.TabOn : UIFactory.TabOff, true, 18);
-            _slotsRoot.SetActive(!_avatar);
+            bool gear = !_avatar && !_model;
+            RowButton(_tabs, "일반 슬롯", () => { _avatar = _model = false; Refresh(); }, 0, 136, gear ? UIFactory.TabOn : UIFactory.TabOff, true, 17);
+            RowButton(_tabs, "아바타 슬롯", () => { _avatar = true; _model = false; Refresh(); }, 142, 136, _avatar ? UIFactory.TabOn : UIFactory.TabOff, true, 17);
+            RowButton(_tabs, "캐릭터 모델", () => { _model = true; _avatar = false; Refresh(); }, 284, 136, _model ? UIFactory.TabOn : UIFactory.TabOff, true, 17);
+            _slotsRoot.SetActive(gear);
             _detailCard.SetActive(!_avatar);
             _statCard.SetActive(_avatar);
 
             UIFactory.ClearChildren(_list);
             if (_avatar) RefreshAvatar();
+            else if (_model) RefreshModel();
             else RefreshGear();
         }
 
@@ -318,7 +332,7 @@ namespace Fishing.UI
 
         void RefreshDetail()
         {
-            if (_avatar || Game.Profile == null) return;
+            if (_avatar || _model || Game.Profile == null) return;
             var (id, _, detail) = SlotInfo(_hover >= 0 ? _hover : _selected);
             var sprite = ItemIcons.Get(id);
             _detailIcon.sprite = sprite;
@@ -374,6 +388,93 @@ namespace Fishing.UI
                 else if (p.Data.level < c.Level) RowButton(row, $"Lv.{c.Level} 필요 · {c.Price:N0}G", null, 600, 210, null, false, 15);
                 else RowButton(row, $"구매 {c.Price:N0}골드", () => Buy(c), 600, 210, UIFactory.BtnGold, p.Data.gold >= c.Price);
             }
+        }
+
+        // ---- 캐릭터 모델 (VRM) ----
+
+        void RefreshModel()
+        {
+            var p = Game.Profile;
+            string cur = p.Data.vrm ?? "";
+            var rows = new RowCursor(_list);
+            var head = rows.Next(42, 10);
+            Cell(head, "<size=15><color=#a0b0c0>VRoid Studio 등에서 만든 <b>.vrm</b> 파일을 폴더에 넣으면 바로 고를 수 있어요. 의상 능력치는 그대로 붙어요.</color></size>", 0, 520, 15)
+                .alignment = UIFactory.Align(TextAnchor.MiddleLeft);
+            RowButton(head, "폴더 열기", () => Application.OpenURL("file:///" + VrmCharacters.EnsureUserFolder().Replace('\\', '/')), 530, 138, null, true, 15);
+            RowButton(head, "새로고침", () =>
+            {
+                foreach (var id in VrmCharacters.List()) VrmCharacters.Forget(id);
+                if (cur.Length > 0) VrmCharacters.Request(cur);
+                Refresh();
+            }, 676, 138, null, true, 15);
+
+            // 기본 캐릭터
+            var row0 = rows.Next(66, 4);
+            UIFactory.RowBg(row0, cur.Length == 0);
+            Cell(row0, "<b>기본 캐릭터</b>\n<size=14><color=#8090a0>아바타 슬롯에서 고른 옷을 입어요</color></size>", 20, 560, 19).alignment = UIFactory.Align(TextAnchor.MiddleLeft);
+            if (cur.Length == 0) RowButton(row0, "사용 중", null, 600, 210, UIFactory.TabOn, false);
+            else RowButton(row0, "고르기", () => { p.SetCharacterModel(null, p.Data.vrmFemale); Game.Sound.Coin(); }, 600, 210);
+
+            var ids = VrmCharacters.List();
+            foreach (var id in ids)
+            {
+                VrmCharacters.Request(id); // 이름·만든 사람·키를 보여 주려고 미리 읽는다
+                var info = VrmCharacters.GetInfo(id);
+                var row = rows.Next(66, 4);
+                UIFactory.RowBg(row, id == cur);
+                string title = info?.Title ?? System.IO.Path.GetFileNameWithoutExtension(id);
+                string sub = info == null || info.Loading ? "읽는 중…" : info.Error != null ? $"<color=#ff9070>읽기 실패: {info.Error}</color>"
+                    : $"{(string.IsNullOrEmpty(info.Author) ? "만든 사람 모름" : "만든 사람 " + info.Author)} · 키 {info.Height:0.00}m{PermissionNote(info)}";
+                string src = id.StartsWith("builtin/") ? "  <color=#80c0ff>기본 제공</color>" : "";
+                Cell(row, $"<b>{title}</b>{src}\n<size=14><color=#8090a0>{sub}</color></size>", 20, 560, 19).alignment = UIFactory.Align(TextAnchor.MiddleLeft);
+                if (id == cur) RowButton(row, "사용 중", null, 600, 210, UIFactory.TabOn, false);
+                else RowButton(row, "고르기", () => { p.SetCharacterModel(id, p.Data.vrmFemale); Game.Sound.Coin(); }, 600, 210, null, info?.Error == null);
+            }
+            if (ids.Count == 0)
+            {
+                var empty = rows.Next(60, 4);
+                Cell(empty, "<size=15><color=#8090a0>아직 VRM 파일이 없어요. [폴더 열기]를 눌러 .vrm 파일을 넣고 [새로고침]을 누르세요.</color></size>", 20, 760, 15)
+                    .alignment = UIFactory.Align(TextAnchor.MiddleLeft);
+            }
+
+            if (cur.Length > 0)
+            {
+                var gait = rows.Next(50, 10);
+                Cell(gait, "걸음걸이", 20, 140, 17).alignment = UIFactory.Align(TextAnchor.MiddleLeft);
+                RowButton(gait, "남자", () => p.SetCharacterModel(cur, false), 170, 120, p.Data.vrmFemale ? UIFactory.TabOff : UIFactory.TabOn, true, 16);
+                RowButton(gait, "여자", () => p.SetCharacterModel(cur, true), 298, 120, p.Data.vrmFemale ? UIFactory.TabOn : UIFactory.TabOff, true, 16);
+            }
+
+            // 왼쪽 카드: 고른 모델 썸네일·사용 허락
+            var sel = cur.Length > 0 ? VrmCharacters.GetInfo(cur) : null;
+            var thumb = sel?.Thumbnail;
+            if (_thumbSprite != null && (_thumbSprite.texture != thumb)) { Object.Destroy(_thumbSprite); _thumbSprite = null; }
+            if (thumb != null && _thumbSprite == null) _thumbSprite = Sprite.Create(thumb, new Rect(0, 0, thumb.width, thumb.height), new Vector2(0.5f, 0.5f));
+            _detailIcon.sprite = _thumbSprite;
+            _detailIcon.enabled = _thumbSprite != null;
+            _detailText.rectTransform.offsetMin = new Vector2(_thumbSprite != null ? 100 : 16, _detailText.rectTransform.offsetMin.y);
+            _detailText.text = cur.Length == 0
+                ? "<b>기본 캐릭터</b>\n아바타 슬롯의 옷을 입은 모습이에요."
+                : sel == null || sel.Loading ? "<b>읽는 중…</b>"
+                : sel.Error != null ? $"<b>읽기 실패</b>\n{sel.Error}"
+                : $"<b>{sel.Title}</b>\n{(string.IsNullOrEmpty(sel.Author) ? "" : "만든 사람: " + sel.Author + "\n")}{PermissionText(sel)}";
+        }
+
+        Sprite _thumbSprite;
+
+        static string PermissionNote(VrmCharacters.Info info) =>
+            info.Permission == Fishing.Vrm.VrmPermission.Everyone ? "" : " · <color=#ffc060>사용 허락 확인</color>";
+
+        static string PermissionText(VrmCharacters.Info info)
+        {
+            string s = info.Permission switch
+            {
+                Fishing.Vrm.VrmPermission.OnlyAuthor => "<color=#ffc060>만든 사람만 쓸 수 있는 모델이에요. 직접 만든 모델일 때만 쓰세요.</color>",
+                Fishing.Vrm.VrmPermission.OnlySeparatelyLicensed => "<color=#ffc060>따로 허락받은 사람만 쓸 수 있는 모델이에요.</color>",
+                _ => "<color=#a0d0a0>누구나 쓸 수 있는 모델이에요.</color>",
+            };
+            if (info.CreditRequired) s += "\n<size=13>만든 사람 표기가 필요해요.</size>";
+            return s;
         }
 
         static float[] _max;

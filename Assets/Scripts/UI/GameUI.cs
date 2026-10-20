@@ -124,6 +124,19 @@ namespace Fishing.UI
                 Game.Player.ApplyLook();
                 if (Game.Lobby != null) Game.Lobby.RefreshPlayer();
             };
+            // 고른 VRM이 다 읽히면 (처음엔 기본 캐릭터로 서 있다) 그 모델로 다시 입힌다
+            Fishing.Characters.VrmCharacters.Loaded += id =>
+            {
+                if (this == null) return;
+                if (id == Game.Profile.Data.vrm)
+                {
+                    var info = Fishing.Characters.VrmCharacters.GetInfo(id);
+                    if (info?.Error != null) Game.Toast($"캐릭터 파일을 읽지 못했습니다: {info.Error}", ToastKind.Warn);
+                    Game.Player.ApplyLook();
+                    if (Game.Lobby != null) Game.Lobby.RefreshPlayer();
+                }
+                RefreshOpenPanels();
+            };
             Game.Fishing.Casted += Hud.OnCasted;
         }
 

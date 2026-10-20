@@ -296,7 +296,8 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 
 ### 아트 교체
 - 캐릭터: `CharacterFactory.Create(look, parent)`가 Angler FBX(몸 `Body` + 옷 메쉬, `tools/blender/build_characters.py`)를 만든다. 옷을 고치거나 더하려면 `garments.py`에 함수를 추가하고 `build()`에 등록 → `CharacterFactory.Garments`·`GarmentMaterial`에 이름을 넣는다(08 문서 3장). 몸은 `Fishing/Skin`, 옷은 `Fishing/Garment` 셰이더.
-- 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/Jog/Sprint/HoldRod/Windup/Cast/Hook/Reel/Cheer…)가 클립 이름이다. 클립은 `Resources/Animations/UAL1_Standard`, `Mixamo`, `KevinIglesias`에서 찾고, `이름_M`/`이름_F`가 있으면 캐릭터 성별(`CharacterAnimator.Female`)로 고른다. Mixamo FBX는 `AssetImportRules.MixamoClips`, Kevin Iglesias는 `KevinClips` 표대로 임포트한다(10 문서). 낚시 중 자세는 `PlayerController.FishingPose()`가 상태(Charging → Windup, 감는 중 → Reel, 그 밖 → HoldRod)로, 이동 중 클립과 배속은 `UpdateAnimation()`이 속도로 고른다.
+- 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/Jog/Sprint/HoldRod/Windup/Cast/Hook/Reel/Cheer…)가 클립 이름이다. 클립은 `Resources/Animations/UAL1_Standard`, `Mixamo`, `KevinIglesias`에서 찾고, `이름_M`/`이름_F`가 있으면 캐릭터 성별(`CharacterAnimator.Female`)로 고른다. Mixamo FBX는 `AssetImportRules.MixamoClips`, Kevin Iglesias는 `KevinClips` 표대로 임포트한다(10 문서). 낚시 중 몸은 늘 HoldRod이고 두 팔은 낚싯대 각도를 따라가는 IK다(10 문서 5장). 이동 중 클립과 배속은 `UpdateAnimation()`이 속도로 고른다.
+- VRM 캐릭터: `CharacterLook.Vrm`이 있으면 `VrmCharacters`가 읽어 둔 VRM을 복제한다(16 문서). UniVRM은 `Scripts/Vrm`(asmdef `Fishing.Vrm`)만 직접 참조한다.
 - 물고기: `tools/blender/fish_species.py`에 어종(체형 템플릿 A~H·두족류 O 문어/Q 갑오징어/S 오징어, 색·무늬·지느러미)을 넣고 `build_fish.py --only <id>` → `Resources/Fish/Species/<id>.fbx`·텍스처·아이콘. `FishModels.CreateSpecies`가 길이(cm/100)로 키운다(09 문서).
 - 물: `WaterSurface` + `Fishing/Water` 셰이더 (`_WaveAmp`, `_WaveLen`, 노멀 타일·속도). 하늘 반사는 `DayNightCycle`의 리얼타임 반사 프로브(하늘만, 2초마다).
   - **물가 거품**: 맵을 불러올 때 `FieldMapDef.SeabedAt(x, z)`(물 밑 땅 높이, 방파제는 땅 높이)를 `SeabedArea`에 1m 간격(최대 512칸) RFloat 텍스처로 굽는다(`WaterSurface.SetSeabed`). 셰이더는 `수심 = 수면 높이(파도 포함) − 해저`, 이웃 텍셀로 해저 경사를 구해 `물가까지 거리 ≈ 수심 / 경사`를 어림하고, 그 거리 4.5m 안에 노이즈로 끊긴 흰 띠가 밀려오게 그린다. 기둥 위에 뜬 잔교(한강 낚시 데크)는 `SeabedAt`에서 깊은 물로 돌려 둘레에 해변 같은 거품 띠가 생기지 않게 한다. 수심 2.5m보다 얕으면 바닥이 비치게 밝힌다. 깊이 텍스처를 쓰지 않아 그림자·AO와 부딪치지 않는다. 새 맵은 `SeabedAt`만 지형 높이 함수로 바꿔 주면 된다(기본값은 물이면 수심 3m).
@@ -323,6 +324,7 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 | `World/GrassField.cs` + `Shaders/Grass.shader` | 풀·들꽃 포기: 지형 풀 층·풀 텍스처 바닥을 레이캐스트로 훑어 심고 48m 칸 메쉬로 굽는다, 바람 흔들림, 130m 밖 칸은 끔(`GrassCuller`). `MapLoader`가 월드를 지은 직후 부른다 |
 | `Characters/RodGrip.cs` | 3인칭 오른손이 낚싯대를 쥔다: 릴 시트를 손바닥 가운데에, 손가락 마디를 낚싯대 축으로 감는다 (플레이어·NPC 낚시꾼) |
 | `Characters/CharacterLibrary.cs` · `ExternalCharacters.cs` · `ExtraNpcs.cs` + `Shaders/Ghost.shader` | 받은 휴머노이드 캐릭터(유니티짱·좀비·X Bot)를 같은 동작 시스템으로 움직인다. `CharacterLook.External`, 낚시 아이돌(`IdolRoutine`: 공원 버스킹 무대 `HanRiverMap.IdolStage` 위, 낮에만 — 무대는 풀보다 먼저 지어야 해서 `WorldBuilder.BuildIdolStage`), 밤 손님(`NightVisitor`: 좀비·귀신). 같은 인물은 한 맵에 한 번만 |
+| `Characters/VrmCharacters.cs` · `Vrm/VrmLoader.cs`(`Fishing.Vrm` asmdef) | VRM 캐릭터(문서/짭풍명월/Characters의 .vrm, 빌드 없이): 폴더 훑기·실행 중 읽기(UniVRM)·원본 선반에서 복제·메타(사용 허락)·눈 깜빡임 (16 문서) |
 | `Characters/Wanderer.cs` | 받은 사람으로 만든 배경 NPC: 점 사이 걷기·쉬기, 땅 레이캐스트, 반응 동작, 낮/밤 표시(렌더러만 끔), 헤엄(골반을 수면에), 앉기. 기본 걷기는 이동 속도에 맞춘 배속(`CharacterAnimator.BasicWalkSpeed` 2 m/s 기준), 돌아설 때는 먼저 제자리에서 몸을 돌린 뒤 걷는다 |
 | `UIPanel.RowCursor` | 창 목록을 쌓으면 자동으로 잘라내기 + 휠 스크롤 + 스크롤바 (key로 스크롤 위치 기억) |
 
