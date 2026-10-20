@@ -102,6 +102,19 @@ namespace Fishing.Dev
             Game.Clock.Set(1, 10 * 60);
             yield return new WaitForSeconds(3f);
             yield return Shot("00a_lobby");
+            // 대기실 [옷 바꾸기]: 무작위 옷을 입은 모습 → 원래 옷으로 (세이브는 안 건드린다)
+            {
+                var prevOutfit = Game.Profile.Data.outfit;
+                Fishing.Characters.OutfitChanger.Randomize();
+                float until = Time.realtimeSinceStartup + 60f;
+                yield return null;
+                while (Fishing.Characters.OutfitChanger.Busy && Time.realtimeSinceStartup < until) yield return null;
+                yield return new WaitForSeconds(1f);
+                Debug.Log($"[Dev] 옷 바꾸기: {Game.Profile.Data.outfit}");
+                yield return Shot("00a2_outfit_random");
+                Game.Profile.SetOutfit(prevOutfit);
+                yield return new WaitForSeconds(0.5f);
+            }
             Game.UI.OpenExclusive(Game.UI.Areas);
             yield return new WaitForSeconds(0.5f);
             yield return Shot("00b_area_list");
@@ -244,6 +257,20 @@ namespace Fishing.Dev
                     Game.Player.BodyLean = pitch > 120f ? 20f : pitch < 10f ? -16f : pitch > 70f ? 14f : 0f;
                     yield return new WaitForSeconds(0.8f);
                     yield return Shot($"02s_rod_arms_{pitch:0}");
+                }
+                // 왼쪽 앞에서 가까이: 왼손이 오른손 아래를 감싸 쥐는지, 왼팔이 몸을 파고들지 않는지
+                {
+                    var hip = Game.Player.transform.position + Vector3.up * 1.0f;
+                    var eyeL = hip - pm.right * 1.1f + pm.forward * 0.9f + Vector3.up * 0.25f;
+                    Game.CameraRig.SetFixed(eyeL, Quaternion.LookRotation(hip + pm.forward * 0.2f - eyeL));
+                    foreach (var pitch in new[] { 35f, 82f })
+                    {
+                        Game.Player.RodPitch = pitch;
+                        Game.Player.BodyLean = pitch > 70f ? 14f : 0f;
+                        yield return new WaitForSeconds(0.8f);
+                        yield return Shot($"02t_left_hand_{pitch:0}");
+                    }
+                    Game.CameraRig.SetFixed(eye, Quaternion.LookRotation(c + pm.forward * 0.25f - eye));
                 }
                 // VRM 캐릭터: 폴더(문서/짭풍명월/Characters)에 .vrm이 있으면 첫 번째로 갈아입고 같은 자세를 찍는다 (세이브는 안 건드린다)
                 var vrms = Fishing.Characters.VrmCharacters.List();

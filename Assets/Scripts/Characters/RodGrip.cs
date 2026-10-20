@@ -103,6 +103,21 @@ namespace Fishing.Characters
             _hand.rotation = Quaternion.Slerp(Quaternion.identity, q, Mathf.Clamp01(weight)) * _hand.rotation;
         }
 
+        /// <summary>
+        /// 쥔 것의 축(axis)을 중심으로 손을 굴려 손바닥이 want 쪽을 보게 한다 (AlignTo 뒤에: 새끼→검지 방향은 그대로).
+        /// AlignTo만으로는 축 둘레 방향이 애니메이션 그대로라, 왼손 손바닥이 바깥을 보고 손등이 낚싯대에 붙어 반대로 쥔 것처럼 보였다.
+        /// </summary>
+        public void RollPalm(Vector3 axis, Vector3 want, float weight = 1f)
+        {
+            if (weight <= 0f) return;
+            axis.Normalize();
+            var from = Vector3.ProjectOnPlane(PalmNormal, axis);
+            var to = Vector3.ProjectOnPlane(want, axis);
+            if (from.sqrMagnitude < 1e-8f || to.sqrMagnitude < 1e-8f) return;
+            float deg = Vector3.SignedAngle(from, to, axis) * Mathf.Clamp01(weight);
+            _hand.rotation = Quaternion.AngleAxis(deg, axis) * _hand.rotation;
+        }
+
         /// <summary>손을 돌려 손바닥이 normal 쪽을 보게 한다 (작은 고기를 손바닥에 올려 보일 때).</summary>
         public void AlignPalm(Vector3 normal, float weight = 1f)
         {

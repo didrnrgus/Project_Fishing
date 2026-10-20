@@ -13,7 +13,8 @@ namespace Fishing.Characters
     /// </summary>
     public class NpcAngler : MonoBehaviour
     {
-        public enum Role { Angler, Talker, Sitter }
+        /// <summary>Stand: 맨손으로 서 있기 (대기실의 내 캐릭터).</summary>
+        public enum Role { Angler, Talker, Sitter, Stand }
 
         CharacterAnimator _anim;
         Transform _hand, _rod, _nameTag;
@@ -167,6 +168,7 @@ namespace Fishing.Characters
                     {
                         Role.Angler => CharacterAnimator.HoldRod,
                         Role.Talker => CharacterAnimator.Talk,
+                        Role.Stand => CharacterAnimator.Idle,
                         _ => CharacterAnimator.Sit
                     });
                 // 조합 연락관: 보고할 퀘스트가 있고 내가 가까이 오면 손짓해 부른다 (Mixamo Rallying)
@@ -238,8 +240,8 @@ namespace Fishing.Characters
 
         /// <summary>FishingSequence(약 8.8초)에서 들기·던지기까지 (130/265프레임, 10 문서 2장).</summary>
         const float CastPart = 0.49f;
-        /// <summary>왼손이 쥐는 손잡이 끝: 릴 시트에서 이만큼 뒤 (PlayerController.LeftGripBehind와 같다).</summary>
-        const float LeftGripBehind = 0.24f;
+        /// <summary>왼손이 쥐는 자리: 릴 시트(오른손)에서 이만큼 뒤 — 오른손 바로 아래 (PlayerController.LeftGripBehind와 같다).</summary>
+        const float LeftGripBehind = 0.12f;
 
         /// <summary>
         /// 왼손: 평소엔 손잡이 끝을 감싸 쥐고, 릴을 감을 땐 릴 손잡이(노브)를 돌린다. 던지는 동작(Mixamo) 중에는 클립 그대로.
@@ -265,20 +267,19 @@ namespace Fishing.Characters
             ArmIK.Solve(_upperArmL, _lowerArmL, _handL, Vector3.Lerp(_handL.position, target, w), pole, w);
             if (_gripL == null) return;
             // 손목이 아니라 손바닥 앞(쥐는 자리)이 손잡이에 오게
+            // 손잡이를 쥘 땐 손바닥이 낚싯대(몸 오른쪽)를 보게 (내 캐릭터와 같다), 릴을 감을 땐 노브를 감싸기만
+            var palm = transform.right;
+            float roll = w * (1f - _crankWeight);
             _gripL.AlignTo(axis, w);
+            _gripL.RollPalm(axis, palm, roll);
             ArmIK.Solve(_upperArmL, _lowerArmL, _handL, _handL.position + (target - _gripL.Grip) * w, pole, w);
             _gripL.AlignTo(axis, w);
+            _gripL.RollPalm(axis, palm, roll);
             _gripL.Wrap(target, axis, _crankWeight > 0.5f ? 0.016f : 0.032f);
         }
 
         /// <summary>자동 촬영: 지금부터 10초 릴을 감는다.</summary>
         public void DebugReel() { _reelUntil = Time.time + 10f; _nextCast = Time.time + 60f; }
-
-        /// <summary>대기실처럼 낚싯대를 접어 들고 있게 한다 (빗자루 길이).</summary>
-        public void CollapseRod()
-        {
-            if (_rodModel != null) _rodModel.SetExtension(0f);
-        }
 
         void OnDestroy() => Talkable.Remove(this);
 

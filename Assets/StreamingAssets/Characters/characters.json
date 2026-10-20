@@ -2,6 +2,7 @@
     "_설명": "누구에게 어떤 VRM을 입힐지 정하는 파일. 고치는 법은 같은 폴더의 읽어주세요.txt",
     "playerMale": "HairSample_Male.vrm",
     "playerFemale": "Sendagaya_Shino.vrm",
+    "playerFemaleOutfit": "HairSample_Female.vrm",
     "npcMale": [
         "Sakurada_Fumiriya.vrm",
         "Base_Male.vrm",

@@ -28,9 +28,14 @@ namespace Fishing.Characters
         {
             public string playerMale;
             public string playerFemale;
+            /// <summary>기본 캐릭터에 다른 VRM의 옷을 입힌다 (비우면 제 옷).</summary>
+            public string playerMaleOutfit;
+            public string playerFemaleOutfit;
             public string[] npcMale;
             public string[] npcFemale;
             public Assign[] npc;
+            /// <summary>[옷 바꾸기]가 받아 올 옷 VRM 주소 (.vrm 또는 .vrm이 든 .zip). 받은 파일은 문서 폴더 Characters/outfits에 남는다.</summary>
+            public string[] outfitUrls;
         }
 
         static Config _cfg;
@@ -54,8 +59,11 @@ namespace Fishing.Characters
             {
                 if (!string.IsNullOrWhiteSpace(user.playerMale)) _cfg.playerMale = user.playerMale;
                 if (!string.IsNullOrWhiteSpace(user.playerFemale)) _cfg.playerFemale = user.playerFemale;
+                if (user.playerMaleOutfit != null) _cfg.playerMaleOutfit = user.playerMaleOutfit;
+                if (user.playerFemaleOutfit != null) _cfg.playerFemaleOutfit = user.playerFemaleOutfit;
                 if (user.npcMale != null && user.npcMale.Length > 0) _cfg.npcMale = user.npcMale;
                 if (user.npcFemale != null && user.npcFemale.Length > 0) _cfg.npcFemale = user.npcFemale;
+                if (user.outfitUrls != null && user.outfitUrls.Length > 0) _cfg.outfitUrls = user.outfitUrls;
                 if (user.npc != null && user.npc.Length > 0)
                 {
                     // 이름별 지정은 합친다 (문서 폴더 것이 이긴다)
@@ -110,6 +118,16 @@ namespace Fishing.Characters
         {
             Ensure();
             return IdOf(female ? _cfg.playerFemale : _cfg.playerMale) ?? IdOf(female ? _cfg.playerMale : _cfg.playerFemale) ?? FirstAvailable();
+        }
+
+        /// <summary>[옷 바꾸기]가 받아 올 옷 주소들.</summary>
+        public static string[] OutfitUrls { get { Ensure(); return _cfg.outfitUrls ?? System.Array.Empty<string>(); } }
+
+        /// <summary>기본 캐릭터가 입을 다른 VRM의 옷 (없으면 null = 제 옷).</summary>
+        public static string PlayerOutfit(bool female)
+        {
+            Ensure();
+            return IdOf(female ? _cfg.playerFemaleOutfit : _cfg.playerMaleOutfit);
         }
 
         /// <summary>NPC 모델: 이름 지정 → 성별 목록에서 이름으로 고르기 → 다른 성별 목록 → 아무거나.</summary>

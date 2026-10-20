@@ -85,6 +85,17 @@ VRoid 프로젝트(pixiv)가 VRoid Studio 알파 시절 샘플로 **CC0** 공개
 - NPC는 `npc` 이름 지정 → 성별 목록에서 이름의 FNV 해시로 고르기(실행마다 같다) → 다른 성별 목록 → 기본 캐릭터.
 - JSON이 깨졌거나 적힌 파일이 없으면 `CharacterRoster.Warnings` → 캐릭터 창 맨 위 노란 글씨 + 로그.
 
+### 옷 갈아입기 (VrmOutfit · OutfitChanger, 2026-10-21)
+
+사용자 요청: 주인공은 교복 말고 데이트복·오피스룩 같은 옷 → 대기실에서 옷을 무작위로 바꾸고, 웹에서 받아 와 입히고, 끄고 켜도 그 옷.
+- **VrmOutfit**: VRoid 모델은 몸 메쉬 하나(`Body.baked`)에 피부·상의·하의·신발이 재질별 조각(`…_SKIN`, `…_CLOTH`)으로 들어 있고 뼈 이름(`J_Bip_*`)이 같다. 입는 사람의 `_CLOTH` 조각은 메쉬 복사본에서 삼각형을 비워 숨기고, 옷 주인의 `_CLOTH` 조각만 떼어 새 SkinnedMeshRenderer로 입는 사람 뼈에 이름으로 붙인다. 바인드포즈는 옷 주인 것을 그대로 써서 정점이 각자 뼈 기준 자리를 지킨다(키·팔 길이가 달라도 소매·바짓단이 손목·발목을 따라간다). 입는 사람에게 없는 흔들림 뼈(후드·치마 `J_Sec_*`)는 옷 주인 뼈대의 가장 가까운 조상으로 붙이고 그 조상 기준 바인드포즈를 다시 계산한다(그 부분은 흔들리지 않는다). 피부 텍스처에 그려진 양말은 그대로 남는다.
+- **주인공 기본 옷**: `characters.json`의 `playerFemaleOutfit` = `HairSample_Female.vrm`(흰 긴소매 원피스). 받은 여자 옷 중 오피스룩은 없어서(넥타이 셔츠는 교복) 데이트복으로 골랐다. 남자 옷(후드티)은 남자 몸이라 컸다.
+- **세이브**: `SaveData.outfit` — `""` = characters.json 기본, `"own"` = 모델 제 옷, 그 밖 = 옷 주인 VRM id. `PlayerProfile.SetOutfit`. 끄고 켜도 그 옷이다.
+- **대기실 [옷 바꾸기] / 캐릭터 창 [캐릭터 모델] 탭 옷 줄([랜덤] [기본] [제 옷])** → `OutfitChanger.Randomize()`:
+  - `characters.json`의 `outfitUrls`에 아직 받지 않은 주소가 있으면 하나를 `UnityWebRequest`로 받아(`.vrm` 또는 `.vrm`이 든 `.zip`, 첫 바이트로 구분) `문서/짭풍명월/Characters/outfits/`에 두고 입힌다. 받은 옷은 다시 받지 않고 후보에 들어간다(`user/outfits/…`, 캐릭터 모델 목록에도 나온다).
+  - 없거나 받기에 실패하면 가진 VRM(기본 11 + 문서 폴더) 중 지금 모델·지금 옷이 아니고 `_CLOTH`가 있는 것을 무작위로.
+  - 게임과 함께 나가는 `outfitUrls`는 비워 두었다: 로그인 없이 받을 수 있는 공개 VRoid 옷 목록이 없다(VRoid Hub API는 pixiv 앱 등록 + 사용자 로그인 + 모델마다 내려받기 허락). 시험: OpenGameArt CC0 `avatarsample_g.zip` 주소를 넣고 받아 입는 것까지 확인(`00a2_outfit_random`).
+
 ### 사용 허락 (VRM 메타)
 
 VRM 파일에는 만든 사람이 정한 허락이 들어 있다. 캐릭터 창이 보여 준다.

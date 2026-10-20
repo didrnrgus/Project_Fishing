@@ -17,6 +17,8 @@ namespace Fishing.Characters
         public bool Female;
         /// <summary>VRM id ("builtin/파일.vrm", "user/파일.vrm"). 비우면 CharacterRoster가 고른다.</summary>
         public string Vrm;
+        /// <summary>다른 VRM의 옷을 입힌다 (VRM id, VrmOutfit). 주인공 기본 캐릭터만 (characters.json playerFemaleOutfit).</summary>
+        public string Outfit;
 
         public static CharacterLook Player => new CharacterLook { Name = "강태공", Title = "초보 조사" };
     }
@@ -36,6 +38,8 @@ namespace Fishing.Characters
             var id = !string.IsNullOrEmpty(look.Vrm) ? look.Vrm : CharacterRoster.ForNpc(look.Name, look.Female);
             if (id == null || !VrmCharacters.LoadNow(id)) return null;
             var go = VrmCharacters.Create(id, parent, look.Name, look.Female);
+            if (go != null && !string.IsNullOrEmpty(look.Outfit) && look.Outfit != id && VrmCharacters.LoadNow(look.Outfit))
+                VrmOutfit.Apply(go, VrmCharacters.Template(look.Outfit));
             if (go != null && npc && string.IsNullOrEmpty(look.Vrm))
             {
                 float j = (CharacterRoster.StableHash(look.Name ?? "") % 1000u) / 999f * 2f - 1f;

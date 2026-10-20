@@ -901,23 +901,36 @@ def model_trap(iid):
     return [o], 'item', 0.45
 
 
+def _shoe_round(t, front=0.2, back=0.12):
+    """앞코·뒤꿈치 끝을 둥글게 오므리는 비율 (끝 0 → 안쪽 1, 사분원). 폭과 높이에 함께 곱해 끝이 타원체처럼 닫힌다
+    (예전에는 폭만 줄고 높이는 그대로라 앞코가 세운 판처럼 뭉툭하게 잘려 보였다)."""
+    r = 1.0
+    if t < front:
+        u = 1 - t / front
+        r = math.sqrt(max(0.0, 1 - u * u))
+    if t > 1 - back:
+        u = 1 - (1 - t) / back
+        r = min(r, math.sqrt(max(0.0, 1 - u * u)))
+    return r
+
+
 def _shoe_hw(t):
-    """운동화 발바닥 윤곽의 반폭 (t: 0 앞코 ~ 1 뒤꿈치). 앞볼이 넓고 장심(아치)이 잘록하고 뒤꿈치는 둥글다."""
-    env = math.sin(math.pi * min(1.0, max(0.0, t))) ** 0.42
-    return env * (0.047 - 0.009 * math.exp(-((t - 0.63) / 0.13) ** 2) - 0.004 * max(0.0, t - 0.75) / 0.25)
+    """운동화 발바닥 윤곽의 반폭 (t: 0 앞코 ~ 1 뒤꿈치). 앞볼이 넓고 장심(아치)이 잘록하고, 앞코·뒤꿈치는 위에서 보면 둥글다."""
+    base = 0.043 + 0.005 * math.exp(-((t - 0.26) / 0.14) ** 2) - 0.007 * math.exp(-((t - 0.6) / 0.12) ** 2) - 0.005 * fish_smooth(0.7, 1.0, t)
+    return base * _shoe_round(t)
 
 
 def _shoe_zb(t):
-    """밑창 바닥 높이: 앞코가 들리고(토 스프링) 뒤꿈치도 살짝 둥글게."""
-    return 0.02 * max(0.0, (0.24 - t) / 0.24) ** 2 + 0.006 * max(0.0, (t - 0.88) / 0.12) ** 2
+    """밑창 바닥 높이: 앞코가 살짝 들리고(토 스프링) 뒤꿈치 끝도 조금 둥글게."""
+    return 0.011 * max(0.0, (0.3 - t) / 0.3) ** 2.2 + 0.003 * max(0.0, (t - 0.88) / 0.12) ** 2
 
 
-SOLE_H = 0.026
+SOLE_H = 0.024
 
 
 def _shoe_H(t):
-    """갑피 높이 (밑창 위에서): 앞코 낮고, 발등을 따라 오르고, 뒤꿈치 컵이 가장 높다."""
-    return 0.026 + 0.05 * fish_smooth(0.04, 0.6, t) + 0.008 * fish_smooth(0.8, 1.0, t)
+    """갑피 높이 (밑창 위에서): 앞코(토박스)는 낮고 납작, 끈 자리를 따라 발등이 오르고, 뒤꿈치 컵이 가장 높다."""
+    return 0.024 + 0.048 * fish_smooth(0.14, 0.58, t) + 0.006 * fish_smooth(0.8, 1.0, t)
 
 
 def _shoe_dip(t, xr):
@@ -931,10 +944,10 @@ def fish_smooth(e0, e1, x):
     return k * k * (3 - 2 * k)
 
 
-def _loft(rings_fn, n, sides, mats, face_mat):
+def _loft(rings_fn, n, sides, mats, face_mat, end=0.004):
     """t를 따라 닫힌 단면(sides개 점)을 이어 붙인 몸. 양 끝은 부채꼴로 막는다. face_mat(t, a) → 머티리얼 번호."""
     bm = bmesh.new()
-    ts = [0.004 + 0.992 * (0.5 - 0.5 * math.cos(math.pi * i / (n - 1))) for i in range(n)]
+    ts = [end + (1 - 2 * end) * (0.5 - 0.5 * math.cos(math.pi * i / (n - 1))) for i in range(n)]
     rings = [[bm.verts.new(p) for p in rings_fn(t)] for t in ts]
     for i in range(n - 1):
         for k in range(sides):
@@ -961,16 +974,20 @@ def _loft(rings_fn, n, sides, mats, face_mat):
 
 def model_shoe(iid):
     """
-    강에서 건진 낡은 운동화 한 짝 (예전 모델은 밑창이 안 보이고 끈이 갑피에 묻혀 파란 민달팽이 같았고, 앞코에 구멍이 뚫려 있었다).
-    흰 밑창(앞코가 들림, 가운데 남색 줄, 바닥 고무) + 발 모양 갑피(앞볼 넓고 장심 잘록) + 파인 발목 구멍과 짙은 안감 +
-    혀 + X자로 엇갈린 신발끈과 구멍 + 옆면 흰 줄무늬 두 줄 + 앞코 고무 + 이끼 몇 점.
+    강에서 건진 낡은 운동화 한 짝 (캔버스 운동화). 예전 모델은 밑창이 안 보이고 끈이 갑피에 묻혀 파란 민달팽이 같았고,
+    그다음엔 앞코가 폭만 줄고 높이는 그대로라 세운 판처럼 뭉툭하게 잘리고 들려서 주걱 같았으며 앞코 고무가 옆에 붙은 회색 조각이었다.
+    지금: 위에서 보면 둥근 앞코, 낮게 내려와 밑창에 닿는 토박스(끝을 폭·높이 함께 타원체로 오므림), 살짝 들린 토 스프링,
+    밑창보다 조금 앞에서 끝나는 갑피를 감싸는 흰 고무 앞코 캡(밑창 위 같은 높이의 띠 + 앞코 윗면 방패꼴), 둘레 전체 흰 밑창(남색 줄·바닥 고무),
+    파인 발목 구멍과 짙은 안감, 혀, X자 끈·구멍·매듭, 옆 줄무늬 두 줄, 뒤꿈치 보강(힐 카운터)·고리, 이끼 몇 점.
     """
-    sole_w, sole_line, sole_gum = mat('#d9d2c0', 0.75), mat('#2b3a5a', 0.6), mat('#5a5048', 0.9)
-    upper, stripe, toe_rub = mat('#46658a', 0.85), mat('#e6e2d6', 0.7), mat('#d4cdbb', 0.7)
+    sole_w, sole_line, sole_gum = mat('#e4ddcb', 0.7), mat('#2b3a5a', 0.6), mat('#5a5048', 0.9)
+    upper, stripe, toe_rub = mat('#46658a', 0.85), mat('#e6e2d6', 0.7), mat('#e4ddcb', 0.55)
+    counter = mat('#34507a', 0.8)
     lining, lace, eyelet = mat('#26242a', 0.95), mat('#ece8dc', 0.65), mat('#8a8c90', 0.35, metal=0.8)
     tongue_m, moss = mat('#52709a', 0.9), mat('#6b7a3a', 0.95)
-    sides = 48
+    sides = 64
     L0, L = -0.13, 0.26
+    SOLE_OUT = 0.005          # 밑창이 갑피보다 앞뒤로 더 나온 길이
 
     def y_of(t):
         return L0 + L * t
@@ -978,32 +995,44 @@ def model_shoe(iid):
     def se(c, p):
         return math.copysign(abs(c) ** (2 / p), c)
 
-    # ---- 밑창: 납작한 둥근 사각 단면 ----
+    # ---- 밑창: 납작한 둥근 사각 단면. 끝에서 폭·두께가 함께 오므라들어 둥근 코가 된다 ----
     def sole_ring(t):
-        hw, zb = _shoe_hw(t) + 0.003, _shoe_zb(t)
+        r = _shoe_round(t)
+        hw = _shoe_hw(t) + 0.0035 * r ** 0.5
+        # 앞뒤 끝: 바닥은 위로 둥글게 말려 오르고 윗면은 거의 그대로 → 코가 밑창 윗면 쪽에서 둥글게 닫힌다
+        k = 1 - r ** 0.7
+        zb = _shoe_zb(t)
+        z0, z1 = zb + SOLE_H * 0.65 * k, zb + SOLE_H * (1 - 0.3 * k)
+        zm, hh = (z0 + z1) / 2, (z1 - z0) / 2
+        y = L0 - SOLE_OUT + (L + 2 * SOLE_OUT) * t
         out = []
         for k in range(sides):
             a = 2 * math.pi * k / sides
-            out.append((hw * se(math.cos(a), 3.2), y_of(t), zb + SOLE_H * 0.5 * (1 + se(math.sin(a), 3.2))))
+            out.append((hw * se(math.cos(a), 3.2), y, zm + hh * se(math.sin(a), 3.2)))
         return out
 
     def sole_mat(t, a):
         zr = 0.5 * (1 + se(math.sin(a), 3.2))     # 0 바닥 ~ 1 윗면
-        if zr < 0.06:
+        if zr < 0.08:
             return 2                               # 바닥 고무
-        return 1 if 0.42 < zr < 0.56 else 0        # 가운데 남색 줄
-    objs = [_loft(sole_ring, 56, sides, [sole_w, sole_line, sole_gum], sole_mat)]
+        return 1 if 0.5 < zr < 0.6 else 0          # 가운데 남색 줄
+    objs = [_loft(sole_ring, 72, sides, [sole_w, sole_line, sole_gum], sole_mat, end=0.0004)]
 
-    # ---- 갑피: 아래는 밑창에 묻히고 위는 둥근 돔, 발목 쪽은 파여서 구멍 ----
+    # ---- 갑피: 아래는 밑창에 묻히고 위는 둥근 돔, 발목 쪽은 파여서 구멍. 앞코는 밑창 윗면 높이 쪽으로 오므린다 ----
+    def sole_top(t):
+        return _shoe_zb(t) + SOLE_H
+
     def upper_z(t, xr, top=True):
-        zt = _shoe_zb(t) + SOLE_H - 0.004
-        if not top:
-            return zt - 0.004
-        H = _shoe_H(t)
-        return zt + H * (1 - abs(xr) ** 2.6) ** (1 / 2.6) - _shoe_dip(t, xr)
+        zt = sole_top(t) - 0.003
+        if top:
+            z = zt + _shoe_H(t) * (1 - abs(xr) ** 2.6) ** (1 / 2.6) - _shoe_dip(t, xr)
+        else:
+            z = zt - 0.005
+        zc = _shoe_zb(t) + SOLE_H * 0.65          # 앞코 끝이 모이는 높이 (밑창 속)
+        return zc + (z - zc) * _shoe_round(t) ** 0.9
 
     def upper_pt(t, a):
-        hw = _shoe_hw(t) - 0.001
+        hw = _shoe_hw(t) - 0.001 * _shoe_round(t)
         xr = se(math.cos(a), 2.6)
         s = math.sin(a)
         z = upper_z(t, xr) if s >= 0 else upper_z(t, xr, False)
@@ -1017,13 +1046,60 @@ def model_shoe(iid):
 
     def upper_mat(t, a):
         xr = se(math.cos(a), 2.6)
-        s = math.sin(a)
-        if s >= 0 and _shoe_dip(t, xr) > 0.012:
+        if math.sin(a) >= 0 and _shoe_dip(t, xr) > 0.012:
             return 1                                # 발목 구멍 안감
-        if t < 0.13 and s < 0.75:
-            return 3                                # 앞코 고무
         return 0
-    objs.append(_loft(upper_ring, 72, sides, [upper, lining, stripe, toe_rub], upper_mat))
+    objs.append(_loft(upper_ring, 96, sides, [upper, lining], upper_mat, end=0.0004))
+
+    # 앞코 고무 캡 · 뒤꿈치 보강: 갑피 위에 덧댄 얇은 껍질. 밑창 윗면에서 잰 높이 hmax(t)까지 덮는다
+    # (면마다 색을 칠하면 경계가 계단처럼 보였다). 높이가 갑피 꼭대기보다 높으면 좌우가 위에서 만난다
+    def overlay(t0, t1, hmax, m, ctr_t, n=40, na=14):
+        def inside(t, a):   # 덮을 자리: 높이 아래이고 발목 구멍(파인 곳)이 아님
+            return upper_pt(t, a).z - sole_top(t) < hmax(t) and _shoe_dip(t, se(math.cos(a), 2.6)) < 0.0005
+
+        def a_edge(t):
+            lo, hi = 0.0, math.pi / 2
+            for k in range(1, 41):
+                a = math.pi / 2 * k / 40
+                if not inside(t, a):
+                    hi = a
+                    break
+                lo = a
+            else:
+                return hi
+            for _ in range(20):
+                mid = (lo + hi) / 2
+                if inside(t, mid):
+                    lo = mid
+                else:
+                    hi = mid
+            return lo
+        for side in (1, -1):
+            bm = bmesh.new()
+            rows = []
+            for i in range(n):
+                t = t0 + (t1 - t0) * (0.5 - 0.5 * math.cos(math.pi * i / (n - 1)))
+                ae = a_edge(t)
+                ctr = V((0, y_of(ctr_t), sole_top(t) - 0.006))
+                row = []
+                for j in range(na):
+                    a = -0.35 + (ae + 0.35) * j / (na - 1)
+                    if side < 0:
+                        a = math.pi - a
+                    q = upper_pt(t, a)
+                    row.append(bm.verts.new(q + (q - ctr).normalized() * 0.0013))
+                rows.append(row)
+            for i in range(n - 1):
+                for j in range(na - 1):
+                    f = (rows[i][j], rows[i + 1][j], rows[i + 1][j + 1], rows[i][j + 1])
+                    bm.faces.new(f if side > 0 else f[::-1])
+            bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-6)
+            bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+            objs.append(obj_from_bm(bm, 'Overlay', m))
+    # 앞코 캡: 밑창 위 1.3cm 띠로 앞을 고르게 감싸고 뒤로 가며 낮아져 끝난다. 앞코 윗면은 통째로 덮인다
+    overlay(0.0004, 0.27, lambda t: 0.013 * fish_smooth(0.27, 0.17, t) + 0.0004, toe_rub, 0.3)
+    # 뒤꿈치 보강: 위 가장자리가 뒤로 갈수록 올라간다
+    overlay(0.78, 0.9996, lambda t: 0.006 + 0.026 * fish_smooth(0.78, 0.97, t), counter, 0.7)
 
     def surf(t, xr, lift=0.0):
         return V((_shoe_hw(t) * xr, y_of(t), upper_z(t, xr) + lift))

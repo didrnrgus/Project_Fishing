@@ -10,8 +10,8 @@ namespace Fishing.World
     {
         const float SkyRadius = 900f;
 
-        Transform _moon, _stars, _clouds;
-        Material _moonMat, _starMat, _cloudMat;
+        Transform _moon, _sun, _stars, _clouds;
+        Material _moonMat, _sunMat, _starMat, _cloudMat;
         bool _built;
 
         void Build()
@@ -22,6 +22,11 @@ namespace Fishing.World
             _moonMat = new Material(shader) { mainTexture = ProceduralTextures.Moon };
             _moonMat.SetFloat("_Mode", 0f);
             _moon = Quad("Moon", _moonMat, 70f);
+
+            // 해: 스카이박스의 작은 해만으로는 잘 안 보여서 빛이 번지는 원판을 하나 더 (구름보다 먼저 그려 구름에 가린다)
+            _sunMat = new Material(shader) { mainTexture = SunGlow() };
+            _sunMat.SetFloat("_Mode", 0f);
+            _sun = Quad("Sun", _sunMat, 150f);
 
             _starMat = new Material(shader) { mainTexture = ProceduralTextures.Star };
             _starMat.SetFloat("_Mode", 2f);
@@ -56,6 +61,26 @@ namespace Fishing.World
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             r.receiveShadows = false;
             return go.transform;
+        }
+
+        /// <summary>해 원판 + 번지는 빛 (가운데 하얗고 둘레로 옅어지는 알파).</summary>
+        static Texture2D SunGlow()
+        {
+            const int N = 128;
+            var tex = new Texture2D(N, N, TextureFormat.RGBA32, true) { name = "SunGlow", wrapMode = TextureWrapMode.Clamp };
+            var px = new Color[N * N];
+            for (int y = 0; y < N; y++)
+            for (int x = 0; x < N; x++)
+            {
+                float r = new Vector2(x - N * 0.5f + 0.5f, y - N * 0.5f + 0.5f).magnitude / (N * 0.5f);
+                // Mathf.SmoothStep(a, b, t)는 a~b 사이 값을 돌려준다(셰이더 smoothstep과 다르다) → 0~1로 바꿔 쓴다
+                float disk = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.15f, 0.19f, r)); // 해 원판
+                float halo = Mathf.Pow(Mathf.Clamp01(1f - r), 3f) * 0.55f;   // 둘레 빛
+                px[y * N + x] = new Color(1f, 1f, 1f, Mathf.Clamp01(disk + halo));
+            }
+            tex.SetPixels(px);
+            tex.Apply(true);
+            return tex;
         }
 
         /// <summary>
@@ -161,7 +186,8 @@ namespace Fishing.World
         /// <param name="night">0 = 낮, 1 = 한밤</param>
         /// <param name="cloudColor">구름 색 (노을이면 주황)</param>
         /// <param name="coverage">구름 양 0~1</param>
-        public void Apply(Camera cam, Vector3 toSun, float night, Color cloudColor, float coverage)
+        /// <param name="warm">노을 정도 0~1 (해가 주황으로)</param>
+        public void Apply(Camera cam, Vector3 toSun, float night, Color cloudColor, float coverage, float warm = 0f)
         {
             if (!_built) Build();
             if (!_built || cam == null) return;
@@ -173,6 +199,13 @@ namespace Fishing.World
             _moon.rotation = Quaternion.LookRotation(toMoon);
             _moonMat.color = new Color(1f, 0.98f, 0.9f, Mathf.Clamp01(night * 1.2f) * Mathf.Clamp01(toMoon.y * 6f + 0.3f));
             _moon.gameObject.SetActive(toMoon.y > -0.05f);
+
+            _sun.position = camPos + toSun * SkyRadius;
+            _sun.rotation = Quaternion.LookRotation(toSun);
+            var sunCol = Color.Lerp(new Color(1f, 0.97f, 0.88f), new Color(1f, 0.58f, 0.3f), warm);
+            sunCol.a = Mathf.Clamp01(toSun.y * 8f + 0.4f) * (1f - Mathf.Clamp01((coverage - 0.5f) * 2.2f)); // 흐리면 가린다
+            _sunMat.color = sunCol;
+            _sun.gameObject.SetActive(toSun.y > -0.06f && sunCol.a > 0.01f);
 
             _starMat.color = new Color(2.2f, 2.2f, 2.2f, Mathf.Clamp01(night * night * 1.3f) * (1f - Mathf.Max(0f, coverage - 0.4f) * 1.6f));
             _stars.gameObject.SetActive(night > 0.05f);

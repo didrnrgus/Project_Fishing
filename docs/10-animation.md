@@ -173,3 +173,11 @@ NPC는 20~45초마다 `Fishing_Sequence`(들기 → 던지기 → 기다리기 �
 - 평소엔 왼손이 릴 시트 0.24m 뒤 손잡이 끝을 감싸 쥔다(내 캐릭터 `UpdateRodArmLeft`와 같다). 던지는 클립이 도는 동안(`CharacterAnimator.PlayingOnce`)은 IK를 끈다.
 - 확인: `sh tools/inspect.sh "hangang:NPC_새벽조사@reel:120:15:1.1"` — 이름 뒤 `@reel`이면 그 NPC가 바로 릴을 감는다. NPC는 몸(SkinnedMeshRenderer)만으로 경계를 잡는다(줄·찌까지 넣으면 카메라가 물 위를 봤다).
 
+## 11. 왼손 잡는 방향 (2026-10-21)
+
+사용자 지적(스크린샷): 왼손이 반대로 잡고 있고, 오른손은 그대로 두고 왼손을 더 오른손 쪽으로 올려 잡아야 한다. 왼손 그립이 잘못돼 왼팔이 몸 쪽으로 파고들었다.
+- 원인: `RodGrip.AlignTo`는 새끼→검지 방향만 낚싯대 축에 맞춰서, 축 둘레 방향(손바닥이 어디를 보는지)은 애니메이션 그대로였다 → 손바닥이 바깥을 보고 손등이 낚싯대에 붙었고, 손바닥 앞 자리를 낚싯대에 맞추려고 팔이 몸 쪽으로 꺾였다.
+- `RodGrip.RollPalm(axis, want)`: 축을 중심으로 손을 굴려 손바닥이 몸 오른쪽(낚싯대 쪽)을 보게 한 뒤 IK. 내 캐릭터(`UpdateRodArmLeft`)와 NPC(`UpdateLeftHand`, 릴을 감을 땐 끈다) 모두.
+- 왼손 자리 `LeftGripBehind` 0.24 → 0.12m: 손잡이 끝이 아니라 오른손(릴 시트) 바로 아래.
+- 확인 장면 `02t_left_hand_35`·`02t_left_hand_82` (왼쪽 앞에서 가까이 — 오른쪽에서 찍은 `02s_rod_arms`는 왼손이 몸에 가려 안 보였다).
+

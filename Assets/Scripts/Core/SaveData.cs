@@ -171,6 +171,8 @@ namespace Fishing.Core
         public bool vrmFemale = true;
         /// <summary>1 = 주인공 기본을 여자로 바꾼 뒤의 세이브. 그 전 세이브는 불러올 때 한 번 여자로 바꾼다 (GameBootstrap).</summary>
         public int lookVersion;
+        /// <summary>입은 옷: 다른 VRM의 옷(VRM id, VrmOutfit). "" = characters.json 기본(주인공은 흰 원피스), "own" = 모델 제 옷. 끄고 켜도 그대로 (2026-10-21).</summary>
+        public string outfit = "";
         public List<DailyQuest> daily = new List<DailyQuest>();
         public int dailyDay = -1;
         public int dailyCompleted;

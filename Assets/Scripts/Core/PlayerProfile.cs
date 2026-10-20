@@ -389,10 +389,21 @@ namespace Fishing.Core
             var look = Fishing.Characters.CharacterLook.Player;
             look.Title = CurrentTitle;
             look.Female = Data.vrmFemale;
-            look.Vrm = !string.IsNullOrEmpty(Data.vrm) && Fishing.Characters.VrmCharacters.Exists(Data.vrm)
-                ? Data.vrm
-                : Fishing.Characters.CharacterRoster.PlayerDefault(Data.vrmFemale);
+            bool custom = !string.IsNullOrEmpty(Data.vrm) && Fishing.Characters.VrmCharacters.Exists(Data.vrm);
+            look.Vrm = custom ? Data.vrm : Fishing.Characters.CharacterRoster.PlayerDefault(Data.vrmFemale);
+            // 옷: 고른 옷(대기실 [옷 바꾸기]·캐릭터 창, 세이브에 남는다) → 없으면 기본 캐릭터는 characters.json의 옷(주인공은 교복 대신 흰 원피스)
+            if (Data.outfit == "own") look.Outfit = null;
+            else if (!string.IsNullOrEmpty(Data.outfit) && Fishing.Characters.VrmCharacters.Exists(Data.outfit)) look.Outfit = Data.outfit;
+            else if (!custom) look.Outfit = Fishing.Characters.CharacterRoster.PlayerOutfit(Data.vrmFemale);
             return look;
+        }
+
+        /// <summary>옷을 바꾼다 (다른 VRM id, "own" = 제 옷, "" = 기본). 세이브에 남아 다음에 켜도 그 옷.</summary>
+        public void SetOutfit(string outfitId)
+        {
+            Data.outfit = outfitId ?? "";
+            NotifyChanged();
+            LookChanged?.Invoke();
         }
 
         /// <summary>내 캐릭터 모델을 바꾼다 (null·빈 문자열 = 기본 캐릭터, 아니면 VRM id). female = 기본 캐릭터 성별이자 걸음걸이.</summary>

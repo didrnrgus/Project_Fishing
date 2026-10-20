@@ -306,7 +306,7 @@ namespace Fishing.PlayerSystems
         };
 
         /// <summary>왼손이 쥐는 자리: 릴 시트에서 손잡이 끝 쪽으로 (TelescopicRod 손잡이 0.32m).</summary>
-        const float LeftGripBehind = 0.24f;
+        const float LeftGripBehind = 0.12f;
 
         float _rodArmWeight;
 
@@ -355,9 +355,13 @@ namespace Fishing.PlayerSystems
             ArmIK.Solve(_upperArmL, _lowerArmL, _handL, Vector3.Lerp(_handL.position, butt, w), pole, w);
             if (_gripL == null) return;
             // 손목이 아니라 손바닥 앞(쥐는 자리)이 손잡이에 오게 (UpdateCrank와 같은 방법)
+            // 손바닥이 낚싯대(몸 오른쪽)를 보게 굴린다 — 안 그러면 손등이 낚싯대에 붙어 반대로 쥔 것처럼 보였다
+            var palm = Model.right;
             _gripL.AlignTo(fwd, w);
+            _gripL.RollPalm(fwd, palm, w);
             ArmIK.Solve(_upperArmL, _lowerArmL, _handL, _handL.position + (butt - _gripL.Grip) * w, pole, w);
             _gripL.AlignTo(fwd, w);
+            _gripL.RollPalm(fwd, palm, w);
             _gripL.Wrap(butt, fwd);
         }
 

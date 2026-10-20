@@ -10,8 +10,9 @@ namespace Fishing.UI
     /// <summary>
     /// 납품 DELIVERY 창 (원작 2013 홍현 영상 1:36~2:04, 필드 납품소 · 대기실 납품 버튼).
     ///  - 왼쪽: 살림망 고기 카드 3×4칸 (어종 · cm · kg · 아이콘), 왼쪽 세로 페이지 번호. 누르면 선택(오른쪽 아래 네모).
-    ///    대물·월척은 도장. 진행 중인 퀘스트가 요구하는 어종은 초록 테두리, "퀘스트어종 비활성화"를 켜 두면 자물쇠로 잠겨 고를 수 없다.
-    ///  - 위: "퀘스트어종 비활성화" · "전체선택" 체크.
+    ///    대물·월척은 도장. 진행 중인 퀘스트가 요구하는 어종은 초록 테두리·초록 이름·"퀘스트" 태그로 알려 주기만 하고 막지 않는다
+    ///    (2026-10-21 사용자 결정: 원작의 "퀘스트어종 비활성화" 잠금은 뺐다 — 퀘스트 고기도 납품할 수 있다).
+    ///  - 위: "전체선택" 체크.
     ///  - 오른쪽: 세로 원통 납품 게이지(%), 고른 고기 값 "10,014 GOLD", "X2 납품게이지" 버튼, "납품하기".
     /// 값·게이지 규칙은 <see cref="Delivery"/>.
     /// </summary>
@@ -26,7 +27,6 @@ namespace Fishing.UI
 
         readonly HashSet<CaughtFish> _selected = new HashSet<CaughtFish>();
         int _page;
-        bool _lockQuest = true;
         bool _useX2 = true;
 
         public DeliveryPanel(Transform canvas)
@@ -42,13 +42,11 @@ namespace Fishing.UI
             base.Open();
         }
 
-        bool Locked(CaughtFish f) => _lockQuest && Delivery.IsQuestSpecies(f.speciesId);
-
-        /// <summary>자동 촬영용: 잠기지 않은 고기 앞에서 n마리를 고른다.</summary>
+        /// <summary>자동 촬영용: 앞에서 n마리를 고른다.</summary>
         public void DebugSelect(int n)
         {
             _selected.Clear();
-            foreach (var f in Game.Profile.Data.keepNet.Where(x => !Locked(x)).Take(n)) _selected.Add(f);
+            foreach (var f in Game.Profile.Data.keepNet.Take(n)) _selected.Add(f);
             if (IsOpen) Refresh();
         }
 
@@ -56,7 +54,7 @@ namespace Fishing.UI
         {
             var p = Game.Profile;
             var net = p.Data.keepNet;
-            _selected.RemoveWhere(f => !net.Contains(f) || Locked(f));
+            _selected.RemoveWhere(f => !net.Contains(f));
             int pages = Mathf.Max(1, Mathf.CeilToInt(net.Count / (float)PerPage));
             _page = Mathf.Clamp(_page, 0, pages - 1);
             Title.text = $"납품 <size=17><color=#8fa3b5>DELIVERY</color></size>   <size=20><color=#ffd060>{p.Data.gold:N0} GOLD</color></size>";
@@ -68,20 +66,18 @@ namespace Fishing.UI
             BuildSide(net);
         }
 
-        // ---------------- 위: 체크 두 개 ----------------
+        // ---------------- 위: 전체선택 ----------------
 
         void BuildTopBar(PlayerProfile p, List<CaughtFish> net)
         {
             var bar = UIFactory.Node("Top", Body).At(new Vector2(0, 1), new Vector2(0, 0), new Vector2(SideX - 20, 36));
-            CheckBox(bar, "퀘스트어종 비활성화", _lockQuest, () => { _lockQuest = !_lockQuest; Refresh(); }, GridX, 210);
-            var selectable = net.Where(f => !Locked(f)).ToList();
-            bool all = selectable.Count > 0 && selectable.All(_selected.Contains);
+            bool all = net.Count > 0 && net.All(_selected.Contains);
             CheckBox(bar, "전체선택", all, () =>
             {
                 if (all) _selected.Clear();
-                else foreach (var f in selectable) _selected.Add(f);
+                else foreach (var f in net) _selected.Add(f);
                 Refresh();
-            }, GridX + 230, 130);
+            }, GridX, 130);
             var count = UIFactory.Text(bar, $"살림망 {net.Count}/{p.KeepNetSize}", 15, UIFactory.TextDim, TextAnchor.MiddleRight);
             count.rectTransform.Fill(GridX + 380, 0, 0, 0);
         }
@@ -138,7 +134,6 @@ namespace Fishing.UI
             var s = FishDatabase.Get(f.speciesId);
             if (s == null) return;
             bool quest = Delivery.IsQuestSpecies(f.speciesId);
-            bool locked = Locked(f);
             bool picked = _selected.Contains(f);
 
             var img = UIFactory.Shape(Body, picked ? new Color(0.36f, 0.88f, 0.8f, 0.16f) : UIFactory.Surface, UIFactory.RadiusCard, "Card", 0f);
@@ -147,17 +142,14 @@ namespace Fishing.UI
             if (picked) UIFactory.AddBorder(img, UIFactory.Accent, 2f);
             else if (quest) UIFactory.AddBorder(img, QuestGreen, 2f);
             else UIFactory.AddBorder(img, new Color(1f, 1f, 1f, 0.12f), 1f);
-            if (!locked)
+            var btn = img.gameObject.AddComponent<Button>();
+            btn.transition = Selectable.Transition.None;
+            btn.onClick.AddListener(() =>
             {
-                var btn = img.gameObject.AddComponent<Button>();
-                btn.transition = Selectable.Transition.None;
-                btn.onClick.AddListener(() =>
-                {
-                    if (Game.Sound != null) Game.Sound.UiClick();
-                    if (!_selected.Remove(f)) _selected.Add(f);
-                    Refresh();
-                });
-            }
+                if (Game.Sound != null) Game.Sound.UiClick();
+                if (!_selected.Remove(f)) _selected.Add(f);
+                Refresh();
+            });
 
             // 이름 · 길이 · 무게 (퀘스트 어종은 초록 이름)
             UIFactory.Text(card, s.Name, 17, quest ? QuestGreen : UIFactory.TextMain, TextAnchor.UpperCenter, FontStyle.Bold).rectTransform.Fill(6, 6, 8, 0);
@@ -166,13 +158,13 @@ namespace Fishing.UI
             var icon = Fishing.Angling.FishModels.Icon(s);
             if (icon != null)
             {
-                var fishImg = UIFactory.Image(card, locked ? new Color(1f, 1f, 1f, 0.35f) : Color.white, icon, "Icon");
+                var fishImg = UIFactory.Image(card, Color.white, icon, "Icon");
                 fishImg.preserveAspect = true;
                 fishImg.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0, 14), new Vector2(CardW - 36, 82), new Vector2(0.5f, 0));
             }
             else
             {
-                var fishImg = UIFactory.Image(card, new Color(1f, 1f, 1f, locked ? 0.25f : 0.7f), UIFactory.Fish, "Icon");
+                var fishImg = UIFactory.Image(card, new Color(1f, 1f, 1f, 0.7f), UIFactory.Fish, "Icon");
                 fishImg.preserveAspect = true;
                 fishImg.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0, 18), new Vector2(CardW - 70, 70), new Vector2(0.5f, 0));
             }
@@ -184,29 +176,16 @@ namespace Fishing.UI
             if (s.IsTrophy(f.length)) Stamp(card, s.TrophyName);
 
             // 선택 네모 (오른쪽 아래)
-            if (!locked)
-            {
-                var box = UIFactory.Shape(card, new Color(0f, 0f, 0f, 0.35f), 4f, "Pick", 0f);
-                box.rectTransform.At(new Vector2(1, 0), new Vector2(-8, 8), new Vector2(20, 20), new Vector2(1, 0));
-                UIFactory.AddBorder(box, new Color(1f, 1f, 1f, 0.45f), 1.2f);
-                if (picked) UIFactory.Shape(box.transform, UIFactory.Accent, 2f, "On", 0f).rectTransform.Fill(4, 4, 4, 4);
-            }
+            var box = UIFactory.Shape(card, new Color(0f, 0f, 0f, 0.35f), 4f, "Pick", 0f);
+            box.rectTransform.At(new Vector2(1, 0), new Vector2(-8, 8), new Vector2(20, 20), new Vector2(1, 0));
+            UIFactory.AddBorder(box, new Color(1f, 1f, 1f, 0.45f), 1.2f);
+            if (picked) UIFactory.Shape(box.transform, UIFactory.Accent, 2f, "On", 0f).rectTransform.Fill(4, 4, 4, 4);
 
-            // 퀘스트 어종 잠금: 왼쪽 위 퀘스트 표시 + 가운데 빨간 금지 표시
+            // 퀘스트 어종: 왼쪽 위 "퀘스트" 태그 (알려 주기만, 납품은 막지 않는다)
             if (quest)
             {
                 var chip = UIFactory.Chip(card, "퀘스트", new Color(0.2f, 0.5f, 0.2f, 0.95f), Color.white, 11);
                 ((RectTransform)chip.transform.parent).At(new Vector2(0, 1), new Vector2(6, -6), new Vector2(48, 18));
-            }
-            if (locked)
-            {
-                var ring = UIFactory.Image(card, new Color(0.95f, 0.25f, 0.22f, 0.9f), UIFactory.Ring, "LockRing");
-                ring.rectTransform.At(new Vector2(0.5f, 0), new Vector2(0, 22), new Vector2(70, 70), new Vector2(0.5f, 0));
-                var slash = UIFactory.Image(ring.transform, new Color(0.95f, 0.25f, 0.22f, 0.9f), null, "Slash");
-                slash.rectTransform.At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(62, 7));
-                slash.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
-                var lockText = UIFactory.Text(card, "잠김", 12, new Color(1f, 0.6f, 0.55f), TextAnchor.LowerRight, FontStyle.Bold);
-                lockText.rectTransform.Fill(0, 10, 0, 8);
             }
         }
 

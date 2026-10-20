@@ -162,6 +162,9 @@ namespace Fishing.Core
             return light;
         }
 
+        /// <summary>해·달이 가장 높을 때 고도 30° (sin, cos) — 수평으로 보는 3인칭 화면 위쪽에 걸린다.</summary>
+        const float SunPathSin = 0.5f, SunPathCos = 0.866f;
+
         void Update()
         {
             if (_sun == null) return;
@@ -181,12 +184,17 @@ namespace Fishing.Core
             float day = Mathf.Clamp01(elevation * 3f + 0.42f);
             float warm = 1f - Mathf.Clamp01(elevation * 3.5f);
 
-            _sun.transform.rotation = Quaternion.Euler(sunAngle, -35f, 0f);
+            // 해가 지나는 길: 동쪽(+X)에서 떠서 물 쪽(+Z, 낚시할 때 바라보는 쪽) 하늘 높이 30°를 지나 서쪽(-X)으로 진다.
+            // 예전에는 정오에 머리 바로 위(90°)를 지나고 달은 그 반대(밤 10시에 60°)라 수평으로 보는 3인칭 화면에 해·달이 안 보였다.
+            // 밝기(elevation)는 예전 그대로, 보이는 자리만 낮게 기울였다
+            float s = sunAngle * Mathf.Deg2Rad;
+            var toSun = new Vector3(Mathf.Cos(s), Mathf.Sin(s) * SunPathSin, Mathf.Sin(s) * SunPathCos).normalized;
+            _sun.transform.rotation = Quaternion.LookRotation(-toSun);
             _sun.intensity = (elevation > -0.03f ? Mathf.Clamp01(elevation * 2.5f + 0.15f) : 0f) * 1.0f * _weatherDim; // 지평선의 낮은 햇빛
             _sun.color = Color.Lerp(new Color(1f, 0.96f, 0.88f), new Color(1f, 0.52f, 0.28f), warm);
             _sun.enabled = _sun.intensity > 0.01f;
 
-            _moon.transform.rotation = Quaternion.Euler(sunAngle + 180f, -35f, 0f);
+            _moon.transform.rotation = Quaternion.LookRotation(toSun); // 달은 해의 정반대 (밤 12시에 물 쪽 30°)
             // 원작 밤(2013 홍현 영상): 검지 않고 보랏빛 남색으로 밝다. 바위·물결·캐릭터가 또렷하게 보이는 "달빛 낮"
             _moon.intensity = Mathf.Clamp01(-elevation * 3f) * 0.5f * Mathf.Lerp(0.5f, 1f, _weatherDim);
             _moon.enabled = _moon.intensity > 0.01f;
@@ -222,7 +230,7 @@ namespace Fishing.Core
             var cloudColor = Color.Lerp(cloudNight, Color.Lerp(cloudDay, cloudSunset, warm * 0.8f), day);
             cloudColor.a = Mathf.Lerp(0.55f, 0.95f, day);
             if (Game.CameraRig != null)
-                _decor.Apply(Game.CameraRig.Cam, -_sun.transform.forward, 1f - day, cloudColor, coverage);
+                _decor.Apply(Game.CameraRig.Cam, toSun, 1f - day, cloudColor, coverage, warm);
 
             if (Time.time >= _nextProbeAt)
             {

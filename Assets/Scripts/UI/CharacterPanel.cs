@@ -452,6 +452,14 @@ namespace Fishing.UI
             RowButton(gait, "남자", () => p.SetCharacterModel(cur, false), 170, 120, p.Data.vrmFemale ? UIFactory.TabOff : UIFactory.TabOn, true, 16);
             RowButton(gait, "여자", () => p.SetCharacterModel(cur, true), 298, 120, p.Data.vrmFemale ? UIFactory.TabOn : UIFactory.TabOff, true, 16);
 
+            // 옷: 다른 VRM의 옷을 입는다 (VrmOutfit). 대기실 [옷 바꾸기]와 같다, 세이브에 남는다
+            var wear = p.BuildLook().Outfit;
+            var outfitRow = rows.Next(50, 10);
+            Cell(outfitRow, $"옷  <size=14><color=#8090a0>{(wear == null ? "제 옷" : DisplayName(wear))}</color></size>", 20, 300, 17).alignment = UIFactory.Align(TextAnchor.MiddleLeft);
+            RowButton(outfitRow, OutfitChanger.Busy ? "받는 중…" : "랜덤", () => OutfitChanger.Randomize(), 330, 120, null, !OutfitChanger.Busy, 16);
+            RowButton(outfitRow, "기본", () => p.SetOutfit(""), 458, 120, p.Data.outfit.Length == 0 ? UIFactory.TabOn : UIFactory.TabOff, true, 16);
+            RowButton(outfitRow, "제 옷", () => p.SetOutfit("own"), 586, 120, p.Data.outfit == "own" ? UIFactory.TabOn : UIFactory.TabOff, true, 16);
+
             // 왼쪽 카드: 지금 모델 썸네일·사용 허락
             string shown = cur.Length > 0 ? cur : defId;
             var sel = shown != null ? VrmCharacters.GetInfo(shown) : null;

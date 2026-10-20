@@ -33,6 +33,9 @@ namespace Fishing.Characters
         public static string UserFolder =>
             System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "짭풍명월", "Characters");
 
+        /// <summary>[옷 바꾸기]가 웹에서 받은 VRM (OutfitChanger).</summary>
+        public static string OutfitFolder => System.IO.Path.Combine(UserFolder, "outfits");
+
         public static string BuiltInFolder => System.IO.Path.Combine(Application.streamingAssetsPath, "Characters");
 
         /// <summary>읽은 VRM이 이 키 밖이면(잘못 만든 모델) 1.6m로 맞춘다.</summary>
@@ -62,6 +65,7 @@ namespace Fishing.Characters
             }
             Scan(BuiltInFolder, "builtin/");
             Scan(UserFolder, "user/");
+            Scan(OutfitFolder, "user/outfits/");
             return ids;
         }
 
@@ -87,6 +91,9 @@ namespace Fishing.Characters
         }
 
         public static Info GetInfo(string id) => id != null && _info.TryGetValue(id, out var i) ? i : null;
+
+        /// <summary>읽어 둔 원본 (꺼진 채 선반에 있다, T 자세). 옷 입히기(VrmOutfit)가 옷 조각을 떼어 간다.</summary>
+        public static GameObject Template(string id) => id != null && _templates.TryGetValue(id, out var t) ? t : null;
 
         public static bool IsReady(string id) => id != null && _templates.TryGetValue(id, out var t) && t != null;
 

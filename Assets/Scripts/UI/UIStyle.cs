@@ -222,5 +222,73 @@ namespace Fishing.UI
         {
             if (g is TranslucentImage ti) ti.paraformConfig.CornerRadii = Vector4.one * radius;
         }
+
+        /// <summary>
+        /// 화면 전체를 흐리게 덮는 막 (테두리·그림자 없는 유리). 원작 ESC 메뉴처럼 뒤 게임 화면이 뿌옇게 보인다. 클릭을 막는다.
+        /// </summary>
+        public static TranslucentImage BlurBackdrop(Transform parent, string name, float opacity = 0.25f)
+        {
+            var img = NewTranslucent(parent, name, GlassMaterial, new Color(0f, 0f, 0f, 1f), 0f, 0f);
+            img.foregroundOpacity = opacity;
+            img.vibrancy = 0.6f;
+            img.brightness = -0.08f;
+            img.flatten = 0.2f;
+            img.raycastTarget = true;
+            img.rectTransform.Fill();
+            return img;
+        }
+
+        // ---- 원작 메뉴 버튼 (대기실 오른쪽 아래 4개·ESC 메뉴, 2013 홍현 영상 0:10·2:50) ----
+        // 짙은 남색 금속판: 위 반은 조금 밝고 맨 위에 가는 빛 줄, 가운데가 가장 어둡고 아래로 갈수록 푸른 반사광이 올라온다.
+        // 둘레는 하늘색 빛 테두리, 글씨는 흰 굵은 한글 + 그 아래 작은 영문 대문자. 게임 종료는 같은 모양의 주황·적갈색 판.
+        static Texture2D _classicBlue, _classicRed;
+        static Texture2D ClassicBlue => _classicBlue ??= ClassicPlate(new Color(0.36f, 0.6f, 0.78f), new Color(0.17f, 0.34f, 0.48f), new Color(0.05f, 0.13f, 0.21f), new Color(0.1f, 0.27f, 0.39f));
+        static Texture2D ClassicRed => _classicRed ??= ClassicPlate(new Color(1f, 0.6f, 0.32f), new Color(0.82f, 0.36f, 0.14f), new Color(0.5f, 0.14f, 0.05f), new Color(0.62f, 0.2f, 0.07f));
+
+        /// <summary>세로 그라데이션 판 텍스처: top = 맨 위 빛 줄, upper = 위 반, mid = 가운데(가장 어둡다), bottom = 아래 반사광.</summary>
+        static Texture2D ClassicPlate(Color top, Color upper, Color mid, Color bottom)
+        {
+            const int h = 64;
+            var tex = new Texture2D(4, h, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            var px = new Color32[4 * h];
+            for (int y = 0; y < h; y++)
+            {
+                float v = (y + 0.5f) / h; // 0 = 아래, 1 = 위
+                Color c = v > 0.5f ? Color.Lerp(mid, upper, Mathf.SmoothStep(0f, 1f, (v - 0.5f) / 0.42f)) : Color.Lerp(bottom, mid, Mathf.SmoothStep(0f, 1f, v / 0.5f));
+                if (v > 0.9f) c = Color.Lerp(c, top, (v - 0.9f) / 0.1f);
+                c.a = 1f;
+                for (int x = 0; x < 4; x++) px[y * 4 + x] = c;
+            }
+            tex.SetPixels32(px);
+            tex.Apply();
+            return tex;
+        }
+
+        /// <summary>
+        /// 원작 메뉴 버튼. ko = 굵은 한글, en = 아래 작은 영문(대문자로 쓴다). red면 게임 종료 같은 주황 판.
+        /// 크기는 부르는 쪽에서 At으로 정한다 (원작: 대기실 300×56, ESC 228×48).
+        /// </summary>
+        public static Button ClassicButton(Transform parent, string ko, string en, System.Action onClick, bool red = false, int koSize = 22)
+        {
+            var img = RoundedTexture(parent, red ? ClassicRed : ClassicBlue, 3f, "ClassicButton");
+            img.raycastTarget = true;
+            AddShadow(img, 10f, new Vector2(0, -3), 0.55f);
+            AddBorder(img, red ? new Color(1f, 0.7f, 0.42f, 0.95f) : new Color(0.42f, 0.78f, 1f, 0.9f), 1.5f, 2.5f);
+            var btn = img.gameObject.AddComponent<Button>();
+            btn.targetGraphic = img;
+            var colors = btn.colors;
+            colors.highlightedColor = new Color(1.3f, 1.3f, 1.3f);
+            colors.pressedColor = new Color(0.78f, 0.78f, 0.78f);
+            colors.selectedColor = Color.white;
+            colors.disabledColor = new Color(0.5f, 0.5f, 0.52f, 0.6f);
+            colors.fadeDuration = 0.08f;
+            btn.colors = colors;
+            btn.onClick.AddListener(() => { if (Fishing.Core.Game.Sound != null) Fishing.Core.Game.Sound.UiClick(); onClick?.Invoke(); });
+            int enSize = Mathf.Max(10, Mathf.RoundToInt(koSize * 0.55f));
+            var t = Text(img.transform, string.IsNullOrEmpty(en) ? ko : $"{ko}\n<size={enSize}><color=#e4f0f8>{en}</color></size>", koSize, TextMain, TextAnchor.MiddleCenter, FontStyle.Bold);
+            t.lineSpacing = -14f;
+            t.rectTransform.Fill(4, 4, 0, 2);
+            return btn;
+        }
     }
 }

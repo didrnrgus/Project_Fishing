@@ -87,7 +87,7 @@ Assets/
       WaterSurface.cs            격자 수면 메쉬 + Fishing/Water 머티리얼 (맵마다 색), 해저 높이 텍스처 굽기(SetSeabed → 물가 거품)
       WaterGlints.cs             밤 물 위에 길게 비치는 불빛 (가로등·다리·도시)
       WorldBatcher.cs            맵을 지은 뒤 움직이지 않는 Standard 소품을 정적 배칭으로 묶기 (아래 "정적 배칭")
-      SkyDecor.cs                달·별(번지는 사각형 2,200개, 은하수 띠, 반짝임)·구름 돔 (카메라를 따라다님)
+      SkyDecor.cs                해 원판(번지는 빛)·달·별(번지는 사각형 2,200개, 은하수 띠, 반짝임)·구름 돔 (카메라를 따라다님). 해·달 길은 DayNightCycle(고도 최대 30°, 물 쪽)
       KenneyProps.cs             Kenney CC0 모델 배치 헬퍼
       ProceduralTextures.cs      물 노멀맵, 구름 노이즈, 달 텍스처
       FishSchoolManager.cs       어군 자리·이동, 큰/작은 어군, 히든·포식자 어군(SchoolKind), 소용돌이(색)·파문
