@@ -455,7 +455,6 @@ namespace Fishing.Angling
                 Game.Player.BodyLean = -16f;
                 Game.Player.RodYaw = 0f;
                 Game.Player.Rod.Kick(-260f);       // 휘두르는 힘에 초릿대가 뒤로 휘었다 튕긴다
-                Game.Player.PlayCast();
                 _bobber.Launch(Game.Player.RodTip.position, _castTarget);
                 Game.Sound.Whoosh();
                 Game.CameraRig.Shake(0.25f);
@@ -1018,7 +1017,6 @@ namespace Fishing.Angling
                     return;
                 }
                 Game.Profile.ConsumeItem(Game.Profile.Bait.Id);
-                Game.Player.PlayHook();
                 float quality = grade switch { HookGrade.SoSo => 0.25f, HookGrade.Good => 0.5f, HookGrade.Great => 0.75f, _ => 1f };
                 // 홱! 낚싯대를 세우며 크게 휘고, 찌 자리에 물보라, 잠깐 시간이 멈춘 듯
                 _hookAt = Time.unscaledTime;

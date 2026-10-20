@@ -284,6 +284,78 @@ namespace Fishing.PlayerSystems
             SolveTwoBone(_upperArmR, _lowerArmR, _handR, Vector3.Lerp(_handR.position, want, Mathf.SmoothStep(0f, 1f, _showWeight)));
         }
 
+        // ---------------- 낚싯대를 쥔 두 팔 (IK) ----------------
+
+        /// <summary>
+        /// 낚싯대 기울기별 오른 손목 자리 (오른 어깨 기준, 모델 축: x 오른쪽, y 위, z 앞).
+        /// 예전에는 팔은 Mixamo 클립(Windup·Cast·Hook)이 시간대로 움직이고 낚싯대 각도는 코드가 따로 정해서 팔과 낚싯대가 따로 놀았다.
+        /// 이제 낚싯대 각도가 먼저고 손이 따라간다: 2 = 던진 직후 앞으로 뻗음, 35 = 허리 앞 대기, 82 = 챔질(가슴 앞에 세움), 155 = 어깨 너머로 젖힘.
+        /// </summary>
+        static readonly (float pitch, Vector3 off)[] GripCurve =
+        {
+            (0f,   new Vector3(-0.06f, -0.20f, 0.44f)),
+            (35f,  new Vector3(-0.03f, -0.38f, 0.27f)),
+            (82f,  new Vector3(-0.08f, -0.10f, 0.33f)),
+            (120f, new Vector3(-0.04f,  0.10f, 0.22f)),
+            (155f, new Vector3( 0.05f,  0.22f, 0.06f)),
+        };
+
+        /// <summary>왼손이 쥐는 자리: 릴 시트에서 손잡이 끝 쪽으로 (TelescopicRod 손잡이 0.32m).</summary>
+        const float LeftGripBehind = 0.24f;
+
+        float _rodArmWeight;
+
+        static Vector3 GripOffset(float pitch)
+        {
+            if (pitch <= GripCurve[0].pitch) return GripCurve[0].off;
+            for (int i = 1; i < GripCurve.Length; i++)
+            {
+                if (pitch > GripCurve[i].pitch) continue;
+                var (p0, o0) = GripCurve[i - 1];
+                var (p1, o1) = GripCurve[i];
+                return Vector3.Lerp(o0, o1, Mathf.SmoothStep(0f, 1f, (pitch - p0) / (p1 - p0)));
+            }
+            return GripCurve[GripCurve.Length - 1].off;
+        }
+
+        /// <summary>낚싯대를 들고 서 있을 때만 (걷기·점프·운전·고기 들어 보이기·넣어 둠은 애니메이션 그대로).</summary>
+        bool RodArmsActive =>
+            !RodHidden && _modelVisible && _heldFish == null && !ShowOff && _speedNow < 0.5f && _airTime < 0.15f
+            && !(_mount != null && _mountSeated) && Game.Fishing != null && Game.Fishing.State != Angling.FishingState.Idle;
+
+        /// <summary>오른손을 낚싯대 각도에 맞는 자리로 (낚싯대를 손에 붙이기 전에).</summary>
+        void UpdateRodArmRight()
+        {
+            _rodArmWeight = Mathf.MoveTowards(_rodArmWeight, RodArmsActive ? 1f : 0f, Time.deltaTime * 4f);
+            if (_rodArmWeight <= 0.001f || _upperArmR == null) return;
+            float w = Mathf.SmoothStep(0f, 1f, _rodArmWeight);
+            // 낚싯대를 좌우로 틀면 손도 어깨를 축으로 따라 돈다
+            var rot = Model.rotation * Quaternion.Euler(0f, _currentRodYaw * 0.6f, 0f);
+            var want = _upperArmR.position + rot * GripOffset(_currentRodPitch);
+            // 팔꿈치: 들고 있을 때는 아래 바깥, 어깨 너머로 젖힐수록 앞 바깥으로 든다
+            float up = Mathf.InverseLerp(70f, 155f, _currentRodPitch);
+            var pole = Model.rotation * Vector3.Lerp(new Vector3(0.7f, -0.7f, -0.1f), new Vector3(0.75f, 0.05f, 0.65f), up);
+            SolveTwoBone(_upperArmR, _lowerArmR, _handR, Vector3.Lerp(_handR.position, want, w), pole, w);
+        }
+
+        /// <summary>왼손으로 낚싯대 손잡이 끝을 감싸 쥔다 (낚싯대를 손에 붙인 뒤에).</summary>
+        void UpdateRodArmLeft()
+        {
+            if (_rodArmWeight <= 0.001f || _upperArmL == null) return;
+            float w = Mathf.SmoothStep(0f, 1f, _rodArmWeight);
+            var fwd = _rodPivot.forward;
+            var butt = _rodPivot.position - fwd * LeftGripBehind;
+            float up = Mathf.InverseLerp(70f, 155f, _currentRodPitch);
+            var pole = Model.rotation * Vector3.Lerp(new Vector3(-0.7f, -0.7f, -0.1f), new Vector3(-0.5f, -0.3f, 0.8f), up);
+            SolveTwoBone(_upperArmL, _lowerArmL, _handL, Vector3.Lerp(_handL.position, butt, w), pole, w);
+            if (_gripL == null) return;
+            // 손목이 아니라 손바닥 앞(쥐는 자리)이 손잡이에 오게 (UpdateCrank와 같은 방법)
+            _gripL.AlignTo(fwd, w);
+            SolveTwoBone(_upperArmL, _lowerArmL, _handL, _handL.position + (butt - _gripL.Grip) * w, pole, w);
+            _gripL.AlignTo(fwd, w);
+            _gripL.Wrap(butt, fwd);
+        }
+
         /// <summary>2관절 IK: 위팔·아래팔 길이는 그대로 두고 손이 target에 닿게 돌린다 (팔꿈치는 지금 굽은 면 그대로).</summary>
         static void SolveTwoBone(Transform a, Transform b, Transform c, Vector3 target)
         {
@@ -302,6 +374,19 @@ namespace Fishing.PlayerSystems
             a.rotation = Quaternion.AngleAxis((acab1 - acab0) * Mathf.Rad2Deg, axis) * a.rotation;
             b.rotation = Quaternion.AngleAxis((babc1 - babc0) * Mathf.Rad2Deg, axis) * b.rotation;
             a.rotation = Quaternion.FromToRotation(c.position - pa, target - pa) * a.rotation;
+        }
+
+        /// <summary>2관절 IK + 팔꿈치 방향: 풀고 나서 어깨→손 축을 중심으로 팔을 돌려 팔꿈치가 pole(방향) 쪽을 보게 한다 (weight만큼).</summary>
+        static void SolveTwoBone(Transform a, Transform b, Transform c, Vector3 target, Vector3 pole, float weight)
+        {
+            SolveTwoBone(a, b, c, target);
+            var axis = c.position - a.position;
+            if (axis.sqrMagnitude < 1e-6f) return;
+            var elbow = Vector3.ProjectOnPlane(b.position - a.position, axis);
+            var want = Vector3.ProjectOnPlane(pole, axis);
+            if (elbow.sqrMagnitude < 1e-8f || want.sqrMagnitude < 1e-8f) return;
+            float angle = Vector3.SignedAngle(elbow, want, axis) * Mathf.Clamp01(weight);
+            a.rotation = Quaternion.AngleAxis(angle, axis.normalized) * a.rotation;
         }
 
         /// <summary>의상을 바꾸면 캐릭터를 다시 입힌다 (초상화도 따라 바뀐다).</summary>
@@ -416,12 +501,6 @@ namespace Fishing.PlayerSystems
             Mats.Prim(PrimitiveType.Cylinder, "HatBrim", Model, new Vector3(0f, 1.82f, 0f), new Vector3(0.7f, 0.01f, 0.7f), hat, false);
             Mats.Prim(PrimitiveType.Cylinder, "HatTop", Model, new Vector3(0f, 1.9f, 0f), new Vector3(0.38f, 0.09f, 0.38f), hat, false);
         }
-
-        /// <summary>캐스팅 동작: 어깨 너머(Windup 끝 자세)에서 앞으로 던지고 팔을 뻗은 채 내린다.</summary>
-        public void PlayCast() => _anim?.PlayOnce(CharacterAnimator.Cast, 1.5f);
-
-        /// <summary>챔질 동작 (낚싯대를 홱 들어 올리기).</summary>
-        public void PlayHook() => _anim?.PlayOnce(CharacterAnimator.Hook, 2f);
 
         /// <summary>낚아 올렸을 때 (두 팔 들고 환호).</summary>
         /// <summary>랜딩 환호: 두 팔 흔들기, 가끔(40%) 깡충 뛰며 기뻐하기 (받은 Mixamo Joyful Jump).</summary>
@@ -561,16 +640,11 @@ namespace Fishing.PlayerSystems
         }
 
         /// <summary>
-        /// 낚시 중 반복 자세: 던지려고 당기는 중 = 어깨 너머로 들기, 그 밖 = 낚싯대 들고 대기.
-        /// 찌·루어를 감을 때도 대기 자세 그대로 두고 왼손만 릴 손잡이를 돌린다 (<see cref="UpdateCrank"/>).
-        /// Mixamo 릴 감기 클립은 오른손이 원을 그려서, 낚싯대를 쥔 오른손이 낚싯대째 빙빙 돌았다.
+        /// 낚시 중 몸은 늘 낚싯대 들고 대기 자세. 젖히기·던지기·챔질의 팔은 낚싯대 각도를 따라가는 IK가 정한다
+        /// (<see cref="UpdateRodArmRight"/>, 예전 Windup·Cast·Hook 클립은 마우스와 상관없이 시간대로 움직여 낚싯대와 따로 놀았다).
+        /// 찌·루어를 감을 때도 같은 자세에서 왼손만 릴 손잡이를 돌린다 (<see cref="UpdateCrank"/>).
         /// </summary>
-        static string FishingPose()
-        {
-            var f = Game.Fishing;
-            if (f.CastPulling) return CharacterAnimator.Windup;
-            return CharacterAnimator.HoldRod;
-        }
+        static string FishingPose() => CharacterAnimator.HoldRod;
 
         float _crankWeight;
 
@@ -612,7 +686,7 @@ namespace Fishing.PlayerSystems
             if (running) _anim.SetLoop(CharacterAnimator.Sprint, _speedNow / CharacterAnimator.SprintClipSpeed);
             else if (_speedNow > 2.6f) _anim.SetLoop(CharacterAnimator.Jog, _speedNow / CharacterAnimator.JogClipSpeed);
             else if (_speedNow > 0.5f) _anim.SetLoop(CharacterAnimator.Walk, Mathf.Max(0.6f, _speedNow / CharacterAnimator.WalkClipSpeed));
-            else if (fishing) _anim.SetLoop(FishingPose(), Game.Fishing.CastPulling ? 1.5f : 1f);
+            else if (fishing) _anim.SetLoop(FishingPose());
             else _anim.SetLoop(CharacterAnimator.Idle);
         }
 
@@ -621,11 +695,15 @@ namespace Fishing.PlayerSystems
             // 애니메이션이 손을 움직인 뒤에 낚싯대를 손에 붙인다
             // 상체를 젖히거나 숙인다 (애니메이션 위에 덧입힌다). 손 위치가 바뀌므로 낚싯대보다 먼저
             _currentLean = Mathf.Lerp(_currentLean, BodyLean, Time.deltaTime * 12f);
-            if (_spine != null && Mathf.Abs(_currentLean) > 0.05f)
-                _spine.rotation = Quaternion.AngleAxis(-_currentLean, Model.right) * _spine.rotation;
-            UpdateRodArm();
             _currentRodPitch = Mathf.Lerp(_currentRodPitch, RodPitch, Time.deltaTime * RodPitchSpeed);
             _currentRodYaw = Mathf.Lerp(_currentRodYaw, RodYaw, Time.deltaTime * 14f);
+            if (_spine != null && Mathf.Abs(_currentLean) > 0.05f)
+                _spine.rotation = Quaternion.AngleAxis(-_currentLean, Model.right) * _spine.rotation;
+            // 낚싯대를 좌우로 틀면 가슴도 반쯤 따라 돈다 (어깨 너머로 젖힐 때 오른 어깨가 뒤로 빠진다)
+            if (_spine != null && _rodArmWeight > 0.001f)
+                _spine.rotation = Quaternion.AngleAxis(_currentRodYaw * 0.45f * _rodArmWeight, Vector3.up) * _spine.rotation;
+            UpdateRodArm();
+            UpdateRodArmRight();
             _rodPivot.localRotation = Quaternion.Euler(0f, _currentRodYaw, 0f) * Quaternion.Euler(-_currentRodPitch, 0f, 0f);
             // 손을 낚싯대 방향에 맞춰 돌리고, 릴 시트를 손바닥 앞에 두고 손가락으로 감싸 쥔다 (RodGrip). 뼈가 없는 단순 모델은 손목에
             if (_grip != null)
@@ -649,6 +727,7 @@ namespace Fishing.PlayerSystems
             }
             Rod.Drive(RodBendTarget, RodPullDir.sqrMagnitude > 0f ? RodPullDir : Model.forward, 0f, Time.deltaTime);
             RodBendTarget = 0f;
+            UpdateRodArmLeft();
             UpdateCrank();
             UpdateHold();
         }

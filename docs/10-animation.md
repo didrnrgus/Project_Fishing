@@ -47,9 +47,9 @@
 | 클립 | 파일 | 프레임 | 반복 | 어디서 |
 |---|---|---|---|---|
 | `Fishing_Idle_Loop` | FishingIdle | 0~105 | ○ | 낚시 중 기본 자세 `HoldRod` (내 캐릭터 대기·NPC 낚시꾼) |
-| `Fishing_Windup` | FishingCast | 0~45 | | 캐스팅하려고 당기는 동안(`Charging`) 1.5배속. 끝 자세에서 멈춰 있다 |
-| `Fishing_Cast` | FishingCast | 45~95 | | 버튼을 놓는 순간 `PlayCast()` 1.5배속 → 끝나면 `HoldRod` |
-| `Fishing_Hook` | FishingCast | 0~30 | | 챔질 `PlayHook()` 2배속 (홱 들어 올리기) |
+| `Fishing_Windup` | FishingCast | 0~45 | | (내 캐릭터는 안 씀, 2026-10-20) 시간대로 움직여 마우스로 젖히는 낚싯대와 따로 놀았다. 5장 팔 IK로 바꿈 |
+| `Fishing_Cast` | FishingCast | 45~95 | | (내 캐릭터는 안 씀, 2026-10-20) 5장 팔 IK |
+| `Fishing_Hook` | FishingCast | 0~30 | | (내 캐릭터는 안 씀, 2026-10-20) 5장 팔 IK |
 | `Fishing_Reel_Loop` | FishingCast | 207~238 | ○ | (안 씀, 2026-10-19) 오른손이 원을 그려 낚싯대 쥔 손이 돌았다. 감는 동안은 `HoldRod` + 왼손 IK로 3인칭 릴 손잡이를 돌린다 (`PlayerController.UpdateCrank`) |
 | `Fishing_Sequence` | FishingCast | 0~263 | | NPC 낚시꾼이 20~45초마다 한 벌 통째로 (끝 자세 = `HoldRod` 첫 자세라 이음새가 없다) |
 | `Cheer_ArmsUp` | Cheering | 0~87 | | 랜딩 환호 `PlayCheer()` (두 팔 들고 흔들기, 얼굴 클로즈업) |
@@ -86,9 +86,18 @@
 3. `AssetImportRules.MixamoClips`에 `(파일, 클립 이름, 첫 프레임, 끝 프레임)`을 더하고 `CharacterAnimator`에 상수를 만든다.
 4. `sh tools/build.sh` → 메뉴 **Fishing > Inspect Imported Assets**(또는 `-executeMethod Fishing.EditorTools.AssetInspector.Run`)로 `Logs/asset-inspect.txt`에서 클립 길이·아바타 확인 → `sh tools/autoshot.sh`로 `02_casting`·`03_waiting`·`09b_cheer`·`22_honghyeon_day`(NPC) 확인.
 
-## 5. 낚싯대와 손
+## 5. 낚싯대와 손 (팔 IK, 2026-10-20)
 
-낚싯대는 손뼈(`hand_r`) **위치만** 따라가고 각도는 코드(`PlayerController.RodPitch`·`RodYaw`, `BodyLean`)가 정한다. 그래서 던지기·챔질에서 낚싯대 각도와 팔 동작이 따로 움직인다. NPC 낚싯대는 -40° 고정이라 `Fishing_Sequence`에서 손을 머리 위로 들 때 낚싯대가 기울지 않는다. 더 자연스럽게 하려면 손뼈 회전을 낚싯대에 섞는 것이 다음 단계다(뼈 축이 리그마다 달라서 오프셋을 맞춰야 한다).
+낚싯대 각도(`PlayerController.RodPitch`·`RodYaw`, `BodyLean`)는 코드가 정하고, **내 캐릭터의 두 팔은 그 각도를 따라가는 2관절 IK**다. 예전에는 젖히기·던지기·챔질을 Mixamo 클립(`Windup`·`Cast`·`Hook`)이 시간대로 재생하고 낚싯대 각도는 마우스를 따라 따로 움직여서, 팔과 낚싯대가 따로 놀았다(사용자 지적: 어색하다).
+
+- 몸은 낚시 중 늘 `HoldRod`(Fishing Idle) + 상체 젖힘/숙임(`BodyLean`) + 낚싯대를 좌우로 틀면 가슴이 반쯤 따라 돈다.
+- **오른손** (`UpdateRodArmRight`): 오른 어깨 기준 손목 자리를 낚싯대 각도 표 `GripCurve`에서 고른다 — 2° 던진 직후 앞으로 뻗음, 35° 허리 앞 대기, 82° 챔질(가슴 앞에 세움), 120°, 155° 어깨 너머로 젖힘. 사이는 부드럽게 섞는다. 팔꿈치 방향(pole)은 들고 있을 땐 아래 바깥, 젖힐수록 앞 바깥.
+- 낚싯대는 오른손 손바닥 앞(`RodGrip.Grip`)에 붙는다.
+- **왼손** (`UpdateRodArmLeft`): 릴 시트에서 0.24m 뒤(손잡이 끝 쪽)를 감싸 쥔다. 릴을 감을 때(`UpdateCrank`)와 고기를 들 때(`UpdateHold`)는 그 위에서 손잡이·고기로 옮겨 간다.
+- 걷기·점프·운전·넣어 둠·고기 들어 보이기 중에는 0.25초에 걸쳐 IK를 풀고 애니메이션 그대로.
+- 확인: autoshot `02a_windup`, `02s_rod_arms_2`·`_35`·`_82`·`_155`(옆에서 각도별), `04b_hook_raise`(챔질 순간).
+
+NPC 낚싯대는 -40° 고정이고 `Fishing_Sequence` 클립 그대로다.
 
 ## 6. 라이선스
 

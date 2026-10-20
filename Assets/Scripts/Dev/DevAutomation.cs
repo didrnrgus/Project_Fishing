@@ -290,6 +290,26 @@ namespace Fishing.Dev
             Game.CameraRig.Distance = 5.5f;
             yield return new WaitForSeconds(2f);
 
+            // 캐스팅 젖힘 끝: 두 손이 낚싯대를 쥔 채 어깨 너머로 (팔은 낚싯대 각도를 따라가는 IK)
+            Game.Fishing.DebugAim(0f, 10f);
+            yield return new WaitForSeconds(0.5f);
+            yield return Shot("02a_windup");
+            // 옆에서 본 두 팔: 낚싯대 각도마다 손이 따라가는지 (2 던진 직후 · 35 대기 · 82 챔질 · 155 젖힘)
+            {
+                var pm = Game.Player.Model;
+                var c = Game.Player.transform.position + Vector3.up * 1.35f;
+                var eye = c + pm.right * 2.6f + pm.forward * 0.6f + Vector3.up * 0.1f;
+                Game.CameraRig.SetFixed(eye, Quaternion.LookRotation(c + pm.forward * 0.25f - eye));
+                foreach (var pitch in new[] { 2f, 35f, 82f, 155f })
+                {
+                    Game.Player.RodPitch = pitch;
+                    Game.Player.BodyLean = pitch > 120f ? 20f : pitch < 10f ? -16f : pitch > 70f ? 14f : 0f;
+                    yield return new WaitForSeconds(0.8f);
+                    yield return Shot($"02s_rod_arms_{pitch:0}");
+                }
+                Game.CameraRig.ClearFixed();
+            }
+            Game.Fishing.DebugResume();
             // 캐스팅 제스처 (당겼다가 미는 중)
             Game.Fishing.DebugAim(0.62f, 10f);
             yield return new WaitForSeconds(0.3f);
@@ -339,6 +359,13 @@ namespace Fishing.Dev
             // 자동 조작: 찌가 완전히 잠기면 흔들어 PERFECT 챔질 → 파이팅
             Game.Fishing.Autoplay = true;
             float timeout = Time.time + 5f;
+            // 챔질 순간: 낚싯대를 세우며 두 손이 가슴 앞으로
+            while (Game.Player.RodPitch < 80f && Game.Fishing.State != FishingState.Fighting && Time.time < timeout) yield return null;
+            if (Game.Fishing.State != FishingState.Fighting)
+            {
+                yield return new WaitForSecondsRealtime(0.2f);
+                yield return Shot("04b_hook_raise");
+            }
             while (Game.Fishing.State != FishingState.Fighting && Time.time < timeout) yield return null;
             yield return new WaitForSeconds(0.25f);
             yield return Shot("05_hook_perfect");
