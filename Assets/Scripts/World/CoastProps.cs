@@ -66,61 +66,92 @@ namespace Fishing.World
         static Mesh _tetrapod;
 
         /// <summary>
-        /// 테트라포드 메쉬: 정사면체 방향 다리 4개, 가운데가 굵고(반지름 0.42) 끝이 가는(0.24) 원뿔대, 끝은 평평하게 자른 면.
-        /// 다리마다 옆면 법선을 원뿔대 경사에 맞춰 부드럽게, 끝면은 따로.
+        /// 테트라포드 메쉬: 정사면체 방향 다리 4개. 가운데가 굵고(반지름 0.42) 끝이 가는(0.24) 원뿔대이고,
+        /// 끝은 평평하게 자르되 모서리를 둥글게 모따기(실물은 거푸집 모서리가 닳아 둥글다). 다리 뿌리는 가운데 공으로 메워 이음매가 보이지 않는다.
+        /// 다리마다 링 7줄(뿌리 → 끝 모따기 3줄), 둘레 20칸 — 예전(링 2줄·12칸)보다 실루엣이 둥글다.
         /// </summary>
         public static Mesh TetrapodMesh()
         {
             if (_tetrapod != null) return _tetrapod;
-            const int seg = 12;
-            const float len = 1.05f, r0 = 0.42f, r1 = 0.24f, back = 0.15f;
+            const int seg = 20;
+            const float len = 1.05f, r0 = 0.42f, r1 = 0.24f, back = 0.15f, bevel = 0.07f;
             var v = new List<Vector3>();
             var n = new List<Vector3>();
             var uv = new List<Vector2>();
             var tri = new List<int>();
+            // 링: (다리 방향 위치, 반지름). 끝 모따기는 1/4 원을 3칸으로
+            var rings = new List<(float t, float r, bool cap)>();
+            for (int i = 0; i <= 3; i++)
+            {
+                float f = i / 3f;
+                rings.Add((Mathf.Lerp(-back, len - bevel, f), Mathf.Lerp(r0, r1 + bevel * 0.2f, f), false));
+            }
+            for (int i = 1; i <= 3; i++)
+            {
+                float a = i / 3f * Mathf.PI * 0.5f;
+                rings.Add((len - bevel + Mathf.Sin(a) * bevel, r1 + bevel * 0.2f - (1f - Mathf.Cos(a)) * bevel * 1.2f, i == 3));
+            }
             for (int leg = 0; leg < 4; leg++)
             {
                 var d = leg == 0 ? Vector3.up : Quaternion.Euler(109.47f, leg * 120f, 0f) * Vector3.up;
                 var q = Quaternion.FromToRotation(Vector3.up, d);
                 var a = q * Vector3.right;
                 var b = q * Vector3.forward;
-                // 옆면
-                int side = v.Count;
-                for (int i = 0; i <= seg; i++)
+                int start = v.Count;
+                float slope = (r0 - r1) / (len + back);
+                for (int k = 0; k < rings.Count; k++)
                 {
-                    float th = i / (float)seg * Mathf.PI * 2f;
-                    var radial = Mathf.Cos(th) * a + Mathf.Sin(th) * b;
-                    var normal = (radial * (len + back) + d * (r0 - r1)).normalized;
-                    v.Add(-d * back + radial * r0); n.Add(normal); uv.Add(new Vector2(i / (float)seg * 1.2f, 0f));
-                    v.Add(d * len + radial * r1); n.Add(normal); uv.Add(new Vector2(i / (float)seg * 1.2f, 0.6f));
-                }
-                for (int i = 0; i < seg; i++)
-                {
-                    int b0 = side + i * 2, t0 = b0 + 1, b1 = b0 + 2, t1 = b0 + 3;
-                    tri.AddRange(new[] { b0, t0, b1, b1, t0, t1 });
-                }
-                // 끝면 (바깥) + 밑면 (가운데 안쪽, 다른 다리 틈으로 안이 보이지 않게)
-                for (int cap = 0; cap < 2; cap++)
-                {
-                    var c = cap == 0 ? d * len : -d * back;
-                    float r = cap == 0 ? r1 : r0;
-                    var cn = cap == 0 ? d : -d;
-                    int center = v.Count;
-                    v.Add(c); n.Add(cn); uv.Add(new Vector2(0.5f, 0.5f));
+                    var (t, r, _) = rings[k];
+                    // 법선: 옆면은 원뿔대 경사, 모따기는 끝면 쪽으로 점점 기운다
+                    float capW = k <= 3 ? 0f : (k - 3) / 3f;
                     for (int i = 0; i <= seg; i++)
                     {
                         float th = i / (float)seg * Mathf.PI * 2f;
-                        v.Add(c + (Mathf.Cos(th) * a + Mathf.Sin(th) * b) * r); n.Add(cn);
-                        uv.Add(new Vector2(0.5f + Mathf.Cos(th) * 0.25f, 0.5f + Mathf.Sin(th) * 0.25f));
-                    }
-                    for (int i = 0; i < seg; i++)
-                    {
-                        int p0 = center + 1 + i, p1 = p0 + 1;
-                        if (cap == 0) tri.AddRange(new[] { center, p1, p0 });
-                        else tri.AddRange(new[] { center, p0, p1 });
+                        var radial = Mathf.Cos(th) * a + Mathf.Sin(th) * b;
+                        var side = (radial + d * slope).normalized;
+                        v.Add(d * t + radial * r);
+                        n.Add(Vector3.Slerp(side, d, capW * 0.9f).normalized);
+                        uv.Add(new Vector2(i / (float)seg * 1.6f, (t + back) * 0.8f));
                     }
                 }
+                for (int k = 0; k < rings.Count - 1; k++)
+                    for (int i = 0; i < seg; i++)
+                    {
+                        int b0 = start + k * (seg + 1) + i, b1 = b0 + 1, t0 = b0 + seg + 1, t1 = t0 + 1;
+                        tri.AddRange(new[] { b0, t0, b1, b1, t0, t1 });
+                    }
+                // 끝면
+                var (tc, rc, _) = rings[rings.Count - 1];
+                int center = v.Count;
+                v.Add(d * tc); n.Add(d); uv.Add(new Vector2(0.5f, 0.5f));
+                for (int i = 0; i <= seg; i++)
+                {
+                    float th = i / (float)seg * Mathf.PI * 2f;
+                    v.Add(d * tc + (Mathf.Cos(th) * a + Mathf.Sin(th) * b) * rc); n.Add(d);
+                    uv.Add(new Vector2(0.5f + Mathf.Cos(th) * 0.25f, 0.5f + Mathf.Sin(th) * 0.25f));
+                }
+                for (int i = 0; i < seg; i++) tri.AddRange(new[] { center, center + 2 + i, center + 1 + i });
             }
+            // 가운데 공: 네 다리 뿌리 사이 틈을 메운다
+            const int ls = 10, lr = 16;
+            const float cr = 0.43f;
+            int c0 = v.Count;
+            for (int i = 0; i <= ls; i++)
+            {
+                float ph = i / (float)ls * Mathf.PI;
+                for (int j = 0; j <= lr; j++)
+                {
+                    float th = j / (float)lr * Mathf.PI * 2f;
+                    var dir = new Vector3(Mathf.Sin(ph) * Mathf.Cos(th), Mathf.Cos(ph), Mathf.Sin(ph) * Mathf.Sin(th));
+                    v.Add(dir * cr); n.Add(dir); uv.Add(new Vector2(j / (float)lr, i / (float)ls));
+                }
+            }
+            for (int i = 0; i < ls; i++)
+                for (int j = 0; j < lr; j++)
+                {
+                    int p0 = c0 + i * (lr + 1) + j, p1 = p0 + 1, p2 = p0 + lr + 1, p3 = p2 + 1;
+                    tri.AddRange(new[] { p0, p1, p2, p1, p3, p2 });
+                }
             _tetrapod = new Mesh { name = "Tetrapod" };
             _tetrapod.SetVertices(v);
             _tetrapod.SetNormals(n);
@@ -190,88 +221,8 @@ namespace Fishing.World
             AddLamp(head - Vector3.up * 0.2f, new Color(1f, 0.82f, 0.55f), 14f, 1.6f);
         }
 
-        /// <summary>팔작지붕 정자: 돌 기단, 붉은 기둥 8개, 단청 보, 처마 끝이 들린 기와지붕.</summary>
-        public Transform Pavilion(Vector3 at, float yaw)
-        {
-            var p = new GameObject("Pavilion").transform;
-            p.SetParent(_root, false);
-            p.localPosition = at;
-            p.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            var stone = Mats.Textured("concrete", new Color(0.75f, 0.73f, 0.68f), 1f, 0.15f);
-            var wood = Mats.Textured("deck", new Color(0.85f, 0.72f, 0.58f), 2f, 0.3f);
-            var pillar = Mats.Lit(new Color(0.55f, 0.16f, 0.12f), 0.35f);
-            var beam = Mats.Lit(new Color(0.18f, 0.48f, 0.42f), 0.3f);
-            var beamRed = Mats.Lit(new Color(0.7f, 0.2f, 0.15f), 0.3f);
-            Mats.Prim(PrimitiveType.Cube, "Base", p, new Vector3(0f, 0.25f, 0f), new Vector3(7f, 1.1f, 7f), stone);
-            Mats.Prim(PrimitiveType.Cube, "Floor", p, new Vector3(0f, 0.95f, 0f), new Vector3(6f, 0.3f, 6f), wood);
-            for (int i = 0; i < 8; i++)
-            {
-                float a = i * Mathf.PI / 4f;
-                var pos = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * 2.7f;
-                if (i % 2 == 1) pos *= 1.41f * 0.98f; // 모서리
-                pos = new Vector3(Mathf.Clamp(pos.x, -2.7f, 2.7f), 2.4f, Mathf.Clamp(pos.z, -2.7f, 2.7f));
-                Mats.Prim(PrimitiveType.Cylinder, "Pillar", p, pos, new Vector3(0.32f, 1.35f, 0.32f), pillar);
-            }
-            // 보 (단청: 초록 + 붉은 띠)
-            foreach (var (pos, size) in new[] { (new Vector3(0f, 3.75f, 2.7f), new Vector3(5.8f, 0.35f, 0.35f)), (new Vector3(0f, 3.75f, -2.7f), new Vector3(5.8f, 0.35f, 0.35f)),
-                         (new Vector3(2.7f, 3.75f, 0f), new Vector3(0.35f, 0.35f, 5.8f)), (new Vector3(-2.7f, 3.75f, 0f), new Vector3(0.35f, 0.35f, 5.8f)) })
-            {
-                Mats.Prim(PrimitiveType.Cube, "Beam", p, pos, size, beam, false);
-                Mats.Prim(PrimitiveType.Cube, "BeamBand", p, pos + Vector3.up * 0.22f, Vector3.Scale(size, new Vector3(1f, 0.25f, 1f)) + new Vector3(0.02f, 0f, 0.02f), beamRed, false);
-            }
-            // 난간
-            var rail = Mats.Lit(new Color(0.5f, 0.2f, 0.15f), 0.3f);
-            foreach (var (pos, size) in new[] { (new Vector3(0f, 1.6f, 2.85f), new Vector3(5.6f, 0.1f, 0.1f)), (new Vector3(0f, 1.6f, -2.85f), new Vector3(5.6f, 0.1f, 0.1f)),
-                         (new Vector3(2.85f, 1.6f, 0f), new Vector3(0.1f, 0.1f, 5.6f)), (new Vector3(-2.85f, 1.6f, 0f), new Vector3(0.1f, 0.1f, 5.6f)) })
-                Mats.Prim(PrimitiveType.Cube, "Rail", p, pos, size, rail, false);
-
-            var roof = new GameObject("Roof");
-            roof.transform.SetParent(p, false);
-            roof.transform.localPosition = new Vector3(0f, 3.95f, 0f);
-            roof.AddComponent<MeshFilter>().sharedMesh = CurvedRoof(4.6f, 2.3f, 0.75f);
-            var mr = roof.AddComponent<MeshRenderer>();
-            mr.sharedMaterials = new[] { Mats.Lit(new Color(0.22f, 0.24f, 0.28f), 0.35f), Mats.Lit(new Color(0.55f, 0.22f, 0.16f), 0.3f) };
-            Mats.Prim(PrimitiveType.Sphere, "Finial", p, new Vector3(0f, 6.3f, 0f), new Vector3(0.5f, 0.6f, 0.5f), Mats.Lit(new Color(0.25f, 0.27f, 0.3f), 0.3f), false);
-            return p;
-        }
-
-        /// <summary>
-        /// 기와지붕 메쉬: 정사각형 바닥(반폭 hw)에서 꼭대기까지 오르고, 처마 쪽은 오목하게, 네 귀퉁이 끝은 위로 들린다.
-        /// 서브메쉬 0 = 윗면(기와), 1 = 아랫면(서까래, 붉은색).
-        /// </summary>
-        public static Mesh CurvedRoof(float hw, float rise, float cornerLift)
-        {
-            const int n = 24;
-            var verts = new List<Vector3>();
-            var up = new List<int>();
-            var down = new List<int>();
-            for (int iz = 0; iz <= n; iz++)
-            for (int ix = 0; ix <= n; ix++)
-            {
-                float u = ix / (float)n * 2f - 1f, v = iz / (float)n * 2f - 1f;
-                float m = Mathf.Max(Mathf.Abs(u), Mathf.Abs(v));
-                float y = rise * (1f - Mathf.Pow(m, 0.75f));               // 오목한 경사 (가운데가 높다)
-                y += cornerLift * Mathf.Pow(Mathf.Abs(u * v), 3f);           // 귀퉁이 들림
-                verts.Add(new Vector3(u * hw, y, v * hw));
-            }
-            int count = verts.Count;
-            for (int i = 0; i < count; i++) verts.Add(verts[i] - new Vector3(0f, 0.12f, 0f));
-            for (int iz = 0; iz < n; iz++)
-            for (int ix = 0; ix < n; ix++)
-            {
-                int a = iz * (n + 1) + ix, b = a + 1, c = a + n + 1, d = c + 1;
-                up.AddRange(new[] { a, c, b, b, c, d });
-                down.AddRange(new[] { a + count, b + count, c + count, b + count, d + count, c + count });
-            }
-            var mesh = new Mesh { name = "PavilionRoof" };
-            mesh.SetVertices(verts);
-            mesh.subMeshCount = 2;
-            mesh.SetTriangles(up, 0);
-            mesh.SetTriangles(down, 1);
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            return mesh;
-        }
+        /// <summary>팔작지붕 정자 (<see cref="Hanok.Pavilion"/>): 장대석 기단, 주춧돌, 석간주 기둥, 공포, 단청 창방, 계자 난간, 기와지붕.</summary>
+        public Transform Pavilion(Vector3 at, float yaw) => Hanok.Pavilion(_root, at, yaw);
 
         /// <summary>낚시점 건물 (줄무늬 차양·카운터·불빛) + 주인 NPC(NpcId "shop").</summary>
         public NpcAngler TackleShop(Vector3 p, float yaw, string sign, CharacterLook owner, Color roof)
@@ -282,7 +233,7 @@ namespace Fishing.World
             shop.localRotation = Quaternion.Euler(0f, yaw, 0f);
             // 몸통: 칠한 시멘트 벽(얼룩 셰이더) + 짙은 기단, 지붕 슬래브 + 처마 테두리
             Mats.Prim(PrimitiveType.Cube, "Body", shop, new Vector3(0f, 1.5f, 0f), new Vector3(7f, 3f, 4.5f), Plaster(new Color(0.93f, 0.9f, 0.84f), 7f, 3f));
-            Mats.Prim(PrimitiveType.Cube, "Plinth", shop, new Vector3(0f, 0.2f, 0f), new Vector3(7.1f, 0.4f, 4.6f), Mats.Textured("concrete", new Color(0.55f, 0.55f, 0.53f), new Vector2(4f, 1f), 0.1f), false);
+            Mats.Prim(PrimitiveType.Cube, "Plinth", shop, new Vector3(0f, 0.2f, 0f), new Vector3(7.1f, 0.4f, 4.6f), Mats.Weathered("concrete", new Color(0.45f, 0.45f, 0.43f), 2f, 0.1f, 0f, 0.4f, 0.3f, null, 0.7f, 0f, "wallconcrete"), false);
             Mats.Prim(PrimitiveType.Cube, "Roof", shop, new Vector3(0f, 3.2f, 0f), new Vector3(7.6f, 0.4f, 5.2f), Mats.Lit(roof));
             Mats.Prim(PrimitiveType.Cube, "Fascia", shop, new Vector3(0f, 3.05f, 2.62f), new Vector3(7.7f, 0.18f, 0.06f), Mats.Lit(roof * 0.7f), false);
             // 옆 창: 창틀·유리·창턱, 유리에 낚시 용품 포스터
@@ -363,7 +314,8 @@ namespace Fishing.World
             h.localRotation = Quaternion.Euler(0f, yaw, 0f);
             var wallCol = WallColors[_rng.Next(WallColors.Length)];
             var roofCol = RoofColors[_rng.Next(RoofColors.Length)];
-            var roof = Mats.Lit(roofCol, 0.35f);
+            // 지붕: 칠한 기와(슬레이트) 결 — 색은 지붕 색 그대로, 결만 입힌다
+            var roof = Mats.Weathered("greytile", roofCol, 1.3f, 0.35f, 0f, 0.35f, 0.15f, null, 1f);
             var glass = Mats.Lit(new Color(0.18f, 0.25f, 0.31f), 0.92f);
             var frame = Mats.Lit(new Color(0.78f, 0.79f, 0.8f), 0.6f, 0.55f);   // 알루미늄 새시
             var door = Mats.Lit(new Color(0.42f, 0.32f, 0.24f), 0.3f);
@@ -376,7 +328,7 @@ namespace Fishing.World
 
             // 벽: 칠한 미장(얼룩 셰이더) + 짙은 기단 띠 + 층 사이 띠
             Mats.Prim(PrimitiveType.Cube, "Wall", h, new Vector3(0f, wallH * 0.5f - 0.2f, 0f), new Vector3(w, wallH + 0.4f, d), Plaster(wallCol, w, wallH), false);
-            var plinth = Mats.Textured("concrete", new Color(0.52f, 0.52f, 0.5f), new Vector2(Mathf.Round(w / 2f), 1f), 0.1f);
+            var plinth = Mats.Weathered("concrete", new Color(0.45f, 0.45f, 0.43f), 2f, 0.1f, 0f, 0.4f, 0.3f, null, 0.7f, 0f, "wallconcrete");
             Mats.Prim(PrimitiveType.Cube, "Plinth", h, new Vector3(0f, 0.15f, 0f), new Vector3(w + 0.1f, 0.5f, d + 0.1f), plinth, false);
             if (twoStory)
                 Mats.Prim(PrimitiveType.Cube, "FloorBand", h, new Vector3(0f, floorH, 0f), new Vector3(w + 0.08f, 0.16f, d + 0.08f), Mats.Lit(wallCol * 0.82f, 0.2f), false);
@@ -471,9 +423,9 @@ namespace Fishing.World
             return h;
         }
 
-        /// <summary>칠한 미장 벽: 콘크리트 텍스처(반복 깨기 셰이더)에 칠 색을 곱한다. 벽 크기에 맞춰 한 장 = 3m.</summary>
+        /// <summary>칠한 미장 벽: 거친 회벽 텍스처(Fishing/Weathered)에 칠 색, 처마 밑부터 흘러내린 빗물 자국. 한 장 = 2.5m.</summary>
         static Material Plaster(Color c, float w, float hgt) =>
-            Mats.Textured("concrete", PaintTint(c), new Vector2(Mathf.Max(1f, Mathf.Round(w / 3f)), Mathf.Max(1f, Mathf.Round(hgt / 3f))), 0.12f);
+            Mats.Wall(c);
 
         /// <summary>
         /// 콘크리트 텍스처 위에 칠한 색이 그대로 나오게 하는 곱 색: 텍스처 평균(0.47, 0.43, 0.36)으로 나눈다.

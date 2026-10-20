@@ -174,7 +174,7 @@ namespace Fishing.World
             Mats.Prim(PrimitiveType.Cube, "CoastRoad", _root, new Vector3(0f, _map.LandY + 0.03f, -62f), new Vector3(420f, 0.14f, 7f),
                 Mats.TexturedBox("asphalt", Color.white, new Vector2(420f, 7f), 6f, 0.15f), false);
             Mats.Prim(PrimitiveType.Cube, "Seawall", _root, new Vector3(30f, _map.LandY - 1.2f, HonghyeonDef.ShoreZ - 0.4f),
-                new Vector3(90f, 3.2f, 1f), Mats.TexturedBox("concrete", new Color(0.85f, 0.85f, 0.83f), new Vector2(90f, 3.2f), 3f, 0.2f));
+                new Vector3(90f, 3.2f, 1f), Mats.Quay(new Color(0.85f, 0.85f, 0.83f)));
             Mats.Prim(PrimitiveType.Cube, "HarborApron", _root, new Vector3(30f, _map.LandY + 0.03f, -47f), new Vector3(70f, 0.14f, 13f),
                 Mats.TexturedBox("concrete", new Color(0.8f, 0.8f, 0.78f), new Vector2(70f, 13f), 4f, 0.2f), false);
 
@@ -220,12 +220,12 @@ namespace Fishing.World
             float bottom = _map.WaterY - 4f;
             float h = _map.LandY - bottom;
             Mats.Prim(PrimitiveType.Cube, "Body", bw, new Vector3(b.center.x, bottom + h * 0.5f, b.center.y), new Vector3(b.width, h, b.height),
-                Mats.TexturedBox("concrete", new Color(0.92f, 0.92f, 0.9f), new Vector2(b.width, b.height), 4f, 0.2f));
+                Mats.Quay(new Color(0.92f, 0.92f, 0.9f)));
             Mats.Prim(PrimitiveType.Cube, "Parapet", bw, new Vector3(b.xMin + 0.3f, _map.LandY + 0.6f, b.center.y), new Vector3(0.6f, 1.2f, b.height),
-                Mats.Lit(new Color(0.64f, 0.64f, 0.62f)), false);
+                Mats.Quay(new Color(0.78f, 0.78f, 0.76f)), false);
 
             // 테트라포드 (바깥쪽): 벽에 기댄 안쪽 줄이 가장 높고 바깥 줄일수록 잠긴다
-            var tetra = Mats.Textured("concrete", new Color(0.74f, 0.73f, 0.7f), 1f, 0.12f);
+            var tetra = Mats.Tetrapod(new Color(0.92f, 0.9f, 0.86f));
             for (int k = 0; k < 3; k++)
                 for (float z = b.yMin + 3f + (k % 2); z < b.yMax + 4f; z += R(1.8f, 2.3f))
                 {

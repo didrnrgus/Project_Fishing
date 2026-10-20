@@ -163,6 +163,8 @@ def junk(_):
 PROPS = {'palm_a': palm, 'palm_b': palm, 'felucca': felucca, 'junk': junk}
 import props_sea  # noqa: E402
 PROPS.update(props_sea.PROPS)
+import sculpt  # noqa: E402  (석상·난파선을 한 덩어리 조각으로 다시 만든 판 — 같은 id를 덮어쓴다)
+PROPS.update(sculpt.PROPS)
 
 
 def export(pid, objs):
@@ -183,6 +185,7 @@ def main():
     only = B.arg('--only')
     want = set(only.split(',')) if only else None
     prev = B.arg('--preview')
+    prev3 = B.arg('--preview3')   # 앞·3/4·옆 세 장 (원근)
     for pid, fn in PROPS.items():
         if want and pid not in want:
             continue
@@ -195,6 +198,10 @@ def main():
             os.makedirs(d, exist_ok=True)
             B.frame(cam, [o])
             B.render(os.path.join(d, pid + '.png'))
+        if prev3:
+            d = prev3 if os.path.isabs(prev3) else os.path.join(ROOT, prev3)
+            os.makedirs(d, exist_ok=True)
+            sculpt.preview3([o], os.path.join(d, pid + '_3.png'))
 
 
 if __name__ == '__main__':

@@ -118,7 +118,7 @@ namespace Fishing.World
         /// </summary>
         public static Mesh Mountain(float rx, float rz, float h, int seed, float snowLine = 2f, int peaks = 3)
         {
-            const int seg = 72, rings = 24;
+            const int seg = 180, rings = 64;
             var v = new List<Vector3>();
             var uv = new List<Vector2>();
             var rnd = new System.Random(seed);
@@ -137,7 +137,17 @@ namespace Fishing.World
                     for (int i = 0; i < peaks; i++) ridge = Mathf.Max(ridge, peakH[i] * Mathf.Exp(-(x - peakX[i]) * (x - peakX[i]) * 6f));
                     float n = Mathf.PerlinNoise(seed + x * 3.1f, seed * 0.7f + z * 3.1f) - 0.5f;
                     float n2 = Mathf.PerlinNoise(seed + x * 9f, z * 9f) - 0.5f;
+                    // 능선·골짜기 (사진: 레프카 오리·토로스 산맥은 날카로운 석회암 능선과 깊게 팬 골짜기): 리지 노이즈 세 옥타브.
+                    // 산 위쪽일수록 세게 → 아래는 완만한 기슭, 위는 칼날 능선
+                    float rdg = 0f, amp = 0.5f, fq = 5f;
+                    for (int o = 0; o < 3; o++)
+                    {
+                        float q = Mathf.PerlinNoise(seed * 1.7f + x * fq + o * 13.1f, z * fq + o * 7.3f) * 2f - 1f;
+                        rdg += (1f - Mathf.Abs(q)) * amp;
+                        amp *= 0.5f; fq *= 2.3f;
+                    }
                     float hh = h * Mathf.SmoothStep(0f, 1f, f) * (0.55f + 0.45f * ridge) * (1f + n * 0.5f + n2 * 0.12f);
+                    hh *= 0.78f + 0.42f * rdg * Mathf.SmoothStep(0.15f, 0.8f, f);
                     v.Add(new Vector3(x * rx, hh - 4f, z * rz));
                     uv.Add(new Vector2(x * rx / 24f, (hh + z * rz) / 24f));
                 }
@@ -227,15 +237,53 @@ namespace Fishing.World
             for (int y = 0; y < H; y++)
             for (int x = 0; x < W; x++)
             {
-                // 가는 세로 줄(물줄기 결) 위주, 사이사이 조금 비친다
-                float streak = Mathf.PerlinNoise(x * 0.45f, y * 0.02f) * 0.6f + Mathf.PerlinNoise(x * 1.3f, y * 0.06f) * 0.4f;
-                float a = Mathf.Clamp01(0.6f + streak * 0.6f);
-                float w = 0.88f + 0.12f * streak;
+                // 사진(듀덴 폭포): 가는 세로 물줄기 결 + 떨어지며 뭉친 흰 거품 덩어리 + 줄기 사이로 비치는 틈. 가로·세로 모두 이어진다
+                float u = x / (float)W, v = y / (float)H;
+                float streak = Mathf.PerlinNoise(u * 58f, v * 5f) * 0.6f + Mathf.PerlinNoise(u * 160f, v * 15f) * 0.4f;
+                float clump = Mathf.PerlinNoise(u * 14f + 3f, v * 9f) * Mathf.PerlinNoise(u * 31f, v * 22f + 5f);
+                float gap = Mathf.SmoothStep(0.25f, 0.42f, Mathf.PerlinNoise(u * 22f + 9f, v * 2.5f));
+                float a = Mathf.Clamp01((0.35f + streak * 0.75f) * (0.45f + 0.55f * gap) + clump * 0.8f);
+                float w = Mathf.Clamp01(0.8f + 0.14f * streak + clump * 0.4f);
                 px[y * W + x] = new Color(w, w * 1.01f, w * 1.03f, a);
             }
             _fallTex.SetPixels(px);
             _fallTex.Apply(true);
             return _fallTex;
+        }
+
+        /// <summary>폭포 밑 물안개: 천천히 피어올라 바람에 흩어지는 큰 흰 입자 (파티클). parent와 함께 지워진다.</summary>
+        public static ParticleSystem Mist(Transform parent, Vector3 pos, float radius, float rate = 14f)
+        {
+            var go = new GameObject("Mist");
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = pos;
+            var ps = go.AddComponent<ParticleSystem>();
+            var main = ps.main;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(5f, 9f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.6f, 2.2f);
+            main.startSize = new ParticleSystem.MinMaxCurve(radius * 0.5f, radius * 1.1f);
+            main.startColor = new Color(1f, 1f, 1f, 0.22f);
+            main.maxParticles = 160;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.gravityModifier = -0.02f;
+            var em = ps.emission;
+            em.rateOverTime = rate;
+            var sh = ps.shape;
+            sh.shapeType = ParticleSystemShapeType.Hemisphere;
+            sh.radius = radius;
+            sh.rotation = new Vector3(-90f, 0f, 0f);
+            var col = ps.colorOverLifetime;
+            col.enabled = true;
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.25f), new GradientAlphaKey(0f, 1f) });
+            col.color = g;
+            var sz = ps.sizeOverLifetime;
+            sz.enabled = true;
+            sz.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.6f, 1f, 1.6f));
+            go.GetComponent<ParticleSystemRenderer>().sharedMaterial = Mats.Particle(new Color(1f, 1f, 1f, 0.5f));
+            ps.Play();
+            return ps;
         }
 
         /// <summary>가로 줄무늬 두 색 (기둥·차양).</summary>
@@ -254,6 +302,28 @@ namespace Fishing.World
 
         /// <summary>먼 랜드마크 재질 (안개를 덜 받아 수백 m 밖에서도 보인다).</summary>
         public static Material Far(Color c, float smooth = 0.15f, float metal = 0f) => HanRiverLandmarks.Mat(c, null, null, Color.black, smooth, metal, Vector2.one);
+
+        /// <summary>
+        /// 먼 산·절벽 재질: Far와 같은 옅은 안개(Landmark 셰이더)에 실사 바위 결(Resources/Terrain/{tex})을 월드 트라이플래너로 (tile m마다).
+        /// 매끈한 단색 산이 장난감처럼 보이던 것을 고친다. 같은 인자면 공유.
+        /// </summary>
+        public static Material FarRock(Color c, string tex = "cliff", float tile = 40f, float strength = 0.85f, float smooth = 0.08f)
+        {
+            string key = $"{c}{tex}{tile}{strength}{smooth}";
+            if (FarRockCache.TryGetValue(key, out var m) && m != null) return m;
+            m = new Material(Far(c, smooth));
+            var d = Resources.Load<Texture2D>("Terrain/" + tex + "_diff");
+            if (d != null && m.HasProperty("_DetailTex"))
+            {
+                m.SetTexture("_DetailTex", d);
+                m.SetColor("_DetailAvg", Mats.AvgOf(tex));
+                m.SetFloat("_DetailTile", tile);
+                m.SetFloat("_DetailStrength", strength);
+            }
+            FarRockCache[key] = m;
+            return m;
+        }
+        static readonly System.Collections.Generic.Dictionary<string, Material> FarRockCache = new System.Collections.Generic.Dictionary<string, Material>();
 
         /// <summary>폭포 물줄기 재질: 반투명 흰 물결 텍스처.</summary>
         public static Material FallMat()

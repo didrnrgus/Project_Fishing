@@ -284,7 +284,7 @@ namespace Fishing.World
         {
             // E1, F1 칸: 수초 지대
             var pad = Mats.Lit(new Color(0.24f, 0.45f, 0.2f), 0.3f);
-            var reed = Mats.Lit(new Color(0.55f, 0.6f, 0.3f));
+            var reed = Mats.Thatch(new Color(0.55f, 0.6f, 0.3f));
             var weeds = new GameObject("Weeds").transform;
             weeds.SetParent(_root, false);
             for (int i = 0; i < 140; i++)

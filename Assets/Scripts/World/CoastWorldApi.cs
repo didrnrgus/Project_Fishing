@@ -47,8 +47,10 @@ namespace Fishing.World
             go.transform.SetParent(_root, false);
             go.transform.localPosition = new Vector3(at.x, _map.BaseWaterY - 2f, at.z);
             go.AddComponent<MeshFilter>().sharedMesh = StackMesh(radius, height, _rng.Next(1000), true, 4f);
-            var lime = Mats.Karst(new Color(0.92f, 0.92f, 0.88f));
-            go.AddComponent<MeshRenderer>().sharedMaterials = new[] { lime, Mats.Karst(new Color(0.42f, 0.42f, 0.4f), 0.1f), jungleTop ? Mats.Karst(new Color(0.92f, 0.92f, 0.88f), 1f) : lime };
+            var lime = Mats.Karst(new Color(0.92f, 0.92f, 0.88f), 0.8f, jungleTop ? 0.35f : 0f);
+            go.AddComponent<MeshRenderer>().sharedMaterials = new[] { lime, Mats.Karst(new Color(0.42f, 0.42f, 0.4f), 0.1f), jungleTop ? Mats.Karst(new Color(0.92f, 0.92f, 0.88f), 1f, 1f) : lime };
+            if (jungleTop && KenneyProps.Available && radius > 5f)
+                JungleTop(go.transform, go.GetComponent<MeshFilter>().sharedMesh, Mathf.RoundToInt(Mathf.Clamp(radius * 0.6f, 3f, 14f)), radius);
             return go.transform;
         }
         /// <summary>박공지붕 단위 메쉬 (바닥 -0.5~0.5, 용마루 높이 1, 용마루는 x축 방향).</summary>
@@ -86,9 +88,9 @@ namespace Fishing.World
             h.SetParent(_root, false);
             h.localPosition = at;
             h.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            var wood = Mats.Lit(WeatheredWood[_rng.Next(WeatheredWood.Length)], 0.12f);
+            var wood = Mats.Wood(WeatheredWood[_rng.Next(WeatheredWood.Length)], 0.12f);
             var plankLine = Mats.Lit(new Color(0.25f, 0.22f, 0.2f), 0.1f);
-            var post = Mats.Lit(new Color(0.35f, 0.28f, 0.22f), 0.15f);
+            var post = Mats.Wood(new Color(0.35f, 0.28f, 0.22f), 0.15f);
             bool thatch = _rng.NextDouble() < 0.45;
             var roofMat = thatch ? Mats.Lit(new Color(0.62f, 0.5f, 0.32f), 0.05f) : Mats.Lit(new Color(0.55f, 0.6f, 0.63f), 0.45f, 0.3f);
             float w = R(5f, 7.5f), d = R(4.5f, 6f), lift = R(1.6f, 2.2f), wallH = 2.6f;
@@ -123,9 +125,9 @@ namespace Fishing.World
             h.SetParent(_root, false);
             h.localPosition = at;
             h.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            var white = Mats.Lit(new Color(0.96f, 0.95f, 0.92f), 0.12f);
+            var white = Mats.Wall(new Color(0.96f, 0.95f, 0.92f), 0.12f);
             var glass = Mats.Lit(new Color(0.35f, 0.5f, 0.58f), 0.85f, 0.1f);
-            var wood = Mats.Lit(new Color(0.55f, 0.38f, 0.24f), 0.3f);
+            var wood = Mats.Wood(new Color(0.55f, 0.38f, 0.24f), 0.3f);
             if (_rng.NextDouble() < 0.4)
             {
                 // 초가 방갈로: 나무 벽 + 높은 초가 박공
@@ -174,9 +176,9 @@ namespace Fishing.World
             h.SetParent(_root, false);
             h.localPosition = at;
             h.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            var teak = Mats.Lit(new Color(0.42f, 0.24f, 0.14f), 0.25f);
-            var post = Mats.Lit(new Color(0.3f, 0.2f, 0.14f), 0.2f);
-            var tile = Mats.Lit(_rng.NextDouble() < 0.7 ? new Color(0.82f, 0.38f, 0.16f) : new Color(0.2f, 0.45f, 0.3f), 0.35f);
+            var teak = Mats.Wood(new Color(0.42f, 0.24f, 0.14f), 0.25f);
+            var post = Mats.Wood(new Color(0.3f, 0.2f, 0.14f), 0.2f);
+            var tile = Mats.Tile(_rng.NextDouble() < 0.7 ? new Color(0.82f, 0.38f, 0.16f) : new Color(0.2f, 0.45f, 0.3f), 0.35f);
             var gold = Mats.Lit(new Color(0.9f, 0.72f, 0.3f), 0.6f, 0.6f);
             float w = R(6f, 8f), d = R(5f, 6.5f), lift = 1.2f, wallH = 2.8f;
             for (int i = 0; i < 4; i++)
@@ -212,11 +214,11 @@ namespace Fishing.World
             h.SetParent(_root, false);
             h.localPosition = at;
             h.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            var wall = Mats.Lit(VenetianWalls[_rng.Next(VenetianWalls.Length)], 0.1f);
+            var wall = Mats.Wall(VenetianWalls[_rng.Next(VenetianWalls.Length)], 0.1f);
             var shutter = Mats.Lit(_rng.NextDouble() < 0.6 ? new Color(0.2f, 0.42f, 0.3f) : new Color(0.42f, 0.28f, 0.18f), 0.25f);
             var dark = Mats.Lit(new Color(0.16f, 0.15f, 0.14f), 0.4f);
-            var tile = Mats.Lit(new Color(0.72f, 0.32f, 0.2f), 0.2f);
-            var stone = Mats.Lit(new Color(0.78f, 0.74f, 0.66f), 0.15f);
+            var tile = Mats.Tile(new Color(0.72f, 0.32f, 0.2f), 0.2f);
+            var stone = Mats.Stone(new Color(0.78f, 0.74f, 0.66f), 0.15f);
             float w = R(5f, 7f), d = R(7f, 9f);
             int floors = _rng.Next(2, 5);
             const float fh = 3f;
@@ -236,7 +238,7 @@ namespace Fishing.World
                 }
             if (floors >= 3 && _rng.NextDouble() < 0.4)
             {
-                var wood = Mats.Lit(new Color(0.4f, 0.27f, 0.17f), 0.25f);
+                var wood = Mats.Wood(new Color(0.4f, 0.27f, 0.17f), 0.25f);
                 Mats.Prim(PrimitiveType.Cube, "Bay", h, new Vector3(0f, fh + 1.6f, d * 0.5f + 0.6f), new Vector3(w * 0.6f, 2.4f, 1.2f), wood, false);
             }
             Roof(h, new Vector3(0f, hgt, 0f), new Vector3(d + 0.6f, 1.6f, w + 0.6f), tile, 90f); // 박공 면이 앞(항구)을 본다

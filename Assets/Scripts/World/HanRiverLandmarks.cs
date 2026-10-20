@@ -548,12 +548,12 @@ namespace Fishing.World
             t.localPosition = pos;
             t.localRotation = Quaternion.Euler(0f, yaw, 0f);
             const float W = 12f, D = 8f, Ht = 4.2f;
-            var wall = Mats.Lit(new Color(0.94f, 0.94f, 0.93f), 0.2f);
+            var wall = Mats.Wall(new Color(0.94f, 0.94f, 0.93f), 0.2f);
             var purple = Mats.Lit(new Color(0.45f, 0.2f, 0.58f), 0.35f);
             var lime = Mats.Lit(new Color(0.62f, 0.8f, 0.2f), 0.3f);
             var frame = Mats.Lit(new Color(0.3f, 0.3f, 0.33f), 0.5f, 0.4f);
             var glass = Mats.Transparent(new Color(0.75f, 0.85f, 0.92f, 0.28f));
-            var floorMat = Mats.Lit(new Color(0.82f, 0.82f, 0.8f), 0.4f);
+            var floorMat = Mats.Wood(new Color(0.82f, 0.82f, 0.8f), 0.4f);
             var indoorLight = Mats.Emissive(new Color(1f, 0.98f, 0.92f), 1.6f);
             // 바닥·벽·지붕 (앞면 -z… 여기서는 +z가 강 쪽 앞면)
             Mats.Prim(PrimitiveType.Cube, "StoreFloor", t, new Vector3(0f, 0.08f, 0f), new Vector3(W, 0.16f, D), floorMat, false);

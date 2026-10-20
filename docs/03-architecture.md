@@ -71,6 +71,8 @@ Assets/
       Maps/MapKit.cs             랜드마크 공용 도구: 회전체 Lathe(톱니 단면 프랑), 관 묶음 Tubes, 원판 묶음 Discs, 눈 덮인 산 Mountain, 폭포 FallSheet, 들보 Beam, Blender 소품 Prop
       CoastWorldOverseas.cs      CoastWorldBuilder의 해외 부분(partial): 지역 양식 집(키클라데스·이집트·베트남)·나무(야자수·열대·지중해), 강 맞은편 둑·사막 판, 석회암 봉우리·정크선·수상 마을·칼데라·풍차·펠루카·피라미드
       CoastProps.cs              바닷가 공용 소품 (등대·큰 등대·테트라포드·정자·가로등·낚시점·바위·한국 바닷가 집)
+      Hanok.cs                   한옥 부재: 팔작 기와지붕 메쉬(기와골·수막새·서까래·용마루·취두), 정자(기단·주춧돌·공포·단청 창방·계자 난간), 단청 텍스처
+      TextureScroll.cs           재질 텍스처를 흐르게 (폭포 물줄기)
       WorldBuilder.cs            한강 월드 (다리, 데크, 낚시점, 나무, 도시, NPC)
       HanRiverLandmarks.cs       한강에서 보이는 롯데월드타워·63빌딩·남산서울타워(로프트 메쉬 + 코드 텍스처), 먼 시가지, CU 편의점
       DriedPollock.cs            덕장에 거는 명태 한 쌍 메쉬·텍스처 (청진포구)
@@ -306,6 +308,7 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 
 | 파일 | 하는 일 |
 |---|---|
+| `Shaders/Weathered.shader` (`Fishing/Weathered`) | 풍화 표면: 월드 트라이플래너(`_Tile` m) + 윗면/옆면 텍스처 따로 + 만조선(전역 `_FishingWetY`) 아래 물 자국·물때 + 빗물 줄 + 이끼 + 팔레트 모드(Kenney). 텍스처를 평균 색으로 나눠 결만 남긴다. `Mats.Weathered`·`Wall`·`Wood`·`Tile`·`Thatch`·`Stone`·`Carved`·`Quay`·`Tetrapod`, Blender 소품은 `Mats.Weatherize` ([09 8장](09-art-plan.md)) |
 | `Shaders/Ground.shader` (`Fishing/Ground`) | `Mats.Textured`가 쓰는 바닥·바위·콘크리트·데크 셰이더. 같은 텍스처를 회전·0.73배로 한 번 더 읽어 노이즈로 섞고, 월드 좌표 큰 얼룩으로 밝기·채도·광택을 흔들어 반복 무늬를 없앤다. 월드 좌표라 정적 배칭해도 같다 (`WorldBatcher`가 Standard와 함께 묶는다) |
 | `Shaders/Terrain.shader` + `Terrain-AddPass.shader` (`FishingTerrain.cginc`, `FishingNoise.cginc`) | Unity Terrain(홍현·서천·해안 맵 틀) 셰이더. 내장 지형과 같은 엔진 속성을 받아 층마다 같은 방법으로 반복을 깬다. 5번째 층부터는 추가 패스. `TerrainBuilder`가 `materialTemplate`로 쓰고 인스턴싱은 끈다 |
 | `Shaders/FishFin.shader` (`Fishing/FishFin`) | 물고기 지느러미 반투명 막 (09 문서 3-16) |

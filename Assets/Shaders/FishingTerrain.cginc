@@ -22,6 +22,7 @@ struct Input
 {
     float2 tc;
     float3 worldPos;
+    float3 wn;
     UNITY_FOG_COORDS(0)
 };
 
@@ -29,6 +30,7 @@ void TerrainVert(inout appdata_full v, out Input data)
 {
     UNITY_INITIALIZE_OUTPUT(Input, data);
     data.tc = TRANSFORM_TEX(v.texcoord.xy, _Control);
+    data.wn = UnityObjectToWorldNormal(v.normal);
     // 지형 메쉬에는 접선이 없다 (내장 지형 셰이더와 같은 방법으로 만든다)
     v.tangent.xyz = cross(v.normal, float3(0, 0, 1));
     v.tangent.w = -1;
@@ -49,6 +51,16 @@ void SampleLayer(sampler2D tex, sampler2D nor, float4 st, half nscale, float2 tc
     n = lerp(na, nb, m);
 }
 
+// 가파른 면(절벽): 위에서 내려 찍은 UV는 세로로 늘어나 줄무늬가 된다 → 옆 두 방향(월드 X·Z)에서 찍은 색을 면 방향 비율로 섞는다.
+// perM = 지형 UV(tc)가 1m에 바뀌는 양 × 층 반복 횟수. side = 옆 투영 비중 (평지 0)
+half3 SideColor(sampler2D tex, float4 st, float3 wp, float perM, half3 tw, half3 planar)
+{
+    float k = perM * st.x;
+    half3 cx = tex2D(tex, wp.zy * k).rgb;
+    half3 cz = tex2D(tex, wp.xy * k + 0.31).rgb;
+    return planar * tw.y + cx * tw.x + cz * tw.z;
+}
+
 void TerrainSurf(Input IN, inout SurfaceOutputStandard o)
 {
     half4 ctrl = tex2D(_Control, IN.tc);
@@ -65,6 +77,18 @@ void TerrainSurf(Input IN, inout SurfaceOutputStandard o)
     SampleLayer(_Splat1, _Normal1, _Splat1_ST, _NormalScale1, IN.tc, m, c1, n1);
     SampleLayer(_Splat2, _Normal2, _Splat2_ST, _NormalScale2, IN.tc, m, c2, n2);
     SampleLayer(_Splat3, _Normal3, _Splat3_ST, _NormalScale3, IN.tc, m, c3, n3);
+    // 절벽 트라이플래너: 경사 40도부터 섞기 시작해 수직이면 옆 투영만
+    float3 nw = normalize(IN.wn);
+    half3 tw = pow(abs(nw), 4);
+    tw /= (tw.x + tw.y + tw.z);
+    if (tw.y < 0.97)
+    {
+        float perM = (length(ddx(IN.tc)) + length(ddy(IN.tc))) / max(length(ddx(IN.worldPos.xz)) + length(ddy(IN.worldPos.xz)), 1e-5);
+        if (ctrl.r > 0.01) c0 = SideColor(_Splat0, _Splat0_ST, IN.worldPos, perM, tw, c0);
+        if (ctrl.g > 0.01) c1 = SideColor(_Splat1, _Splat1_ST, IN.worldPos, perM, tw, c1);
+        if (ctrl.b > 0.01) c2 = SideColor(_Splat2, _Splat2_ST, IN.worldPos, perM, tw, c2);
+        if (ctrl.a > 0.01) c3 = SideColor(_Splat3, _Splat3_ST, IN.worldPos, perM, tw, c3);
+    }
     half3 col = c0 * ctrl.r * _DiffuseRemapScale0.rgb + c1 * ctrl.g * _DiffuseRemapScale1.rgb
               + c2 * ctrl.b * _DiffuseRemapScale2.rgb + c3 * ctrl.a * _DiffuseRemapScale3.rgb;
     half3 n = n0 * ctrl.r + n1 * ctrl.g + n2 * ctrl.b + n3 * ctrl.a;

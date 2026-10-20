@@ -79,6 +79,7 @@ namespace Fishing.World
 
             bool nature = path.Contains("/Nature/");
             bool city = path.Contains("/City/");
+            bool lamp = path.Contains("/Roads/light");
             foreach (var r in go.GetComponentsInChildren<Renderer>(true))
             {
                 var mats = r.sharedMaterials;
@@ -87,10 +88,13 @@ namespace Fishing.World
                     if (mats[i] == null) continue;
                     if (nature) mats[i] = Recolor(mats[i]);
                     else if (city) mats[i] = CityGlow(mats[i]);
+                    // 가로등: 장난감 라벤더 색 → 짙은 회색 도장 철제 (실제 해안 가로등)
+                    else if (lamp) mats[i] = Mats.Weathered("rust", new Color(0.36f, 0.38f, 0.4f), 1.2f, 0.45f, 0f, 0.35f, 0f, null, 1f, 0.35f);
                 }
                 r.sharedMaterials = mats;
                 r.shadowCastingMode = city ? UnityEngine.Rendering.ShadowCastingMode.Off : UnityEngine.Rendering.ShadowCastingMode.On;
             }
+            if (path.StartsWith("Props/")) PropSurface(leaf, go);
             if (solid) AddCollider(go, path);
             return go;
         }
@@ -279,11 +283,60 @@ namespace Fishing.World
             return m;
         }
 
+        static bool Bright(Color c) => c.grayscale > 0.78f;
+        static bool Vivid(Color c)
+        {
+            Color.RGBToHSV(c, out _, out float sat, out float val);
+            return sat > 0.55f && val > 0.35f;
+        }
+
+        /// <summary>
+        /// Blender 소품(Resources/Props)은 FBX 색만 있어 매끈한 플라스틱처럼 보인다 → 재질 결을 트라이플래너로 입힌다 (부위 색은 그대로).
+        /// 석상은 돌 결·빗물 줄·이끼, 배·망루는 판재, 난파선은 녹. 금박·돛·리본처럼 반짝이거나 천인 부위는 건너뛴다.
+        /// </summary>
+        static void PropSurface(string id, GameObject go)
+        {
+            switch (id)
+            {
+                case "buddha_white": // 푸켓 빅 부다: 흰 버마 대리석
+                    Mats.Weatherize(go, "marble", 3f, 0.35f, 0f, 0.45f, 0.12f, new Color(0.45f, 0.45f, 0.38f), null, 0.85f); break;
+                case "buddha_gold": // 금박은 그대로, 받침 돌만
+                    Mats.Weatherize(go, "sandstone", 2.5f, 0.2f, 0f, 0.4f, 0.15f, null, c => c.r > c.b * 1.5f); break; // (색은 선형 값이라 밝기로 거르면 금 받침이 빠졌다)
+                case "merlion": // 센토사 머라이언: 회색 GRC(유리섬유 보강 콘크리트), 비늘 위로 빗물 줄
+                    Mats.Weatherize(go, "concrete", 2.5f, 0.25f, 1f, 0.6f, 0.15f, null, null, 0.85f); break;
+                case "eagle": // 다타란 랑: 적갈색 칠한 조각 + 바위 받침
+                    Mats.Weatherize(go, "concrete", 1.8f, 0.3f, 1f, 0.35f, 0.05f, null, c => c.r > 0.85f && c.g > 0.7f, 0.9f); break;
+                case "hareubang": // 제주 현무암: 구멍 숭숭한 거친 돌
+                    Mats.Weatherize(go, "basalt", 0.6f, 0.15f, 0f, 0.25f, 0.2f, new Color(0.3f, 0.34f, 0.24f), null, 0.95f); break;
+                case "singha": // 앙코르 사자상: 사암
+                    Mats.Weatherize(go, "sandstone", 1.6f, 0.15f, 0f, 0.5f, 0.45f, new Color(0.22f, 0.27f, 0.18f), null, 0.8f); break;
+                case "shipwreck": // 자킨토스 파나기오티스호: 녹슨 철
+                    Mats.Weatherize(go, "rust", 2.5f, 0.3f, 1f, 0.6f, 0f, null, null, 0.4f); break;
+                case "longtail_a": case "longtail_b": case "felucca": case "junk": case "lifeguard": case "sunbed":
+                    Mats.Weatherize(go, "planks", 1.6f, 0.3f, 1f, 0.2f, 0.05f, null, c => Bright(c) || Vivid(c), 0.75f); break;
+                case "parasol_thatch":
+                    Mats.Weatherize(go, "thatch", 1.2f, 0.05f, 0f, 0f, 0f, null, null, 0.7f); break;
+            }
+        }
+
+        /// <summary>
+        /// Kenney 도시 건물: 팔레트 텍스처(라벤더·하늘색 장난감 색)를 반쯤 무채색으로 빼고 따뜻한 회벽 색을 곱한 뒤,
+        /// 회벽 결·빗물 자국을 트라이플래너로 입힌다 (Fishing/Weathered 팔레트 모드). 밤 창 불빛은 팔레트를 발광으로.
+        /// </summary>
         static Material CityGlow(Material src)
         {
             if (_cityGlow != null) return _cityGlow;
-            _cityGlow = new Material(src) { name = "KenneyCityGlow" };
-            _cityGlow.EnableKeyword("_EMISSION");
+            var wx = Mats.Wall(new Color(1.3f, 1.26f, 1.18f));
+            _cityGlow = wx.shader.name == "Fishing/Weathered" ? new Material(wx) : new Material(src);
+            _cityGlow.name = "KenneyCityGlow";
+            if (wx.shader.name == "Fishing/Weathered")
+            {
+                _cityGlow.SetTexture("_PaletteTex", src.mainTexture);
+                _cityGlow.SetFloat("_UsePalette", 1f);
+                _cityGlow.SetFloat("_PaletteDesat", 0.55f);
+                _cityGlow.SetFloat("_Tile", 2f);
+            }
+            else _cityGlow.EnableKeyword("_EMISSION");
             _cityGlow.SetTexture("_EmissionMap", src.mainTexture);
             _cityGlow.SetColor("_EmissionColor", Color.black);
             _cityGlow.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;

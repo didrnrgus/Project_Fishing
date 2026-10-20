@@ -107,7 +107,7 @@ namespace Fishing.World
             // --- 왓 아룬: 3단 기단 + 가운데 높은 프랑(톱니 단면) + 네 귀퉁이 작은 프랑 ---
             var mosaic = new Material(Shader.Find("Standard")) { color = Color.white, mainTexture = Mosaic() };
             mosaic.SetFloat("_Glossiness", 0.35f);
-            var white = Mats.Lit(new Color(0.9f, 0.87f, 0.8f), 0.25f);
+            var white = Mats.Wall(new Color(0.9f, 0.87f, 0.8f), 0.25f);
             var gold = Mats.Lit(new Color(0.9f, 0.72f, 0.3f), 0.6f, 0.6f);
             var c = new Vector3(10f, land, 215f);
             float y = land;
@@ -119,14 +119,14 @@ namespace Fishing.World
                 Mats.Prim(PrimitiveType.Cube, "WatStair", root, new Vector3(c.x, y + hh * 0.5f, c.z - w * 0.5f - 1.2f), new Vector3(5f, hh, 2.4f), white, false);
                 y += hh;
             }
-            var tall = new List<Vector2>(PrangProfile(62f, 9f));
-            MapKit.Place(root, "WatArunPrang", MapKit.Lathe(tall, 24, 3f, 0.86f), mosaic, new Vector3(c.x, y, c.z), 45f);
+            var tall = new List<Vector2>(PrangProfile(62f, 9f, 16));
+            MapKit.Place(root, "WatArunPrang", MapKit.Lathe(tall, 40, 3f, 0.88f), mosaic, new Vector3(c.x, y, c.z), 45f);
             // 꼭대기 삼지창 (금빛 뾰족 끝)
             MapKit.Place(root, "WatArunSpire", MapKit.Lathe(new[] { new Vector2(0.6f, 0f), new Vector2(0.15f, 6f), new Vector2(0.01f, 9f) }, 8), gold, new Vector3(c.x, y + 61f, c.z));
             foreach (var (dx, dz) in new[] { (-26f, -26f), (26f, -26f), (-26f, 26f), (26f, 26f) })
             {
                 var at = new Vector3(c.x + dx, land + 3f, c.z + dz);
-                MapKit.Place(root, "WatArunSatellite", MapKit.Lathe(PrangProfile(26f, 4.5f), 16, 3f, 0.84f), mosaic, at, 45f);
+                MapKit.Place(root, "WatArunSatellite", MapKit.Lathe(PrangProfile(26f, 4.5f, 10), 24, 3f, 0.86f), mosaic, at, 45f);
             }
             // 강가 쪽 흰 담과 정자 둘
             Mats.Prim(PrimitiveType.Cube, "WatWall", root, new Vector3(c.x, land + 1.2f, c.z - 42f), new Vector3(110f, 2.4f, 0.8f), white, true);
@@ -135,22 +135,58 @@ namespace Fishing.World
                 var pav = new Vector3(sx, land, c.z - 48f);
                 foreach (var (dx, dz) in new[] { (-2.5f, -2.5f), (2.5f, -2.5f), (-2.5f, 2.5f), (2.5f, 2.5f) })
                     Mats.Prim(PrimitiveType.Cylinder, "SalaPost", root, pav + new Vector3(dx, 1.6f, dz), new Vector3(0.35f, 1.6f, 0.35f), white, false);
-                var tile = Mats.Lit(new Color(0.82f, 0.38f, 0.16f), 0.35f);
+                var tile = Mats.Tile(new Color(0.82f, 0.38f, 0.16f), 0.35f);
                 MapKit.Place(root, "SalaRoof", CoastWorldBuilder.Gable(), tile, pav + new Vector3(0f, 3.2f, 0f)).transform.localScale = new Vector3(8f, 3f, 7f);
                 MapKit.Place(root, "SalaRoof2", CoastWorldBuilder.Gable(), tile, pav + new Vector3(0f, 4.6f, 0f)).transform.localScale = new Vector3(6f, 2.6f, 4f);
             }
 
             // --- 먼 방콕 빌딩숲 (강 건너 오른쪽·왼쪽 멀리, 밤엔 창 불빛) ---
+            // 사진(짜오프라야 강변 스카이라인): 유리 커튼월·베이지 콘크리트 탑이 섞이고, 위로 갈수록 좁아지는 계단형 탑, 원통 탑, 옥상 왕관·안테나
             var rng = new System.Random(54);
-            for (int i = 0; i < 18; i++)
+            float Rn(float a0, float a1) => a0 + (float)rng.NextDouble() * (a1 - a0);
+            var glassSets = new[]
             {
-                float x = (i % 2 == 0 ? -1f : 1f) * (110f + (float)rng.NextDouble() * 320f);
-                float z = 330f + (float)rng.NextDouble() * 260f;
-                float h = 40f + (float)rng.NextDouble() * 110f, w = 18f + (float)rng.NextDouble() * 16f;
-                var tex = HanRiverLandmarks.Facade(Mathf.RoundToInt(h / 3.5f), 8, new Color(0.6f, 0.72f, 0.8f), new Color(0.25f, 0.32f, 0.38f), new Color(0.85f, 0.85f, 0.82f), 0.25f, 0.12f, 300 + i, out var night, 0.4f);
-                var m = HanRiverLandmarks.Mat(Color.white, tex, night, new Color(1f, 0.85f, 0.6f), 0.5f, 0.2f, new Vector2(w / 22f, 1f));
-                var go = Mats.Prim(PrimitiveType.Cube, "BkkTower", root, new Vector3(x, land + h * 0.5f - 1f, z), new Vector3(w, h, w), m, false);
-                go.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                (new Color(0.55f, 0.7f, 0.82f), new Color(0.22f, 0.3f, 0.38f), new Color(0.82f, 0.84f, 0.85f)),   // 푸른 유리
+                (new Color(0.62f, 0.66f, 0.62f), new Color(0.3f, 0.34f, 0.32f), new Color(0.9f, 0.86f, 0.76f)),   // 녹회색 유리 + 베이지 틀
+                (new Color(0.78f, 0.74f, 0.66f), new Color(0.4f, 0.38f, 0.34f), new Color(0.93f, 0.9f, 0.82f)),   // 베이지 콘크리트 + 띠창
+                (new Color(0.35f, 0.42f, 0.5f), new Color(0.12f, 0.16f, 0.2f), new Color(0.6f, 0.62f, 0.64f)),    // 짙은 유리
+            };
+            var crownMat = MapKit.Far(new Color(0.82f, 0.82f, 0.8f), 0.4f, 0.3f);
+            for (int i = 0; i < 24; i++)
+            {
+                float x = (i % 2 == 0 ? -1f : 1f) * Rn(110f, 430f);
+                float z = Rn(330f, 590f);
+                float h = Rn(40f, 150f), w = Rn(16f, 32f);
+                var (gt, gb, fr) = glassSets[rng.Next(glassSets.Length)];
+                int kind = rng.Next(3); // 0 상자 · 1 계단형 · 2 원통
+                var tex = HanRiverLandmarks.Facade(Mathf.RoundToInt(h / 3.5f), kind == 2 ? 14 : 8, gt, gb, fr, Rn(0.15f, 0.35f), Rn(0.08f, 0.18f), 300 + i, out var night, 0.4f);
+                var m = HanRiverLandmarks.Mat(Color.white, tex, night, new Color(1f, 0.85f, 0.6f), 0.55f, 0.25f, new Vector2(w / 22f, 1f));
+                var at = new Vector3(x, land - 1f, z);
+                GameObject Seg(PrimitiveType t, float y0, float hh, float ww)
+                {
+                    var g = Mats.Prim(t, "BkkTower", root, at + Vector3.up * (y0 + hh * 0.5f), new Vector3(ww, t == PrimitiveType.Cylinder ? hh * 0.5f : hh, ww), m, false);
+                    g.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    return g;
+                }
+                float topY;
+                if (kind == 1)
+                {
+                    Seg(PrimitiveType.Cube, 0f, h * 0.55f, w);
+                    Seg(PrimitiveType.Cube, h * 0.55f, h * 0.27f, w * 0.78f);
+                    Seg(PrimitiveType.Cube, h * 0.82f, h * 0.18f, w * 0.55f);
+                    topY = h;
+                }
+                else
+                {
+                    Seg(kind == 2 ? PrimitiveType.Cylinder : PrimitiveType.Cube, 0f, h, w);
+                    topY = h;
+                }
+                // 옥상: 기계실 상자 + 왕관 테 + 가끔 안테나
+                var crown = Mats.Prim(PrimitiveType.Cube, "BkkCrown", root, at + Vector3.up * (topY + 1.5f), new Vector3(w * 0.5f, 3f, w * 0.5f), crownMat, false);
+                crown.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                if (rng.NextDouble() < 0.4)
+                    Mats.Prim(PrimitiveType.Cylinder, "BkkAntenna", root, at + Vector3.up * (topY + 3f + h * 0.08f), new Vector3(0.6f, h * 0.08f, 0.6f), crownMat, false)
+                        .GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
 
             // --- 강 위: 롱테일 보트, 수상 버스(Kenney 큰 배), 선착장에 매어 둔 배 ---

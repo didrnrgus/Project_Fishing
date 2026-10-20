@@ -138,6 +138,9 @@ namespace Fishing.World
         public bool Snow;
         /// <summary>검은 현무암 갯바위 (제주).</summary>
         public bool DarkRock;
+        /// <summary>지형 절벽 층 텍스처 (Resources/Terrain). 기본 rock. 자킨토스처럼 흰 석회암 절벽이면 "karst" + 밝은 CliffTint.</summary>
+        public string CliffTexture = "rock";
+        public Color CliffTint;
         /// <summary>포구 호안을 콘크리트 대신 돌(사암·석회암, StoneTint 색)로, 계류 말뚝 없이 (앙코르 해자 둑길, 하니아 베네치아 항구).</summary>
         public bool StoneQuay;
         public Color StoneTint = new Color(0.66f, 0.64f, 0.56f);
@@ -560,7 +563,7 @@ namespace Fishing.World
             _bulbs = bulbs;
             _props = new CoastProps(_root, _rng, lamps, bulbs);
             _rock = S.DarkRock ? Mats.Textured("rock", new Color(0.3f, 0.29f, 0.29f), 1.2f, 0.35f) : Mats.Textured("rock", new Color(0.8f, 0.78f, 0.74f), 1.2f, 0.3f);
-            _concrete = Mats.Textured("concrete", new Color(0.88f, 0.88f, 0.86f), 1f, 0.2f);
+            _concrete = Mats.Quay(new Color(0.9f, 0.9f, 0.88f));
             _wood = Mats.Textured("deck", new Color(0.85f, 0.72f, 0.58f), 2f, 0.3f);
 
             // 섬 맵은 남쪽까지 바다가 감싼다
@@ -591,7 +594,7 @@ namespace Fishing.World
             {
                 new TerrainBuilder.LayerSpec(S.Snow ? "snow" : "grass", 9f, S.Snow ? 0.35f : 0.05f),
                 new TerrainBuilder.LayerSpec("sand", 6f, 0.15f),
-                new TerrainBuilder.LayerSpec("rock", 11f, 0.2f),
+                new TerrainBuilder.LayerSpec(S.CliffTexture, 11f, 0.2f, S.CliffTint),
                 new TerrainBuilder.LayerSpec("shore", 7f, 0.3f),
                 new TerrainBuilder.LayerSpec("mud", 5f, 0.7f),
             };
@@ -685,7 +688,7 @@ namespace Fishing.World
                 if (seg.Kind != ShoreKind.Quay) continue;
                 float x0 = Mathf.Max(seg.X0, -halfW), x1 = Mathf.Min(seg.X1, halfW);
                 // 돌 부두: 바위 텍스처는 이끼 낀 갈라진 바위 덩어리처럼 보여서, 포장석 결이 있는 콘크리트 텍스처에 돌 색을 입힌다
-                var quay = S.StoneQuay ? Mats.Textured("concrete", S.StoneTint, 1f, 0.12f) : _concrete;
+                var quay = S.StoneQuay ? Mats.Weathered("stonewall", S.StoneTint * 0.45f, 3f, 0.12f, 1f, 0.5f, 0.35f, null, 0.4f, 0f, "stonewall") : _concrete;
                 AlongShore("QuayWall", x0, x1, -0.4f, _map.LandY - 2.6f, new Vector3(1f, 7.2f, 1f), quay, true);
                 // 해안도로가 바로 뒤에 붙어 있으면 앞마당은 깔지 않는다 (겹쳐서 깜빡인다)
                 if (S.RoadOffset <= 0f || S.RoadOffset >= 16f)
@@ -711,12 +714,12 @@ namespace Fishing.World
 
         void BuildBreakwaters()
         {
-            var parapet = Mats.Lit(new Color(0.66f, 0.66f, 0.64f));
-            var tetra = Mats.Textured("concrete", new Color(0.74f, 0.73f, 0.7f), 1f, 0.12f);
+            var parapet = Mats.Quay(new Color(0.78f, 0.78f, 0.76f));
+            var tetra = Mats.Tetrapod(new Color(0.92f, 0.9f, 0.86f));
             float bottom = _map.BaseWaterY - 6f;
             foreach (var b in S.Breakwaters)
             {
-                var concrete = Mats.TexturedBox("concrete", new Color(0.92f, 0.92f, 0.9f), new Vector2(b.Stem.width, b.Stem.height), 4f, 0.2f);
+                var concrete = Mats.Quay(new Color(0.94f, 0.94f, 0.92f));
                 void Body(Rect r, bool along)
                 {
                     float h = _map.LandY - bottom;
@@ -761,7 +764,6 @@ namespace Fishing.World
             var yellow = Mats.Lit(new Color(0.95f, 0.78f, 0.15f), 0.3f);
             var bitt = Mats.Lit(new Color(0.15f, 0.16f, 0.18f), 0.45f, 0.3f);
             var ladder = Mats.Lit(new Color(0.55f, 0.35f, 0.18f), 0.4f, 0.6f);
-            var wet = Mats.Lit(new Color(0.28f, 0.29f, 0.27f), 0.6f);
             float top = _map.LandY + 0.012f;
             void Along(Rect r, bool stem)
             {
@@ -792,8 +794,7 @@ namespace Fishing.World
                             Mats.Prim(PrimitiveType.Cube, "LadderRung", _root, new Vector3(wx, yy, z), new Vector3(0.04f, 0.04f, 0.5f), ladder, false);
                     }
                 }
-                // 수면 근처 젖은 띠 (벽 둘레, 1cm 바깥)
-                Mats.Prim(PrimitiveType.Cube, "BreakwaterWet", _root, new Vector3(r.center.x, _map.BaseWaterY - 0.4f, r.center.y), new Vector3(r.width + 0.02f, 1.6f, r.height + 0.02f), wet, false);
+                // 수면 근처 젖은 띠·물때는 Fishing/Weathered 셰이더가 그린다 (_FishingWetY)
             }
             Along(b.Stem, true);
             if (b.Arm.width > 0f) Along(b.Arm, false);
@@ -817,10 +818,19 @@ namespace Fishing.World
             t.SetParent(_root, false);
             t.localPosition = at;
             t.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            var stone = Mats.Lit(new Color(0.55f, 0.53f, 0.5f), 0.2f);
-            for (int i = 0; i < 9; i++)
-                Mats.Prim(PrimitiveType.Sphere, "Cairn", t, new Vector3(R(-0.8f, 0.8f), 0.3f + i * 0.12f, R(-0.8f, 0.8f)) + new Vector3(2.5f, 0f, 0f),
-                    Vector3.one * R(0.5f, 0.9f), stone, false);
+            // 돌탑: 납작한 돌을 아래 넓게 위로 좁게 쌓는다 (서낭당 누석단)
+            var stone = Mats.Weathered("rock", new Color(0.5f, 0.48f, 0.45f), 1.2f, 0.2f, 0f, 0.1f, 0.5f);
+            // (실사 바위 에셋은 크기를 평균 쪽으로 당겨 납작해지지 않으므로 납작한 타원체로 쌓는다)
+            float cy = 0f;
+            for (int i = 0; i < 14; i++)
+            {
+                float ring = 1f - i / 15f;
+                float th = R(0.16f, 0.24f) * (0.7f + ring * 0.5f);
+                cy += th * 0.5f;
+                Mats.Prim(PrimitiveType.Sphere, "Cairn", t, new Vector3(2.5f + R(-0.12f, 0.12f), cy, R(-0.12f, 0.12f)),
+                    new Vector3(R(0.55f, 0.8f) * (0.45f + ring * 0.75f), th * 1.15f, R(0.5f, 0.7f) * (0.45f + ring * 0.75f)), stone, false, Quaternion.Euler(R(-8f, 8f), R(0f, 360f), R(-8f, 8f)));
+                cy += th * 0.5f;
+            }
             // 당산나무: 큰 활엽수 (없으면 예전 원기둥 + 구)
             if (KenneyProps.SpawnBush(t, new Vector3(-2f, 0f, 0f), 0f, 8.5f, 0, null, 0f, true) == null)
             {
@@ -830,12 +840,19 @@ namespace Fishing.World
             var ribbons = new[] { new Color(0.9f, 0.2f, 0.2f), new Color(0.95f, 0.85f, 0.2f), new Color(0.2f, 0.45f, 0.85f), new Color(0.95f, 0.95f, 0.95f), new Color(0.2f, 0.65f, 0.3f) };
             for (int i = 0; i < 5; i++)
                 Mats.Prim(PrimitiveType.Cylinder, "Ribbon", t, new Vector3(-2f, 1.5f + i * 0.18f, 0f), new Vector3(0.78f, 0.05f, 0.78f), Mats.Lit(ribbons[i]), false);
-            Mats.Prim(PrimitiveType.Cube, "Hall", t, new Vector3(0f, 1.1f, -3f), new Vector3(2.6f, 2.2f, 2.2f), Mats.Lit(new Color(0.85f, 0.8f, 0.7f)));
+            // 당집: 회벽 + 나무 기둥·문, 작은 팔작 기와지붕 (Hanok.Roof)
+            var wood = Mats.Weathered("planks", new Color(0.4f, 0.18f, 0.12f), 1.2f, 0.3f, 0f, 0.2f, 0f, null, 0.7f);
+            Mats.Prim(PrimitiveType.Cube, "HallBase", t, new Vector3(0f, 0.2f, -3f), new Vector3(3.2f, 0.4f, 2.8f), Mats.Weathered("stonewall", new Color(0.55f, 0.53f, 0.5f), 1.4f, 0.15f, 0f, 0.3f, 0.4f));
+            Mats.Prim(PrimitiveType.Cube, "Hall", t, new Vector3(0f, 1.3f, -3f), new Vector3(2.6f, 1.8f, 2.2f), Mats.Weathered("plaster", new Color(0.86f, 0.83f, 0.76f), 2f, 0.15f, 0f, 0.6f, 0.15f));
+            foreach (float sx in new[] { -1.3f, 1.3f })
+            foreach (float sz in new[] { -1.1f, 1.1f })
+                Mats.Prim(PrimitiveType.Cylinder, "HallPost", t, new Vector3(sx, 1.3f, -3f + sz), new Vector3(0.22f, 0.9f, 0.22f), wood, false);
+            Mats.Prim(PrimitiveType.Cube, "HallDoor", t, new Vector3(0f, 1.15f, -4.11f), new Vector3(1.1f, 1.4f, 0.04f), wood, false);
             var roof = new GameObject("HallRoof");
             roof.transform.SetParent(t, false);
-            roof.transform.localPosition = new Vector3(0f, 2.2f, -3f);
-            roof.AddComponent<MeshFilter>().sharedMesh = CoastProps.CurvedRoof(1.9f, 1.1f, 0.3f);
-            roof.AddComponent<MeshRenderer>().sharedMaterials = new[] { Mats.Lit(new Color(0.22f, 0.24f, 0.28f), 0.35f), Mats.Lit(new Color(0.55f, 0.22f, 0.16f), 0.3f) };
+            roof.transform.localPosition = new Vector3(0f, 2.25f, -3f);
+            roof.AddComponent<MeshFilter>().sharedMesh = Hanok.Roof(2.1f, 1.85f, 1.05f, 0.28f);
+            roof.AddComponent<MeshRenderer>().sharedMaterials = Hanok.RoofMaterials();
         }
 
         void Trees(Vector3 c, float radius, int count, Func<float, float, bool> ok, bool camellia)
@@ -937,14 +954,16 @@ namespace Fishing.World
                 go.AddComponent<MeshFilter>().sharedMesh = StackMesh(st.Radius, st.Height + 2f, _rng.Next(1000), (S.Features & CoastFeature.Karst) != 0);
                 // 재질 3개: 옆 절벽 / 파도에 젖은 아랫단(짙고 번들) / 위를 보는 턱·꼭대기(풀·이끼)
                 bool karst = (S.Features & CoastFeature.Karst) != 0;
-                var cliff = karst ? Mats.Karst(new Color(0.95f, 0.94f, 0.9f))
+                var cliff = karst ? Mats.Karst(new Color(0.95f, 0.94f, 0.9f), 0.8f, 0.35f)
                     : S.DarkRock ? Mats.Textured("rock", new Color(0.36f, 0.34f, 0.33f), 1f, 0.3f) : Mats.Textured("rock", new Color(0.78f, 0.74f, 0.68f), 1f, 0.25f);
                 go.AddComponent<MeshRenderer>().sharedMaterials = new[]
                 {
                     cliff, karst ? Mats.Karst(new Color(0.42f, 0.41f, 0.38f), 0.1f) : Mats.Textured("rock", new Color(0.22f, 0.21f, 0.2f), 1f, 0.75f),
-                    st.Pines ? (karst ? Mats.Karst(new Color(0.95f, 0.94f, 0.9f), 1f) : Mats.Textured("grass", new Color(0.55f, 0.62f, 0.45f), 1f, 0.1f)) : cliff,
+                    st.Pines ? (karst ? Mats.Karst(new Color(0.95f, 0.94f, 0.9f), 1f, 1f) : Mats.Textured("grass", new Color(0.55f, 0.62f, 0.45f), 1f, 0.1f)) : cliff,
                 };
-                if (st.Pines && KenneyProps.Available)
+                if (st.Pines && KenneyProps.Available && karst)
+                    JungleTop(t, go.GetComponent<MeshFilter>().sharedMesh, Mathf.RoundToInt(Mathf.Clamp(st.Radius * 0.9f, 4f, 22f)), st.Radius);
+                else if (st.Pines && KenneyProps.Available)
                     for (int k = 0; k < 3; k++)
                         KenneyProps.Spawn("Kenney/Nature/tree_pineRoundB", t, new Vector3(R(-st.Radius, st.Radius) * 0.3f, st.Height + 1.6f, R(-st.Radius, st.Radius) * 0.3f), R(0f, 360f), R(3f, 5f));
                 // 걸어서 못 들어가게 (배도 부딪힌다)
@@ -952,6 +971,24 @@ namespace Fishing.World
                 col.radius = st.Radius;
                 col.height = st.Height + 6f;
                 col.center = new Vector3(0f, st.Height * 0.5f, 0f);
+            }
+        }
+
+        /// <summary>
+        /// 석회암 봉우리 밀림 (사진: 하롱베이 봉우리 위와 비탈은 활엽수가 빽빽하다): 메쉬에서 위를 보는(법선 y > 0.45) 꼭짓점을 골라
+        /// 활엽수를 심는다. 크기는 봉우리 반지름에 비례 (멀리서도 덩어리진 숲으로 보이게).
+        /// </summary>
+        public void JungleTop(Transform t, Mesh mesh, int count, float radius)
+        {
+            var vs = mesh.vertices;
+            var ns = mesh.normals;
+            var cand = new List<int>();
+            for (int i = 0; i < vs.Length; i += 3) if (ns[i].y > 0.45f && vs[i].y > 6f) cand.Add(i);
+            if (cand.Count == 0) return;
+            for (int k = 0; k < count; k++)
+            {
+                int i = cand[_rng.Next(cand.Count)];
+                KenneyProps.Spawn("Kenney/Nature/tree_default", t, vs[i] - ns[i] * 0.4f, R(0f, 360f), R(0.35f, 0.6f) * Mathf.Clamp(radius, 6f, 16f), 0f, false);
             }
         }
 
@@ -973,10 +1010,18 @@ namespace Fishing.World
             for (int r = 0; r <= rings; r++)
             {
                 float f = r / (float)rings;
-                float capStart = karst ? 0.9f : 0.85f;
-                float cap = f > capStart ? Mathf.Sqrt(Mathf.Max(0f, 1f - Mathf.Pow((f - capStart) / (1f - capStart), 2f))) : 1f;
-                float taper = karst ? Mathf.Lerp(1.05f, 0.82f, Mathf.Pow(f, 1.6f)) : Mathf.Lerp(1.12f, 0.62f, Mathf.Pow(f, 1.3f));
+                // 석회암 봉우리(사진: 하롱베이): 곧게 선 절벽 위로 위쪽 1/3이 밀림 덮인 둥근 지붕·뾰족한 봉우리
+                float capStart = karst ? 0.66f : 0.85f;
+                float cf = f > capStart ? (f - capStart) / (1f - capStart) : 0f;
+                float cap = f > capStart ? Mathf.Pow(Mathf.Max(0f, 1f - cf * cf), karst ? 0.75f : 0.5f) : 1f;
+                float taper = karst ? Mathf.Lerp(1.05f, 0.9f, Mathf.Pow(f, 1.6f)) : Mathf.Lerp(1.12f, 0.62f, Mathf.Pow(f, 1.3f));
                 taper *= Mathf.Max(0.04f, cap);
+                // 물가 파식 홈 (노치): 수면 위 0~1.5m가 파도에 깎여 안으로 들어간다
+                if (karst)
+                {
+                    float yy = f * height;
+                    taper *= 1f - 0.16f * Mathf.Exp(-Mathf.Pow((yy - (wetH - 0.3f)) / 0.9f, 2f));
+                }
                 // 퇴적층 턱: 높이를 층으로 나눠 층 위쪽이 살짝 튀어나온다 (층 경계도 노이즈로 기울어진다)
                 for (int i = 0; i <= seg; i++)
                 {
@@ -989,7 +1034,7 @@ namespace Fishing.World
                     float crack = Mathf.Pow(Mathf.Abs(Mathf.Sin(a * (7f + seed % 4) + big * 3f)), 10f);
                     float rr = radius * taper * (1f + big * (karst ? 0.32f : 0.45f) + fine * 0.1f + ledge * 0.07f - crack * 0.07f);
                     float y = f * height;
-                    if (f > capStart) y += height * 0.035f * (Mathf.PerlinNoise(sd + ca * 2f + 20f, sa * 2f) - 0.5f) * 2f; // 울퉁불퉁한 꼭대기
+                    if (f > capStart) y += height * (karst ? 0.14f * cf : 0.035f) * (Mathf.PerlinNoise(sd + ca * 2f + 20f, sa * 2f) - 0.5f) * 2f; // 울퉁불퉁한(석회암은 뾰족뾰족한) 꼭대기
                     verts.Add(new Vector3(ca * rr, y, sa * rr));
                     uvs.Add(new Vector2(i / (float)seg * circ / 4f, y / 4f));
                 }
@@ -1001,7 +1046,7 @@ namespace Fishing.World
                 quads.AddRange(new[] { a, c, b, b, c, d });
             }
             int top = verts.Count;
-            verts.Add(new Vector3(0f, height + radius * 0.05f, 0f));
+            verts.Add(new Vector3(0f, height + radius * (karst ? 0.02f : 0.05f), 0f));
             uvs.Add(new Vector2(0.5f, height / 4f));
             int last = rings * (seg + 1);
             for (int i = 0; i < seg; i++) quads.AddRange(new[] { last + i, top, last + i + 1 });
@@ -1096,8 +1141,8 @@ namespace Fishing.World
             root.SetParent(_root, false);
             Mats.Prim(PrimitiveType.Cube, "BoardwalkDeck", root, new Vector3(r.center.x, y, r.center.y), new Vector3(r.width, 0.18f, r.height),
                 Mats.TexturedBox("deck", new Color(0.8f, 0.66f, 0.5f), new Vector2(r.width, r.height), 2f, 0.3f));
-            var post = Mats.Lit(new Color(0.35f, 0.28f, 0.2f), 0.3f);
-            var joist = Mats.Lit(new Color(0.42f, 0.33f, 0.24f), 0.2f);
+            var post = Mats.Wood(new Color(0.35f, 0.28f, 0.2f), 0.3f);
+            var joist = Mats.Wood(new Color(0.42f, 0.33f, 0.24f), 0.2f);
             var wetPile = Mats.Lit(new Color(0.16f, 0.15f, 0.13f), 0.55f);
             bool longX = r.width > r.height;
             float len = longX ? r.width : r.height;
@@ -1321,6 +1366,8 @@ namespace Fishing.World
             t.localPosition = at;
             t.localRotation = Quaternion.Euler(0f, yaw, 0f);
             t.localScale = Vector3.one * scale;
+            // Blender 조각(sculpt.py hareubang: 벙거지·왕방울 눈·주먹코·배에 얹은 두 손을 한 덩어리로) + 현무암 결. 없으면 예전 도형 판
+            if (KenneyProps.Spawn("Props/hareubang", t, Vector3.zero, 0f, 2.55f) != null) return;
             var stone = Mats.Textured("rock", new Color(0.32f, 0.31f, 0.31f), 0.6f, 0.25f);
             var dark = Mats.Lit(new Color(0.15f, 0.15f, 0.15f), 0.2f);
             Mats.Prim(PrimitiveType.Cube, "Base", t, new Vector3(0f, 0.15f, 0f), new Vector3(0.9f, 0.3f, 0.9f), stone);
@@ -1534,8 +1581,8 @@ namespace Fishing.World
         /// </summary>
         void DryingRacks()
         {
-            var log = Mats.Lit(new Color(0.42f, 0.33f, 0.24f), 0.2f);
-            var oldLog = Mats.Lit(new Color(0.33f, 0.28f, 0.23f), 0.15f);
+            var log = Mats.Wood(new Color(0.42f, 0.33f, 0.24f), 0.2f);
+            var oldLog = Mats.Wood(new Color(0.33f, 0.28f, 0.23f), 0.15f);
             var snow = Mats.Lit(new Color(0.93f, 0.95f, 0.98f), 0.35f);
             var pair = DriedPollock.Pair;
             for (int r = 0; r < 3; r++)
@@ -1582,7 +1629,7 @@ namespace Fishing.World
         /// <summary>바다를 건너는 사장교 (영흥대교): 맵 서쪽 너머로 지나간다.</summary>
         void SeaBridge()
         {
-            var deckMat = Mats.Lit(new Color(0.78f, 0.78f, 0.76f), 0.3f);
+            var deckMat = Mats.Wood(new Color(0.78f, 0.78f, 0.76f), 0.3f);
             var pylonMat = Mats.Lit(new Color(0.9f, 0.9f, 0.88f), 0.3f);
             var cable = Mats.Lit(new Color(0.85f, 0.85f, 0.85f), 0.5f);
             float x = -262f, z0 = -60f, z1 = 520f, deckY = 16f;
@@ -1616,7 +1663,7 @@ namespace Fishing.World
         {
             var yellow = Mats.Lit(new Color(0.85f, 0.65f, 0.15f), 0.35f);
             var red = Mats.Lit(new Color(0.65f, 0.18f, 0.14f), 0.35f);
-            var shed = Mats.Lit(S.Snow ? new Color(0.55f, 0.58f, 0.6f) : new Color(0.6f, 0.62f, 0.6f), 0.3f);
+            var shed = Mats.Wall(S.Snow ? new Color(0.55f, 0.58f, 0.6f) : new Color(0.6f, 0.62f, 0.6f), 0.3f);
             var roof = Mats.Lit(S.Snow ? new Color(0.92f, 0.94f, 0.97f) : new Color(0.3f, 0.45f, 0.55f), 0.3f);
             for (int i = 0; i < 2; i++)
             {
@@ -1663,7 +1710,7 @@ namespace Fishing.World
             var a = new Vector3(c.Tip.x, H(c.Tip.x, c.Tip.y) + 0.3f, c.Tip.y);
             var b = new Vector3(st.Pos.x, _map.BaseWaterY - 2f + st.Height + 1f, st.Pos.z);
             var rope = Mats.Lit(new Color(0.75f, 0.2f, 0.15f), 0.3f);
-            var plank = Mats.Lit(new Color(0.55f, 0.42f, 0.3f), 0.3f);
+            var plank = Mats.Wood(new Color(0.55f, 0.42f, 0.3f), 0.3f);
             int n = 24;
             var dir = (b - a);
             var flat = new Vector3(dir.x, 0f, dir.z).normalized;

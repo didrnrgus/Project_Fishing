@@ -110,7 +110,7 @@
 - **성장·수집**: 레벨 1~40(레벨 보상 장비), 장비(낚싯대·릴·줄·배) 강화 +15, 미끼 + 해체 미끼 5등급, 도감, 살림망, 이야기 퀘스트 87개(낚시터마다), **일일 의뢰**, **대물 도전**, **업적**·칭호, **빙고 5×5**, **출석 체크**, 낚시 일지, 소라고동 교환소, **납품소**(살림망 고기를 팔면 납품 게이지가 차고, 가득 차면 다음 납품 두 배), **통발**(낚시터에 설치해 두고 20시간 뒤 수거), **내 캐릭터 창**(장착 장비 칸 + 최종 능력치 표), **의상**(6부위 25벌, 부위별 능력치), 대기실 **수족관**.
 - **조합 낚시 대회**: 매일 09~15시, AI 낚시꾼 7명과 마릿수·최장·길이 합계로 겨룬다. 계급 엠블럼, 우승 상품 거거 낚시대·나팔고둥 릴.
 - **손맛**: 마디를 펼치는 뽑기대가 줄 방향으로 휘고 출렁인다. 장비별 릴이 돌고, 릴·드랙·카운터 소리, 게임패드 진동.
-- **화면**: 원작풍 UI(짙은 남색 판·파란 빛 테두리·각진 모서리·파란 탭, Translucent Image + Paraform), EasyChart 차트, 후처리(블룸·톤매핑·AO), 낮밤(하루 24분)·노을·해달별(은하수·반짝이는 별), 날씨(흐린 날 층구름·비·겨울 눈), 물결 셰이더, 새벽 물안개. 바닥·지형은 반복 무늬를 깨는 셰이더(`Fishing/Ground`·`Fishing/Terrain`), 테트라포드·등대·바위기둥은 절차적 메쉬, 나무·바위·풀은 실사풍 에셋(Conifers [BOTD], Realistic Tree 9·10, Rock and Boulders 2, Grass Flowers Pack Free).
+- **화면**: 원작풍 UI(짙은 남색 판·파란 빛 테두리·각진 모서리·파란 탭, Translucent Image + Paraform), EasyChart 차트, 후처리(블룸·톤매핑·AO), 낮밤(하루 24분)·노을·해달별(은하수·반짝이는 별), 날씨(흐린 날 층구름·비·겨울 눈), 물결 셰이더, 새벽 물안개. 바닥·지형은 반복 무늬를 깨는 셰이더(`Fishing/Ground`·`Fishing/Terrain`, 절벽은 옆 투영), 벽·호안·석상·집은 풍화 셰이더(`Fishing/Weathered`: 월드 트라이플래너 + 물 자국·빗물 줄·이끼), 테트라포드·등대·바위기둥·한옥 정자는 절차적 메쉬, 석상(머라이언·독수리·사자상·대불·돌하르방)은 Blender에서 한 덩어리로 깎은 조각, 나무·바위·풀은 실사풍 에셋(Conifers [BOTD], Realistic Tree 9·10, Rock and Boulders 2, Grass Flowers Pack Free).
 - **사람과 물고기는 직접 만든 3D 모델**: headless Blender 스크립트(`tools/blender`)로 Quaternius CC0 몸을 보통 체형으로 다듬고 진짜 옷 메쉬(체크 남방 깃·조끼·웨이더·운동화·반장갑…)를 입힌다. 물고기 165종도 어종별 모델·텍스처·헤엄 애니메이션(오징어·문어·갑오징어는 다리마다 뼈), 아이템 아이콘도 렌더.
 - **인트로**: Unity 스플래시 → 사업자 로고 「제쓰로네 게임공방」(낙관이 쾅 찍히고 이름이 붓으로 써진다) → 타이틀 「짭풍명월」(달밤 수묵 산수화 겹 그림이 시차·물안개·배·꽃잎으로 움직이고, 붓글씨·징·가야금풍 음악) → 아무 키 → 대기실. 아무 키로 건너뛸 수 있다. 그림은 `tools/intro/build_intro_art.py`, 소리는 절차적(`IntroAudio`).
 - **편의**: 옵션(O) — 음량·감도·해상도·그림자·후처리·진동·**키 설정**.
@@ -208,7 +208,7 @@ tools/        build·autoshot·test·balance 스크립트, fightsim/(Unity 없�
 - 실사풍 식생·바위: Conifers [BOTD] (forst), Realistic Tree 9·10 (Pixel Games), Rock and Boulders 2, Grass Flowers Pack Free — Unity Asset Store.
 - 대기·걷기·뛰기: [Human Basic Motions FREE](https://assetstore.unity.com/packages/3d/animations/human-basic-motions-free-154271) (Kevin Iglesias, Unity Asset Store).
 - 배경·배 모델: [Kenney](https://kenney.nl) — City Kit Commercial, City Kit Roads, Nature Kit, Watercraft Kit (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Kenney/`.
-- 텍스처: [Poly Haven](https://polyhaven.com) (CC0) — 모래·풀·바위·해안·나무 데크·콘크리트·아스팔트(갯벌 진흙·눈은 모래를 바꿔 만듦) → `Assets/Resources/Terrain/SOURCES.md`
+- 텍스처: [Poly Haven](https://polyhaven.com) (CC0) — 모래·풀·바위·해안·나무 데크·콘크리트·아스팔트(갯벌 진흙·눈은 모래를 바꿔 만듦), 2026-10-20 추가: 거친 콘크리트·벽 콘크리트·회벽·점토 기와·회색 기와·사암·암벽·초가·판재·현무암·흰 사암 벽돌·돌담·녹슨 철·대리석 → `Assets/Resources/Terrain/SOURCES.md`
 - 소리: [Kenney](https://kenney.nl) Interface Sounds · Impact Sounds (CC0, UI 클릭·경고·발소리) → `Assets/Resources/Audio/Kenney/SOURCES.md`
 - UI 에셋: Translucent Image · Paraform (Le Tai), EasyChart, TextMesh Pro, 글꼴 여기어때 잘난체2(Jalnan2).
 

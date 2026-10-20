@@ -88,6 +88,14 @@ namespace Fishing.World
             MapKit.Place(root, "DudenFall", MapKit.FallSheet(22f, drop, 6f), fallMat, fallTop, 90f);
             MapKit.Place(root, "DudenFall2", MapKit.FallSheet(10f, drop, 9f), fallMat, fallTop + new Vector3(0.5f, 0f, -5f), 90f);
             MapKit.Place(root, "DudenFall3", MapKit.FallSheet(8f, drop, 8f), fallMat, fallTop + new Vector3(0.5f, 0f, 6f), 90f);
+            // 사진처럼 여러 갈래: 바깥 가는 물줄기 둘 (앞으로 덜 튀어나와 절벽을 타고 흐른다)
+            var fallMat2 = MapKit.FallMat();
+            MapKit.Place(root, "DudenFall4", MapKit.FallSheet(5f, drop, 3f), fallMat2, fallTop + new Vector3(-0.5f, 0f, -13f), 90f);
+            MapKit.Place(root, "DudenFall5", MapKit.FallSheet(4f, drop, 2.5f), fallMat2, fallTop + new Vector3(-0.5f, 0f, 15f), 90f);
+            // 물이 떨어지며 흐르게 (두 재질 속도를 달리해 겹친 줄기가 따로 움직인다)
+            TextureScroll.On(root).Add(fallMat, new Vector2(0f, 0.55f)).Add(fallMat2, new Vector2(0f, 0.42f));
+            // 떨어지는 곳의 물안개
+            MapKit.Mist(root, new Vector3(-80f, water + 0.5f, 12f), 9f, 18f);
             // 물보라: 떨어지는 곳의 흰 거품 원판 + 뿌연 물안개 덩어리
             var foam = new List<Vector4>();
             var rng = new System.Random(63);
@@ -100,7 +108,7 @@ namespace Fishing.World
 
             // --- 토로스 산맥: 뒤로 눈 덮인 높은 산줄기 ---
             var taurus = MapKit.Mountain(700f, 150f, 260f, 63, 0.58f, 5);
-            MapKit.Place(root, "Taurus", taurus, new[] { MapKit.Far(new Color(0.5f, 0.48f, 0.44f), 0.05f), MapKit.Far(new Color(0.96f, 0.97f, 0.99f), 0.3f) }, new Vector3(80f, b.Map.LandY, -600f));
+            MapKit.Place(root, "Taurus", taurus, new[] { MapKit.FarRock(new Color(0.58f, 0.54f, 0.48f), "cliff", 50f), MapKit.FarRock(new Color(0.96f, 0.97f, 0.99f), "snow", 30f, 0.5f, 0.3f) }, new Vector3(80f, b.Map.LandY, -600f));
         }
     }
 }

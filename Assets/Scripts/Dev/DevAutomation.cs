@@ -16,6 +16,11 @@ namespace Fishing.Dev
         public string StopAfter;
         /// <summary>-autoshotMaps id,id: 낚시터 둘러보기(CoastTour)에서 그 맵 장면만 찍고 끝낸다 (새 맵을 빨리 확인할 때).</summary>
         public string Maps;
+        /// <summary>
+        /// -autoshotInspect "맵:물체이름:방위각:고도각:거리배수[:시각];…" — 맵을 열고 그 이름의 물체(여럿이면 첫째)를 HUD 없이 자유 카메라로 찍는다.
+        /// 거리배수는 물체 경계 반지름의 배수. 시각은 분(기본 10시). 모델 디테일을 가까이 확인할 때 쓴다 (tools/inspect.sh).
+        /// </summary>
+        public string Inspect;
     }
 
     /// <summary>
@@ -47,6 +52,7 @@ namespace Fishing.Dev
                 }
                 else if (args[i] == "-autoshotStop") result.StopAfter = args[i + 1];
                 else if (args[i] == "-autoshotMaps") result.Maps = args[i + 1];
+                else if (args[i] == "-autoshotInspect") result.Inspect = args[i + 1];
             return result;
         }
 
@@ -70,6 +76,13 @@ namespace Fishing.Dev
                 yield return Shot("00_intro_title");
                 intro.Continue();
                 yield return new WaitUntil(() => Fishing.UI.IntroSequence.Instance == null);
+            }
+            if (!string.IsNullOrEmpty(_args.Inspect))
+            {
+                yield return InspectShots(_args.Inspect);
+                Debug.Log("[Dev] 자동 스크린샷 완료 (-autoshotInspect)");
+                Application.Quit();
+                yield break;
             }
             if (!string.IsNullOrEmpty(_args.Maps))
             {
@@ -1217,6 +1230,66 @@ namespace Fishing.Dev
                 yield return null;
             }
             if (Game.UI.Result.IsOpen) Debug.LogError("[Dev] 결과 창이 닫히지 않았습니다.");
+        }
+
+        /// <summary>-autoshotInspect: 물체마다 HUD를 끄고 카메라를 직접 놓아 찍는다. 파일 이름 = i_맵_물체_번호.</summary>
+        IEnumerator InspectShots(string spec)
+        {
+            Game.Profile.Data.level = Mathf.Max(Game.Profile.Data.level, 40);
+            string loaded = null;
+            int idx = 0;
+            foreach (var item in spec.Split(';'))
+            {
+                var f = item.Split(':');
+                if (f.Length < 5) continue;
+                string map = f[0], name = f[1];
+                float yaw = float.Parse(f[2], System.Globalization.CultureInfo.InvariantCulture);
+                float pitch = float.Parse(f[3], System.Globalization.CultureInfo.InvariantCulture);
+                float mult = float.Parse(f[4], System.Globalization.CultureInfo.InvariantCulture);
+                int minute = f.Length > 5 ? int.Parse(f[5]) : 10 * 60;
+                if (loaded != map)
+                {
+                    Game.UI.EnterField(System.Linq.Enumerable.First(Fishing.Data.FishingAreas.All, a => a.Id == map), 1);
+                    Game.UI.Help.Close();
+                    loaded = map;
+                    yield return new WaitForSeconds(1.5f);
+                }
+                Game.Clock.Set(5, minute);
+                Game.Weather.Force(Weather.Clear);
+                Transform target = null;
+                if (Game.World != null)
+                    foreach (var t in Game.World.GetComponentsInChildren<Transform>(true))
+                        if (t.name == name) { target = t; break; }
+                if (target == null)
+                {
+                    Debug.Log($"[Dev] 찾을 수 없음: {map}:{name}");
+                    continue;
+                }
+                var rs = target.GetComponentsInChildren<Renderer>();
+                var b = rs.Length > 0 ? rs[0].bounds : new Bounds(target.position, Vector3.one);
+                foreach (var r in rs) b.Encapsulate(r.bounds);
+                // 정적 배칭 뒤에는 Renderer.bounds가 합친 메쉬 전체라, 너무 크면 물체 위치 둘레 기본 크기로
+                if (b.extents.magnitude > 120f) b = new Bounds(target.position + Vector3.up * 3f, Vector3.one * 8f);
+                var cam = Camera.main;
+                Game.CameraRig.enabled = false;
+                // HUD 숨기기: 캔버스를 끄면 TranslucentImage(블러 패널)가 다시 켤 때 예외를 낸다 → CanvasGroup 알파로 감춘다
+                var groups = new System.Collections.Generic.List<CanvasGroup>();
+                foreach (var c in UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None))
+                {
+                    if (!c.isRootCanvas) continue;
+                    var g = c.GetComponent<CanvasGroup>() ?? c.gameObject.AddComponent<CanvasGroup>();
+                    g.alpha = 0f;
+                    groups.Add(g);
+                }
+                var dir = Quaternion.Euler(pitch, yaw, 0f) * Vector3.back;
+                float dist = b.extents.magnitude * mult;
+                cam.transform.position = b.center + dir * dist;
+                cam.transform.LookAt(b.center);
+                yield return new WaitForSeconds(1.2f);
+                yield return Shot($"i_{map}_{name}_{idx++}");
+                foreach (var g in groups) if (g != null) g.alpha = 1f;
+                Game.CameraRig.enabled = true;
+            }
         }
 
         IEnumerator Shot(string name)

@@ -18,6 +18,8 @@ namespace Fishing.Core
             var bulbs = new List<Renderer>();
             WaterGlints.Clear();
             map.WaterY = map.BaseWaterY;
+            // 풍화 셰이더(Fishing/Weathered)의 물 자국 높이: 물때가 있으면 만조선, 없으면 수면 조금 위 (물보라)
+            Shader.SetGlobalFloat("_FishingWetY", map.BaseWaterY + Mathf.Max(map.TideAmplitude, 0.25f));
             Game.World = map.BuildWorld(lamps, bulbs);
             GrassField.Plant(Game.World, map.BaseWaterY, map.Id.GetHashCode());
             Fishing.Characters.ExtraNpcs.Populate(map, Game.World);

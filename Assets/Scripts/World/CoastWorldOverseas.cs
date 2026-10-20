@@ -30,6 +30,47 @@ namespace Fishing.World
         }
 
         static readonly Color CycladicBlue = new Color(0.1f, 0.35f, 0.72f);
+        static readonly Dictionary<long, Mesh> ArchCache = new Dictionary<long, Mesh>();
+
+        /// <summary>위가 반원인 판 (아치 문·창): 바닥 가운데 원점, 앞(+Z)을 본다. 두께 0.04.</summary>
+        static Mesh ArchPanel(float width, float height)
+        {
+            long key = Mathf.RoundToInt(width * 100f) * 100000L + Mathf.RoundToInt(height * 100f);
+            if (ArchCache.TryGetValue(key, out var m)) return m;
+            float r = width * 0.5f, straight = Mathf.Max(0f, height - r);
+            var outline = new List<Vector2> { new Vector2(-r, 0f), new Vector2(r, 0f) };
+            const int arcN = 14;
+            for (int i = 0; i <= arcN; i++)
+            {
+                float a = i / (float)arcN * Mathf.PI;
+                outline.Add(new Vector2(Mathf.Cos(a) * r, straight + Mathf.Sin(a) * r));
+            }
+            var v = new List<Vector3>();
+            var t = new List<int>();
+            // 앞면: 가운데 점에서 부채꼴
+            int c0 = v.Count;
+            v.Add(new Vector3(0f, height * 0.45f, 0.02f));
+            foreach (var p in outline) v.Add(new Vector3(p.x, p.y, 0.02f));
+            // 윤곽은 +Z에서 보면 시계 방향으로 돈다 → 그 순서 그대로가 앞면
+            for (int i = 0; i < outline.Count; i++) t.AddRange(new[] { c0, c0 + 1 + i, c0 + 1 + (i + 1) % outline.Count });
+            // 옆 두께
+            int s0 = v.Count;
+            foreach (var p in outline) { v.Add(new Vector3(p.x, p.y, 0.02f)); v.Add(new Vector3(p.x, p.y, -0.02f)); }
+            for (int i = 0; i < outline.Count; i++)
+            {
+                int j = (i + 1) % outline.Count;
+                // 두께 면은 양면으로 (0.04m라 감는 방향을 따지지 않는다)
+                t.AddRange(new[] { s0 + i * 2, s0 + j * 2, s0 + i * 2 + 1, s0 + j * 2, s0 + j * 2 + 1, s0 + i * 2 + 1 });
+                t.AddRange(new[] { s0 + i * 2, s0 + i * 2 + 1, s0 + j * 2, s0 + j * 2, s0 + i * 2 + 1, s0 + j * 2 + 1 });
+            }
+            m = new Mesh { name = "Arch" };
+            m.SetVertices(v);
+            m.SetTriangles(t, 0);
+            m.RecalculateNormals();
+            m.RecalculateBounds();
+            ArchCache[key] = m;
+            return m;
+        }
 
         /// <summary>
         /// 키클라데스 집: 하얀 회벽 상자(모서리가 둥근 느낌으로 처마 턱), 파란 문·덧창, 가끔 2단.
@@ -41,21 +82,61 @@ namespace Fishing.World
             h.SetParent(_root, false);
             h.localPosition = at;
             h.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            var white = Mats.Lit(new Color(0.97f, 0.97f, 0.95f), 0.1f);
-            var blue = Mats.Lit(CycladicBlue, 0.35f);
+            // 사진(이아 마을): 흰 회벽(가끔 황토·분홍 파스텔), 위가 둥근 아치 문·창에 파란 칠, 둥근 처마 턱, 원통 지붕(카마라), 바깥 계단, 부겐빌레아
+            var wallCol = _rng.NextDouble() < 0.15 ? (_rng.NextDouble() < 0.5 ? new Color(0.93f, 0.8f, 0.55f) : new Color(0.93f, 0.72f, 0.68f)) : new Color(0.97f, 0.97f, 0.95f);
+            var white = Mats.Wall(wallCol, 0.1f);
+            var trim = Mats.Wall(new Color(0.98f, 0.98f, 0.97f), 0.1f);
+            var blue = Mats.Wood(CycladicBlue, 0.35f);
             var dark = Mats.Lit(new Color(0.18f, 0.2f, 0.24f), 0.6f);
             float w = R(5f, 8f), d = R(5f, 7f), hgt = R(3f, 3.6f);
             const float below = 3f;
             Mats.Prim(PrimitiveType.Cube, "Wall", h, new Vector3(0f, (hgt - below) * 0.5f, 0f), new Vector3(w, hgt + below, d), white, false);
-            Mats.Prim(PrimitiveType.Cube, "Lip", h, new Vector3(0f, hgt + 0.08f, 0f), new Vector3(w + 0.2f, 0.18f, d + 0.2f), white, false);
-            // 문 + 덧창
-            Mats.Prim(PrimitiveType.Cube, "Door", h, new Vector3(R(-w * 0.2f, w * 0.2f), 1f, d * 0.5f + 0.04f), new Vector3(0.95f, 2f, 0.06f), blue, false);
+            // 둥근 처마 턱: 가로 원통을 둘레에 (모서리가 각지지 않게 회벽을 덧바른 모양)
+            foreach (var (pos, len, rot) in new[] { (new Vector3(0f, hgt + 0.05f, d * 0.5f), w + 0.1f, 90f), (new Vector3(0f, hgt + 0.05f, -d * 0.5f), w + 0.1f, 90f),
+                         (new Vector3(w * 0.5f, hgt + 0.05f, 0f), d + 0.1f, 0f), (new Vector3(-w * 0.5f, hgt + 0.05f, 0f), d + 0.1f, 0f) })
+                Mats.Prim(PrimitiveType.Capsule, "Lip", h, pos, new Vector3(0.28f, len * 0.5f, 0.28f), trim, false, Quaternion.Euler(90f, rot, 0f));
+            Mats.Prim(PrimitiveType.Cube, "RoofSlab", h, new Vector3(0f, hgt + 0.05f, 0f), new Vector3(w, 0.2f, d), trim, false);
+            // 아치 문 (파란 판 + 흰 테) · 아치 창 둘 (파란 덧창 + 어두운 유리)
+            float dx = R(-w * 0.2f, w * 0.2f);
+            MapKit.Place(h, "DoorFrame", ArchPanel(1.25f, 2.35f), trim, new Vector3(dx, 0f, d * 0.5f + 0.02f));
+            MapKit.Place(h, "Door", ArchPanel(0.95f, 2.15f), blue, new Vector3(dx, 0f, d * 0.5f + 0.05f));
+            Mats.Prim(PrimitiveType.Cube, "DoorStep", h, new Vector3(dx, 0.08f, d * 0.5f + 0.35f), new Vector3(1.5f, 0.16f, 0.6f), trim, false);
             for (int i = 0; i < 2; i++)
             {
                 float x = (i == 0 ? -1f : 1f) * w * 0.32f;
-                Mats.Prim(PrimitiveType.Cube, "Window", h, new Vector3(x, 1.7f, d * 0.5f + 0.03f), new Vector3(0.8f, 0.9f, 0.04f), dark, false);
-                Mats.Prim(PrimitiveType.Cube, "Shutter", h, new Vector3(x - 0.5f, 1.7f, d * 0.5f + 0.05f), new Vector3(0.22f, 0.95f, 0.04f), blue, false);
-                Mats.Prim(PrimitiveType.Cube, "Shutter", h, new Vector3(x + 0.5f, 1.7f, d * 0.5f + 0.05f), new Vector3(0.22f, 0.95f, 0.04f), blue, false);
+                if (Mathf.Abs(x - dx) < 1.3f) continue;
+                MapKit.Place(h, "WinFrame", ArchPanel(1.0f, 1.3f), trim, new Vector3(x, 1.1f, d * 0.5f + 0.02f));
+                MapKit.Place(h, "Window", ArchPanel(0.76f, 1.12f), dark, new Vector3(x, 1.2f, d * 0.5f + 0.04f));
+                Mats.Prim(PrimitiveType.Cube, "Shutter", h, new Vector3(x - 0.58f, 1.72f, d * 0.5f + 0.06f), new Vector3(0.36f, 1.05f, 0.04f), blue, false);
+                Mats.Prim(PrimitiveType.Cube, "Shutter", h, new Vector3(x + 0.58f, 1.72f, d * 0.5f + 0.06f), new Vector3(0.36f, 1.05f, 0.04f), blue, false);
+                Mats.Prim(PrimitiveType.Cube, "Sill", h, new Vector3(x, 1.12f, d * 0.5f + 0.1f), new Vector3(1.05f, 0.08f, 0.2f), trim, false);
+            }
+            // 원통 지붕 (동굴집 카마라): 앞뒤 방향 반원통
+            if (!church && _rng.NextDouble() < 0.3)
+                Mats.Prim(PrimitiveType.Cylinder, "Vault", h, new Vector3(0f, hgt + 0.1f, 0f), new Vector3(w * 0.9f, d * 0.5f, w * 0.55f), trim, false, Quaternion.Euler(90f, 0f, 0f));
+            // 옆벽 바깥 계단 (옥상 테라스로)
+            if (_rng.NextDouble() < 0.35)
+            {
+                float sx = _rng.NextDouble() < 0.5 ? -1f : 1f;
+                for (int k = 0; k < 9; k++)
+                    Mats.Prim(PrimitiveType.Cube, "Stair", h, new Vector3(sx * (w * 0.5f + 0.45f), k * hgt / 9f + 0.15f, d * 0.4f - k * d * 0.8f / 9f),
+                        new Vector3(0.9f, 0.3f + k * hgt / 9f * 0f, d * 0.8f / 9f + 0.02f), trim, false);
+                Mats.Prim(PrimitiveType.Cube, "StairWall", h, new Vector3(sx * (w * 0.5f + 0.88f), hgt * 0.5f, 0f), new Vector3(0.12f, hgt, d * 0.85f), trim, false);
+            }
+            // 부겐빌레아: 문 옆 벽을 타고 오른 분홍·자주 꽃 덩굴
+            if (_rng.NextDouble() < 0.2)
+            {
+                var pink = Mats.Lit(_rng.NextDouble() < 0.6 ? new Color(0.85f, 0.2f, 0.55f) : new Color(0.65f, 0.2f, 0.6f), 0.2f);
+                var leaf = Mats.Lit(new Color(0.2f, 0.38f, 0.16f), 0.2f);
+                float bx = dx + (dx > 0 ? -1.3f : 1.3f);
+                // 벽에 붙은 납작한 꽃송이 덩어리 (위로 갈수록 처마를 따라 옆으로 번진다)
+                for (int k = 0; k < 16; k++)
+                {
+                    float yy = R(0.6f, hgt + 0.2f);
+                    float spread = 0.4f + yy / hgt * 1.2f;
+                    Mats.Prim(PrimitiveType.Sphere, "Bougainvillea", h, new Vector3(bx + R(-spread, spread), yy, d * 0.5f + 0.12f),
+                        new Vector3(R(0.35f, 0.6f), R(0.3f, 0.45f), 0.22f), k % 4 == 0 ? leaf : pink, false);
+                }
             }
             float top = hgt;
             if (!church && _rng.NextDouble() < 0.35)
@@ -63,7 +144,7 @@ namespace Fishing.World
                 // 2단: 뒤쪽에 작은 상자 하나 더 (테라스가 앞에 남는다)
                 float w2 = w * R(0.5f, 0.7f), d2 = d * 0.5f;
                 Mats.Prim(PrimitiveType.Cube, "Upper", h, new Vector3(R(-0.5f, 0.5f), hgt + 1.5f, -d * 0.25f), new Vector3(w2, 3f, d2), white, false);
-                Mats.Prim(PrimitiveType.Cube, "UpperWindow", h, new Vector3(0f, hgt + 1.6f, -d * 0.25f + d2 * 0.5f + 0.03f), new Vector3(0.8f, 0.9f, 0.04f), blue, false);
+                MapKit.Place(h, "UpperWindow", ArchPanel(0.8f, 1.2f), blue, new Vector3(0f, hgt + 1.0f, -d * 0.25f + d2 * 0.5f + 0.03f));
                 top = hgt + 3f;
             }
             if (church)
@@ -91,7 +172,7 @@ namespace Fishing.World
             h.localPosition = at;
             h.localRotation = Quaternion.Euler(0f, yaw, 0f);
             var tones = new[] { new Color(0.78f, 0.66f, 0.5f), new Color(0.72f, 0.58f, 0.42f), new Color(0.86f, 0.78f, 0.62f) };
-            var mud = Mats.Lit(tones[_rng.Next(tones.Length)], 0.05f);
+            var mud = Mats.Wall(tones[_rng.Next(tones.Length)], 0.05f);
             var dark = Mats.Lit(new Color(0.15f, 0.12f, 0.1f), 0.2f);
             var door = Mats.Lit(_rng.NextDouble() < 0.5 ? new Color(0.2f, 0.45f, 0.55f) : new Color(0.45f, 0.3f, 0.18f), 0.2f);
             float w = R(6f, 9f), d = R(5f, 7f), hgt = R(3f, 4.2f);
@@ -135,10 +216,10 @@ namespace Fishing.World
             h.SetParent(_root, false);
             h.localPosition = at;
             h.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            var wall = Mats.Lit(TubeColors[_rng.Next(TubeColors.Length)], 0.15f);
+            var wall = Mats.Wall(TubeColors[_rng.Next(TubeColors.Length)], 0.15f);
             var rail = Mats.Lit(new Color(0.2f, 0.22f, 0.24f), 0.4f);
             var glass = Mats.Lit(new Color(0.2f, 0.28f, 0.32f), 0.8f);
-            var tile = Mats.Lit(new Color(0.72f, 0.3f, 0.18f), 0.2f);
+            var tile = Mats.Tile(new Color(0.72f, 0.3f, 0.18f), 0.2f);
             float w = R(4f, 5.2f), d = R(8f, 11f);
             int floors = _rng.Next(3, 5);
             const float fh = 3.2f;
@@ -231,9 +312,9 @@ namespace Fishing.World
             t.SetParent(_root, false);
             t.localPosition = at;
             t.localRotation = Quaternion.Euler(0f, R(150f, 210f), 0f);
-            var white = Mats.Lit(new Color(0.96f, 0.96f, 0.94f), 0.1f);
-            var thatch = Mats.Lit(new Color(0.45f, 0.36f, 0.25f), 0.05f);
-            var wood = Mats.Lit(new Color(0.4f, 0.3f, 0.2f), 0.2f);
+            var white = Mats.Wall(new Color(0.96f, 0.96f, 0.94f), 0.1f);
+            var thatch = Mats.Thatch(new Color(0.45f, 0.36f, 0.25f));
+            var wood = Mats.Wood(new Color(0.4f, 0.3f, 0.2f), 0.2f);
             var cloth = Mats.Lit(new Color(0.95f, 0.93f, 0.86f), 0.1f);
             Mats.Prim(PrimitiveType.Cylinder, "Tower", t, new Vector3(0f, 3.5f, 0f), new Vector3(4.2f, 3.5f, 4.2f), white);
             Mats.Prim(PrimitiveType.Sphere, "Cap", t, new Vector3(0f, 7.2f, 0f), new Vector3(4.4f, 2.6f, 4.4f), thatch, false);
@@ -352,7 +433,7 @@ namespace Fishing.World
         /// <summary>하롱베이 수상 마을: 플라스틱 통 위에 뜬 판잣집들과 그물 가두리 (멀리서 보는 풍경, 콜라이더 있음).</summary>
         void FloatingVillage()
         {
-            var plank = Mats.Lit(new Color(0.55f, 0.42f, 0.3f), 0.1f);
+            var plank = Mats.Wood(new Color(0.55f, 0.42f, 0.3f), 0.1f);
             var drum = Mats.Lit(new Color(0.2f, 0.35f, 0.65f), 0.4f);
             var tin = Mats.Lit(new Color(0.6f, 0.62f, 0.62f), 0.4f, 0.3f);
             var colors = new[] { new Color(0.25f, 0.55f, 0.75f), new Color(0.85f, 0.75f, 0.55f), new Color(0.6f, 0.75f, 0.55f), new Color(0.95f, 0.95f, 0.9f) };
@@ -393,7 +474,7 @@ namespace Fishing.World
             go.AddComponent<MeshFilter>().sharedMesh = CalderaMesh(S.Seed, out var rim);
             go.AddComponent<MeshRenderer>().sharedMaterials = new[] { cliff, band, top };
             // 절벽 위 마을: 하얀 상자 집, 드문드문 파란 둥근 지붕
-            var white = Mats.Lit(new Color(0.96f, 0.96f, 0.93f), 0.15f);
+            var white = Mats.Wall(new Color(0.96f, 0.96f, 0.93f), 0.15f);
             var blue = Mats.Lit(new Color(0.12f, 0.32f, 0.7f), 0.4f);
             foreach (var (p, inward) in rim)
             {
@@ -482,7 +563,7 @@ namespace Fishing.World
         /// <summary>나일강 하류 서쪽 사막 너머 기자 피라미드 셋 (멀리, 안개 속 모래색).</summary>
         void Pyramids()
         {
-            var stone = Mats.Lit(new Color(0.82f, 0.72f, 0.52f), 0.05f);
+            var stone = Mats.Stone(new Color(0.82f, 0.72f, 0.52f), 0.05f);
             var pts = new[] { (new Vector3(-260f, 0f, 700f), 146f), (new Vector3(-80f, 0f, 760f), 136f), (new Vector3(70f, 0f, 820f), 65f) };
             foreach (var (p, h) in pts)
             {

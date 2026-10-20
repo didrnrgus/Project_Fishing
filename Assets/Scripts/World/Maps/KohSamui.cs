@@ -73,7 +73,7 @@ namespace Fishing.World
             var root = new GameObject("KohSamui").transform;
             root.SetParent(b.Root, false);
             float water = b.Map.BaseWaterY;
-            var white = Mats.Lit(new Color(0.94f, 0.92f, 0.88f), 0.25f);
+            var white = Mats.Wall(new Color(0.94f, 0.92f, 0.88f), 0.25f);
             var red = Mats.Lit(new Color(0.72f, 0.18f, 0.14f), 0.3f);
             var gold = Mats.Lit(new Color(0.88f, 0.68f, 0.26f), 0.6f, 0.7f);
 

@@ -122,7 +122,7 @@ namespace Fishing.World
             Mats.Prim(PrimitiveType.Cylinder, "HallVault", root, hallAt + new Vector3(0f, 3f, 0f), new Vector3(16f, 18f, 12f), glass, false, Quaternion.Euler(0f, 0f, 90f));
 
             // 돌 포장 산책로 횃불 (정글 길)
-            var pole = Mats.Lit(new Color(0.28f, 0.2f, 0.14f), 0.2f);
+            var pole = Mats.Wood(new Color(0.28f, 0.2f, 0.14f), 0.2f);
             var flame = Mats.Emissive(new Color(1f, 0.55f, 0.15f), 2.5f);
             for (float x = -150f; x < -100f; x += 10f)
             {

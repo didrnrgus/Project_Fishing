@@ -18,6 +18,7 @@ namespace Fishing.World
             LandName = "나바지오 해변", SeaName = "이오니아해", Seed = 62,
             WaterDeep = new Color(0.0f, 0.18f, 0.38f), WaterShallow = new Color(0.08f, 0.62f, 0.72f),
             Shores = new[] { new ShoreSeg(-999f, -55f, ShoreKind.Rock), new ShoreSeg(-55f, 55f, ShoreKind.Beach), new ShoreSeg(55f, 999f, ShoreKind.Rock) },
+            CliffTexture = "karst", CliffTint = new Color(1.3f, 1.28f, 1.22f, 1f),
             NearDepth = 4f, DepthSlope = 0.09f, FlatWidth = 26f, CliffHeight = 60f, CliffWidth = 16f, RoadOffset = 0f, VillageDensity = 0.08f,
             Houses = HouseStyle.Venetian, TreeKind = TreeStyle.Mediterranean,
             // 만을 감싸는 두 절벽 곶
@@ -73,9 +74,9 @@ namespace Fishing.World
 
             // --- 하얀 석회암 절벽: 해변 뒤와 두 곶을 따라 겹쳐 세운 봉우리 (이끼 적게) ---
             // 해를 등진 북향 절벽이라 그늘에서도 하얗게 보이게 색을 1보다 밝게 (HDR 틴트)
-            var white = Mats.Karst(new Color(1.45f, 1.43f, 1.36f), 0.08f);
+            var white = Mats.Karst(new Color(1.45f, 1.43f, 1.36f), 0.08f, 0f, 0.8f);
             var wet = Mats.Karst(new Color(0.7f, 0.7f, 0.66f), 0.05f);
-            var top = Mats.Karst(new Color(1.3f, 1.28f, 1.2f), 0.6f);
+            var top = Mats.Karst(new Color(1.3f, 1.28f, 1.2f), 0.6f, 0f, 0.5f);
             void Cliff(float x, float z, float r, float h)
             {
                 var t = b.KarstPeak(new Vector3(x, 0f, z), r, h, true);

@@ -73,9 +73,9 @@ namespace Fishing.Core
         /// 석회암 봉우리(하롱베이) 절벽: Fishing/Karst에 실사 석회암 두 장(Resources/Terrain/karst·karst2)을 섞는다.
         /// 메쉬 UV는 1 = 4m(StackMesh). 덤불 양 moss 0~1. 셰이더·텍스처가 없으면 예전 rock 텍스처.
         /// </summary>
-        public static Material Karst(Color tint, float moss = 0.6f)
+        public static Material Karst(Color tint, float moss = 0.6f, float jungle = 0f, float lift = 0f)
         {
-            string key = $"karst{tint}{moss}";
+            string key = $"karst{tint}{moss}{jungle}{lift}";
             if (Cache.TryGetValue(key, out var m)) return m;
             var shader = Shader.Find("Fishing/Karst");
             var diff = Resources.Load<Texture2D>("Terrain/karst_diff");
@@ -92,8 +92,116 @@ namespace Fishing.Core
                 m.EnableKeyword("_NORMALMAP");
             }
             m.SetFloat("_Moss", moss);
+            m.SetFloat("_Jungle", jungle);
+            m.SetFloat("_Lift", lift);
+            // 밀림 색: 사진의 짙은 열대림 초록 (예전 연두는 이끼처럼 보였다)
+            if (jungle > 0f) m.SetColor("_MossColor", new Color(0.17f, 0.3f, 0.13f));
             Cache[key] = m;
             return m;
+        }
+
+        /// <summary>Resources/Terrain 디퓨즈 텍스처의 평균 색 (감마). 풍화 셰이더가 나눠서 결만 남긴다. 새 텍스처를 넣으면 여기에 더한다.</summary>
+        static readonly Dictionary<string, Color> TexAvg = new Dictionary<string, Color>
+        {
+            { "aggregate", new Color(0.579f, 0.518f, 0.454f) }, { "asphalt", new Color(0.355f, 0.352f, 0.332f) }, { "basalt", new Color(0.765f, 0.612f, 0.463f) },
+            { "cliff", new Color(0.513f, 0.412f, 0.315f) }, { "concrete", new Color(0.469f, 0.432f, 0.356f) }, { "deck", new Color(0.433f, 0.204f, 0.054f) },
+            { "greytile", new Color(0.379f, 0.361f, 0.294f) }, { "karst", new Color(0.557f, 0.556f, 0.53f) }, { "karst2", new Color(0.531f, 0.52f, 0.5f) },
+            { "marble", new Color(0.696f, 0.615f, 0.477f) }, { "planks", new Color(0.313f, 0.264f, 0.23f) }, { "plaster", new Color(0.453f, 0.439f, 0.295f) },
+            { "rock", new Color(0.431f, 0.363f, 0.205f) }, { "rooftile", new Color(0.57f, 0.313f, 0.168f) }, { "rust", new Color(0.673f, 0.563f, 0.354f) },
+            { "sand", new Color(0.509f, 0.449f, 0.359f) }, { "sandstone", new Color(0.536f, 0.409f, 0.244f) }, { "stonewall", new Color(0.436f, 0.403f, 0.371f) },
+            { "thatch", new Color(0.331f, 0.313f, 0.286f) }, { "grass", new Color(0.311f, 0.241f, 0.083f) }, { "mud", new Color(0.287f, 0.261f, 0.221f) },
+            { "snow", new Color(0.835f, 0.862f, 0.901f) }, { "shore", new Color(0.294f, 0.268f, 0.177f) }, { "wallconcrete", new Color(0.359f, 0.316f, 0.271f) }, { "whitestone", new Color(0.536f, 0.5f, 0.433f) },
+        };
+
+        /// <summary>텍스처 평균 색 (풍화·랜드마크 셰이더가 결만 남길 때 쓴다).</summary>
+        public static Color AvgOf(string name) => TexAvg.TryGetValue(name, out var c) ? c : new Color(0.5f, 0.5f, 0.5f);
+
+        /// <summary>
+        /// 풍화 표면 (Fishing/Weathered): Resources/Terrain/{name} 텍스처를 월드 좌표 트라이플래너로 metersPerTile(m)마다 깔고,
+        /// 만조선 아래 물 자국(wet), 세로 면 빗물 자국(streaks), 위를 보는 면 이끼(moss)를 얹는다. UV가 없는 메쉬에도 쓸 수 있다.
+        /// tint = 칠한 색 그대로 (셰이더가 텍스처를 평균 색으로 나눠 결만 남긴 뒤 곱한다). FBX 소품의 원래 부위 색을 넘기면 색은 두고 결만 입는다.
+        /// side = 세로 면에 쓸 다른 텍스처 (예: 윗면 바닥 콘크리트 + 옆면 벽 콘크리트). 셰이더·텍스처가 없으면 Lit.
+        /// </summary>
+        public static Material Weathered(string name, Color tint, float metersPerTile = 3f, float smoothness = 0.2f,
+            float wet = 1f, float streaks = 0.5f, float moss = 0.3f, Color? mossColor = null, float desat = 0.3f, float metallic = 0f, string side = null, float contrast = 1f)
+        {
+            var mc = mossColor ?? new Color(0.32f, 0.36f, 0.2f);
+            string key = $"wx{name}{side}{tint}{metersPerTile}{smoothness}{wet}{streaks}{moss}{mc}{desat}{metallic}{contrast}";
+            if (Cache.TryGetValue(key, out var m)) return m;
+            var shader = Shader.Find("Fishing/Weathered");
+            var diff = Resources.Load<Texture2D>("Terrain/" + name + "_diff");
+            if (shader == null || diff == null) return Lit(tint, smoothness, metallic);
+            m = new Material(shader) { color = tint, mainTexture = diff };
+            m.SetColor("_TexAvg", TexAvg.TryGetValue(name, out var avg) ? avg : new Color(0.5f, 0.5f, 0.5f));
+            var nor = Resources.Load<Texture2D>("Terrain/" + name + "_nor");
+            if (nor != null)
+            {
+                m.SetTexture("_BumpMap", nor);
+                m.EnableKeyword("_NORMALMAP");
+            }
+            // 세로 면 텍스처 (예: 윗면 바닥 콘크리트 + 옆면 거푸집 벽 콘크리트). 없으면 윗면과 같게
+            var sdiff = side != null ? Resources.Load<Texture2D>("Terrain/" + side + "_diff") : null;
+            var snor = side != null ? Resources.Load<Texture2D>("Terrain/" + side + "_nor") : null;
+            m.SetTexture("_SideTex", sdiff != null ? sdiff : diff);
+            m.SetColor("_SideAvg", TexAvg.TryGetValue(sdiff != null ? side : name, out var savg) ? savg : new Color(0.5f, 0.5f, 0.5f));
+            if (nor != null || snor != null) m.SetTexture("_SideBump", snor != null ? snor : nor);
+            m.SetFloat("_Tile", metersPerTile);
+            m.SetFloat("_Glossiness", smoothness);
+            m.SetFloat("_Metallic", metallic);
+            m.SetFloat("_Wet", wet);
+            m.SetFloat("_Streaks", streaks);
+            m.SetFloat("_Moss", moss);
+            m.SetColor("_MossColor", mc);
+            m.SetFloat("_Desat", desat);
+            m.SetFloat("_Contrast", contrast);
+            Cache[key] = m;
+            return m;
+        }
+
+        // ---- 용도별 풍화 재질 (색 = 칠한 색 그대로) ----
+        /// <summary>회벽·미장 벽: 거친 회벽 결 + 처마 밑에서 흘러내린 빗물 자국.</summary>
+        public static Material Wall(Color c, float smoothness = 0.12f) => Weathered("plaster", c, 2.5f, smoothness, 0f, 0.45f, 0.08f, new Color(0.4f, 0.42f, 0.3f), 0.85f, 0f, null, 0.45f);
+        /// <summary>나무 판·기둥: 비바람에 닳은 판재 결. 물에 닿는 말뚝은 아래가 젖는다.</summary>
+        public static Material Wood(Color c, float smoothness = 0.25f) => Weathered("planks", c, 1.8f, smoothness, 0.7f, 0.15f, 0.08f, null, 0.75f);
+        /// <summary>점토 기와 (지중해·동남아 붉은 기와, 색만 바꿔 초록 기와도).</summary>
+        public static Material Tile(Color c, float smoothness = 0.3f) => Weathered("rooftile", c, 1.6f, smoothness, 0f, 0.25f, 0.15f, null, 0.8f);
+        /// <summary>초가·짚·갈대 지붕.</summary>
+        public static Material Thatch(Color c) => Weathered("thatch", c, 1.5f, 0.05f, 0f, 0.1f, 0.1f, null, 0.7f);
+        /// <summary>쌓은 돌·석재: 돌 쌓기 결, 물가는 젖고 위는 이끼.</summary>
+        public static Material Stone(Color c, float smoothness = 0.15f) => Weathered("stonewall", c, 2f, smoothness, 1f, 0.4f, 0.3f, null, 0.8f);
+        /// <summary>석상·조각 돌 (사암·화강암 느낌): 결이 고운 사암 텍스처, 빗물 줄과 이끼.</summary>
+        public static Material Carved(Color c, float smoothness = 0.15f, float moss = 0.3f) => Weathered("sandstone", c, 2.5f, smoothness, 1f, 0.55f, moss, new Color(0.25f, 0.3f, 0.2f), 0.85f);
+
+        /// <summary>호안·방파제·부두 콘크리트: 윗면은 바닥 콘크리트, 옆면은 거푸집 자국 난 벽 콘크리트, 물 자국·빗물 줄·이끼.</summary>
+        public static Material Quay(Color tint, float smoothness = 0.2f) =>
+            Weathered("concrete", tint * 0.66f, 3.5f, smoothness, 1f, 0.6f, 0.25f, null, 0.6f, 0f, "wallconcrete");
+
+        /// <summary>테트라포드·소파 블록: 자갈 박힌 거친 콘크리트, 아래쪽 물때·따개비.</summary>
+        public static Material Tetrapod(Color tint) =>
+            Weathered("aggregate", tint * 0.66f, 1.6f, 0.12f, 1f, 0.3f, 0.2f, null, 0.7f);
+
+        /// <summary>
+        /// 이미 놓은 물체(FBX 소품 등)의 머티리얼을 모두 풍화 표면으로 바꾼다. 부위마다 원래 색을 tint로 넘겨 색 구분은 그대로 둔다.
+        /// skip에 걸리는 색(예: 눈·금박처럼 반짝여야 할 부위)은 그대로 둔다.
+        /// </summary>
+        public static void Weatherize(GameObject go, string name, float metersPerTile, float smoothness = 0.2f, float wet = 1f, float streaks = 0.5f,
+            float moss = 0.3f, Color? mossColor = null, System.Func<Color, bool> skip = null, float desat = 0.6f)
+        {
+            if (go == null) return;
+            foreach (var r in go.GetComponentsInChildren<Renderer>())
+            {
+                var mats = r.sharedMaterials;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] == null) continue;
+                    var c = mats[i].HasProperty("_Color") ? mats[i].color : Color.white;
+                    if (skip != null && skip(c)) continue;
+                    // Blender FBX 색은 선형 값으로 들어온다 (감마 프로젝트에서 그대로 쓰면 미리보기보다 한참 어둡다: 베이지 머라이언이 짙은 회색)
+                    c = c.gamma;
+                    mats[i] = Weathered(name, new Color(c.r, c.g, c.b, 1f), metersPerTile, smoothness, wet, streaks, moss, mossColor, desat);
+                }
+                r.sharedMaterials = mats;
+            }
         }
 
         public static Material Lit(Color color, float smoothness = 0.15f, float metallic = 0f)

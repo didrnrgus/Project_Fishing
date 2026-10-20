@@ -64,25 +64,37 @@ namespace Fishing.World
         /// 크메르 프랑(연꽃 봉오리 탑) 단면: 기단 → 몸통 → 안으로 들어가며 다섯 층 꽃잎 띠 → 봉오리 끝. 높이 h, 몸통 반지름 r.
         /// 톱니 단면(notch)으로 돌리면 모서리가 층층이 꺾인 탑이 된다.
         /// </summary>
-        static List<Vector2> PrangProfile(float h, float r)
+        /// <summary>
+        /// 프랑(탑) 단면: 기단 → 곧은 몸 → 위로 좁아지는 층 tiers개 → 연꽃봉오리 끝. 층마다 튀어나온 처마 턱 + 들어간 띠(조각 벽감 자리) + 작은 연꽃잎 턱.
+        /// 사진(왓 아룬 가운데 프랑, 앙코르와트 중앙 탑): 층이 촘촘해서 멀리서 가로 줄이 겹겹이 보인다.
+        /// </summary>
+        static List<Vector2> PrangProfile(float h, float r, int tiers = 9)
         {
-            var p = new List<Vector2> { new Vector2(r * 1.25f, 0f), new Vector2(r * 1.25f, h * 0.05f), new Vector2(r, h * 0.07f), new Vector2(r, h * 0.3f), new Vector2(r * 1.06f, h * 0.32f) };
-            for (int i = 0; i < 5; i++)
+            var p = new List<Vector2> { new Vector2(r * 1.25f, 0f), new Vector2(r * 1.25f, h * 0.035f), new Vector2(r * 1.1f, h * 0.045f), new Vector2(r * 1.1f, h * 0.06f),
+                new Vector2(r, h * 0.07f), new Vector2(r, h * 0.27f), new Vector2(r * 1.07f, h * 0.29f), new Vector2(r * 1.07f, h * 0.31f) };
+            float y = h * 0.31f, top = h * 0.88f;
+            float step = (top - y) / tiers;
+            for (int i = 0; i < tiers; i++)
             {
-                float y0 = h * (0.34f + i * 0.11f);
-                float ri = r * (0.92f - i * 0.15f);
-                p.Add(new Vector2(ri, y0));
-                p.Add(new Vector2(ri * 1.08f, y0 + h * 0.03f));
-                p.Add(new Vector2(ri * 0.96f, y0 + h * 0.08f));
+                float f = i / (float)tiers;
+                float ri = r * Mathf.Lerp(0.95f, 0.28f, Mathf.Pow(f, 1.15f));
+                p.Add(new Vector2(ri * 0.94f, y + step * 0.05f));       // 들어간 띠
+                p.Add(new Vector2(ri * 0.94f, y + step * 0.55f));
+                p.Add(new Vector2(ri * 1.04f, y + step * 0.62f));       // 연꽃잎 턱
+                p.Add(new Vector2(ri * 1.1f, y + step * 0.82f));        // 처마
+                p.Add(new Vector2(ri * 0.98f, y + step));
+                y += step;
             }
             p.Add(new Vector2(r * 0.2f, h * 0.9f));
-            p.Add(new Vector2(r * 0.12f, h * 0.96f));
+            p.Add(new Vector2(r * 0.15f, h * 0.93f));
+            p.Add(new Vector2(r * 0.17f, h * 0.945f));
+            p.Add(new Vector2(r * 0.08f, h * 0.975f));
             p.Add(new Vector2(0.01f, h));
             return p;
         }
 
         static void Prang(Transform root, Vector3 at, float h, float r, Material stone) =>
-            MapKit.Place(root, "Prang", MapKit.Lathe(PrangProfile(h, r), 16, 4f, 0.8f), stone, at, 45f);
+            MapKit.Place(root, "Prang", MapKit.Lathe(PrangProfile(h, r, 8), 24, 4f, 0.86f), stone, at, 45f);
 
         /// <summary>앙코르와트만의 풍경: 건너편 바깥 회랑·정문 탑·둑길·중앙 사원 탑 다섯, 물가 연잎·연꽃, 사자상, 횃불.</summary>
         static void AngkorExtra(CoastWorldBuilder b)
@@ -180,7 +192,7 @@ namespace Fishing.World
             foreach (var f in flowers) stems.Add(new[] { new Vector3(f.x, water - 0.2f, f.y), new Vector3(f.x, f.w, f.y) });
             MapKit.Place(root, "LotusStems", MapKit.Tubes(stems, u => 0.025f, 5), Mats.Lit(new Color(0.3f, 0.45f, 0.2f)), Vector3.zero);
 
-            var pole = Mats.Lit(new Color(0.3f, 0.22f, 0.15f), 0.2f);
+            var pole = Mats.Wood(new Color(0.3f, 0.22f, 0.15f), 0.2f);
             var flame = Mats.Emissive(new Color(1f, 0.55f, 0.15f), 2.5f);
             foreach (float x in new[] { -38f, -20f, -7f, 7f, 20f, 38f })
             {

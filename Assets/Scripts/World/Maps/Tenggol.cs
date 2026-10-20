@@ -73,9 +73,9 @@ namespace Fishing.World
             var root = new GameObject("Tenggol").transform;
             root.SetParent(b.Root, false);
             float deck = b.Map.LandY + 0.34f;
-            var white = Mats.Lit(new Color(0.96f, 0.95f, 0.92f), 0.15f);
-            var wood = Mats.Lit(new Color(0.5f, 0.34f, 0.2f), 0.3f);
-            var tile = Mats.Lit(new Color(0.62f, 0.28f, 0.18f), 0.3f);
+            var white = Mats.Wall(new Color(0.96f, 0.95f, 0.92f), 0.15f);
+            var wood = Mats.Wood(new Color(0.5f, 0.34f, 0.2f), 0.3f);
+            var tile = Mats.Tile(new Color(0.62f, 0.28f, 0.18f), 0.3f);
             var glass = Mats.Lit(new Color(0.3f, 0.45f, 0.52f), 0.85f, 0.1f);
 
             // 별장 두 채 (데크 뒤쪽, 바다를 본다): 흰 벽 + 통유리 + 겹 박공 기와지붕

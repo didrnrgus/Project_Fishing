@@ -21,6 +21,8 @@ Shader "Fishing/Karst"
         _Streaks ("Streak Amount", Range(0,1)) = 0.7
         _MossColor ("Moss Color", Color) = (0.3,0.42,0.22,1)
         _Moss ("Moss Amount", Range(0,1)) = 0.6
+        _Jungle ("Jungle Cover", Range(0,1)) = 0
+        _Lift ("Bounce Light (white cliffs)", Range(0,1)) = 0
     }
     SubShader
     {
@@ -38,7 +40,8 @@ Shader "Fishing/Karst"
         sampler2D _BumpMap;
         sampler2D _LayerTex, _LayerBump;
         fixed4 _Color, _StreakColor, _MossColor;
-        half _BumpScale, _Glossiness, _Saturation, _Streaks, _Moss;
+        half _BumpScale, _Glossiness, _Saturation, _Streaks, _Moss, _Jungle, _Lift;
+        float _FishingNight;
 
         struct Input
         {
@@ -98,7 +101,8 @@ Shader "Fishing/Karst"
             // 덤불: 위를 보는 면과 턱에 몰리고, 깎아지른 면에는 드문드문 덩어리로
             float up = saturate(IN.wn.y * 1.6 + 0.25);
             float mossN = WallNoise(wp + 53.0, float2(0.09, 0.07)) * 0.6 + WallNoise(wp + 71.0, float2(0.35, 0.3)) * 0.4;
-            float moss = smoothstep(0.66, 0.74, mossN + up * 0.32) * _Moss;
+            // _Jungle: 하롱베이 사진처럼 비탈까지 짙은 밀림이 덮는다 (깎아지른 면만 회색 바위로 남는다)
+            float moss = smoothstep(0.66 - _Jungle * 0.42, 0.74 - _Jungle * 0.3, mossN + up * (0.32 + _Jungle * 0.25)) * _Moss;
             fixed3 mossCol = _MossColor.rgb * lerp(0.6, 1.35, saturate(detail * 1.8));
             col = lerp(col, mossCol, moss);
 
@@ -113,6 +117,8 @@ Shader "Fishing/Karst"
         #endif
             o.Smoothness = saturate(_Glossiness * lerp(1.2, 0.5, max(moss, streak * 0.5)));
             o.Metallic = 0;
+            // 흰 석회암 절벽은 그늘에서도 바다·모래 반사광으로 밝다 (나바지오 북향 절벽이 회색으로 보이던 것). 밤에는 끈다
+            o.Emission = o.Albedo * _Lift * (1 - saturate(_FishingNight)) * 0.45;
         }
         ENDCG
     }

@@ -73,8 +73,8 @@ namespace Fishing.World
             var root = new GameObject("Vinpearl").transform;
             root.SetParent(b.Root, false);
             float land = b.Map.LandY, deck = land + 0.34f;
-            var post = Mats.Lit(new Color(0.42f, 0.3f, 0.2f), 0.25f);
-            var straw = Mats.Lit(Thatch, 0.05f);
+            var post = Mats.Wood(new Color(0.42f, 0.3f, 0.2f), 0.25f);
+            var straw = Mats.Thatch(Thatch);
 
             // --- 바다 위 정자: 네 기둥 + 네모뿔 초가지붕 + 벤치 ---
             var gz = new Vector3(32.5f, deck, 17.5f);

@@ -298,7 +298,7 @@ namespace Fishing.World
                 Mats.TexturedBox("asphalt", Color.white, new Vector2(420f, 7f), 6f, 0.15f), false);
             // 홍원항 호안: 포구 앞 콘크리트 벽 (갯벌 쪽은 모래 해변)
             Mats.Prim(PrimitiveType.Cube, "Quay", _root, new Vector3(45f, _map.LandY - 2.2f, SeocheonDef.ShoreZ - 0.4f), new Vector3(150f, 6.4f, 1f),
-                Mats.TexturedBox("concrete", new Color(0.85f, 0.85f, 0.82f), new Vector2(150f, 6.4f), 3f, 0.2f));
+                Mats.Quay(new Color(0.85f, 0.85f, 0.82f)));
             Mats.Prim(PrimitiveType.Cube, "QuayApron", _root, new Vector3(45f, _map.LandY + 0.03f, -46f), new Vector3(150f, 0.14f, 12f),
                 Mats.TexturedBox("concrete", new Color(0.8f, 0.8f, 0.78f), new Vector2(150f, 12f), 4f, 0.2f), false);
             // 춘장대 해변의 작은 소나무 숲 (해송)
@@ -310,7 +310,7 @@ namespace Fishing.World
                         new Vector3(x, SeocheonTerrain.HeightAt(x, z) - 0.05f, z), R(0f, 360f), R(6f, 9f));
                 }
             // 갯벌 위 말뚝과 바구니 (갯벌 체험장 느낌)
-            var pole = Mats.Lit(new Color(0.35f, 0.28f, 0.2f), 0.3f);
+            var pole = Mats.Wood(new Color(0.35f, 0.28f, 0.2f), 0.3f);
             for (int i = 0; i < 14; i++)
             {
                 float x = -170f + i * 9f + R(-2f, 2f), z = -20f + R(-6f, 18f);
@@ -323,9 +323,9 @@ namespace Fishing.World
 
         void BuildBreakwaters()
         {
-            var concrete = Mats.TexturedBox("concrete", new Color(0.92f, 0.92f, 0.9f), new Vector2(8f, 60f), 4f, 0.2f);
-            var parapet = Mats.Lit(new Color(0.66f, 0.66f, 0.64f));
-            var tetra = Mats.Textured("concrete", new Color(0.74f, 0.73f, 0.7f), 1f, 0.12f);
+            var concrete = Mats.Quay(new Color(0.92f, 0.92f, 0.9f));
+            var parapet = Mats.Quay(new Color(0.78f, 0.78f, 0.76f));
+            var tetra = Mats.Tetrapod(new Color(0.92f, 0.9f, 0.86f));
             float bottom = _map.BaseWaterY - 5f;
             void Body(Rect r, string name, bool parapetWest)
             {
