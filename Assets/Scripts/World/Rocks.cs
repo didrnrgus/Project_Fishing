@@ -60,14 +60,73 @@ namespace Fishing.World
         {
             _meshes ??= new Mesh[Variants];
             variant = ((variant % Variants) + Variants) % Variants;
-            return _meshes[variant] ??= Build(variant);
+            return _meshes[variant] ??= Build(variant, 3);
         }
 
-        static Mesh Build(int seed)
+        static Mesh[] _pebbles;
+
+        /// <summary>낮은 다각형 돌(80삼각형): 수백 개를 한 메쉬로 쌓는 돌담·석방렴용. 지름 1.</summary>
+        public static Mesh Pebble(int variant)
+        {
+            _pebbles ??= new Mesh[Variants];
+            variant = ((variant % Variants) + Variants) % Variants;
+            return _pebbles[variant] ??= Build(variant + 100, 1);
+        }
+
+        /// <summary>
+        /// 돌을 쌓은 띠 한 덩어리 (석방렴·돌담): path 점을 따라 폭 width로, 바닥(bedY(x,z))에서 topY까지 돌을 층층이 쌓는다.
+        /// 위층일수록 폭이 좁아져 단면이 사다리꼴. stone = 돌 지름(m). 메쉬는 parent 로컬 좌표(= path 좌표).
+        /// </summary>
+        public static Mesh StoneBand(IList<Vector3> path, float width, float topY, System.Func<float, float, float> bedY, float stone, int seed)
+        {
+            var rng = new System.Random(seed);
+            float Rf(float a, float b) => (float)(a + rng.NextDouble() * (b - a));
+            var parts = new List<CombineInstance>();
+            for (int s = 0; s + 1 < path.Count; s++)
+            {
+                Vector3 a = path[s], b = path[s + 1];
+                var dir = b - a;
+                dir.y = 0f;
+                float len = dir.magnitude;
+                if (len < 0.01f) continue;
+                dir /= len;
+                var side = new Vector3(dir.z, 0f, -dir.x);
+                for (float d = 0f; d < len; d += stone * 0.7f)
+                {
+                    var c = a + dir * d;
+                    float bed = bedY(c.x, c.z);
+                    int layers = Mathf.Max(1, Mathf.CeilToInt((topY - bed) / (stone * 0.55f)));
+                    for (int l = 0; l < layers; l++)
+                    {
+                        float f = layers == 1 ? 1f : l / (float)(layers - 1);
+                        float w = Mathf.Lerp(width, width * 0.45f, f);
+                        int across = Mathf.Max(1, Mathf.RoundToInt(w / (stone * 0.8f)));
+                        for (int k = 0; k < across; k++)
+                        {
+                            float o = across == 1 ? 0f : Mathf.Lerp(-w * 0.5f, w * 0.5f, k / (float)(across - 1));
+                            float sz = stone * Rf(0.7f, 1.25f);
+                            var p = c + side * (o + Rf(-0.15f, 0.15f) * stone) + dir * Rf(-0.2f, 0.2f) * stone;
+                            p.y = Mathf.Min(bed + (l + 0.5f) * stone * 0.55f, topY - sz * 0.25f);
+                            parts.Add(new CombineInstance
+                            {
+                                mesh = Pebble(rng.Next(Variants)),
+                                transform = Matrix4x4.TRS(p, Quaternion.Euler(Rf(-25f, 25f), Rf(0f, 360f), Rf(-25f, 25f)), new Vector3(sz * Rf(0.9f, 1.3f), sz * Rf(0.6f, 0.9f), sz)),
+                            });
+                        }
+                    }
+                }
+            }
+            var mesh = new Mesh { name = "StoneBand", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            mesh.CombineMeshes(parts.ToArray(), true, true);
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        static Mesh Build(int seed, int subdiv)
         {
             var rng = new System.Random(9173 + seed * 7919);
             float Rf(float a, float b) => (float)(a + rng.NextDouble() * (b - a));
-            Icosphere(3, out var verts, out var tris);
+            Icosphere(subdiv, out var verts, out var tris);
 
             // 깎는 평면: 위·옆으로 3~5개 (절리면), 각 평면은 중심에서 0.55~0.8 거리
             int cuts = 3 + rng.Next(3);

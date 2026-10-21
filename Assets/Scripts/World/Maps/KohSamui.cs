@@ -15,7 +15,7 @@ namespace Fishing.World
         public static CoastSpec KohSamui() => new CoastSpec
         {
             Id = "kohsamui", MapName = "코사무이 · 타이만", ShortName = "코사무이", ShopName = "보풋 낚시점", UnionContact = "보풋 어촌의 찻차이 지부장",
-            LandName = "보풋 해변", SeaName = "타이만", Seed = 55,
+            LandName = "보풋 해변", SeaName = "타이만", Seed = 55, SandTint = new Color(1.5f, 1.45f, 1.32f),
             WaterDeep = new Color(0.02f, 0.22f, 0.32f), WaterShallow = new Color(0.1f, 0.56f, 0.55f),
             Shores = new[] { new ShoreSeg(-999f, -20f, ShoreKind.Beach), new ShoreSeg(-20f, 30f, ShoreKind.Quay), new ShoreSeg(30f, 999f, ShoreKind.Beach) },
             NearDepth = 3f, DepthSlope = 0.05f, FlatWidth = 32f, CliffHeight = 18f, CliffWidth = 50f, RoadOffset = 18f, VillageDensity = 0.8f,
@@ -93,6 +93,41 @@ namespace Fishing.World
             }
             var at = c + new Vector3(0f, 5.4f, 0f);
             MapKit.Prop(root, "buddha_gold", at, MapKit.Face(at, new Vector3(20f, 0f, -45f)), 20f);
+
+            // --- 사용자 참고 사진(코사무이): 앙통 해상공원의 숲 덮인 섬들 + 모래톱으로 이어진 낭유안 세 섬 ---
+            var jungle = MapKit.FarRock(new Color(0.16f, 0.32f, 0.15f), "grass", 18f, 0.8f, 0.05f);
+            var granite = MapKit.FarRock(new Color(0.55f, 0.5f, 0.44f), "granite", 20f, 0.8f);
+            foreach (var (x, z, rx, h, seed) in new[] { (-260f, 420f, 90f, 60f, 1), (-140f, 470f, 60f, 48f, 2), (-330f, 520f, 120f, 75f, 3), (240f, 460f, 70f, 52f, 4), (330f, 380f, 50f, 34f, 5) })
+            {
+                var isl = MapKit.Place(root, "AngThong", HanRiverLandmarks.HillMesh(rx, rx * 0.7f, h, seed + 40), jungle, new Vector3(x, water - 0.5f, z));
+                isl.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            // 낭유안: 봉긋한 세 섬 사이를 흰 모래톱이 Y자로 잇는다
+            var ny = new Vector3(60f, water, 330f);
+            foreach (var (dx, dz, rx, h) in new[] { (0f, 0f, 34f, 30f), (-58f, 40f, 26f, 22f), (52f, 46f, 22f, 18f) })
+                MapKit.Place(root, "NangYuan", HanRiverLandmarks.HillMesh(rx, rx * 0.8f, h, (int)(dx + 77)), jungle, ny + new Vector3(dx, -0.5f, dz));
+            var sand = Mats.Textured("sand", new Color(1f, 0.97f, 0.9f), 6f, 0.1f);
+            foreach (var (tx, tz) in new[] { (-58f, 40f), (52f, 46f) })
+            {
+                var to = ny + new Vector3(tx, 0f, tz);
+                var mid = (ny + to) * 0.5f;
+                Mats.Prim(PrimitiveType.Cube, "SandBar", root, mid + Vector3.up * 0.05f, new Vector3(12f, 0.3f, (to - ny).magnitude), sand, false, Quaternion.Euler(0f, MapKit.Face(ny, to), 0f));
+            }
+            // 바위 해안 화강암 무더기 (사진: 둥근 화강암이 물가에 쌓였다)
+            var graniteNear = Mats.Weathered("granite", new Color(0.66f, 0.58f, 0.5f), 4f, 0.25f, 1f, 0.3f, 0.2f);
+            var rng = new System.Random(5555);
+            for (int k = 0; k < 18; k++)
+            {
+                float x = 92f + (float)rng.NextDouble() * 50f, z = b.Map.ShoreAt(x) + (float)(rng.NextDouble() - 0.4) * 16f;
+                float s = 2f + (float)rng.NextDouble() * 5f;
+                var go = new GameObject("Granite");
+                go.transform.SetParent(root, false);
+                go.transform.localPosition = new Vector3(x, Mathf.Max(b.Height(x, z), water - 1.2f) + s * 0.2f, z);
+                go.transform.localScale = new Vector3(s * 1.3f, s * 0.8f, s);
+                go.transform.localRotation = Quaternion.Euler(0f, (float)rng.NextDouble() * 360f, 0f);
+                go.AddComponent<MeshFilter>().sharedMesh = Rocks.Mesh(rng.Next(8));
+                go.AddComponent<MeshRenderer>().sharedMaterial = graniteNear;
+            }
 
             // 롱테일 보트·어선
             foreach (var (x, z, yaw, id) in new[] { (5f, -20f, 95f, "longtail_a"), (-10f, -14f, 80f, "longtail_b"), (-60f, -33f, 40f, "longtail_a"), (60f, -34f, 140f, "longtail_b") })

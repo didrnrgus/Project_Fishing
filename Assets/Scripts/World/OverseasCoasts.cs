@@ -99,7 +99,7 @@ namespace Fishing.World
         public static CoastSpec Santorini() => new CoastSpec
         {
             Id = "santorini", MapName = "산토리니 · 에게해", ShortName = "산토리니", ShopName = "암모우디 낚시점", UnionContact = "암모우디 항구의 야니스 지부장",
-            LandName = "암모우디 항구", SeaName = "칼데라 바다", Seed = 34, DarkRock = true,
+            LandName = "암모우디 항구", SeaName = "칼데라 바다", Seed = 34, DarkRock = true, CliffTexture = "canyon", CliffTint = new Color(1.05f, 0.82f, 0.78f, 1f),
             WaterDeep = new Color(0.01f, 0.1f, 0.3f), WaterShallow = new Color(0.04f, 0.38f, 0.55f),
             Shores = new[] { new ShoreSeg(-999f, -50f, ShoreKind.Rock), new ShoreSeg(-50f, 42f, ShoreKind.Quay), new ShoreSeg(42f, 999f, ShoreKind.Rock) },
             NearDepth = 7f, DepthSlope = 0.12f, FlatWidth = 13f, CliffHeight = 46f, CliffWidth = 34f, RoadOffset = 0f, VillageDensity = 0.35f,

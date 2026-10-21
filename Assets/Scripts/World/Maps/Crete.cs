@@ -15,7 +15,7 @@ namespace Fishing.World
         public static CoastSpec Crete() => new CoastSpec
         {
             Id = "crete", MapName = "크레타 · 하니아", ShortName = "크레타", ShopName = "하니아 항구 낚시점", UnionContact = "베네치아 항구의 디미트리스 지부장",
-            LandName = "베네치아 항구", SeaName = "크레타 바다", Seed = 61, StoneQuay = true, StoneTint = new Color(0.82f, 0.74f, 0.6f),
+            LandName = "베네치아 항구", SeaName = "크레타 바다", Seed = 61, SandTint = new Color(1.3f, 1.26f, 1.16f), StoneQuay = true, StoneTint = new Color(0.82f, 0.74f, 0.6f),
             WaterDeep = new Color(0.02f, 0.16f, 0.3f), WaterShallow = new Color(0.08f, 0.42f, 0.5f),
             Shores = new[] { new ShoreSeg(-999f, -120f, ShoreKind.Rock), new ShoreSeg(-120f, 90f, ShoreKind.Quay), new ShoreSeg(90f, 999f, ShoreKind.Rock) },
             NearDepth = 4f, DepthSlope = 0.07f, FlatWidth = 26f, CliffHeight = 14f, CliffWidth = 50f, RoadOffset = 0f, VillageDensity = 1.5f,
@@ -79,15 +79,18 @@ namespace Fishing.World
             b.AddBulb(bulb.GetComponent<Renderer>());
             b.AddLamp(lh + new Vector3(0f, 19.4f, 0f), new Color(1f, 0.9f, 0.6f), 30f, 2f);
 
-            // --- 야니체리 모스크: 네모난 돌 건물 + 큰 둥근 지붕 + 앞 회랑의 작은 돔 다섯 + 야자수 둘 ---
+            // --- 야니체리 모스크 (사용자 참고 사진): 황토빛 사암 네모 건물 + 붉은 테라코타 큰 돔 + 앞 회랑의 작은 테라코타 돔 다섯 + 야자수 둘 ---
             var mq = new Vector3(-80f, land, -52f);
+            var sandstone = Mats.Carved(new Color(0.84f, 0.72f, 0.54f), 0.12f, 0.15f);
+            var terracotta = Mats.Weathered("plaster", new Color(0.74f, 0.42f, 0.3f), 2f, 0.2f, 0f, 0.35f, 0.05f, null, 0.6f, 0f, null, 0.5f);
+            stoneLight = sandstone;
             Mats.Prim(PrimitiveType.Cube, "MosqueHall", root, mq + new Vector3(0f, 4f, 0f), new Vector3(14f, 8f, 14f), stoneLight, true);
-            Mats.Prim(PrimitiveType.Sphere, "MosqueDome", root, mq + new Vector3(0f, 8.4f, 0f), new Vector3(12.5f, 9f, 12.5f), Mats.Lit(new Color(0.88f, 0.86f, 0.8f), 0.2f), false);
+            Mats.Prim(PrimitiveType.Sphere, "MosqueDome", root, mq + new Vector3(0f, 8.4f, 0f), new Vector3(12.5f, 9f, 12.5f), terracotta, false);
             Mats.Prim(PrimitiveType.Cylinder, "MosqueDrum", root, mq + new Vector3(0f, 8.6f, 0f), new Vector3(12.8f, 0.6f, 12.8f), stone, false);
             Mats.Prim(PrimitiveType.Cube, "MosquePorch", root, mq + new Vector3(0f, 2.6f, 9.5f), new Vector3(16f, 5.2f, 5f), stoneLight, true);
             for (int k = -2; k <= 2; k++)
             {
-                Mats.Prim(PrimitiveType.Sphere, "PorchDome", root, mq + new Vector3(k * 3.1f, 5.3f, 9.5f), new Vector3(2.8f, 2.2f, 2.8f), stoneLight, false);
+                Mats.Prim(PrimitiveType.Sphere, "PorchDome", root, mq + new Vector3(k * 3.1f, 5.3f, 9.5f), new Vector3(2.8f, 2.2f, 2.8f), terracotta, false);
                 Mats.Prim(PrimitiveType.Cube, "PorchArch", root, mq + new Vector3(k * 3.1f, 1.7f, 12.02f), new Vector3(1.8f, 3.2f, 0.05f), Mats.Lit(new Color(0.15f, 0.13f, 0.12f)), false);
             }
             foreach (float sx in new[] { -11f, 11f })

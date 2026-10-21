@@ -15,7 +15,7 @@ namespace Fishing.World
         public static CoastSpec Langkawi() => new CoastSpec
         {
             Id = "langkawi", MapName = "랑카위 · 말레이시아", ShortName = "랑카위", ShopName = "쿠아 낚시점", UnionContact = "독수리 광장의 아지즈 지부장",
-            LandName = "쿠아 부두", SeaName = "안다만 해협", Seed = 56,
+            LandName = "쿠아 부두", SeaName = "안다만 해협", Seed = 56, SandTint = new Color(1.5f, 1.45f, 1.32f),
             WaterDeep = new Color(0.03f, 0.2f, 0.24f), WaterShallow = new Color(0.14f, 0.44f, 0.38f),
             Shores = new[] { new ShoreSeg(-999f, -90f, ShoreKind.Mud), new ShoreSeg(-90f, 50f, ShoreKind.Quay), new ShoreSeg(50f, 999f, ShoreKind.Beach) },
             NearDepth = 3.5f, DepthSlope = 0.05f, FlatWidth = 30f, CliffHeight = 22f, CliffWidth = 50f, RoadOffset = 16f, VillageDensity = 0.7f,

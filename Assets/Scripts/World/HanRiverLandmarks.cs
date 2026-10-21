@@ -347,6 +347,17 @@ namespace Fishing.World
             mesh.SetVertices(verts); mesh.SetUVs(0, uvs); mesh.SetTriangles(tris, 0);
             mesh.RecalculateNormals(); mesh.RecalculateBounds();
             Place(t, "63Body", mesh, mat, Vector3.zero);
+            // 사진(63빌딩): 넓은 앞뒤 면 가운데를 위아래로 가르는 짙은 세로 홈 두 줄 (강 쪽에서 보면 탑이 둘로 나뉜 듯)
+            var groove = Mat(new Color(0.18f, 0.13f, 0.08f), null, null, Color.black, 0.85f, 0.6f, Vector2.one);
+            float hCenter = H * Mathf.Lerp(1f, 0.83f, Mathf.Pow(3 / (float)(slices - 1), 1.2f));
+            float bend = Mathf.Atan(bow) * Mathf.Rad2Deg;
+            foreach (float fz in new[] { -1f, 1f })
+            foreach (float gx in new[] { -1.6f, 1.6f })
+            {
+                float z = fz * (depth - Mathf.Abs(gx) * bow) + fz * 0.06f;
+                float yaw = -Mathf.Sign(gx) * fz * bend;
+                Mats.Prim(PrimitiveType.Cube, "63Groove", t, new Vector3(gx, hCenter * 0.5f, z), new Vector3(1.1f, hCenter, 0.14f), groove, false, Quaternion.Euler(0f, yaw, 0f));
+            }
             // 옥상 안테나 + 항공 장애등
             var steel = Mat(new Color(0.75f, 0.75f, 0.76f), null, null, Color.black, 0.5f, 0.6f, Vector2.one);
             Mats.Prim(PrimitiveType.Cylinder, "63Antenna", t, new Vector3(-halfW + 6f, H + 9f, 0f), new Vector3(0.7f, 9f, 0.7f), steel, false);
@@ -427,6 +438,48 @@ namespace Fishing.World
             var beacon = Mat(new Color(1f, 0.3f, 0.3f), null, Texture2D.whiteTexture, new Color(1f, 0.15f, 0.1f) * 3f, 0.3f, 0f, Vector2.one);
             beacon.SetFloat("_DayEmission", 0.4f);
             Mats.Prim(PrimitiveType.Sphere, "MastBeacon", t, new Vector3(0f, mastTop + 0.4f, 0f), Vector3.one * 0.9f, beacon, false);
+
+            // 사진(남산): 탑 옆 산등성이의 빨강·흰 철골 송신탑 두 기 (탑보다 낮다)
+            var red = Mat(new Color(0.85f, 0.16f, 0.12f), null, null, Color.black, 0.3f, 0.3f, Vector2.one);
+            var whiteSteel = Mat(new Color(0.94f, 0.94f, 0.93f), null, null, Color.black, 0.3f, 0.3f, Vector2.one);
+            LatticeMast(t, new Vector3(-48f, NamsanHill - 22f, 18f), 82f, 6f, 0.8f, red, whiteSteel, beacon);
+            LatticeMast(t, new Vector3(-30f, NamsanHill - 12f, -24f), 58f, 4.5f, 0.6f, red, whiteSteel, beacon);
+        }
+
+        /// <summary>철골 송신탑: 네 다리가 위로 모이고, 칸마다 X자 가새와 수평재. 높이를 7칸으로 나눠 빨강·흰 띠를 번갈아 칠한다.</summary>
+        static void LatticeMast(Transform parent, Vector3 basePos, float height, float baseHalf, float topHalf, Material red, Material white, Material beacon)
+        {
+            var t = new GameObject("LatticeMast").transform;
+            t.SetParent(parent, false);
+            t.localPosition = basePos;
+            const int bays = 14;
+            Vector3 Corner(int k, float f)
+            {
+                float h = Mathf.Lerp(baseHalf, topHalf, Mathf.Pow(f, 0.8f));
+                return new Vector3((k == 0 || k == 3) ? -h : h, f * height, (k < 2) ? -h : h);
+            }
+            void Bar(Vector3 a, Vector3 b, float thick, Material m)
+            {
+                var d = b - a;
+                var go = Mats.Prim(PrimitiveType.Cube, "Bar", t, (a + b) * 0.5f, new Vector3(thick, thick, d.magnitude), m, false, Quaternion.LookRotation(d));
+                go.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            for (int i = 0; i < bays; i++)
+            {
+                float f0 = i / (float)bays, f1 = (i + 1) / (float)bays;
+                var m = (i / 2) % 2 == 0 ? red : white;
+                float thick = Mathf.Lerp(0.5f, 0.2f, f0);
+                for (int k = 0; k < 4; k++)
+                {
+                    Vector3 a0 = Corner(k, f0), a1 = Corner(k, f1), b0 = Corner((k + 1) % 4, f0), b1 = Corner((k + 1) % 4, f1);
+                    Bar(a0, a1, thick, m);              // 다리
+                    Bar(a1, b1, thick * 0.6f, m);       // 수평재
+                    Bar(a0, b1, thick * 0.45f, m);      // X 가새
+                    Bar(b0, a1, thick * 0.45f, m);
+                }
+            }
+            Mats.Prim(PrimitiveType.Cylinder, "MastTip", t, new Vector3(0f, height + 4f, 0f), new Vector3(0.35f, 4f, 0.35f), red, false);
+            Mats.Prim(PrimitiveType.Sphere, "MastBeacon", t, new Vector3(0f, height + 8.3f, 0f), Vector3.one * 0.8f, beacon, false);
         }
 
         /// <summary>둥근 산: 가운데가 높고 가장자리로 흘러내리는 돔 + 능선 노이즈.</summary>
@@ -515,7 +568,7 @@ namespace Fishing.World
         static readonly Dictionary<Vector3Int, Mesh> _cubes = new Dictionary<Vector3Int, Mesh>();
 
         /// <summary>크기 (w,h,d)인 상자 프리미티브(스케일로 늘림)에 맞춘 UV: 옆면 한 장 = 20m × 14m.</summary>
-        static Mesh TiledCube(Mesh src, float w, float h, float d)
+        internal static Mesh TiledCube(Mesh src, float w, float h, float d)
         {
             var key = new Vector3Int(Mathf.Max(1, Mathf.RoundToInt(w / 4f)), Mathf.Max(1, Mathf.RoundToInt(h / 4f)), Mathf.Max(1, Mathf.RoundToInt(d / 4f)));
             if (_cubes.TryGetValue(key, out var m)) return m;

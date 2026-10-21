@@ -15,7 +15,7 @@ namespace Fishing.World
         public static CoastSpec Duden() => new CoastSpec
         {
             Id = "duden", MapName = "듀덴 폭포 · 안탈리아", ShortName = "듀덴 폭포", ShopName = "라라 해안 낚시점", UnionContact = "폭포 공원의 메흐메트 지부장",
-            LandName = "폭포 공원", SeaName = "안탈리아 만", Seed = 63, StoneQuay = true, StoneTint = new Color(0.8f, 0.72f, 0.58f),
+            LandName = "폭포 공원", SeaName = "안탈리아 만", Seed = 63, CliffTexture = "canyon", CliffTint = new Color(1.25f, 1.15f, 1.05f, 1f), StoneQuay = true, StoneTint = new Color(0.8f, 0.72f, 0.58f),
             WaterDeep = new Color(0.01f, 0.16f, 0.32f), WaterShallow = new Color(0.06f, 0.45f, 0.55f),
             Shores = new[] { new ShoreSeg(-999f, -60f, ShoreKind.Rock), new ShoreSeg(-60f, 70f, ShoreKind.Quay), new ShoreSeg(70f, 999f, ShoreKind.Rock) },
             NearDepth = 5f, DepthSlope = 0.08f, FlatWidth = 30f, CliffHeight = 26f, CliffWidth = 30f, RoadOffset = 16f, VillageDensity = 0.7f,
@@ -66,45 +66,76 @@ namespace Fishing.World
             root.SetParent(b.Root, false);
             float water = b.Map.BaseWaterY;
 
-            // --- 트래버틴 절벽: 곶 동쪽 옆구리를 따라 황갈색 석회화 바위 면 ---
-            var trav = Mats.Karst(new Color(0.86f, 0.74f, 0.56f), 0.45f);
-            var travWet = Mats.Karst(new Color(0.42f, 0.38f, 0.32f), 0.2f);
-            var travTop = Mats.Karst(new Color(0.86f, 0.74f, 0.56f), 1f);
-            for (int i = 0; i < 5; i++)
+            // --- 트래버틴 절벽 (사용자 참고 사진): 주황·황갈색 석회화 바위가 층층이 흘러내린 면, 젖은 곳은 짙고, 턱마다 초록 이끼·덤불 ---
+            var trav = Mats.Karst(new Color(0.95f, 0.78f, 0.58f), 0.55f, 0f, 0.15f, "canyon", "cliff");
+            var travWet = Mats.Karst(new Color(0.45f, 0.4f, 0.32f), 0.35f, 0f, 0f, "canyon", "cliff");
+            var travTop = Mats.Karst(new Color(0.9f, 0.76f, 0.56f), 1f, 0.6f, 0f, "canyon", "cliff");
+            for (int i = 0; i < 6; i++)
             {
-                float t = i / 4f;
-                var pk = b.KarstPeak(new Vector3(Mathf.Lerp(-102f, -98f, t), 0f, Mathf.Lerp(-40f, 66f, t)), 14f - 2f * t, 62f - 8f * t, true);
+                float t = i / 5f;
+                var pk = b.KarstPeak(new Vector3(Mathf.Lerp(-103f, -97f, t) + (i % 2) * 2f, 0f, Mathf.Lerp(-44f, 70f, t)), 13f - 1.5f * t, 62f - 8f * t, true);
                 pk.GetComponent<MeshRenderer>().sharedMaterials = new[] { trav, travWet, travTop };
             }
 
-            // --- 폭포: 절벽 위 물길 → 동쪽(바다·공원 쪽)으로 튀어나와 떨어지는 물줄기 ---
+            // --- 폭포 (사용자: 메쉬 디테일, 흐르는 물, 물보라·안개 파티클) ---
+            // 절벽 위 강물 → 절벽 끝에서 여러 갈래로 나뉘어 동쪽(바다·공원 쪽)으로 뿜어져 떨어진다.
+            // 갈래마다 폭·튀어나가는 거리·흐름 속도가 달라 따로 움직이고, 넓은 가운데 줄기 앞뒤로 가는 줄기를 겹쳐 두께감을 낸다
             float topY = Mathf.Min(b.Height(-112f, 12f), 52f) + 1f;
-            var fallTop = new Vector3(-88f, topY, 12f);
-            var riverMat = Mats.Lit(new Color(0.12f, 0.32f, 0.36f), 0.92f);
-            Mats.Prim(PrimitiveType.Cube, "DudenRiver", root, new Vector3(-112f, topY - 0.3f, 12f), new Vector3(48f, 0.5f, 20f), riverMat, false);
-            var fallMat = MapKit.FallMat();
+            const float lipX = -88f;
+            var riverMat = Mats.Lit(new Color(0.12f, 0.34f, 0.36f), 0.92f);
+            Mats.Prim(PrimitiveType.Cube, "DudenRiver", root, new Vector3(-112f, topY - 0.3f, 14f), new Vector3(48f, 0.5f, 56f), riverMat, false);
             float drop = topY - water;
-            // 넓은 물줄기 하나 + 앞으로 더 튀어나오는 가는 물줄기 둘 (겹쳐서 두께감)
-            MapKit.Place(root, "DudenFall", MapKit.FallSheet(22f, drop, 6f), fallMat, fallTop, 90f);
-            MapKit.Place(root, "DudenFall2", MapKit.FallSheet(10f, drop, 9f), fallMat, fallTop + new Vector3(0.5f, 0f, -5f), 90f);
-            MapKit.Place(root, "DudenFall3", MapKit.FallSheet(8f, drop, 8f), fallMat, fallTop + new Vector3(0.5f, 0f, 6f), 90f);
-            // 사진처럼 여러 갈래: 바깥 가는 물줄기 둘 (앞으로 덜 튀어나와 절벽을 타고 흐른다)
-            var fallMat2 = MapKit.FallMat();
-            MapKit.Place(root, "DudenFall4", MapKit.FallSheet(5f, drop, 3f), fallMat2, fallTop + new Vector3(-0.5f, 0f, -13f), 90f);
-            MapKit.Place(root, "DudenFall5", MapKit.FallSheet(4f, drop, 2.5f), fallMat2, fallTop + new Vector3(-0.5f, 0f, 15f), 90f);
-            // 물이 떨어지며 흐르게 (두 재질 속도를 달리해 겹친 줄기가 따로 움직인다)
-            TextureScroll.On(root).Add(fallMat, new Vector2(0f, 0.55f)).Add(fallMat2, new Vector2(0f, 0.42f));
-            // 떨어지는 곳의 물안개
-            MapKit.Mist(root, new Vector3(-80f, water + 0.5f, 12f), 9f, 18f);
-            // 물보라: 떨어지는 곳의 흰 거품 원판 + 뿌연 물안개 덩어리
-            var foam = new List<Vector4>();
-            var rng = new System.Random(63);
-            for (int k = 0; k < 60; k++)
+            var falls = new (float z, float width, float lip, float speed, float opacity)[]
             {
-                float a = (float)rng.NextDouble() * Mathf.PI, d = 3f + (float)rng.NextDouble() * 16f;
-                foam.Add(new Vector4(-80f + Mathf.Sin(a) * d, 12f + Mathf.Cos(a) * d * 1.3f, 1f + (float)rng.NextDouble() * 2.4f, water + 0.1f + (float)rng.NextDouble() * 0.05f));
+                (12f, 20f, 7f, 0.55f, 0.95f),   // 가운데 큰 줄기
+                (7f, 9f, 10f, 0.62f, 0.85f),    // 앞으로 더 뿜어지는 줄기
+                (18f, 8f, 9f, 0.58f, 0.85f),
+                (-6f, 7f, 5f, 0.5f, 0.9f),
+                (-16f, 5f, 3.5f, 0.46f, 0.85f), // 바깥 가는 줄기: 절벽을 타고 흐른다
+                (30f, 6f, 4f, 0.48f, 0.88f),
+                (40f, 3.5f, 2.5f, 0.44f, 0.8f),
+            };
+            var lipFoam = new List<Vector4>();
+            var rng = new System.Random(63);
+            for (int k = 0; k < falls.Length; k++)
+            {
+                var f = falls[k];
+                var top = new Vector3(lipX, topY, f.z);
+                var mat = MapKit.WaterfallMat(f.speed, f.opacity, new Color(0.3f, 0.6f, 0.58f));
+                MapKit.Place(root, "DudenFall", MapKit.FallSheet(f.width, drop, f.lip, seed: k + 1), mat, top, 90f);
+                // 물이 수면에 닿는 곳: 튀어 오르는 물보라 (큰 줄기일수록 많이)
+                MapKit.Splash(root, new Vector3(lipX + f.lip, water + 0.3f, f.z), f.width * 0.8f, 90f, 18f + f.width * 4f);
+                if (f.width >= 8f) MapKit.FallDrift(root, top, f.width, drop, 90f);
+                // 절벽 끝 물마루의 흰 거품
+                for (float zz = -f.width * 0.5f; zz <= f.width * 0.5f; zz += 1.4f)
+                    lipFoam.Add(new Vector4(lipX + 0.4f, f.z + zz, 0.7f + (float)rng.NextDouble() * 0.6f, topY + 0.25f));
+            }
+            MapKit.Place(root, "DudenLipFoam", MapKit.Discs(lipFoam, 8), Mats.Transparent(new Color(0.97f, 0.98f, 0.98f, 0.75f), 0.4f), Vector3.zero);
+            // 절벽 위 강의 급류 거품 (물이 끝으로 몰려간다)
+            var rapids = new List<Vector4>();
+            for (int k = 0; k < 70; k++)
+                rapids.Add(new Vector4(lipX - 2f - (float)rng.NextDouble() * 22f, -14f + (float)rng.NextDouble() * 56f, 0.5f + (float)rng.NextDouble() * 1.4f, topY - 0.02f + (float)rng.NextDouble() * 0.03f));
+            MapKit.Place(root, "DudenRapids", MapKit.Discs(rapids, 8), Mats.Transparent(new Color(0.92f, 0.96f, 0.96f, 0.55f), 0.4f), Vector3.zero);
+            // 떨어지는 곳의 큰 물안개 구름 (바다 쪽으로 피어오른다)
+            MapKit.Mist(root, new Vector3(lipX + 9f, water + 1f, 12f), 14f, 26f);
+            MapKit.Mist(root, new Vector3(lipX + 6f, water + 1f, 32f), 8f, 10f);
+            // 물보라: 떨어지는 곳의 흰 거품 판 (반원으로 퍼진다)
+            var foam = new List<Vector4>();
+            for (int k = 0; k < 110; k++)
+            {
+                float a = (float)rng.NextDouble() * Mathf.PI, d = 2f + (float)rng.NextDouble() * 22f;
+                float zc = falls[rng.Next(falls.Length)].z;
+                foam.Add(new Vector4(lipX + 6f + Mathf.Sin(a) * d, zc + Mathf.Cos(a) * d * 1.2f, 1f + (float)rng.NextDouble() * 2.8f, water + 0.1f + (float)rng.NextDouble() * 0.05f));
             }
             MapKit.Place(root, "DudenFoam", MapKit.Discs(foam, 10), Mats.Transparent(new Color(0.97f, 0.98f, 0.98f, 0.7f), 0.5f), Vector3.zero);
+            // 절벽 끝을 따라 늘어진 덤불 (사진: 폭포 사이로 초록이 흘러내린다)
+            for (float z = -40f; z < 66f; z += 4.5f)
+            {
+                bool inFall = false;
+                foreach (var f in falls) if (Mathf.Abs(z - f.z) < f.width * 0.5f + 1f) inFall = true;
+                if (inFall) continue;
+                KenneyProps.SpawnBush(root, new Vector3(lipX - 1.5f, topY - 0.8f, z + (float)rng.NextDouble() * 2f), (float)rng.NextDouble() * 360f, 2.4f + (float)rng.NextDouble() * 1.6f);
+            }
 
             // --- 토로스 산맥: 뒤로 눈 덮인 높은 산줄기 ---
             var taurus = MapKit.Mountain(700f, 150f, 260f, 63, 0.58f, 5);

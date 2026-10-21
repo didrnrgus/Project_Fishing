@@ -213,7 +213,7 @@ namespace Fishing.World
             ShoreBumps = new[] { new Vector3(-60f, 18f, 6f) },
             NearDepth = 6f, DepthSlope = 0.1f, FlatWidth = 30f, CliffHeight = 20f, CliffWidth = 30f, RoadOffset = 20f, VillageDensity = 0.3f,
             Breakwaters = new[] { new BreakwaterSpec { Name = "등대섬 선착장", Stem = new Rect(62f, -40f, 6f, 40f), Arm = new Rect(38f, -6f, 30f, 6f), Light = new Color(0.95f, 0.95f, 0.93f) } },
-            Capes = new[] { new CapeSpec { Base = new Vector2(-45f, -75f), Tip = new Vector2(-58f, -4f), WidthBase = 32f, WidthTip = 20f, Height = 24f, Forest = true, Landmark = Landmark.GrandLighthouse, Name = "등대 언덕" } },
+            Capes = new[] { new CapeSpec { Base = new Vector2(-45f, -75f), Tip = new Vector2(-58f, -4f), WidthBase = 32f, WidthTip = 20f, Height = 24f, Forest = true, Landmark = Landmark.MukhoLighthouse, Name = "등대 언덕" } },
             Islets = new[]
             {
                 new IsletSpec { Center = new Vector3(-118f, 0f, 92f), Radius = 14f, Height = 6f, Walkable = true, Name = "서쪽 갯바위섬" },
@@ -424,7 +424,7 @@ namespace Fishing.World
         public static CoastSpec Jeju() => new CoastSpec
         {
             Id = "jeju", MapName = "제주 서귀포 · 남해", ShortName = "제주", ShopName = "서귀포 낚시점", UnionContact = "서귀포항의 어촌계 고계장",
-            LandName = "서귀포 마을", SeaName = "서귀포 앞바다", Seed = 21, DarkRock = true,
+            LandName = "서귀포 마을", SeaName = "서귀포 앞바다", Seed = 21, DarkRock = true, CliffTexture = "darkrock", CliffTint = new Color(1.35f, 1.35f, 1.4f, 1f),
             WaterDeep = new Color(0.02f, 0.14f, 0.26f), WaterShallow = new Color(0.04f, 0.45f, 0.5f),
             Shores = new[] { new ShoreSeg(-999f, -150f, ShoreKind.Rock), new ShoreSeg(-150f, -112f, ShoreKind.Beach), new ShoreSeg(-112f, -12f, ShoreKind.Rock),
                              new ShoreSeg(-12f, 82f, ShoreKind.Quay), new ShoreSeg(82f, 999f, ShoreKind.Rock) },
@@ -482,7 +482,7 @@ namespace Fishing.World
             Shores = new[] { new ShoreSeg(-999f, -22f, ShoreKind.Rock), new ShoreSeg(-22f, 72f, ShoreKind.Quay), new ShoreSeg(72f, 999f, ShoreKind.Rock) },
             NearDepth = 6f, DepthSlope = 0.1f, FlatWidth = 34f, CliffHeight = 22f, CliffWidth = 34f, RoadOffset = 22f, VillageDensity = 0.55f,
             Breakwaters = new[] { new BreakwaterSpec { Name = "거문항 방파제", Stem = new Rect(66f, -40f, 7f, 55f), Arm = new Rect(34f, 9f, 39f, 6f), Light = new Color(0.85f, 0.15f, 0.12f) } },
-            Capes = new[] { new CapeSpec { Base = new Vector2(-100f, -72f), Tip = new Vector2(-138f, 12f), WidthBase = 34f, WidthTip = 16f, Height = 26f, Forest = true, Landmark = Landmark.GrandLighthouse, Name = "거문도 등대" } },
+            Capes = new[] { new CapeSpec { Base = new Vector2(-100f, -72f), Tip = new Vector2(-138f, 12f), WidthBase = 34f, WidthTip = 16f, Height = 26f, Forest = true, Landmark = Landmark.GeomunLighthouse, Name = "거문도 등대" } },
             Islets = new[]
             {
                 new IsletSpec { Center = new Vector3(60f, 0f, 124f), Radius = 16f, Height = 6f, Walkable = true, Trees = true, Name = "서도 갯바위" },

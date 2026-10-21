@@ -44,6 +44,7 @@ namespace Fishing.World
             WaterY = 0.2f;
             BaseWaterY = 0.2f;
             TideAmplitude = 0.6f;
+            Bioluminescence = 1f; // 서천 밤바다: 파도 끝이 야광충으로 청록빛 (사용자 참고 사진)
             LandY = 1.0f;
             WaterDeep = new Color(0.1f, 0.15f, 0.12f);
             WaterShallow = new Color(0.27f, 0.3f, 0.2f);
@@ -280,6 +281,8 @@ namespace Fishing.World
             SeocheonTerrain.Build(_root, _map.BaseWaterY);
             BuildShore();
             BuildBreakwaters();
+            BuildSkywalk();
+            BuildPineRock();
             BuildCape();
             BuildIslet();
             BuildHarbor();
@@ -349,7 +352,70 @@ namespace Fishing.World
             _props.TetrapodBank(new Vector3(arm.xMin, 0f, arm.yMax + 0.5f), new Vector3(arm.xMax, 0f, arm.yMax + 0.5f), Vector3.forward, _map.BaseWaterY, tetra);
 
             _props.Lighthouse(new Vector3(SeocheonDef.RedArm.xMin + 3f, _map.LandY, SeocheonDef.RedArm.center.y), new Color(0.85f, 0.15f, 0.12f), new Color(1f, 0.45f, 0.4f));
-            _props.Lighthouse(new Vector3(SeocheonDef.WhiteBw.center.x, _map.LandY, SeocheonDef.WhiteBw.yMax - 3f), new Color(0.95f, 0.95f, 0.93f), new Color(0.6f, 1f, 0.6f));
+            // 사진(서천 바닷가): 방파제 끝 노란 등대
+            _props.Lighthouse(new Vector3(SeocheonDef.WhiteBw.center.x, _map.LandY, SeocheonDef.WhiteBw.yMax - 3f), new Color(0.98f, 0.8f, 0.14f), new Color(0.6f, 1f, 0.6f));
+        }
+
+        // ---------------- 송림 스카이워크 · 솔바위 ----------------
+
+        /// <summary>
+        /// 장항 송림 스카이워크 (사용자 참고 사진): 해송 숲에서 갯벌 위로 곧게 뻗어 나간 높은 콘크리트 보행교.
+        /// T자 기둥 하나씩이 상판을 받치고, 상판 양옆은 철 난간. 끝은 넓은 전망 데크. 밤엔 상판 아래 조명.
+        /// </summary>
+        void BuildSkywalk()
+        {
+            var concrete = Mats.Quay(new Color(0.8f, 0.79f, 0.76f));
+            var deckTop = Mats.Wood(new Color(0.58f, 0.42f, 0.3f), 0.25f);
+            var rail = Mats.Lit(new Color(0.55f, 0.57f, 0.6f), 0.5f, 0.5f);
+            const float x = -150f, z0 = -66f, z1 = 36f, w = 3.2f;
+            float deckY = _map.LandY + 12f;
+            float len = z1 - z0;
+            // 상판 (두께 0.9m 콘크리트 + 위 판재)
+            Mats.Prim(PrimitiveType.Cube, "SkywalkDeck", _root, new Vector3(x, deckY, (z0 + z1) * 0.5f), new Vector3(w, 0.9f, len), concrete, false);
+            Mats.Prim(PrimitiveType.Cube, "SkywalkFloor", _root, new Vector3(x, deckY + 0.47f, (z0 + z1) * 0.5f), new Vector3(w - 0.3f, 0.06f, len), deckTop, false);
+            // 끝 전망 데크
+            Mats.Prim(PrimitiveType.Cube, "SkywalkEnd", _root, new Vector3(x, deckY, z1 + 3f), new Vector3(9f, 0.9f, 7f), concrete, false);
+            Mats.Prim(PrimitiveType.Cube, "SkywalkEndFloor", _root, new Vector3(x, deckY + 0.47f, z1 + 3f), new Vector3(8.7f, 0.06f, 6.7f), deckTop, false);
+            // T자 기둥 (갯벌에 박혀 있다)
+            for (float z = z0 + 6f; z <= z1 + 3f; z += 13f)
+            {
+                float gy = SeocheonTerrain.HeightAt(x, z) - 1.5f;
+                float h = deckY - 0.45f - gy;
+                var pier = Mats.Prim(PrimitiveType.Cube, "SkywalkPier", _root, new Vector3(x, gy + h * 0.5f, z), new Vector3(1.1f, h, 1.1f), concrete, true);
+                Mats.Prim(PrimitiveType.Cube, "SkywalkCap", _root, new Vector3(x, deckY - 0.85f, z), new Vector3(w + 0.6f, 0.8f, 1.4f), concrete, false);
+            }
+            // 난간: 기둥 + 위·가운데 난간대
+            foreach (float side in new[] { -1f, 1f })
+            {
+                float rx = x + side * (w * 0.5f - 0.08f);
+                Mats.Prim(PrimitiveType.Cube, "SkywalkRail", _root, new Vector3(rx, deckY + 1.55f, (z0 + z1) * 0.5f), new Vector3(0.07f, 0.07f, len), rail, false);
+                Mats.Prim(PrimitiveType.Cube, "SkywalkRailMid", _root, new Vector3(rx, deckY + 1.0f, (z0 + z1) * 0.5f), new Vector3(0.05f, 0.05f, len), rail, false);
+                for (float z = z0; z <= z1; z += 2f)
+                    Mats.Prim(PrimitiveType.Cube, "SkywalkPost", _root, new Vector3(rx, deckY + 1.0f, z), new Vector3(0.06f, 1.1f, 0.06f), rail, false);
+            }
+            // 밤 조명: 상판 아래 따뜻한 등 (물·갯벌에 비친다)
+            for (float z = z0 + 10f; z <= z1; z += 26f) _props.AddLamp(new Vector3(x, deckY - 1.2f, z), new Color(1f, 0.82f, 0.55f), 16f, 1.2f);
+            WorldBuilder.AddSign(_root, "송림 스카이워크", new Vector3(x, deckY + 3.4f, z0 + 2f), new Color(1f, 0.88f, 0.6f));
+        }
+
+        /// <summary>갯벌에 홀로 선 솔바위 (사진: 서천 해변의 꼭대기에 소나무가 자란 바위): 바위기둥 + 꼭대기 해송 몇 그루.</summary>
+        void BuildPineRock()
+        {
+            var c = new Vector3(-95f, 0f, -26f);
+            var t = new GameObject("PineRock").transform;
+            t.SetParent(_root, false);
+            t.localPosition = new Vector3(c.x, SeocheonTerrain.HeightAt(c.x, c.z) - 1f, c.z);
+            var go = new GameObject("Rock");
+            go.transform.SetParent(t, false);
+            go.AddComponent<MeshFilter>().sharedMesh = CoastWorldBuilder.StackMesh(5.5f, 8f, 37, false, 1.4f);
+            var cliff = Mats.Textured("rock", new Color(0.62f, 0.5f, 0.38f), 1f, 0.25f);
+            go.AddComponent<MeshRenderer>().sharedMaterials = new[] { cliff, Mats.Textured("rock", new Color(0.3f, 0.27f, 0.24f), 1f, 0.7f), Mats.Textured("grass", new Color(0.5f, 0.55f, 0.4f), 1f, 0.1f) };
+            for (int k = 0; k < 3; k++)
+                KenneyProps.Spawn("Kenney/Nature/tree_pineRoundB", t, new Vector3(R(-1.6f, 1.6f), 7.6f, R(-1.6f, 1.6f)), R(0f, 360f), R(4f, 6.5f));
+            var col = t.gameObject.AddComponent<CapsuleCollider>();
+            col.radius = 5f;
+            col.height = 10f;
+            col.center = new Vector3(0f, 4f, 0f);
         }
 
         // ---------------- 동백정 ----------------
@@ -479,13 +545,21 @@ namespace Fishing.World
 
         void BuildFarIslands()
         {
-            // 서해 섬들 (수평선 너머로 해가 진다)
-            var near = Mats.Lit(new Color(0.22f, 0.3f, 0.24f));
-            var far = Mats.Lit(new Color(0.35f, 0.4f, 0.4f));
-            float[,] isl = { { -300f, 470f, 140f, 35f }, { -60f, 560f, 200f, 45f }, { 260f, 500f, 160f, 40f }, { 80f, 680f, 300f, 55f } };
+            // 서해 섬들 (수평선 너머로 해가 진다). 사진(서천 노을): 숲 덮인 둥근 쌍둥이 섬이 바로 앞바다에 나란히
+            var forestTex = Resources.Load<Texture2D>("Terrain/grass_diff");
+            var near = HanRiverLandmarks.Mat(new Color(0.24f, 0.36f, 0.24f), forestTex, null, Color.black, 0.05f, 0f, new Vector2(10f, 10f));
+            var far = HanRiverLandmarks.Mat(new Color(0.4f, 0.46f, 0.46f), null, null, Color.black, 0.05f, 0f, Vector2.one);
+            float[,] isl = { { -40f, 300f, 46f, 26f, 1f }, { 22f, 312f, 34f, 20f, 2f }, { -300f, 470f, 140f, 35f, 3f }, { 260f, 500f, 160f, 40f, 4f }, { 80f, 680f, 300f, 55f, 5f } };
             for (int i = 0; i < isl.GetLength(0); i++)
-                Mats.Prim(PrimitiveType.Sphere, "FarIsland", _root, new Vector3(isl[i, 0], -isl[i, 3] * 0.35f, isl[i, 1]),
-                    new Vector3(isl[i, 2], isl[i, 3], isl[i, 2] * 0.45f), i >= 3 ? far : near, false);
+            {
+                var go = new GameObject("FarIsland");
+                go.transform.SetParent(_root, false);
+                go.transform.localPosition = new Vector3(isl[i, 0], _map.BaseWaterY - 0.5f, isl[i, 1]);
+                go.AddComponent<MeshFilter>().sharedMesh = HanRiverLandmarks.HillMesh(isl[i, 2], isl[i, 2] * 0.75f, isl[i, 3], (int)isl[i, 4]);
+                var mr = go.AddComponent<MeshRenderer>();
+                mr.sharedMaterial = i >= 2 ? far : near;
+                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
         }
 
         void BuildNpcs()

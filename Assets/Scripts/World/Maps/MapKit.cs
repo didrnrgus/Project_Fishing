@@ -178,30 +178,41 @@ namespace Fishing.World
         }
 
         /// <summary>
-        /// 폭포 물줄기: 위 가장자리(top, 폭 width, 바라보는 방향 yaw)에서 앞으로 살짝 튀어나왔다 떨어지는 휜 판.
-        /// 아래는 수면(bottomY). UV v는 위→아래 (흐르는 결 텍스처).
+        /// 폭포 물줄기 (사용자 참고 사진: 듀덴 폭포): 절벽 끝(원점)에서 앞(+Z)으로 뿜어져 나와 포물선으로 떨어지는 휜 물 커튼.
+        /// 물은 절벽 끝을 수평 속도로 떠나 중력으로 떨어지므로 앞으로 나간 거리는 낙하 비율의 제곱근에 비례한다 (lip = 바닥까지 나간 거리).
+        /// 위 끝은 둥글게 넘쳐흐르는 물마루, 아래로 갈수록 넓게 퍼지고, 가로로 물결이 굽이친다. seed마다 모양이 다르다.
+        /// UV0: u = 가로 m/3, v = 낙차 m/14 (결 텍스처 반복), UV1: (가로 0~1, 세로 0 위~1 아래) — Fishing/Waterfall 셰이더가 가장자리·물보라에 쓴다.
         /// </summary>
-        public static Mesh FallSheet(float width, float drop, float lip, int cols = 16, int rows = 14)
+        public static Mesh FallSheet(float width, float drop, float lip, int cols = 18, int rows = 24, int seed = 0)
         {
             var v = new List<Vector3>();
             var uv = new List<Vector2>();
+            var uv2 = new List<Vector2>();
             var t = new List<int>();
+            float sd = seed * 1.37f;
             for (int r = 0; r <= rows; r++)
             {
-                float f = r / (float)rows;
+                // 위쪽에 줄을 더 촘촘히 (휘는 곳)
+                float f = Mathf.Pow(r / (float)rows, 1.6f);
                 for (int c = 0; c <= cols; c++)
                 {
                     float u = c / (float)cols;
-                    float x = (u - 0.5f) * width * (1f + 0.15f * f);
-                    // 포물선으로 튀어나와 떨어진다 + 가장자리 물결
-                    float z = lip * (1f - (1f - f) * (1f - f)) + Mathf.Sin(u * 17f + f * 3f) * 0.4f * f;
-                    v.Add(new Vector3(x, -drop * f, z));
+                    float x = (u - 0.5f) * width * (1f + 0.28f * f);
+                    float y = -drop * f;
+                    // 물마루: 절벽 끝 위로 둥글게 넘친다 (가운데가 조금 더 앞으로)
+                    float crest = Mathf.Sin(u * Mathf.PI);
+                    float z = lip * Mathf.Sqrt(f) + crest * 0.3f * (1f - Mathf.Clamp01(f * 6f));
+                    if (f < 0.04f) y += crest * 0.35f * (1f - f / 0.04f);
+                    // 가로 굽이 (물줄기 다발) + 아래로 갈수록 커지는 흔들림
+                    z += (Mathf.PerlinNoise(u * 5f + sd, 0.3f) - 0.5f) * 1.2f * Mathf.Sqrt(f) + Mathf.Sin(u * 13f + sd + f * 4f) * 0.35f * f;
+                    v.Add(new Vector3(x, y, z));
                     uv.Add(new Vector2(u * width / 3f, f * drop / 14f));
+                    uv2.Add(new Vector2(u, f));
                 }
             }
             // 양면: 뒷면은 꼭짓점을 따로 둔다 (같은 꼭짓점에 앞뒤 삼각형을 겹치면 법선이 0이 되어 검은 얼룩이 생겼다)
             int n = v.Count;
-            for (int i = 0; i < n; i++) { v.Add(v[i]); uv.Add(uv[i]); }
+            for (int i = 0; i < n; i++) { v.Add(v[i]); uv.Add(uv[i]); uv2.Add(uv2[i]); }
             for (int r = 0; r < rows; r++)
             for (int c = 0; c < cols; c++)
             {
@@ -209,7 +220,9 @@ namespace Fishing.World
                 t.AddRange(new[] { a, b, cc, b, d, cc });
                 t.AddRange(new[] { n + a, n + cc, n + b, n + b, n + cc, n + d });
             }
-            return Finish("Fall", v, uv, t);
+            var m = Finish("Fall", v, uv, t);
+            m.SetUVs(1, uv2);
+            return m;
         }
 
         static Mesh Finish(string name, List<Vector3> v, List<Vector2> uv, List<int> t)
@@ -325,7 +338,98 @@ namespace Fishing.World
         }
         static readonly System.Collections.Generic.Dictionary<string, Material> FarRockCache = new System.Collections.Generic.Dictionary<string, Material>();
 
-        /// <summary>폭포 물줄기 재질: 반투명 흰 물결 텍스처.</summary>
+        /// <summary>
+        /// 흐르는 폭포 재질 (Fishing/Waterfall): 결 텍스처가 두 겹으로 흘러내리고(셰이더가 _Time으로 스크롤), 가장자리는 들쭉날쭉,
+        /// 위 끝은 청록 맑은 물, 아래는 물보라로 부서진다. speed = 초당 UV. 셰이더가 없으면 예전 반투명 판.
+        /// </summary>
+        public static Material WaterfallMat(float speed = 0.55f, float opacity = 0.92f, Color? water = null)
+        {
+            var shader = Shader.Find("Fishing/Waterfall");
+            if (shader == null) return FallMat();
+            var m = new Material(shader) { mainTexture = FallTexture() };
+            m.SetFloat("_Speed", speed);
+            m.SetFloat("_Opacity", opacity);
+            if (water.HasValue) m.SetColor("_WaterColor", water.Value);
+            return m;
+        }
+
+        /// <summary>폭포가 떨어지는 곳의 물보라 (파티클): 수면에서 앞·옆으로 튀어 오르다 떨어지는 흰 물방울 덩어리. width = 물줄기 폭.</summary>
+        public static ParticleSystem Splash(Transform parent, Vector3 pos, float width, float yaw, float rate = 60f)
+        {
+            var go = new GameObject("Splash");
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = pos;
+            go.transform.localRotation = Quaternion.Euler(-90f, yaw, 0f);
+            var ps = go.AddComponent<ParticleSystem>();
+            var main = ps.main;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.8f, 1.8f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(4f, 10f);
+            main.startSize = new ParticleSystem.MinMaxCurve(1.2f, 3.2f);
+            main.startColor = new Color(1f, 1f, 1f, 0.55f);
+            main.gravityModifier = 0.9f;
+            main.maxParticles = 400;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            var em = ps.emission;
+            em.rateOverTime = rate;
+            var sh = ps.shape;
+            sh.shapeType = ParticleSystemShapeType.Cone;
+            sh.angle = 38f;
+            sh.radius = 1f;
+            sh.scale = new Vector3(width, 2f, 1f);
+            var col = ps.colorOverLifetime;
+            col.enabled = true;
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0.9f, 0f), new GradientAlphaKey(0.6f, 0.5f), new GradientAlphaKey(0f, 1f) });
+            col.color = g;
+            var sz = ps.sizeOverLifetime;
+            sz.enabled = true;
+            sz.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.7f, 1f, 1.8f));
+            go.GetComponent<ParticleSystemRenderer>().sharedMaterial = Mats.Particle(new Color(1f, 1f, 1f, 0.6f));
+            ps.Play();
+            return ps;
+        }
+
+        /// <summary>물줄기 앞면에서 바람에 날리는 엷은 물안개 (파티클). top = 절벽 끝 가운데, 아래로 drop m, yaw = 물이 떨어지는 쪽.</summary>
+        public static ParticleSystem FallDrift(Transform parent, Vector3 top, float width, float drop, float yaw)
+        {
+            var go = new GameObject("FallDrift");
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = top + Vector3.down * drop * 0.5f;
+            go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            var ps = go.AddComponent<ParticleSystem>();
+            var main = ps.main;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(2.5f, 4.5f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.2f, 1.2f);
+            main.startSize = new ParticleSystem.MinMaxCurve(2.5f, 6f);
+            main.startColor = new Color(1f, 1f, 1f, 0.16f);
+            main.gravityModifier = 0.25f;
+            main.maxParticles = 200;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            var em = ps.emission;
+            em.rateOverTime = 24f;
+            var sh = ps.shape;
+            sh.shapeType = ParticleSystemShapeType.Box;
+            sh.scale = new Vector3(width, drop * 0.9f, 3f);
+            sh.position = new Vector3(0f, 0f, 4f);
+            var vel = ps.velocityOverLifetime;
+            vel.enabled = true;
+            vel.space = ParticleSystemSimulationSpace.Local;
+            vel.x = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vel.y = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vel.z = new ParticleSystem.MinMaxCurve(0.5f, 2f);
+            var col = ps.colorOverLifetime;
+            col.enabled = true;
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.3f), new GradientAlphaKey(0f, 1f) });
+            col.color = g;
+            go.GetComponent<ParticleSystemRenderer>().sharedMaterial = Mats.Particle(new Color(1f, 1f, 1f, 0.5f));
+            ps.Play();
+            return ps;
+        }
+
+        /// <summary>폭포 물줄기 재질: 반투명 흰 물결 텍스처 (셰이더가 없을 때 대비책).</summary>
         public static Material FallMat()
         {
             // 매끈하면 하늘이 비쳐 파란 얼룩이 된다 → 거친 물보라 면

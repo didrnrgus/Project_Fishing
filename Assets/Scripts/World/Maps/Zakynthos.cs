@@ -18,7 +18,7 @@ namespace Fishing.World
             LandName = "나바지오 해변", SeaName = "이오니아해", Seed = 62,
             WaterDeep = new Color(0.0f, 0.18f, 0.38f), WaterShallow = new Color(0.08f, 0.62f, 0.72f),
             Shores = new[] { new ShoreSeg(-999f, -55f, ShoreKind.Rock), new ShoreSeg(-55f, 55f, ShoreKind.Beach), new ShoreSeg(55f, 999f, ShoreKind.Rock) },
-            CliffTexture = "karst", CliffTint = new Color(1.3f, 1.28f, 1.22f, 1f),
+            CliffTexture = "limecliff", CliffTint = new Color(1.22f, 1.24f, 1.26f, 1f), SandTexture = "pebbles", SandTint = new Color(2.1f, 2.1f, 2.05f),
             NearDepth = 4f, DepthSlope = 0.09f, FlatWidth = 26f, CliffHeight = 60f, CliffWidth = 16f, RoadOffset = 0f, VillageDensity = 0.08f,
             Houses = HouseStyle.Venetian, TreeKind = TreeStyle.Mediterranean,
             // 만을 감싸는 두 절벽 곶
@@ -74,9 +74,16 @@ namespace Fishing.World
 
             // --- 하얀 석회암 절벽: 해변 뒤와 두 곶을 따라 겹쳐 세운 봉우리 (이끼 적게) ---
             // 해를 등진 북향 절벽이라 그늘에서도 하얗게 보이게 색을 1보다 밝게 (HDR 틴트)
-            var white = Mats.Karst(new Color(1.45f, 1.43f, 1.36f), 0.08f, 0f, 0.8f);
-            var wet = Mats.Karst(new Color(0.7f, 0.7f, 0.66f), 0.05f);
-            var top = Mats.Karst(new Color(1.3f, 1.28f, 1.2f), 0.6f, 0f, 0.5f);
+            // 사용자 참고 사진(나바지오): 크림빛 흰 석회암에 세로 결·금, 군데군데 회색·황토 빗물 자국, 꼭대기는 짙은 초록 관목.
+            // 결은 세로 줄이 진 limecliff(Marble Cliff 04)를 주로, 흰 석회암 karst를 섞고 채도를 낮춰 하얗게 (예전 karst 한 장은 회색 반복 무늬로 보였다)
+            var white = Mats.Karst(new Color(1.32f, 1.33f, 1.32f), 0.06f, 0f, 0.75f, "limecliff", "karst");
+            var wet = Mats.Karst(new Color(0.66f, 0.68f, 0.66f), 0.04f, 0f, 0f, "limecliff", "karst");
+            var top = Mats.Karst(new Color(1.2f, 1.2f, 1.16f), 0.75f, 0.35f, 0.4f, "limecliff", "karst");
+            white.SetFloat("_Saturation", 0.42f);
+            wet.SetFloat("_Saturation", 0.5f);
+            top.SetFloat("_Saturation", 0.5f);
+            top.SetColor("_MossColor", new Color(0.2f, 0.32f, 0.16f));
+            white.SetColor("_StreakColor", new Color(0.62f, 0.6f, 0.55f));
             void Cliff(float x, float z, float r, float h)
             {
                 var t = b.KarstPeak(new Vector3(x, 0f, z), r, h, true);
@@ -94,10 +101,24 @@ namespace Fishing.World
             var ship = MapKit.Prop(root, "shipwreck", new Vector3(36f, land - 1.4f, -50f), 0f, 0f, 30f);
             if (ship != null) ship.transform.localRotation = Quaternion.Euler(0f, 72f, 9f) * ship.transform.localRotation; // 모래에 박혀 9° 기울었다
 
-            // --- 푸른 동굴 입구: 절벽 밑 수면에 뚫린 어두운 아치 ---
-            var cave = Mats.Lit(new Color(0.02f, 0.06f, 0.1f), 0.6f);
+            // --- 푸른 동굴 입구 (사진: 절벽 밑동이 파도에 패여 아치로 뚫리고, 안쪽 물은 빛을 받아 청록으로 빛난다) ---
+            var cave = Mats.Lit(new Color(0.02f, 0.05f, 0.08f), 0.6f);
+            var caveGlow = Mats.Emissive(new Color(0.1f, 0.7f, 0.85f), 0.7f);
+            var rim = Mats.Karst(new Color(1.2f, 1.2f, 1.18f), 0.05f, 0f, 0.6f, "limecliff", "karst");
             foreach (var (x, z, yaw) in new[] { (-62f, 70f, 90f), (64f, 90f, -90f), (-58f, 20f, 90f) })
-                Mats.Prim(PrimitiveType.Sphere, "BlueCave", root, new Vector3(x, water + 0.5f, z), new Vector3(9f, 7f, 2f), cave, false, Quaternion.Euler(0f, yaw, 0f));
+            {
+                var rot = Quaternion.Euler(0f, yaw, 0f);
+                var c = new Vector3(x, water, z);
+                Mats.Prim(PrimitiveType.Sphere, "BlueCave", root, c + Vector3.up * 0.5f, new Vector3(9f, 8f, 2.4f), cave, false, rot);
+                Mats.Prim(PrimitiveType.Cylinder, "CaveWater", root, c + rot * new Vector3(0f, 0.08f, 0.6f), new Vector3(7.5f, 0.02f, 3f), caveGlow, false, rot);
+                // 아치 테두리: 돌출된 바위 띠 (반원)
+                for (int k = 0; k <= 8; k++)
+                {
+                    float a = Mathf.Lerp(0f, Mathf.PI, k / 8f);
+                    var p = c + rot * new Vector3(Mathf.Cos(a) * 4.8f, 0.5f + Mathf.Sin(a) * 4.3f, -0.6f);
+                    Rocks.Prim("CaveRim", root, p, new Vector3(2.2f, 1.8f, 2.4f), rim, rot * Quaternion.Euler(0f, 0f, a * Mathf.Rad2Deg));
+                }
+            }
 
             // --- 관광선 ---
             KenneyProps.Spawn("Kenney/Watercraft/boat-speed-a", root, new Vector3(-24f, water - 0.2f, -24f), 90f, 0f, 9f);

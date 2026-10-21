@@ -38,3 +38,14 @@ Poly Haven (https://polyhaven.com, CC0 1.0) 1K JPG, 디퓨즈(_diff) + OpenGL �
 | marble_* | Marble 01 (marble_01) | Rob Tuytel | 푸켓 하얀 대불, 정자 주춧돌 |
 
 새 텍스처를 넣으면 `Mats.TexAvg`에 평균 색(감마)을 더한다 — 셰이더가 평균으로 나눠 결만 남기므로, 넘기는 색이 그대로 칠한 색이 된다.
+
+## 2026-10-22 추가 (Poly Haven CC0 1K, 맵 절벽 층 — 사용자 참고 사진 대조)
+
+| 파일 | Poly Haven 에셋 | 쓰는 곳 |
+|---|---|---|
+| seacliff_* | Marble Cliff 05 (marble_cliff_05) | 한국 바닷가 절벽 (회색 금 간 바위면, 예전 aerial_rocks는 위에서 찍은 풀 낀 바위라 절벽이 이끼 풀밭처럼 보였다) |
+| limecliff_* | Marble Cliff 04 (marble_cliff_04) | 자킨토스 나바지오 흰 석회암 절벽 (세로 결) |
+| canyon_* | Cliff Side (cliff_side) | 듀덴 폭포 주황 석회화 절벽, 산토리니 칼데라 붉은 층 |
+| granite_* | Tiger Rock (tiger_rock) | 티오만·코사무이 화강암 바위 |
+| darkrock_* | Dark Rock (dark_rock) | 제주 현무암 절벽·주상절리 |
+| pebbles_* | Ganges River Pebbles (ganges_river_pebbles) | 자킨토스 흰 조약돌 해변 (모래 층 대신, 밝게 틴트) |

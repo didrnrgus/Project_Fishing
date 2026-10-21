@@ -15,7 +15,7 @@ namespace Fishing.World
         public static CoastSpec Tioman() => new CoastSpec
         {
             Id = "tioman", MapName = "플라우 티오만 · 남중국해", ShortName = "티오만", ShopName = "티오만 리조트 낚시점", UnionContact = "리조트 부두의 파리다 지부장",
-            LandName = "리조트 해변", SeaName = "티오만 앞바다", Seed = 59,
+            LandName = "리조트 해변", SeaName = "티오만 앞바다", Seed = 59, SandTint = new Color(1.5f, 1.45f, 1.32f),
             WaterDeep = new Color(0.02f, 0.24f, 0.3f), WaterShallow = new Color(0.08f, 0.62f, 0.52f),
             Shores = new[] { new ShoreSeg(-999f, -30f, ShoreKind.Beach), new ShoreSeg(-30f, 30f, ShoreKind.Quay), new ShoreSeg(30f, 999f, ShoreKind.Beach) },
             NearDepth = 3f, DepthSlope = 0.06f, FlatWidth = 42f, CliffHeight = 18f, CliffWidth = 60f, RoadOffset = 20f, VillageDensity = 0.4f,
@@ -45,7 +45,7 @@ namespace Fishing.World
             },
             Signs = new[] { ("PULAU TIOMAN", new Vector3(0f, 6.5f, -64f), SignGold) },
             FarIslands = new[] { new Vector4(-300f, 450f, 120f, 40f), new Vector4(280f, 480f, 90f, 30f) },
-            Reserved = new[] { new Rect(-90f, -110f, 180f, 46f), new Rect(-60f, -64f, 30f, 16f) },
+            Reserved = new[] { new Rect(-90f, -110f, 180f, 46f), new Rect(-60f, -64f, 30f, 16f), new Rect(52f, -84f, 96f, 34f) },
             Schools = () => new List<FishSchool>
             {
                 School("범프헤드 산호초", 1, 0, 1, MornDay, "bumpheadparrot", "coraltrout"),
@@ -138,6 +138,68 @@ namespace Fishing.World
             // --- 용의 뿔: 정글 위로 솟은 가는 쌍둥이 봉우리 (멀리 뒤) ---
             b.KarstPeak(new Vector3(140f, 0f, -270f), 13f, 175f);
             b.KarstPeak(new Vector3(172f, 0f, -258f), 10f, 150f);
+
+            // ===== 사용자 참고 사진(티오만 섬): 원작 특징(곡선 호텔·보라 파라솔)에 실제 티오만을 합친다 =====
+            // --- 정글로 덮인 높은 산줄기 (섬 전체가 밀림 산, 능선 위로 구름) ---
+            var jungle = MapKit.FarRock(new Color(0.17f, 0.3f, 0.15f), "grass", 22f, 0.8f, 0.05f);
+            var jungleRock = MapKit.FarRock(new Color(0.4f, 0.4f, 0.34f), "granite", 30f, 0.8f);
+            MapKit.Place(root, "TiomanRange", MapKit.Mountain(520f, 150f, 230f, 59, 0.85f, 4), new[] { jungle, jungleRock }, new Vector3(-40f, land, -380f));
+            MapKit.Place(root, "TiomanRidge", MapKit.Mountain(260f, 90f, 120f, 60, 0.9f, 2), new[] { jungle, jungleRock }, new Vector3(-260f, land, -250f));
+
+            // --- 해변 끝 화강암 바위 무더기 (사진: 둥글게 닳은 큰 화강암이 백사장 끝과 물속에 쌓였다) ---
+            var granite = Mats.Weathered("granite", new Color(0.62f, 0.54f, 0.48f), 4f, 0.25f, 1f, 0.3f, 0.25f);
+            var brng = new System.Random(5959);
+            foreach (float cx in new[] { -150f, 150f })
+                for (int k = 0; k < 14; k++)
+                {
+                    float x = cx + (float)(brng.NextDouble() - 0.5) * 26f, z = b.Map.ShoreAt(x) + (float)(brng.NextDouble() - 0.6) * 14f;
+                    float s = 2.5f + (float)brng.NextDouble() * 5.5f;
+                    var go = new GameObject("Granite");
+                    go.transform.SetParent(root, false);
+                    go.transform.localPosition = new Vector3(x, Mathf.Max(b.Height(x, z), b.Map.BaseWaterY - 1.5f) + s * 0.2f, z);
+                    go.transform.localScale = new Vector3(s * (1f + (float)brng.NextDouble() * 0.5f), s * 0.75f, s);
+                    go.transform.localRotation = Quaternion.Euler(0f, (float)brng.NextDouble() * 360f, 0f);
+                    go.AddComponent<MeshFilter>().sharedMesh = Rocks.Mesh(brng.Next(8));
+                    go.AddComponent<MeshRenderer>().sharedMaterial = granite;
+                }
+
+            // --- 바다를 향한 나무 샬레 (사진: 갈색 나무 벽, 짙은 박공지붕, 기둥 위 데크, 숲 사이로 줄지어) ---
+            var plank = Mats.Wood(new Color(0.5f, 0.28f, 0.16f), 0.3f);
+            var roofWood = Mats.Tile(new Color(0.36f, 0.2f, 0.14f), 0.25f);
+            var glass = Mats.Lit(new Color(0.14f, 0.2f, 0.24f), 0.85f);
+            for (float x = 60f; x <= 140f; x += 13f)
+            {
+                float z = b.Map.ShoreAt(x) - 26f - ((int)(x / 13f) % 2) * 6f;
+                float gy = b.Height(x, z);
+                var ch = new GameObject("Chalet").transform;
+                ch.SetParent(root, false);
+                ch.localPosition = new Vector3(x, gy, z);
+                // 앞면(+z)이 바다(+z) 쪽 그대로
+                const float W = 6f, D = 5f, H = 3f, lift = 1.2f;
+                foreach (var (px, pz) in new[] { (-W * 0.45f, -D * 0.45f), (W * 0.45f, -D * 0.45f), (-W * 0.45f, D * 0.45f + 1.6f), (W * 0.45f, D * 0.45f + 1.6f) })
+                    Mats.Prim(PrimitiveType.Cube, "Post", ch, new Vector3(px, lift * 0.5f, pz), new Vector3(0.25f, lift, 0.25f), plank, false);
+                Mats.Prim(PrimitiveType.Cube, "Wall", ch, new Vector3(0f, lift + H * 0.5f, 0f), new Vector3(W, H, D), plank);
+                Mats.Prim(PrimitiveType.Cube, "Deck", ch, new Vector3(0f, lift, D * 0.5f + 0.8f), new Vector3(W, 0.15f, 1.6f), plank, false);
+                Mats.Prim(PrimitiveType.Cube, "Rail", ch, new Vector3(0f, lift + 0.55f, D * 0.5f + 1.55f), new Vector3(W, 0.08f, 0.08f), plank, false);
+                Mats.Prim(PrimitiveType.Cube, "Door", ch, new Vector3(-1.2f, lift + 1.05f, D * 0.5f + 0.03f), new Vector3(0.9f, 2f, 0.05f), glass, false);
+                Mats.Prim(PrimitiveType.Cube, "Window", ch, new Vector3(1.3f, lift + 1.5f, D * 0.5f + 0.03f), new Vector3(1.8f, 1.1f, 0.05f), glass, false);
+                var roofGo = new GameObject("Roof");
+                roofGo.transform.SetParent(ch, false);
+                roofGo.transform.localPosition = new Vector3(0f, lift + H, 0.6f);
+                roofGo.transform.localRotation = Quaternion.Euler(0f, 90f, 0f); // 용마루가 앞뒤(z)로 → 박공이 바다를 본다
+                roofGo.transform.localScale = new Vector3(D + 3.2f, 2.2f, W + 0.8f);
+                roofGo.AddComponent<MeshFilter>().sharedMesh = CoastWorldBuilder.Gable();
+                roofGo.AddComponent<MeshRenderer>().sharedMaterial = roofWood;
+            }
+
+            // --- 보라 파라솔 둘째 줄 (사진·원작: 백사장 가득) ---
+            for (float x = -155f; x < 155f; x += 11f)
+            {
+                if (x > -40f && x < 40f) continue;
+                float z = b.Map.ShoreAt(x) - 4.5f, y = b.Height(x + 5.5f, z);
+                if (y < land - 0.6f) continue;
+                MapKit.Prop(root, "parasol_purple", new Vector3(x + 5.5f, y - 0.05f, z), 0f, 2.8f);
+            }
         }
     }
 }

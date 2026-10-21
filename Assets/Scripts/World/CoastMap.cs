@@ -11,7 +11,7 @@ namespace Fishing.World
     public enum ShoreKind { Beach, Rock, Quay, Mud }
 
     /// <summary>곶·섬 위에 세우는 것.</summary>
-    public enum Landmark { None, Pavilion, Lighthouse, GrandLighthouse, Shrine }
+    public enum Landmark { None, Pavilion, Lighthouse, GrandLighthouse, Shrine, MukhoLighthouse, GeomunLighthouse }
 
     /// <summary>물 위 시설: 가두리 양식장(통로만 걷는다), 해안 데크길(부채길), 잔교.</summary>
     public enum PlatformKind { FishFarm, Boardwalk, Pier }
@@ -138,9 +138,16 @@ namespace Fishing.World
         public bool Snow;
         /// <summary>검은 현무암 갯바위 (제주).</summary>
         public bool DarkRock;
-        /// <summary>지형 절벽 층 텍스처 (Resources/Terrain). 기본 rock. 자킨토스처럼 흰 석회암 절벽이면 "karst" + 밝은 CliffTint.</summary>
-        public string CliffTexture = "rock";
+        /// <summary>
+        /// 지형 절벽 층 텍스처 (Resources/Terrain). 기본 seacliff(회색 금 간 바위면). 제주 darkrock(현무암), 자킨토스 limecliff(흰 석회암),
+        /// 듀덴 canyon(주황 석회화), 산토리니 canyon + 붉은 CliffTint. 예전 기본 rock은 위에서 찍은 풀 낀 바위라 절벽이 이끼 풀밭처럼 보였다.
+        /// </summary>
+        public string CliffTexture = "seacliff";
         public Color CliffTint;
+        /// <summary>모래 층 색 보정 (0이면 그대로). 열대 산호 모래는 크림빛 흰색, 자킨토스 흰 자갈 해변은 더 하얗게.</summary>
+        public Color SandTint;
+        /// <summary>해변 층 텍스처 (기본 sand). 자킨토스 나바지오는 흰 조약돌(pebbles).</summary>
+        public string SandTexture = "sand";
         /// <summary>포구 호안을 콘크리트 대신 돌(사암·석회암, StoneTint 색)로, 계류 말뚝 없이 (앙코르 해자 둑길, 하니아 베네치아 항구).</summary>
         public bool StoneQuay;
         public Color StoneTint = new Color(0.66f, 0.64f, 0.56f);
@@ -593,7 +600,7 @@ namespace Fishing.World
             var layers = new List<TerrainBuilder.LayerSpec>
             {
                 new TerrainBuilder.LayerSpec(S.Snow ? "snow" : "grass", 9f, S.Snow ? 0.35f : 0.05f),
-                new TerrainBuilder.LayerSpec("sand", 6f, 0.15f),
+                new TerrainBuilder.LayerSpec(S.SandTexture, S.SandTexture == "sand" ? 6f : 2.5f, 0.15f, S.SandTint),
                 new TerrainBuilder.LayerSpec(S.CliffTexture, 11f, 0.2f, S.CliffTint),
                 new TerrainBuilder.LayerSpec("shore", 7f, 0.3f),
                 new TerrainBuilder.LayerSpec("mud", 5f, 0.7f),
@@ -808,6 +815,8 @@ namespace Fishing.World
                 case Landmark.Lighthouse: _props.Lighthouse(at, new Color(0.95f, 0.95f, 0.93f), new Color(0.6f, 1f, 0.6f)); break;
                 case Landmark.GrandLighthouse: _props.GrandLighthouse(at, yaw); break;
                 case Landmark.Shrine: Shrine(at, yaw); break;
+                case Landmark.MukhoLighthouse: _props.MukhoLighthouse(at, yaw); break;
+                case Landmark.GeomunLighthouse: _props.GeomunLighthouse(at, yaw); break;
             }
         }
 
@@ -1121,11 +1130,52 @@ namespace Fishing.World
                              (new Vector3(pen * 0.5f, 0f, 0f), new Vector3(0.05f, 0.05f, pen)), (new Vector3(-pen * 0.5f, 0f, 0f), new Vector3(0.05f, 0.05f, pen)) })
                     Mats.Prim(PrimitiveType.Cube, "NetRail", root, c + o, s, net, false);
             }
-            // 관리사 (모서리)
+            // 사용자 참고 사진(욕지도 낚시 가두리): 칸마다 수면 아래 비치는 그물 + 테두리 기둥에 맨 그물 줄, 통로 둘레 노랑·파랑 스티로폼 부표,
+            // 칸 위로 친 차양 그늘막, 칸 사이 낚시 의자·아이스박스. 관리사는 파란 패널 + 흰 지붕 + 차양
+            var netWater = Mats.Transparent(new Color(0.08f, 0.14f, 0.12f, 0.45f), 0.3f);
+            var buoyY = Mats.Lit(new Color(0.95f, 0.78f, 0.12f), 0.3f);
+            var buoyB = Mats.Lit(new Color(0.18f, 0.42f, 0.8f), 0.3f);
+            var post = Mats.Lit(new Color(0.75f, 0.75f, 0.72f), 0.3f, 0.4f);
+            var shade = Mats.Lit(new Color(0.2f, 0.55f, 0.35f), 0.2f);
+            var chair = Mats.Lit(new Color(0.85f, 0.25f, 0.2f), 0.3f);
+            var cooler = Mats.Lit(new Color(0.92f, 0.92f, 0.95f), 0.4f);
+            int cell = 0;
+            for (float lx = walk; lx < r.width - walk; lx += pen + walk)
+            for (float lz = walk; lz < r.height - walk; lz += pen + walk)
+            {
+                var c = new Vector3(r.xMin + lx + pen * 0.5f, y, r.yMin + lz + pen * 0.5f);
+                Mats.Prim(PrimitiveType.Cube, "NetUnder", root, c + Vector3.down * 0.45f, new Vector3(pen - 0.3f, 0.02f, pen - 0.3f), netWater, false);
+                foreach (var (dx, dz) in new[] { (-1f, -1f), (1f, -1f), (-1f, 1f), (1f, 1f) })
+                    Mats.Prim(PrimitiveType.Cylinder, "NetPost", root, c + new Vector3(dx * pen * 0.5f, 0.45f, dz * pen * 0.5f), new Vector3(0.08f, 0.45f, 0.08f), post, false);
+                if (cell % 3 == 0)
+                {
+                    // 차양 그늘막 (네 기둥 + 초록 천)
+                    foreach (var (dx, dz) in new[] { (-1f, -1f), (1f, -1f), (-1f, 1f), (1f, 1f) })
+                        Mats.Prim(PrimitiveType.Cylinder, "ShadePole", root, c + new Vector3(dx * 2.2f, 1.2f, dz * 2.2f - pen * 0.5f - walk * 0.5f), new Vector3(0.06f, 1.2f, 0.06f), post, false);
+                    Mats.Prim(PrimitiveType.Cube, "Shade", root, c + new Vector3(0f, 2.4f, -pen * 0.5f - walk * 0.5f), new Vector3(4.8f, 0.04f, 4.6f), shade, false);
+                }
+                // 통로에 낚시 의자·아이스박스
+                var seat = c + new Vector3(-pen * 0.3f, 0.35f, -pen * 0.5f - walk * 0.5f);
+                Mats.Prim(PrimitiveType.Cube, "Chair", root, seat, new Vector3(0.45f, 0.06f, 0.45f), chair, false);
+                Mats.Prim(PrimitiveType.Cube, "Cooler", root, seat + new Vector3(0.8f, -0.05f, 0f), new Vector3(0.6f, 0.4f, 0.4f), cooler, false);
+                cell++;
+            }
+            // 통로 바깥 둘레 부표 줄 (노랑·파랑 번갈아)
+            int bi = 0;
+            for (float x = r.xMin; x <= r.xMax; x += 1.6f)
+                foreach (float z in new[] { r.yMin - 0.5f, r.yMax + 0.5f })
+                    Mats.Prim(PrimitiveType.Capsule, "Buoy", root, new Vector3(x, _map.BaseWaterY + 0.1f, z), new Vector3(0.6f, 0.35f, 0.6f), (bi++ % 2 == 0) ? buoyY : buoyB, false, Quaternion.Euler(0f, 0f, 90f));
+            for (float z = r.yMin; z <= r.yMax; z += 1.6f)
+                foreach (float x in new[] { r.xMin - 0.5f, r.xMax + 0.5f })
+                    Mats.Prim(PrimitiveType.Capsule, "Buoy", root, new Vector3(x, _map.BaseWaterY + 0.1f, z), new Vector3(0.6f, 0.35f, 0.6f), (bi++ % 2 == 0) ? buoyY : buoyB, false, Quaternion.Euler(90f, 0f, 0f));
+            // 관리사 (모서리): 파란 패널 벽, 흰 지붕, 앞 차양, 창
             var hut = new Vector3(r.xMax - 3f, y + 0.1f, r.yMax - 3f);
             Mats.Prim(PrimitiveType.Cube, "FarmHutDeck", root, hut + new Vector3(0f, 0f, 0f), new Vector3(6f, 0.2f, 6f), plank);
-            Mats.Prim(PrimitiveType.Cube, "FarmHut", root, hut + new Vector3(0f, 1.3f, 0f), new Vector3(4f, 2.4f, 3.4f), Mats.Lit(new Color(0.3f, 0.5f, 0.7f)));
-            Mats.Prim(PrimitiveType.Cube, "FarmHutRoof", root, hut + new Vector3(0f, 2.6f, 0f), new Vector3(4.6f, 0.2f, 4f), Mats.Lit(new Color(0.85f, 0.85f, 0.82f)), false);
+            Mats.Prim(PrimitiveType.Cube, "FarmHut", root, hut + new Vector3(0f, 1.3f, 0.3f), new Vector3(4.6f, 2.4f, 3.4f), Mats.Lit(new Color(0.25f, 0.45f, 0.72f)));
+            Mats.Prim(PrimitiveType.Cube, "FarmHutRoof", root, hut + new Vector3(0f, 2.6f, 0f), new Vector3(5.2f, 0.2f, 4.6f), Mats.Lit(new Color(0.9f, 0.9f, 0.88f)), false, Quaternion.Euler(-6f, 0f, 0f));
+            Mats.Prim(PrimitiveType.Cube, "FarmHutWindow", root, hut + new Vector3(0.6f, 1.6f, -1.42f), new Vector3(1.6f, 0.8f, 0.05f), Mats.Lit(new Color(0.14f, 0.2f, 0.26f), 0.85f), false);
+            Mats.Prim(PrimitiveType.Cube, "FarmHutDoor", root, hut + new Vector3(-1.3f, 1.1f, -1.42f), new Vector3(0.9f, 1.9f, 0.05f), Mats.Lit(new Color(0.85f, 0.85f, 0.82f)), false);
+            Mats.Prim(PrimitiveType.Cube, "FarmHutAwning", root, hut + new Vector3(0f, 2.3f, -2.4f), new Vector3(4.6f, 0.05f, 1.6f), shade, false, Quaternion.Euler(12f, 0f, 0f));
             _props.AddLamp(hut + new Vector3(0f, 3f, -2.5f), new Color(1f, 0.85f, 0.6f), 16f, 1.4f);
         }
 

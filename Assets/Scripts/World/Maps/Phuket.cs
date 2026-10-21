@@ -15,7 +15,7 @@ namespace Fishing.World
         public static CoastSpec Phuket() => new CoastSpec
         {
             Id = "phuket", MapName = "푸켓 · 안다만해", ShortName = "푸켓", ShopName = "찰롱 낚시점", UnionContact = "찰롱 부두의 솜차이 지부장",
-            LandName = "찰롱 부두", SeaName = "안다만해", Seed = 53,
+            LandName = "찰롱 부두", SeaName = "안다만해", Seed = 53, SandTint = new Color(1.5f, 1.45f, 1.32f),
             WaterDeep = new Color(0.02f, 0.2f, 0.3f), WaterShallow = new Color(0.08f, 0.52f, 0.5f),
             Shores = new[] { new ShoreSeg(-999f, -50f, ShoreKind.Beach), new ShoreSeg(-50f, 40f, ShoreKind.Quay), new ShoreSeg(40f, 999f, ShoreKind.Beach) },
             NearDepth = 3.5f, DepthSlope = 0.06f, FlatWidth = 28f, CliffHeight = 26f, CliffWidth = 45f, RoadOffset = 16f, VillageDensity = 0.9f,

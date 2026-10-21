@@ -15,12 +15,14 @@ namespace Fishing.World
         public static CoastSpec Sentosa() => new CoastSpec
         {
             Id = "sentosa", MapName = "센토사 · 싱가포르", ShortName = "센토사", ShopName = "센토사 마리나 낚시점", UnionContact = "머라이언 광장의 탄 지부장",
-            LandName = "머라이언 광장", SeaName = "싱가포르 해협", Seed = 57, StoneQuay = true, StoneTint = new Color(0.8f, 0.76f, 0.7f),
+            LandName = "머라이언 광장", SeaName = "싱가포르 해협", Seed = 57, SandTint = new Color(1.5f, 1.45f, 1.32f), StoneQuay = true, StoneTint = new Color(0.8f, 0.76f, 0.7f),
             WaterDeep = new Color(0.03f, 0.18f, 0.24f), WaterShallow = new Color(0.12f, 0.42f, 0.42f),
             Shores = new[] { new ShoreSeg(-999f, -110f, ShoreKind.Beach), new ShoreSeg(-110f, 60f, ShoreKind.Quay), new ShoreSeg(60f, 999f, ShoreKind.Beach) },
             NearDepth = 4f, DepthSlope = 0.05f, FlatWidth = 30f, CliffHeight = 20f, CliffWidth = 50f, RoadOffset = 16f, VillageDensity = 0.5f,
             Houses = HouseStyle.Resort, TreeKind = TreeStyle.Tropical,
             Platforms = new[] { new PlatformSpec { Area = new Rect(36f, -41f, 4f, 44f), Kind = PlatformKind.Pier, Name = "마리나 폰툰" } },
+            // 사용자 참고 사진: 팔라완 해변 앞 출렁다리로 건너는 작은 섬 (야자수, 전망 탑)
+            Islets = new[] { new IsletSpec { Center = new Vector3(-150f, 0f, 2f), Radius = 12f, Height = 5f, Walkable = true, Trees = true, Name = "팔라완 작은 섬" } },
             Grid = new[,]
             {
                 { S, S, W, S, S, S, S, S },
@@ -120,6 +122,42 @@ namespace Fishing.World
             var glass = Mats.Lit(new Color(0.55f, 0.7f, 0.78f), 0.85f, 0.2f);
             Mats.Prim(PrimitiveType.Cube, "HallBase", root, hallAt + new Vector3(0f, 1.5f, 0f), new Vector3(36f, 3f, 16f), Mats.Lit(new Color(0.95f, 0.95f, 0.92f), 0.2f), true);
             Mats.Prim(PrimitiveType.Cylinder, "HallVault", root, hallAt + new Vector3(0f, 3f, 0f), new Vector3(16f, 18f, 12f), glass, false, Quaternion.Euler(0f, 0f, 90f));
+
+            // --- 팔라완 출렁다리 (사진): 해변에서 작은 섬까지 밧줄 난간 출렁다리, 양끝 나무 전망 탑 ---
+            {
+                var from = new Vector3(-150f, 0f, b.Map.ShoreAt(-150f) - 2f);
+                var to = new Vector3(-150f, 0f, 2f - 9f);
+                from.y = b.Height(from.x, from.z) + 0.2f;
+                to.y = b.Height(to.x, to.z) + 0.2f;
+                var plank = Mats.Wood(new Color(0.52f, 0.38f, 0.26f), 0.25f);
+                var rope = Mats.Lit(new Color(0.7f, 0.62f, 0.48f), 0.2f);
+                int n = 28;
+                for (int i = 0; i <= n; i++)
+                {
+                    float f = i / (float)n;
+                    var p = Vector3.Lerp(from, to, f) + Vector3.down * Mathf.Sin(f * Mathf.PI) * 1.4f;
+                    Mats.Prim(PrimitiveType.Cube, "BridgePlank", root, p, new Vector3(1.8f, 0.08f, 0.35f), plank, false);
+                    foreach (float sx in new[] { -0.95f, 0.95f })
+                    {
+                        Mats.Prim(PrimitiveType.Cylinder, "BridgeHanger", root, p + new Vector3(sx, 0.55f, 0f), new Vector3(0.03f, 0.55f, 0.03f), rope, false);
+                        if (i < n)
+                        {
+                            var q = Vector3.Lerp(from, to, (i + 1f) / n) + Vector3.down * Mathf.Sin((i + 1f) / n * Mathf.PI) * 1.4f;
+                            MapKit.Beam(root, p + new Vector3(sx, 1.1f, 0f), q + new Vector3(sx, 1.1f, 0f), 0.05f, rope, false, "BridgeRope");
+                            MapKit.Beam(root, p + new Vector3(sx, 0.05f, 0f), q + new Vector3(sx, 0.05f, 0f), 0.06f, rope, false, "BridgeRope");
+                        }
+                    }
+                }
+                // 양끝 나무 전망 탑 (네 기둥 + 두 층 데크 + 지붕)
+                foreach (var end in new[] { from + Vector3.back * 1.5f, to + Vector3.forward * 1.5f })
+                {
+                    foreach (var (dx, dz) in new[] { (-1.4f, -1.4f), (1.4f, -1.4f), (-1.4f, 1.4f), (1.4f, 1.4f) })
+                        Mats.Prim(PrimitiveType.Cube, "TowerPost", root, end + new Vector3(dx, 3.5f, dz), new Vector3(0.3f, 7f, 0.3f), plank, false);
+                    Mats.Prim(PrimitiveType.Cube, "TowerDeck", root, end + new Vector3(0f, 3.5f, 0f), new Vector3(3.4f, 0.2f, 3.4f), plank, false);
+                    Mats.Prim(PrimitiveType.Cube, "TowerDeck2", root, end + new Vector3(0f, 6.6f, 0f), new Vector3(3.4f, 0.2f, 3.4f), plank, false);
+                    MapKit.Place(root, "TowerRoof", CoastWorldBuilder.Gable(), Mats.Thatch(new Color(0.55f, 0.45f, 0.3f)), end + new Vector3(0f, 7f, 0f)).transform.localScale = new Vector3(4.2f, 1.8f, 4.2f);
+                }
+            }
 
             // 돌 포장 산책로 횃불 (정글 길)
             var pole = Mats.Wood(new Color(0.28f, 0.2f, 0.14f), 0.2f);

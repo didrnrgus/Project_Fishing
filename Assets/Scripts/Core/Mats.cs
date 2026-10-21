@@ -73,18 +73,21 @@ namespace Fishing.Core
         /// 석회암 봉우리(하롱베이) 절벽: Fishing/Karst에 실사 석회암 두 장(Resources/Terrain/karst·karst2)을 섞는다.
         /// 메쉬 UV는 1 = 4m(StackMesh). 덤불 양 moss 0~1. 셰이더·텍스처가 없으면 예전 rock 텍스처.
         /// </summary>
-        public static Material Karst(Color tint, float moss = 0.6f, float jungle = 0f, float lift = 0f)
+        public static Material Karst(Color tint, float moss = 0.6f, float jungle = 0f, float lift = 0f) => Karst(tint, moss, jungle, lift, "karst", "karst2");
+
+        /// <summary>석회암 절벽 셰이더에 다른 바위 결 두 장 (듀덴 석회화 = canyon + cliff, 자킨토스 = limecliff + karst).</summary>
+        public static Material Karst(Color tint, float moss, float jungle, float lift, string tex, string layerTex)
         {
-            string key = $"karst{tint}{moss}{jungle}{lift}";
+            string key = $"karst{tint}{moss}{jungle}{lift}{tex}{layerTex}";
             if (Cache.TryGetValue(key, out var m)) return m;
             var shader = Shader.Find("Fishing/Karst");
-            var diff = Resources.Load<Texture2D>("Terrain/karst_diff");
-            var layer = Resources.Load<Texture2D>("Terrain/karst2_diff");
+            var diff = Resources.Load<Texture2D>("Terrain/" + tex + "_diff");
+            var layer = Resources.Load<Texture2D>("Terrain/" + layerTex + "_diff");
             if (shader == null || diff == null || layer == null) return Textured("rock", tint, 1f, 0.2f);
             m = new Material(shader) { color = tint, mainTexture = diff };
             m.SetTexture("_LayerTex", layer);
-            var nor = Resources.Load<Texture2D>("Terrain/karst_nor");
-            var lnor = Resources.Load<Texture2D>("Terrain/karst2_nor");
+            var nor = Resources.Load<Texture2D>("Terrain/" + tex + "_nor");
+            var lnor = Resources.Load<Texture2D>("Terrain/" + layerTex + "_nor");
             if (nor != null && lnor != null)
             {
                 m.SetTexture("_BumpMap", nor);
@@ -111,6 +114,8 @@ namespace Fishing.Core
             { "sand", new Color(0.509f, 0.449f, 0.359f) }, { "sandstone", new Color(0.536f, 0.409f, 0.244f) }, { "stonewall", new Color(0.436f, 0.403f, 0.371f) },
             { "thatch", new Color(0.331f, 0.313f, 0.286f) }, { "grass", new Color(0.33f, 0.45f, 0.16f) }, { "mud", new Color(0.287f, 0.261f, 0.221f) },
             { "snow", new Color(0.835f, 0.862f, 0.901f) }, { "shore", new Color(0.294f, 0.268f, 0.177f) }, { "wallconcrete", new Color(0.359f, 0.316f, 0.271f) }, { "whitestone", new Color(0.536f, 0.5f, 0.433f) },
+            { "seacliff", new Color(0.584f, 0.549f, 0.518f) }, { "limecliff", new Color(0.761f, 0.639f, 0.545f) }, { "canyon", new Color(0.482f, 0.322f, 0.2f) },
+            { "granite", new Color(0.443f, 0.322f, 0.259f) }, { "darkrock", new Color(0.133f, 0.11f, 0.102f) }, { "pebbles", new Color(0.502f, 0.455f, 0.412f) },
         };
 
         /// <summary>텍스처 평균 색 (풍화·랜드마크 셰이더가 결만 남길 때 쓴다).</summary>

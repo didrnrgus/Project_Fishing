@@ -188,6 +188,23 @@ namespace Fishing.World
             return lh;
         }
 
+        /// <summary>묵호등대풍 큰 등대 (동해 등대섬). <see cref="LighthouseBuilder.Mukho"/>.</summary>
+        public Transform MukhoLighthouse(Vector3 at, float yaw) => BigLighthouse("MukhoLighthouse", at, yaw, LighthouseBuilder.Mukho, LighthouseBuilder.MukhoLampY, 60f, 2.6f);
+
+        /// <summary>거문도 등대 (새 등대 + 1905 옛 등대). <see cref="LighthouseBuilder.Geomun"/>.</summary>
+        public Transform GeomunLighthouse(Vector3 at, float yaw) => BigLighthouse("GeomunLighthouse", at, yaw, LighthouseBuilder.Geomun, LighthouseBuilder.GeomunLampY, 70f, 2.8f);
+
+        Transform BigLighthouse(string name, Vector3 at, float yaw, System.Func<Transform, Renderer> build, float lampY, float range, float intensity)
+        {
+            var lh = new GameObject(name).transform;
+            lh.SetParent(_root, false);
+            lh.localPosition = at;
+            lh.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            _bulbs.Add(build(lh));
+            AddLamp(lh.position + Vector3.up * lampY, new Color(1f, 0.95f, 0.75f), range, intensity);
+            return lh;
+        }
+
         public void AddLamp(Vector3 pos, Color color, float range, float intensity)
         {
             var go = new GameObject("Lamp");

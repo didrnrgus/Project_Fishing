@@ -15,7 +15,7 @@ namespace Fishing.World
         public static CoastSpec TelokBatek() => new CoastSpec
         {
             Id = "telokbatek", MapName = "텔록 바텍 · 말레이시아", ShortName = "텔록 바텍", ShopName = "어촌 잔교 낚시점", UnionContact = "어촌 잔교의 로즈나 지부장",
-            LandName = "어촌 마을", SeaName = "남중국해", Seed = 58,
+            LandName = "어촌 마을", SeaName = "남중국해", Seed = 58, SandTint = new Color(1.5f, 1.45f, 1.32f),
             WaterDeep = new Color(0.03f, 0.22f, 0.3f), WaterShallow = new Color(0.12f, 0.5f, 0.5f),
             Shores = new[] { new ShoreSeg(-999f, 999f, ShoreKind.Beach) },
             NearDepth = 2.5f, DepthSlope = 0.05f, FlatWidth = 40f, CliffHeight = 14f, CliffWidth = 50f, RoadOffset = 24f, VillageDensity = 1.1f,

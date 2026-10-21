@@ -153,6 +153,8 @@ namespace Fishing.World
             BuildShore();
             BuildTerraces();
             BuildBreakwater();
+            BuildStoneWeir();
+            BuildWindbreak();
             BuildIslands();
             BuildHarbor();
             BuildShop();
@@ -225,6 +227,24 @@ namespace Fishing.World
             Mats.Prim(PrimitiveType.Cube, "Parapet", bw, new Vector3(b.xMin + 0.3f, _map.LandY + 0.6f, b.center.y), new Vector3(0.6f, 1.2f, b.height),
                 Mats.Quay(new Color(0.78f, 0.78f, 0.76f)), false);
 
+            // 사진(홍현 방파제): 난간벽 안쪽에 파란 바다 벽화와 고래 그림
+            var muralBlue = Mats.Lit(new Color(0.16f, 0.38f, 0.68f), 0.3f);
+            var muralDeep = Mats.Lit(new Color(0.1f, 0.22f, 0.45f), 0.3f);
+            var muralWhite = Mats.Lit(new Color(0.92f, 0.94f, 0.96f), 0.3f);
+            float mx = b.xMin + 0.62f;
+            Mats.Prim(PrimitiveType.Cube, "Mural", bw, new Vector3(mx, _map.LandY + 0.6f, b.center.y), new Vector3(0.04f, 1.05f, b.height - 4f), muralBlue, false);
+            for (float z = b.yMin + 6f; z < b.yMax - 6f; z += 11f)
+            {
+                // 고래: 납작한 몸통 + 꼬리 두 갈래 + 흰 배
+                var whale = new Vector3(mx + 0.03f, _map.LandY + 0.62f + R(-0.08f, 0.1f), z);
+                Mats.Prim(PrimitiveType.Sphere, "Whale", bw, whale, new Vector3(0.05f, 0.42f, 2.1f), muralDeep, false);
+                Mats.Prim(PrimitiveType.Sphere, "WhaleBelly", bw, whale + new Vector3(0.01f, -0.1f, 0.2f), new Vector3(0.05f, 0.17f, 1.3f), muralWhite, false);
+                foreach (float s in new[] { -1f, 1f })
+                    Mats.Prim(PrimitiveType.Sphere, "WhaleTail", bw, whale + new Vector3(0f, s * 0.16f, -1.2f), new Vector3(0.05f, 0.32f, 0.2f), muralDeep, false,
+                        Quaternion.Euler(s * 35f, 0f, 0f));
+                Mats.Prim(PrimitiveType.Sphere, "Wave", bw, new Vector3(mx + 0.03f, _map.LandY + 0.2f, z + 5f), new Vector3(0.05f, 0.14f, 1.6f), muralWhite, false);
+            }
+
             // 테트라포드 (바깥쪽): 벽에 기댄 안쪽 줄이 가장 높고 바깥 줄일수록 잠긴다
             var tetra = Mats.Tetrapod(new Color(0.92f, 0.9f, 0.86f));
             for (int k = 0; k < 3; k++)
@@ -240,6 +260,56 @@ namespace Fishing.World
             lighthouse.localPosition = new Vector3(b.center.x, _map.LandY, b.yMax - 2.5f);
             _bulbs.Add(LighthouseBuilder.Small(lighthouse, new Color(0.85f, 0.15f, 0.12f)));
             AddLamp(lighthouse.position + Vector3.up * LighthouseBuilder.SmallLampY, new Color(1f, 0.55f, 0.45f), 26f, 2.2f);
+        }
+
+        /// <summary>
+        /// 홍현리 석방렴 (사용자 참고 사진, 원시어로 시설): 물가에서 바다 쪽으로 말굽처럼 둥글게 쌓은 돌담.
+        /// 밀물에 들어온 고기가 썰물에 갇힌다. 둥근 냇돌을 사다리꼴 단면으로 쌓아 윗단이 수면 위로 조금 드러난다.
+        /// </summary>
+        void BuildStoneWeir()
+        {
+            var c = new Vector3(-70f, 0f, HonghyeonDef.ShoreZ + 1f);
+            const float radius = 17f;
+            var path = new List<Vector3>();
+            for (int i = 0; i <= 28; i++)
+            {
+                float a = Mathf.Lerp(-8f, 188f, i / 28f) * Mathf.Deg2Rad;
+                // 바다 쪽(+z)으로 조금 길쭉한 말굽
+                path.Add(new Vector3(c.x + Mathf.Cos(a) * radius, 0f, c.z + Mathf.Sin(a) * radius * 1.15f));
+            }
+            var go = new GameObject("StoneWeir");
+            go.transform.SetParent(_root, false);
+            go.AddComponent<MeshFilter>().sharedMesh = Rocks.StoneBand(path, 2.6f, _map.WaterY + 0.45f, (x, z) => SeaTerrain.HeightAt(x, z), 0.75f, 1129);
+            go.AddComponent<MeshRenderer>().sharedMaterial = Mats.Textured("rock", new Color(0.62f, 0.6f, 0.56f), 1f, 0.35f);
+            WorldBuilder.AddSign(_root, "홍현 석방렴", new Vector3(c.x, _map.LandY + 4.5f, HonghyeonDef.ShoreZ - 8f), new Color(1f, 0.88f, 0.6f));
+        }
+
+        /// <summary>
+        /// 홍현마을 방풍림 (사용자 참고 사진): 태풍을 막는 늙은 해송이 해안 돌 축대 위로 줄지어 선다.
+        /// 물가는 둥근 돌을 쌓은 낮은 축대, 그 뒤 해송 줄과 그늘 아래 벤치.
+        /// </summary>
+        void BuildWindbreak()
+        {
+            const float x0 = -195f, x1 = -26f;
+            var wall = new List<Vector3> { new Vector3(x0, 0f, HonghyeonDef.ShoreZ - 3.2f), new Vector3(x1, 0f, HonghyeonDef.ShoreZ - 3.2f) };
+            var go = new GameObject("StoneEmbankment");
+            go.transform.SetParent(_root, false);
+            go.AddComponent<MeshFilter>().sharedMesh = Rocks.StoneBand(wall, 1.4f, _map.LandY + 0.7f, (x, z) => SeaTerrain.HeightAt(x, z) - 0.3f, 0.6f, 2207);
+            go.AddComponent<MeshRenderer>().sharedMaterial = Mats.Textured("rock", new Color(0.7f, 0.68f, 0.64f), 1f, 0.25f);
+            if (!KenneyProps.Available) return;
+            for (float x = x0 + 3f; x < x1; x += R(5f, 8.5f))
+            {
+                float z = R(-56f, -48f);
+                KenneyProps.Spawn("Kenney/Nature/" + (_rng.NextDouble() < 0.5 ? "tree_pineRoundA" : "tree_pineTallA"), _root,
+                    new Vector3(x, SeaTerrain.HeightAt(x, z) - 0.05f, z), R(0f, 360f), R(9f, 13f));
+            }
+            var bench = Mats.Wood(new Color(0.5f, 0.36f, 0.24f), 0.3f);
+            for (float x = x0 + 20f; x < x1; x += 34f)
+            {
+                Mats.Prim(PrimitiveType.Cube, "Bench", _root, new Vector3(x, _map.LandY + 0.45f, -50f), new Vector3(1.8f, 0.08f, 0.45f), bench, false);
+                foreach (float lx in new[] { -0.7f, 0.7f })
+                    Mats.Prim(PrimitiveType.Cube, "BenchLeg", _root, new Vector3(x + lx, _map.LandY + 0.22f, -50f), new Vector3(0.08f, 0.45f, 0.4f), bench, false);
+            }
         }
 
         void BuildIslands()
@@ -342,13 +412,26 @@ namespace Fishing.World
 
         void BuildFarIslands()
         {
-            // 남해 다도해: 수평선 가까이 겹겹이 보이는 섬들
-            var near = Mats.Lit(new Color(0.2f, 0.32f, 0.24f));
-            var far = Mats.Lit(new Color(0.32f, 0.42f, 0.42f));
-            float[,] isl = { { -260f, 430f, 150f, 45f }, { 40f, 520f, 220f, 60f }, { 300f, 460f, 170f, 50f }, { -120f, 620f, 260f, 70f }, { 360f, 640f, 240f, 65f } };
+            // 남해 다도해 (사진: 잔잔한 만 건너 산이 겹겹인 섬들): 가까운 섬은 숲 결, 먼 섬은 푸른 안개빛
+            var forestTex = Resources.Load<Texture2D>("Terrain/grass_diff");
+            var near = HanRiverLandmarks.Mat(new Color(0.22f, 0.32f, 0.22f), forestTex, null, Color.black, 0.05f, 0f, new Vector2(14f, 14f));
+            var mid = HanRiverLandmarks.Mat(new Color(0.3f, 0.38f, 0.36f), forestTex, null, Color.black, 0.05f, 0f, new Vector2(8f, 8f));
+            var far = HanRiverLandmarks.Mat(new Color(0.42f, 0.5f, 0.52f), null, null, Color.black, 0.05f, 0f, Vector2.one);
+            float[,] isl =
+            {
+                { -230f, 380f, 150f, 70f }, { 60f, 430f, 210f, 95f }, { 300f, 400f, 160f, 75f },
+                { -120f, 560f, 260f, 110f }, { 360f, 600f, 240f, 100f }, { 120f, 720f, 380f, 130f },
+            };
             for (int i = 0; i < isl.GetLength(0); i++)
-                Mats.Prim(PrimitiveType.Sphere, "FarIsland", _root, new Vector3(isl[i, 0], -isl[i, 3] * 0.35f, isl[i, 1]),
-                    new Vector3(isl[i, 2], isl[i, 3], isl[i, 2] * 0.45f), i >= 3 ? far : near, false);
+            {
+                var go = new GameObject("FarIsland");
+                go.transform.SetParent(_root, false);
+                go.transform.localPosition = new Vector3(isl[i, 0], _map.WaterY - 0.5f, isl[i, 1]);
+                go.AddComponent<MeshFilter>().sharedMesh = HanRiverLandmarks.HillMesh(isl[i, 2], isl[i, 2] * 0.55f, isl[i, 3], 11 + i);
+                var mr = go.AddComponent<MeshRenderer>();
+                mr.sharedMaterial = i < 3 ? near : i < 5 ? mid : far;
+                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
         }
 
         void BuildNpcs()

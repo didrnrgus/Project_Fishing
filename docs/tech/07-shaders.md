@@ -135,6 +135,8 @@ clip(0.5 - dot(IN.color, _Clip));   // 입은 옷 채널이 칠해진 피부는 
 | 붓으로 쓰듯 드러남 | `UIInkReveal.shader` | `_Progress`에 따라 왼쪽부터 드러나고, 경계는 값 노이즈 두 겹으로 들쭉날쭉. 빛줄기 `_Shine`, 더하기 섞기로 물에 비친 달빛 |
 | 흐린 하늘 돔 | `SkyCube.shader` | 스카이박스 뒤 `Transparent-300`에 큐브맵 돔을 덮고 덮임 정도·노을색으로 섞는다 |
 | 하늘 반사 | `DayNightCycle` | 리얼타임 반사 프로브를 **하늘만**, 2초마다 갱신 |
+| 야광충 | `Water.shader` `_BioGlow` | 거품 띠 계산(`lap`)이 막 차오르는 파도 앞만 골라 청록 발광, 노멀 텍스처 b 채널로 알갱이 반짝임, 밤 정도(`_GlintNight`)를 곱한다. 맵이 `Bioluminescence`로 켠다(서천) |
+| 흐르는 폭포 | `Waterfall.shader` | 결 텍스처 두 겹을 다른 속도·배율로 `_Time` 스크롤(떨어질수록 가속), uv2(가로·세로 비율)로 들쭉날쭉한 가장자리·위 끝 청록 맑은 물·아래 물보라 덩어리, 역광 투과 발광. 메쉬는 `MapKit.FallSheet`(포물선) |
 
 ## 옮겨 쓸 때 체크리스트
 

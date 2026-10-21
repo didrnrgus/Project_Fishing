@@ -467,26 +467,49 @@ namespace Fishing.World
         /// </summary>
         void Caldera()
         {
-            var cliff = Mats.Textured("rock", new Color(0.72f, 0.5f, 0.42f), new Vector2(40f, 6f), 0.1f);
-            var band = Mats.Textured("rock", new Color(0.3f, 0.26f, 0.25f), new Vector2(40f, 6f), 0.1f);
-            var top = Mats.Textured("sand", new Color(0.78f, 0.66f, 0.5f), new Vector2(30f, 3f), 0.05f);
+            // 사용자 참고 사진(산토리니): 붉은 갈색·검은 화산암 층이 켜켜이 쌓인 깎아지른 칼데라 벽, 위에 흰 마을이 쏟아지듯 걸려 있다
+            var cliff = MapKit.FarRock(new Color(0.66f, 0.42f, 0.34f), "canyon", 45f, 0.95f);
+            var band = MapKit.FarRock(new Color(0.24f, 0.21f, 0.2f), "darkrock", 30f, 0.9f);
+            var top = MapKit.FarRock(new Color(0.74f, 0.64f, 0.5f), "sand", 30f, 0.6f);
             var go = new GameObject("Caldera");
             go.transform.SetParent(_root, false);
             go.transform.localPosition = new Vector3(0f, _map.BaseWaterY - 25f, 260f);
             go.AddComponent<MeshFilter>().sharedMesh = CalderaMesh(S.Seed, out var rim);
             go.AddComponent<MeshRenderer>().sharedMaterials = new[] { cliff, band, top };
-            // 절벽 위 마을: 하얀 상자 집, 드문드문 파란 둥근 지붕
-            var white = Mats.Wall(new Color(0.96f, 0.96f, 0.93f), 0.15f);
-            var blue = Mats.Lit(new Color(0.12f, 0.32f, 0.7f), 0.4f);
-            foreach (var (p, inward) in rim)
+            // 절벽 위 마을: 하얀 집이 가장자리를 따라 빽빽하고, 절벽 위쪽으로 계단처럼 흘러내린다. 파란 돔 교회·종탑, 파스텔 집 몇 채
+            var white = MapKit.Far(new Color(0.98f, 0.97f, 0.94f), 0.2f);
+            var pastel = new[] { MapKit.Far(new Color(0.95f, 0.82f, 0.62f)), MapKit.Far(new Color(0.92f, 0.7f, 0.62f)), MapKit.Far(new Color(0.96f, 0.9f, 0.75f)) };
+            var blue = MapKit.Far(new Color(0.1f, 0.3f, 0.72f), 0.45f);
+            var window = MapKit.Far(new Color(0.12f, 0.22f, 0.38f), 0.6f);
+            var origin = go.transform.localPosition;
+            for (int k = 0; k < rim.Count; k++)
             {
-                if (_rng.NextDouble() < 0.35) continue;
-                var at = go.transform.localPosition + p + inward * R(4f, 30f);
-                float w = R(7f, 14f), h = R(5f, 9f);
-                Mats.Prim(PrimitiveType.Cube, "CliffHouse", _root, at + Vector3.up * h * 0.4f, new Vector3(w, h, w * R(0.7f, 1.1f)), white, false,
-                    Quaternion.Euler(0f, R(0f, 90f), 0f));
-                if (_rng.NextDouble() < 0.12)
-                    Mats.Prim(PrimitiveType.Sphere, "CliffDome", _root, at + Vector3.up * h * 0.9f, Vector3.one * w * 0.6f, blue, false);
+                var (p, inward) = rim[k];
+                // 마을이 모인 구간과 빈 구간 (이아·피라·이메로비글리처럼 띄엄띄엄)
+                float town = Mathf.PerlinNoise(k * 0.06f + S.Seed, 2.3f);
+                if (town < 0.42f) continue;
+                int count = town > 0.6f ? 6 : 3;
+                for (int j = 0; j < count; j++)
+                {
+                    // 가장자리 안쪽(평지)부터 절벽 쪽으로 흘러내린다: 음수 = 절벽면 쪽(바다 쪽으로 내려간다)
+                    float back = R(-26f, 34f);
+                    float drop = back < 0f ? -back * 0.9f : 0f;
+                    var at = origin + p + inward * back + Vector3.down * drop;
+                    float w = R(6f, 12f), h = R(4f, 8f);
+                    var mat = _rng.NextDouble() < 0.15 ? pastel[_rng.Next(pastel.Length)] : white;
+                    var rot = Quaternion.LookRotation(-inward) * Quaternion.Euler(0f, R(-12f, 12f), 0f);
+                    Mats.Prim(PrimitiveType.Cube, "CliffHouse", _root, at + Vector3.up * h * 0.45f, new Vector3(w, h, w * R(0.7f, 1.1f)), mat, false, rot);
+                    // 바다 쪽 면의 창 + 가끔 원통 지붕
+                    Mats.Prim(PrimitiveType.Cube, "CliffWindow", _root, at + Vector3.up * h * 0.5f - inward * (w * 0.4f), new Vector3(w * 0.5f, h * 0.3f, 0.4f), window, false, rot);
+                    if (_rng.NextDouble() < 0.25)
+                        Mats.Prim(PrimitiveType.Cylinder, "Vault", _root, at + Vector3.up * h * 0.95f, new Vector3(w * 0.9f, w * 0.3f, w * 0.5f), mat, false, rot * Quaternion.Euler(0f, 0f, 90f));
+                    if (_rng.NextDouble() < 0.07)
+                    {
+                        // 파란 돔 교회 + 종탑
+                        Mats.Prim(PrimitiveType.Sphere, "CliffDome", _root, at + Vector3.up * (h * 0.95f), Vector3.one * w * 0.65f, blue, false);
+                        Mats.Prim(PrimitiveType.Cube, "BellTower", _root, at + Vector3.up * (h + 3f) + Vector3.Cross(Vector3.up, inward) * w * 0.6f, new Vector3(2.4f, 6f, 2.4f), white, false, rot);
+                    }
+                }
             }
             var lava = Mats.Textured("rock", new Color(0.22f, 0.2f, 0.2f), new Vector2(8f, 4f), 0.1f);
             Rocks.Prim("NeaKameni", _root, new Vector3(-80f, _map.BaseWaterY + 6f, 520f), new Vector3(260f, 55f, 180f), lava);
@@ -562,10 +585,13 @@ namespace Fishing.World
             return m;
         }
 
-        /// <summary>나일강 하류 서쪽 사막 너머 기자 피라미드 셋 (멀리, 안개 속 모래색).</summary>
+        /// <summary>
+        /// 나일강 하류 서쪽 사막 너머 기자 피라미드 셋 (사용자 참고 사진: 노을에 물든 계단진 석회암 면, 카프레 피라미드 꼭대기에만 매끈한 외장석이 남았다).
+        /// </summary>
         void Pyramids()
         {
-            var stone = Mats.Stone(new Color(0.82f, 0.72f, 0.52f), 0.05f);
+            var stone = MapKit.FarRock(new Color(0.84f, 0.7f, 0.5f), "sandstone", 6f, 0.9f);
+            var casing = MapKit.FarRock(new Color(0.9f, 0.82f, 0.66f), "whitestone", 10f, 0.4f);
             var pts = new[] { (new Vector3(-260f, 0f, 700f), 146f), (new Vector3(-80f, 0f, 760f), 136f), (new Vector3(70f, 0f, 820f), 65f) };
             foreach (var (p, h) in pts)
             {
@@ -573,26 +599,63 @@ namespace Fishing.World
                 go.transform.SetParent(_root, false);
                 go.transform.localPosition = p + Vector3.up * (_map.LandY - 2f);
                 go.transform.localRotation = Quaternion.Euler(0f, 12f, 0f);
-                go.AddComponent<MeshFilter>().sharedMesh = PyramidMesh(h * 1.57f, h);
-                go.AddComponent<MeshRenderer>().sharedMaterial = stone;
+                // 카프레(가운데)만 꼭대기 1/4에 외장석이 남았다
+                float cap = h == 136f ? 0.24f : 0f;
+                go.AddComponent<MeshFilter>().sharedMesh = PyramidMesh(h * 1.57f, h, 46, cap);
+                go.AddComponent<MeshRenderer>().sharedMaterials = new[] { stone, casing };
             }
         }
 
-        static Mesh PyramidMesh(float baseW, float height)
+        /// <summary>
+        /// 계단진 피라미드: courses 단을 층마다 안으로 들여 쌓는다 (단마다 세운 면 + 디딤 면, 모서리는 닳아 높이가 조금씩 다르다).
+        /// capFrac > 0이면 꼭대기 그 비율만큼은 매끈한 외장석 사면(서브메쉬 1). 재질이 트라이플래너라 UV는 없다.
+        /// </summary>
+        static Mesh PyramidMesh(float baseW, float height, int courses, float capFrac)
         {
+            var v = new List<Vector3>();
+            var t0 = new List<int>();
+            var t1 = new List<int>();
             float b = baseW * 0.5f;
-            var apex = new Vector3(0f, height, 0f);
-            var c = new[] { new Vector3(-b, 0f, -b), new Vector3(b, 0f, -b), new Vector3(b, 0f, b), new Vector3(-b, 0f, b) };
-            var v = new Vector3[12];
-            var t = new int[12];
-            for (int i = 0; i < 4; i++)
+            int smoothFrom = capFrac > 0f ? Mathf.FloorToInt(courses * (1f - capFrac)) : courses;
+            float step = height / courses;
+            void Quad(List<int> t, Vector3 a, Vector3 b2, Vector3 c, Vector3 d)
             {
-                v[i * 3] = c[i];
-                v[i * 3 + 1] = apex;
-                v[i * 3 + 2] = c[(i + 1) % 4];
-                t[i * 3] = i * 3; t[i * 3 + 1] = i * 3 + 1; t[i * 3 + 2] = i * 3 + 2;
+                int i = v.Count;
+                v.Add(a); v.Add(b2); v.Add(c); v.Add(d);
+                t.AddRange(new[] { i, i + 1, i + 2, i, i + 2, i + 3 });
             }
-            var m = new Mesh { name = "Pyramid", vertices = v, triangles = t };
+            var rng = new System.Random(courses * 31 + (int)height);
+            for (int k = 0; k < smoothFrom; k++)
+            {
+                float y0 = k * step, y1 = (k + 1) * step;
+                float r0 = b * (1f - k / (float)courses), r1 = b * (1f - (k + 1) / (float)courses);
+                float rr = r0 - (r0 - r1) * 0.25f; // 세운 면은 디딤 앞쪽에서 조금 들어가 있다
+                for (int s = 0; s < 4; s++)
+                {
+                    var rot = Quaternion.Euler(0f, s * 90f, 0f);
+                    float wear = (float)rng.NextDouble() * step * 0.15f;
+                    Quad(t0, rot * new Vector3(-rr, y0, -rr), rot * new Vector3(-rr, y1 - wear, -rr), rot * new Vector3(rr, y1 - wear, -rr), rot * new Vector3(rr, y0, -rr));
+                    Quad(t0, rot * new Vector3(-rr, y1 - wear, -rr), rot * new Vector3(-r1, y1, -r1), rot * new Vector3(r1, y1, -r1), rot * new Vector3(rr, y1 - wear, -rr));
+                }
+            }
+            if (smoothFrom < courses)
+            {
+                float y0 = smoothFrom * step;
+                float r0 = b * (1f - smoothFrom / (float)courses);
+                var apex = new Vector3(0f, height, 0f);
+                for (int s = 0; s < 4; s++)
+                {
+                    var rot = Quaternion.Euler(0f, s * 90f, 0f);
+                    int i = v.Count;
+                    v.Add(rot * new Vector3(-r0, y0, -r0)); v.Add(apex); v.Add(rot * new Vector3(r0, y0, -r0));
+                    t1.AddRange(new[] { i, i + 1, i + 2 });
+                }
+            }
+            var m = new Mesh { name = "Pyramid", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            m.SetVertices(v);
+            m.subMeshCount = 2;
+            m.SetTriangles(t0, 0);
+            m.SetTriangles(t1, 1);
             m.RecalculateNormals();
             m.RecalculateBounds();
             return m;

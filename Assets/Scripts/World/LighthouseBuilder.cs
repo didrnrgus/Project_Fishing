@@ -99,6 +99,172 @@ namespace Fishing.World
             return lamp.GetComponent<Renderer>();
         }
 
+        public const float MukhoLampY = 17.7f, GeomunLampY = 21.6f;
+
+        /// <summary>
+        /// 묵호등대풍 (동해 등대섬, 사용자 참고 사진): 아래가 나팔처럼 둥글게 벌어진 흰 원통 탑, 앞뒤로 세로로 줄지은 둥근 창,
+        /// 위에 하늘빛 유리 띠를 두른 넓은 전망층과 난간, 다시 가늘어진 목 위 작은 유리 등롱·흰 돔·꼭대기 십자 장식.
+        /// 탑 아래는 바다 그림 벽화를 두른 원형 기단과 앞 계단, 반원 나무 난간.
+        /// </summary>
+        public static Renderer Mukho(Transform lh)
+        {
+            var white = Painted(new Color(0.98f, 0.98f, 0.97f));
+            var dark = Mats.Lit(new Color(0.16f, 0.18f, 0.2f), 0.45f, 0.5f);
+            var concrete = Mats.Textured("concrete", new Color(0.84f, 0.83f, 0.8f), new Vector2(6f, 1f), 0.15f);
+            var mural = Mats.Lit(new Color(0.2f, 0.45f, 0.75f), 0.4f);
+            var muralSea = Mats.Lit(new Color(0.35f, 0.7f, 0.9f), 0.4f);
+            var glassBand = Mats.Lit(new Color(0.42f, 0.66f, 0.78f), 0.92f);
+            var wood = Mats.Wood(new Color(0.55f, 0.32f, 0.18f), 0.3f);
+
+            // 원형 기단(벽화 띠) + 앞 계단
+            Part(lh, "Plinth", Lathe(40, (4.6f, 0f), (4.6f, 1.6f), (4.6f, 1.6f), (0f, 1.6f)), concrete);
+            Part(lh, "Mural", Lathe(40, (4.62f, 0.2f), (4.62f, 1.4f)), mural);
+            for (int i = 0; i < 10; i++)
+            {
+                float a = i / 10f * Mathf.PI * 2f;
+                Mats.Prim(PrimitiveType.Sphere, "MuralWave", lh, new Vector3(Mathf.Cos(a) * 4.62f, 0.75f, Mathf.Sin(a) * 4.62f), new Vector3(1.4f, 0.55f, 1.4f), muralSea, false);
+            }
+            for (int k = 0; k < 4; k++)
+                Mats.Prim(PrimitiveType.Cube, "Stair", lh, new Vector3(0f, 0.2f + k * 0.4f, 5.4f - k * 0.38f), new Vector3(3.2f, 0.4f, 0.5f), concrete, false);
+            // 탑: 나팔처럼 벌어진 밑동 → 곧은 원통
+            var prof = new List<(float, float)>();
+            for (int i = 0; i <= 10; i++)
+            {
+                float f = i / 10f;
+                prof.Add((Mathf.Lerp(3.4f, 1.35f, 1f - Mathf.Pow(1f - f, 2.6f)), 1.6f + f * 5.5f));
+            }
+            prof.Add((1.3f, 13.2f));
+            Part(lh, "Tower", Lathe(36, prof.ToArray()), white);
+            // 둥근 창 세로 줄 (앞뒤)
+            foreach (float yaw in new[] { 0f, 180f })
+                for (int i = 0; i < 4; i++)
+                {
+                    var rot = Quaternion.Euler(0f, yaw, 0f);
+                    Mats.Prim(PrimitiveType.Cylinder, "Porthole", lh, rot * new Vector3(0f, 6.4f + i * 1.7f, 1.33f), new Vector3(0.42f, 0.03f, 0.42f), dark, false,
+                        rot * Quaternion.Euler(90f, 0f, 0f));
+                }
+            Door(lh, 2.3f, 2.7f, 1.2f, 2.1f, 0f);
+            // 전망층: 받침 턱 → 하늘빛 유리 띠(창틀 세로줄) → 처마 → 난간
+            Part(lh, "ObsCorbel", Lathe(40, (1.3f, 12.6f), (2.4f, 13.4f), (2.4f, 13.4f), (2.45f, 13.55f)), white);
+            Part(lh, "ObsGlass", Lathe(40, (2.3f, 13.55f), (2.3f, 15.2f)), glassBand);
+            for (int i = 0; i < 16; i++)
+            {
+                float a = i / 16f * Mathf.PI * 2f;
+                Mats.Prim(PrimitiveType.Cube, "Mullion", lh, new Vector3(Mathf.Cos(a) * 2.32f, 14.38f, Mathf.Sin(a) * 2.32f), new Vector3(0.07f, 1.65f, 0.07f), white, false,
+                    Quaternion.Euler(0f, -a * Mathf.Rad2Deg, 0f));
+            }
+            Part(lh, "ObsRoof", Lathe(40, (2.5f, 15.2f), (2.75f, 15.45f), (2.75f, 15.45f), (2.75f, 15.6f), (2.75f, 15.6f), (0f, 15.6f)), white);
+            Gallery(lh, 15.6f, 2.6f, 24, 0.9f, dark);
+            // 목 + 등롱 + 돔 + 십자 장식
+            Part(lh, "Neck", Lathe(24, (1.05f, 15.6f), (0.9f, 16.9f), (0.9f, 16.9f), (1.25f, 17.05f)), white);
+            Lantern(lh, 17.05f, 0.9f, 1.35f, 8, white, dark);
+            Part(lh, "Dome", Lathe(24, (1.05f, 18.4f), (1.05f, 18.5f), (1.05f, 18.5f), (0.75f, 18.85f), (0.4f, 19.1f), (0f, 19.2f)), white);
+            Mats.Prim(PrimitiveType.Cylinder, "Finial", lh, new Vector3(0f, 19.6f, 0f), new Vector3(0.06f, 0.45f, 0.06f), dark, false);
+            Mats.Prim(PrimitiveType.Cube, "FinialCross", lh, new Vector3(0f, 19.85f, 0f), new Vector3(0.45f, 0.05f, 0.05f), dark, false);
+            // 반원 나무 난간 (바다 쪽)
+            const int Seg = 16;
+            float span = 220f / Seg;
+            for (int i = 0; i <= Seg; i++)
+            {
+                float a = (-200f + i * span) * Mathf.Deg2Rad;
+                Mats.Prim(PrimitiveType.Cube, "RailPost", lh, new Vector3(Mathf.Cos(a) * 9f, 0.6f, Mathf.Sin(a) * 9f), new Vector3(0.18f, 1.2f, 0.18f), wood, false);
+                if (i == Seg) continue;
+                float b = (-200f + (i + 0.5f) * span) * Mathf.Deg2Rad;
+                var q = new Vector3(Mathf.Cos(b) * 9f, 1.05f, Mathf.Sin(b) * 9f);
+                var rr = Quaternion.Euler(0f, -b * Mathf.Rad2Deg, 0f);
+                float len = 9f * span * Mathf.Deg2Rad + 0.1f;
+                Mats.Prim(PrimitiveType.Cube, "Rail", lh, q, new Vector3(0.12f, 0.12f, len), wood, false, rr);
+                Mats.Prim(PrimitiveType.Cube, "Rail2", lh, q - Vector3.up * 0.45f, new Vector3(0.1f, 0.1f, len), wood, false, rr);
+            }
+            var col = lh.gameObject.AddComponent<CapsuleCollider>();
+            col.center = new Vector3(0f, 9f, 0f);
+            col.radius = 3.4f;
+            col.height = 18f;
+            var lamp = Mats.Prim(PrimitiveType.Sphere, "Lamp", lh, new Vector3(0f, MukhoLampY, 0f), Vector3.one * 0.8f, Mats.Lit(new Color(0.96f, 0.96f, 0.94f), 0.45f), false);
+            return lamp.GetComponent<Renderer>();
+        }
+
+        /// <summary>
+        /// 거문도 등대 (사용자 참고 사진): 곶 끝의 높은 흰 원통 탑(새 등대) — 위에 창 띠 두른 전망실과 붉은 등롱·돔,
+        /// 그 옆 작은 흰 옛 등대(1905, 흰 돔)와 붉은 지붕 단층 건물, 붉은 포장 광장. 등불은 새 등대 위.
+        /// </summary>
+        public static Renderer Geomun(Transform lh)
+        {
+            var white = Painted(new Color(0.96f, 0.96f, 0.94f));
+            var red = Painted(new Color(0.75f, 0.12f, 0.1f));
+            var dark = Mats.Lit(new Color(0.16f, 0.18f, 0.2f), 0.45f, 0.5f);
+            var concrete = Mats.Textured("concrete", new Color(0.82f, 0.81f, 0.77f), new Vector2(6f, 1f), 0.15f);
+            var glassBand = Mats.Lit(new Color(0.3f, 0.45f, 0.55f), 0.92f);
+            var paving = Mats.Lit(new Color(0.62f, 0.28f, 0.22f), 0.2f);
+
+            Mats.Prim(PrimitiveType.Cylinder, "Plaza", lh, new Vector3(3f, 0.05f, 0f), new Vector3(16f, 0.1f, 12f), paving, false);
+            // 새 등대: 팔각 기단 → 가는 흰 원통 (세로 홈, 옆 창)
+            Part(lh, "Base", Lathe(8, (2.6f, 0f), (2.6f, 1.6f), (2.6f, 1.6f), (1.55f, 1.6f)), concrete);
+            Part(lh, "Tower", Lathe(28, (1.55f, 1.6f), (1.35f, 17.6f)), white);
+            var groove = Mats.Lit(new Color(0.78f, 0.78f, 0.76f), 0.2f);
+            foreach (float yaw in new[] { 0f, 180f })
+            {
+                var rot = Quaternion.Euler(0f, yaw, 0f);
+                Mats.Prim(PrimitiveType.Cube, "Groove", lh, rot * new Vector3(0f, 9.6f, 1.45f), new Vector3(0.18f, 15.4f, 0.06f), groove, false, rot);
+                for (int i = 0; i < 4; i++) Window(lh, 1.42f, 4.5f + i * 3.4f, 0.32f, 0.55f, yaw + 90f);
+            }
+            Door(lh, 1.55f, 2.7f, 1.0f, 2.0f, 0f);
+            // 전망실: 넓어지는 받침 → 창 띠 → 처마·난간 → 붉은 등롱·돔
+            Part(lh, "ObsCorbel", Lathe(28, (1.35f, 17.4f), (2.3f, 18.1f), (2.3f, 18.1f), (2.3f, 18.25f)), white);
+            Part(lh, "ObsWall", Lathe(28, (2.15f, 18.25f), (2.15f, 18.6f)), white);
+            Part(lh, "ObsGlass", Lathe(28, (2.1f, 18.6f), (2.1f, 19.9f)), glassBand);
+            for (int i = 0; i < 12; i++)
+            {
+                float a = i / 12f * Mathf.PI * 2f;
+                Mats.Prim(PrimitiveType.Cube, "Mullion", lh, new Vector3(Mathf.Cos(a) * 2.12f, 19.25f, Mathf.Sin(a) * 2.12f), new Vector3(0.08f, 1.3f, 0.08f), white, false,
+                    Quaternion.Euler(0f, -a * Mathf.Rad2Deg, 0f));
+            }
+            Part(lh, "ObsRoof", Lathe(28, (2.25f, 19.9f), (2.5f, 20.1f), (2.5f, 20.1f), (2.5f, 20.2f), (2.5f, 20.2f), (0f, 20.2f)), white);
+            Gallery(lh, 20.2f, 2.4f, 20, 0.85f, dark);
+            Lantern(lh, 20.25f, 1.05f, 1.6f, 10, red, dark);
+            Part(lh, "Dome", Lathe(24, (1.2f, 21.85f), (1.2f, 21.95f), (1.2f, 21.95f), (0.85f, 22.3f), (0.45f, 22.55f), (0f, 22.65f)), red);
+            Mats.Prim(PrimitiveType.Sphere, "VentBall", lh, new Vector3(0f, 22.8f, 0f), Vector3.one * 0.3f, dark, false);
+            Mats.Prim(PrimitiveType.Cylinder, "Rod", lh, new Vector3(0f, 23.3f, 0f), new Vector3(0.04f, 0.5f, 0.04f), dark, false);
+
+            // 옛 등대(1905): 작은 흰 원통 + 흰 돔 등롱
+            var old = new GameObject("OldLighthouse").transform;
+            old.SetParent(lh, false);
+            old.localPosition = new Vector3(8.5f, 0f, -2.5f);
+            Part(old, "OldBase", Lathe(16, (1.6f, 0f), (1.6f, 0.6f), (1.6f, 0.6f), (1.2f, 0.6f)), concrete);
+            Part(old, "OldTower", Lathe(24, (1.2f, 0.6f), (1.0f, 4.8f), (1.0f, 4.8f), (1.35f, 5.0f), (1.35f, 5.0f), (1.35f, 5.1f)), white);
+            Gallery(old, 5.1f, 1.45f, 14, 0.75f, dark);
+            Lantern(old, 5.15f, 0.8f, 1.05f, 8, white, dark);
+            Part(old, "OldDome", Lathe(20, (0.92f, 6.2f), (0.92f, 6.28f), (0.92f, 6.28f), (0.6f, 6.6f), (0f, 6.85f)), white);
+            // 붉은 지붕 단층 건물
+            var keeper = new GameObject("Keeper").transform;
+            keeper.SetParent(lh, false);
+            keeper.localPosition = new Vector3(4.5f, 0f, -7f);
+            Mats.Prim(PrimitiveType.Cube, "Wall", keeper, new Vector3(0f, 1.5f, 0f), new Vector3(8f, 3f, 4.5f), white);
+            var roof = new GameObject("Roof");
+            roof.transform.SetParent(keeper, false);
+            roof.transform.localPosition = new Vector3(0f, 3f, 0f);
+            roof.transform.localScale = new Vector3(8.6f, 1.4f, 5.2f);
+            roof.AddComponent<MeshFilter>().sharedMesh = CoastProps.GableMesh();
+            roof.AddComponent<MeshRenderer>().sharedMaterial = red;
+            var glass = Mats.Lit(new Color(0.14f, 0.2f, 0.26f), 0.85f);
+            for (int i = 0; i < 4; i++)
+                Mats.Prim(PrimitiveType.Cube, "Window", keeper, new Vector3(-3f + i * 2f, 1.7f, 2.27f), new Vector3(1f, 1f, 0.05f), glass, false);
+
+            var col = lh.gameObject.AddComponent<CapsuleCollider>();
+            col.center = new Vector3(0f, 11f, 0f);
+            col.radius = 2.4f;
+            col.height = 22f;
+            var oc = old.gameObject.AddComponent<CapsuleCollider>();
+            oc.center = new Vector3(0f, 3.4f, 0f);
+            oc.radius = 1.5f;
+            oc.height = 6.8f;
+            var kc = keeper.gameObject.AddComponent<BoxCollider>();
+            kc.center = new Vector3(0f, 2f, 0f);
+            kc.size = new Vector3(8f, 4f, 4.5f);
+            var lamp = Mats.Prim(PrimitiveType.Sphere, "Lamp", lh, new Vector3(0f, GeomunLampY, 0f), Vector3.one * 0.95f, Mats.Lit(new Color(0.96f, 0.96f, 0.94f), 0.45f), false);
+            return lamp.GetComponent<Renderer>();
+        }
+
         /// <summary>칠한 콘크리트: 텍스처 위에 색을 곱한다 (텍스처가 회색이라 조금 밝게 보정).</summary>
         static Material Painted(Color c) =>
             Mats.Textured("concrete", CoastProps.PaintTint(c), new Vector2(4f, 3f), 0.35f);

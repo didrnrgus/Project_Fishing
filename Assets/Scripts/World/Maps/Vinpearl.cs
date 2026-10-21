@@ -15,7 +15,7 @@ namespace Fishing.World
         public static CoastSpec Vinpearl() => new CoastSpec
         {
             Id = "vinpearl", MapName = "빈펄 · 나트랑", ShortName = "빈펄", ShopName = "혼째 섬 낚시점", UnionContact = "빈펄 선착장의 레 티 마이 지부장",
-            LandName = "빈펄 해변", SeaName = "나트랑 만", Seed = 51,
+            LandName = "빈펄 해변", SeaName = "나트랑 만", Seed = 51, SandTint = new Color(1.5f, 1.45f, 1.32f),
             WaterDeep = new Color(0.02f, 0.24f, 0.36f), WaterShallow = new Color(0.1f, 0.62f, 0.6f),
             Shores = new[] { new ShoreSeg(-999f, 999f, ShoreKind.Beach) },
             NearDepth = 2.5f, DepthSlope = 0.06f, FlatWidth = 34f, CliffHeight = 22f, CliffWidth = 50f, RoadOffset = 20f, VillageDensity = 0.6f,
@@ -51,7 +51,7 @@ namespace Fishing.World
             Signs = new[] { ("VINPEARL", new Vector3(-6f, 6.5f, -66f), SignGold) },
             FarIslands = new[] { new Vector4(-330f, 430f, 170f, 46f), new Vector4(260f, 470f, 110f, 34f), new Vector4(60f, 520f, 80f, 22f) },
             // 케이블카 정류장 언덕
-            Reserved = new[] { new Rect(-185f, -110f, 50f, 60f) },
+            Reserved = new[] { new Rect(-185f, -110f, 50f, 60f), new Rect(52f, -150f, 120f, 92f) },
             Schools = () => new List<FishSchool>
             {
                 School("폼파노 해변", 2, 0, 1, DayLong, "pompano", "silverpomfret"),
@@ -96,6 +96,8 @@ namespace Fishing.World
                     MapKit.Prop(root, "sunbed", new Vector3(x + k * 1.3f, b.Height(x + k * 1.3f, z + 1.6f), z + 1.6f), 180f + b.Rand(-8f, 8f), 0f, 2f);
             }
 
+            VinpearlHotel(b, root);
+
             // --- 케이블카: 섬 언덕 정류장 → 바다 위 철탑 셋 → 본토 쪽 (원작: 바다를 건너는 케이블카) ---
             var steel = Mats.Lit(new Color(0.75f, 0.76f, 0.78f), 0.5f, 0.6f);
             var cableMat = Mats.Lit(new Color(0.15f, 0.15f, 0.16f), 0.4f, 0.5f);
@@ -138,6 +140,49 @@ namespace Fishing.World
                     Mats.Prim(PrimitiveType.Cube, "GondolaGlass", root, on + Vector3.down * 4f, new Vector3(2.25f, 1f, 2.25f), glass, false, Quaternion.Euler(0f, MapKit.Face(station, end), 0f));
                 }
             }
+        }
+
+        /// <summary>
+        /// 빈펄 리조트 호텔 (사용자 참고 사진): 짙은 숲 산을 등진 넓은 흰 호텔. 가운데 높은 동 양옆으로 층이 계단처럼 낮아지는 날개,
+        /// 촘촘한 흰 발코니 격자, 앞 정원의 야자수와 길쭉한 파란 수영장. 뒤로 혼째 섬의 초록 산.
+        /// </summary>
+        static void VinpearlHotel(CoastWorldBuilder b, Transform root)
+        {
+            float land = b.Map.LandY;
+            var c = new Vector3(110f, 0f, -118f);
+            var facade = HanRiverLandmarks.Facade(1, 4, new Color(0.62f, 0.72f, 0.78f), new Color(0.32f, 0.38f, 0.42f), new Color(0.98f, 0.98f, 0.96f), 0.42f, 0.2f, 951, out var night, 0.5f);
+            var front = HanRiverLandmarks.Mat(Color.white, facade, night, new Color(1f, 0.86f, 0.62f), 0.4f, 0f, Vector2.one);
+            var wall = Mats.Wall(new Color(0.97f, 0.97f, 0.95f), 0.2f);
+            var roof = Mats.Tile(new Color(0.62f, 0.3f, 0.2f), 0.3f);
+            // (가로 위치, 폭, 층수): 가운데가 가장 높다
+            var blocks = new[] { (-46f, 18f, 4), (-30f, 16f, 6), (-14f, 16f, 8), (0f, 14f, 10), (14f, 16f, 8), (30f, 16f, 6), (46f, 18f, 4) };
+            const float floorH = 3.2f, depth = 14f;
+            foreach (var (dx, w, floors) in blocks)
+            {
+                float h = floors * floorH;
+                float gy = b.Height(c.x + dx, c.z);
+                var p = new Vector3(c.x + dx, gy, c.z + Mathf.Abs(dx) * 0.12f);
+                Mats.Prim(PrimitiveType.Cube, "HotelBlock", root, p + Vector3.up * (h * 0.5f - 1.5f), new Vector3(w, h + 3f, depth), wall, true);
+                var f = Mats.Prim(PrimitiveType.Quad, "HotelFront", root, p + new Vector3(0f, h * 0.5f, depth * 0.5f + 0.06f), new Vector3(w, h, 1f), front, false, Quaternion.Euler(0f, 180f, 0f));
+                // 블록마다 층·칸 수가 달라 재질을 따로 (한 장 = 1층 × 4칸, 칸 하나 약 4m)
+                f.GetComponent<MeshRenderer>().sharedMaterial = new Material(front) { mainTextureScale = new Vector2(w / 4f, floors) };
+                for (int k = 1; k < floors; k++)
+                    Mats.Prim(PrimitiveType.Cube, "Balcony", root, p + new Vector3(0f, k * floorH - 0.1f, depth * 0.5f + 0.6f), new Vector3(w, 0.18f, 1.2f), wall, false);
+                MapKit.Place(root, "HotelRoof", CoastWorldBuilder.Gable(), roof, p + Vector3.up * h).transform.localScale = new Vector3(w + 1f, 2.6f, depth + 1.4f);
+            }
+            // 앞 정원: 길쭉한 수영장 + 야자수 줄
+            var poolY = land + 0.05f;
+            var poolZ = c.z + 22f;
+            float py = b.Height(c.x, poolZ);
+            Mats.Prim(PrimitiveType.Cube, "PoolDeck", root, new Vector3(c.x, py + 0.05f, poolZ), new Vector3(70f, 0.15f, 14f), Mats.TexturedBox("concrete", new Color(0.92f, 0.9f, 0.85f), new Vector2(70f, 14f), 3f, 0.3f), false);
+            Mats.Prim(PrimitiveType.Cube, "Pool", root, new Vector3(c.x, py + 0.14f, poolZ), new Vector3(60f, 0.04f, 8f), Mats.Lit(new Color(0.12f, 0.62f, 0.82f), 0.95f), false);
+            for (float x = c.x - 34f; x <= c.x + 34f; x += 8.5f)
+                foreach (float zz in new[] { poolZ - 9f, poolZ + 9f })
+                    KenneyProps.Spawn("Props/palm_a", root, new Vector3(x, b.Height(x, zz), zz), b.Rand(0f, 360f), b.Rand(8f, 11f));
+            // 뒤 혼째 섬 산 (짙은 열대림)
+            var jungle = MapKit.FarRock(new Color(0.18f, 0.32f, 0.16f), "grass", 22f, 0.8f, 0.05f);
+            var rock = MapKit.FarRock(new Color(0.42f, 0.4f, 0.34f), "granite", 30f, 0.8f);
+            MapKit.Place(root, "HonTre", MapKit.Mountain(420f, 140f, 190f, 51, 0.85f, 3), new[] { jungle, rock }, new Vector3(40f, land, -360f));
         }
 
         /// <summary>격자 철탑: 바닥 네모에서 꼭대기로 좁아지는 다리 넷, 층마다 가로 띠, 꼭대기 팔(줄을 거는 곳).</summary>

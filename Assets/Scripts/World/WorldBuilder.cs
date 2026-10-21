@@ -338,6 +338,29 @@ namespace Fishing.World
             }
             for (int i = 0; i < 50; i++)
                 PlaceTree(trees, new Vector3(R(-155f, 155f), HanRiverMap.LandY, R(62f, 68f)), trunk, leaves[i % leaves.Length]);
+
+            // 사용자 참고 사진(한강 둔치): 나무 그늘 아래 알록달록한 원터치 텐트와 돗자리, 그늘막
+            var tentColors = new[] { new Color(0.2f, 0.5f, 0.85f), new Color(0.95f, 0.6f, 0.15f), new Color(0.3f, 0.7f, 0.4f), new Color(0.85f, 0.25f, 0.3f), new Color(0.95f, 0.9f, 0.85f) };
+            var matColors = new[] { new Color(0.95f, 0.85f, 0.3f), new Color(0.55f, 0.75f, 0.95f), new Color(0.95f, 0.55f, 0.6f), new Color(0.6f, 0.85f, 0.55f) };
+            for (int i = 0; i < 26; i++)
+            {
+                float x = R(-150f, 150f), z = R(-100f, -84f);
+                if (Mathf.Abs(x - HanRiverMap.StorePos.x) < 14f) continue;
+                if (Vector2.Distance(new Vector2(x, z), new Vector2(HanRiverMap.IdolStage.x, HanRiverMap.IdolStage.z)) < 9f) continue;
+                var at = new Vector3(x, HanRiverMap.LandY, z);
+                float yaw = R(0f, 360f);
+                var rot = Quaternion.Euler(0f, yaw, 0f);
+                if (_rng.NextDouble() < 0.6)
+                {
+                    // 원터치 텐트: 납작한 반구 + 앞 입구 그늘
+                    var tent = Mats.Lit(tentColors[_rng.Next(tentColors.Length)], 0.25f);
+                    Mats.Prim(PrimitiveType.Sphere, "Tent", trees, at + Vector3.up * 0.05f, new Vector3(2.4f, 2.2f, 2.0f), tent, false, rot);
+                    Mats.Prim(PrimitiveType.Cube, "TentDoor", trees, at + rot * new Vector3(0f, 0.55f, 0.98f), new Vector3(0.9f, 0.9f, 0.05f), Mats.Lit(new Color(0.12f, 0.12f, 0.14f)), false, rot);
+                }
+                // 돗자리 (텐트 앞이나 따로)
+                var mat = Mats.Lit(matColors[_rng.Next(matColors.Length)], 0.2f);
+                Mats.Prim(PrimitiveType.Cube, "PicnicMat", trees, at + rot * new Vector3(0f, 0.02f, 2.2f), new Vector3(2f, 0.02f, 1.6f), mat, false, rot);
+            }
         }
 
         static readonly string[] TreeModels =
@@ -588,18 +611,38 @@ namespace Fishing.World
         static readonly string[] LowBuildings =
             { "building-a", "building-b", "building-c", "building-d", "building-e", "building-h", "building-j", "building-k" };
 
-        /// <summary>Kenney City Kit Commercial로 강 건너 빌딩 숲과 남쪽 뒤편 상가를 세운다.</summary>
+        /// <summary>
+        /// 강 건너 아파트 단지와 남쪽 뒤편 상가. 사용자 참고 사진(한강 둔치): 강 건너는 장난감 빌딩이 아니라 흰 판상형 아파트가 병풍처럼 늘어선다 —
+        /// 10~18층(강 너머 남산·롯데타워가 가리지 않게 낮춤), 층마다 베란다 띠, 옆벽에 동 번호, 옥상 물탱크실. 앞줄은 강을 따라 나란히, 뒷줄은 조금 더 높고 엇갈린다.
+        /// </summary>
         void BuildKenneyCity(Transform city)
         {
-            // 북쪽: 두 줄로 겹쳐 세워 스카이라인을 만든다 (뒷줄이 더 높다)
-            for (int row = 0; row < 2; row++)
-            for (float x = -185f; x <= 185f; x += row == 0 ? 17f : 23f)
+            var aptTex = HanRiverLandmarks.Facade(4, 6, new Color(0.82f, 0.88f, 0.92f), new Color(0.6f, 0.66f, 0.72f), new Color(1f, 1f, 0.98f), 0.4f, 0.1f, 1101, out var aptNight, 0.42f);
+            var aptMats = new[]
             {
-                var model = TallBuildings[_rng.Next(TallBuildings.Length)];
-                float h = row == 0 ? R(18f, 32f) : R(30f, 52f);
-                float z = row == 0 ? R(96f, 104f) : R(118f, 130f);
-                KenneyProps.Spawn("Kenney/City/" + model, city, new Vector3(x + R(-3f, 3f), HanRiverMap.LandY, z),
-                    180f + (_rng.Next(4) * 90f) * (row == 0 ? 0f : 1f), h);
+                HanRiverLandmarks.Mat(Color.white, aptTex, aptNight, new Color(1f, 0.85f, 0.6f) * 0.9f, 0.25f, 0f, Vector2.one),
+                HanRiverLandmarks.Mat(new Color(0.96f, 0.93f, 0.86f), aptTex, aptNight, new Color(1f, 0.85f, 0.6f) * 0.9f, 0.25f, 0f, Vector2.one),
+                HanRiverLandmarks.Mat(new Color(0.9f, 0.92f, 0.95f), aptTex, aptNight, new Color(1f, 0.85f, 0.6f) * 0.9f, 0.25f, 0f, Vector2.one),
+            };
+            var roofBox = Mats.Lit(new Color(0.82f, 0.82f, 0.8f), 0.2f);
+            int dong = 101;
+            for (int row = 0; row < 2; row++)
+            for (float x = -185f; x <= 185f; x += row == 0 ? R(46f, 60f) : R(52f, 66f))
+            {
+                float floors = row == 0 ? R(9f, 13f) : R(13f, 18f);
+                float h = floors * 2.8f, w = R(26f, 36f), d = 10f;
+                float z = row == 0 ? R(98f, 104f) : R(124f, 134f);
+                var pos = new Vector3(x + (row == 1 ? 20f : 0f), HanRiverMap.LandY + h * 0.5f, z);
+                var go = Mats.Prim(PrimitiveType.Cube, "Apartment", city, pos, new Vector3(w, h, d), aptMats[_rng.Next(aptMats.Length)], false, Quaternion.Euler(0f, R(-4f, 4f), 0f));
+                var mf = go.GetComponent<MeshFilter>();
+                mf.sharedMesh = HanRiverLandmarks.TiledCube(mf.sharedMesh, w, h, d);
+                go.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                // 옥상 물탱크실·계단실
+                Mats.Prim(PrimitiveType.Cube, "RoofBox", city, pos + new Vector3(R(-w * 0.3f, w * 0.3f), h * 0.5f + 2f, 0f), new Vector3(6f, 4f, 6f), roofBox, false);
+                // 옆벽 동 번호 (강 쪽에서 보이는 서쪽 벽)
+                var label = UIFactory.WorldText(city, (dong++).ToString(), pos + new Vector3(-w * 0.5f - 0.1f, h * 0.3f, 0f), new Color(0.3f, 0.35f, 0.45f), 40f, "DongNumber");
+                label.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
+                UIFactory.OneSided(label);
             }
             // 남쪽 뒤편 저층 상가
             for (float x = -175f; x <= 175f; x += 19f)

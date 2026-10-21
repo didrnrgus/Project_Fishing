@@ -15,7 +15,7 @@ namespace Fishing.World
         public static CoastSpec Tenggol() => new CoastSpec
         {
             Id = "tenggol", MapName = "플라우 탱글 · 말레이시아", ShortName = "탱글", ShopName = "수상 별장 낚시점", UnionContact = "수상 별장의 아이샤 지부장",
-            LandName = "탱글 섬", SeaName = "산호초 바다", Seed = 60,
+            LandName = "탱글 섬", SeaName = "산호초 바다", Seed = 60, SandTint = new Color(1.5f, 1.45f, 1.32f),
             WaterDeep = new Color(0.02f, 0.26f, 0.34f), WaterShallow = new Color(0.1f, 0.7f, 0.62f),
             Shores = new[] { new ShoreSeg(-999f, -40f, ShoreKind.Rock), new ShoreSeg(-40f, 30f, ShoreKind.Beach), new ShoreSeg(30f, 999f, ShoreKind.Rock) },
             NearDepth = 3f, DepthSlope = 0.07f, FlatWidth = 24f, CliffHeight = 34f, CliffWidth = 40f, RoadOffset = 0f, VillageDensity = 0.15f,

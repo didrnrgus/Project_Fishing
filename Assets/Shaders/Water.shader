@@ -7,6 +7,8 @@
 //  - 물가 거품: 맵이 구워 둔 해저 높이 텍스처(_SeabedTex, WaterSurface.SetSeabed)로 수심과 해저 경사를 구해
 //    물가까지의 수평 거리를 어림하고, 그 안쪽 몇 m에 파도 따라 밀려오는 흰 거품 띠와 바닥이 비치는 밝은 얕은 물을 그린다.
 //    수면 높이는 버텍스 파도를 포함하므로 거품 경계가 파도에 맞춰 들락날락한다 (물때가 오르내리면 거품도 따라간다)
+//  - 야광충(_BioGlow, 서천 밤바다): 밤이면 부서지는 파도 끝·거품이 청록 형광으로 빛난다. 새로 부서지는 쪽(파도 앞)이 가장 밝고
+//    노이즈로 끊겨 반짝이며, 물가에서 조금 떨어진 바다에도 드문드문 빛 점이 일렁인다
 Shader "Fishing/Water"
 {
     Properties
@@ -44,7 +46,7 @@ Shader "Fishing/Water"
         float4 _Speed1, _Speed2;
         float4 _GlintPos[48];
         float4 _GlintCol[48];
-        float _GlintCount, _GlintNight;
+        float _GlintCount, _GlintNight, _BioGlow;
         sampler2D _SeabedTex;
         float4 _SeabedRect, _SeabedStep, _FoamColor;
         float _HasSeabed, _FoamWidth;
@@ -115,6 +117,19 @@ Shader "Fishing/Water"
                     o.Albedo = lerp(o.Albedo, _FoamColor.rgb, foam);
                     o.Smoothness = lerp(o.Smoothness, 0.35, foam);
                     o.Normal = normalize(lerp(n, float3(0, 0, 1), foam * 0.8));
+
+                    // 야광충: 부서지는 파도 앞(lap가 막 차오르는 곳)이 가장 밝고, 노이즈 알갱이로 반짝인다
+                    float bio = _BioGlow * _GlintNight;
+                    if (bio > 0.01)
+                    {
+                        float crest = smoothstep(0.55, 0.95, lap) * edge;
+                        float spark = tex2D(_NormalTex, p * 1.9 + t * float2(0.05, -0.04)).b;
+                        float glowFoam = saturate(foam * 0.55 + crest * 1.3) * (0.45 + 0.9 * smoothstep(0.45, 0.8, spark));
+                        // 물가에서 조금 떨어진 곳의 드문 빛 점
+                        float dots = smoothstep(0.86, 0.97, spark) * saturate(1 - dist / (_FoamWidth * 4)) * (0.6 + 0.4 * sin(t * 3 + n1 * 20));
+                        o.Albedo = lerp(o.Albedo, o.Albedo * 0.25, bio);   // 밤엔 흰 거품이 아니라 빛만 보이게
+                        o.Emission += float3(0.1, 0.78, 1.0) * (glowFoam * 2.2 + dots * 0.9) * bio;
+                    }
                 }
             }
 
@@ -138,7 +153,7 @@ Shader "Fishing/Water"
                     float g = exp(-(dx * dx * 5000.0 + dy * dy * 70.0));
                     glow += _GlintCol[i].rgb * (_GlintCol[i].a * g / (1.0 + dist * 0.004));
                 }
-                o.Emission = glow * _GlintNight * 0.9;
+                o.Emission += glow * _GlintNight * 0.9;
             }
         }
         ENDCG
