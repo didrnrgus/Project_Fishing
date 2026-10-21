@@ -63,7 +63,7 @@ VRoid 프로젝트(pixiv)가 VRoid Studio 알파 시절 샘플로 **CC0** 공개
 - 맵을 지을 때(로딩 화면 뒤) NPC·내 캐릭터가 바로 서 있어야 해서 **동기로 읽는다** (`VrmLoader.Load`, UniVRM `ImmediateCaller`). 한 파일에 수백 ms. 처음 그 모델이 나오는 맵에서만 걸리고 이후엔 복제만 한다.
 - 캐릭터 창 목록은 문서 폴더 파일과 지금 쓰는 모델만 뒤에서 읽는다(`Request`). 기본 제공 11개를 다 읽으면 메모리가 커서다. `LoadNow`는 `Loaded`를 내지 않는다(부른 쪽이 바로 입히는 중이라 GameUI가 또 입히면 캐릭터가 둘 생긴다).
 - 복제본은 `RuntimeGltfInstance`를 뗀다 → UniVRM이 "씬에 놓인 프리팹"으로 보고 지금 자세(원본의 T 자세)를 초기 자세로 잡는다. 떼지 않으면 복제본의 초기 자세 표가 비어 있다(직렬화되지 않는 필드). 원본이 꺼진 채 복제하니 복제본 `OnDestroy`가 원본 자원을 지우지 않는다.
-- **컨트롤 리그 없이** (`ControlRigGenerationOption.None`): 휴머노이드 Animator가 뼈를 바로 움직인다 → 우리 동작 클립(UAL·반응 동작·Kevin Iglesias, 모두 휴머노이드)·팔 IK(10 문서 5장)·손가락 쥐기(`RodGrip`의 휴머노이드 경로)가 그대로 붙는다.
+- **컨트롤 리그 없이** (`ControlRigGenerationOption.None`): 휴머노이드 Animator가 뼈를 바로 움직인다 → 우리 동작 클립(UAL·직접 만든 동작·Unity Starter Assets, 모두 휴머노이드)·팔 IK(10 문서 5장)·손가락 쥐기(`RodGrip`의 휴머노이드 경로)가 그대로 붙는다.
 - VRM은 +Z를 보지만 우리 클립은 −Z에 맞춰 두어서 **180° 돌린다**.
 - 키는 VRM 그대로(1.0~2.2m 밖이면 1.6m로 맞춤). `PlayerController`가 팔 길이(어깨~손목)를 재서 낚싯대 쥔 손 자리 표를 예전 기본 캐릭터 팔(0.453m) 대비로 줄이거나 늘인다(`_armScale`).
 - 뼈는 모두 휴머노이드 매핑(`Animator.GetBoneTransform`)으로 찾는다 (예전 Quaternius 뼈 이름 `hand_r`·`spine_02` 경로는 지웠다).
@@ -113,7 +113,7 @@ VRM 파일에는 만든 사람이 정한 허락이 들어 있다. 캐릭터 창�
 | 장식 NPC `ExtraNpcs`(아이돌 `IdolRoutine`, 밤 손님 `NightVisitor`)·`Wanderer` | 퀘스트·대화 NPC(`NpcAngler`)만 남김. 한강 버스킹 무대는 빈 무대로 남았다 |
 | 자동 촬영 `00h_idol_greeting`·`00i_idol_stage`·`00l_park_chat`·`00o_doctor_walk`·`00j_night_zombie`·`00k_night_ghost`·`00m_night_dancer`·`00n_night_clown` | — |
 
-동작 클립(UAL, Kevin Iglesias)은 캐릭터 모델이 아니라 그대로 둔다. Mixamo 동작은 2026-10-21에 걷어내고 직접 만든 반응 동작으로 바꿨다(10 문서 1장).
+동작 클립(UAL·직접 만든 동작·Unity Starter Assets)은 캐릭터 모델이 아니라 그대로 둔다. Mixamo 동작은 2026-10-21에 걷어내고 직접 만든 반응 동작으로 바꿨다(10 문서 1장).
 
 ## 5. 남은 일
 

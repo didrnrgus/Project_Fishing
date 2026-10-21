@@ -9,6 +9,7 @@ namespace Fishing.Characters
     /// AnimatorController 에셋 없이 Playables로 클립을 섞어 재생한다.
     /// 클립은 직접 만든 동작(Resources/Animations/Motions, tools/blender/build_motions.py — 기본 동작 Basic_*·반응 동작)과
     /// 그 바탕인 Universal Animation Library(Resources/Animations/UAL1_Standard, CC0)에서 이름으로 찾는다.
+    /// 대기·걷기·뛰기·점프는 Unity Starter Assets(Resources/Animations/StarterAssets)가 있으면 그걸 먼저 쓴다.
     /// 낚싯대를 든 팔은 클립이 아니라 IK가 정한다 (PlayerController.UpdateRodArmRight, NpcAngler.UpdateRightHand).
     /// "이름_M"/"이름_F" 클립이 있으면 Female에 맞는 쪽을 먼저 쓴다.
     /// </summary>
@@ -18,15 +19,32 @@ namespace Fishing.Characters
         public const string Idle = "Basic_Idle_Loop";
         public const string Walk = "Basic_Walk_Loop";
         /// <summary>Walk 클립이 원래 가는 속도 (m/s, 10 문서 7장). 다른 속도로 걸릴 때 배속 = 속도 / 이 값.</summary>
-        public const float BasicWalkSpeed = WalkClipSpeed;
+        public static float BasicWalkSpeed => WalkClipSpeed;
         public const string Jog = "Basic_Run_Loop";
         public const string Sprint = "Basic_Sprint_Loop";
 
+        /// <summary>우리 이름 → Starter Assets 클립 이름 (Resources/Animations/StarterAssets). 질주 클립은 따로 없어 뛰기를 빨리 튼다.</summary>
+        static readonly Dictionary<string, string> StarterLocomotion = new Dictionary<string, string>
+        {
+            { Idle, "Idle" }, { Walk, "Walk_N" }, { Jog, "Run_N" }, { Sprint, "Run_N" },
+            { JumpStart, "Jump" }, { JumpLoop, "InAir" },
+        };
+
+        /// <summary>Starter Assets 로코모션을 찾아 쓰고 있는지 (Clips를 처음 읽을 때 정해진다).</summary>
+        public static bool UsesStarterLocomotion { get; private set; }
+
         /// <summary>
         /// 클립 원래 이동 속도(m/s). 게임 이동 속도 ÷ 이 값 = 재생 배속 (발 미끄러짐 최소).
-        /// 바탕 UAL 클립에서 땅을 디딘 발이 골반 기준으로 뒤로 가는 속도를 쟀다 (10 문서 7장).
+        /// Starter Assets는 블렌드 트리 문턱값(걷기 2·뛰기 6), 바탕 UAL 클립은 땅을 디딘 발이 골반 기준으로 뒤로 가는 속도를 쟀다 (10 문서 7장).
         /// </summary>
-        public const float WalkClipSpeed = 0.98f, JogClipSpeed = 5.9f, SprintClipSpeed = 8.9f;
+        public static float WalkClipSpeed => Clips != null && UsesStarterLocomotion ? 2f : 0.98f;
+        public static float JogClipSpeed => Clips != null && UsesStarterLocomotion ? 6f : 5.9f;
+        public static float SprintClipSpeed => Clips != null && UsesStarterLocomotion ? 6f : 8.9f;
+        /// <summary>
+        /// 클립 원래 속도로 한 걸음(반 바퀴)에 가는 거리(m) — 발소리 간격. Starter Run_N은 0.67초 한 바퀴 × 6m/s ÷ 2 = 2.0m,
+        /// Motions는 뛰기 14프레임 × 5.9m/s = 2.75m, 질주 10프레임 × 8.9m/s = 2.97m.
+        /// </summary>
+        public static float StepLength(bool sprint) => Clips != null && UsesStarterLocomotion ? 2.0f : sprint ? 2.97f : 2.75f;
         /// <summary>낚싯대를 들고 서 있을 때 몸 (왼발 앞·상체 숙이고 오른쪽으로 튼 낚시꾼 자세). 두 팔은 IK가 낚싯대에 붙인다.</summary>
         public const string HoldRod = "Fishing_Hold_Loop";
         public const string Cheer = "Cheer_ArmsUp";
@@ -76,6 +94,16 @@ namespace Fishing.Characters
                         var name = c.name.Contains("|") ? c.name.Substring(c.name.LastIndexOf('|') + 1) : c.name;
                         if (!_clips.ContainsKey(name)) _clips[name] = c;
                     }
+                // Unity Starter Assets(Third Person) 기본 로코모션이 있으면 대기·걷기·뛰기·점프는 그걸 쓴다 (남·녀 공통)
+                foreach (var c in Resources.LoadAll<AnimationClip>("Animations/StarterAssets"))
+                    foreach (var pair in StarterLocomotion)
+                        if (pair.Value == c.name)
+                        {
+                            _clips[pair.Key] = c;
+                            _clips.Remove(pair.Key + "_M");
+                            _clips.Remove(pair.Key + "_F");
+                            UsesStarterLocomotion = true;
+                        }
                 return _clips;
             }
         }

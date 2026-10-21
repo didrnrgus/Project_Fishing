@@ -19,6 +19,10 @@ namespace Fishing.PlayerSystems
         /// <summary>자동 스크린샷용 이동 입력 (카메라 기준, 0이면 키보드). DebugRun이면 달리기.</summary>
         public Vector2 DebugMove;
         public bool DebugRun;
+        /// <summary>걷기 키(4.5m/s)로 뛰기 클립을 틀 때 최소 배속 (Starter Run_N은 6m/s라 그대로면 0.75배로 늘어져 보인다).</summary>
+        const float JogMinRate = 0.85f;
+        /// <summary>자동 촬영용: 다음 프레임에 한 번 점프.</summary>
+        public bool DebugJump;
 
         public Transform RodTip => Rod != null ? Rod.Tip : transform;
         /// <summary>머리 뼈 (초상화 카메라가 비춘다).</summary>
@@ -534,8 +538,9 @@ namespace Fishing.PlayerSystems
             if (_cc.isGrounded && _vy < 0f) _vy = -1f;
             // 점프 (원작: Space). 낚시 중이거나 창이 열려 있으면 안 된다
             bool fishingIdle = Game.Fishing == null || Game.Fishing.State == Angling.FishingState.Idle;
-            if (Settings.Down(KeyAction.Jump) && _cc.isGrounded && !uiBlocking && !MovementLocked && fishingIdle)
+            if ((Settings.Down(KeyAction.Jump) || DebugJump) && _cc.isGrounded && !uiBlocking && !MovementLocked && fishingIdle)
             {
+                DebugJump = false;
                 _vy = JumpSpeed;
                 _anim?.PlayOnce(CharacterAnimator.JumpStart, 1.4f, 0.6f);
             }
@@ -545,12 +550,15 @@ namespace Fishing.PlayerSystems
             _cc.Move(motion * Time.deltaTime);
 
             _speedNow = new Vector2(motion.x, motion.z).magnitude;
-            // 발소리: 애니메이션 한 걸음마다 (Motions 뛰기 클립 반 바퀴 14프레임 × 5.9m/s = 2.75m, 질주 10프레임 × 8.9m/s = 2.97m — 배속을 속도에 맞추므로 땅 위 거리는 같다)
+            // 발소리: 애니메이션 한 걸음마다 (CharacterAnimator.StepLength — 배속을 속도에 맞추므로 땅 위 거리는 같다.
+            // 걷기 키는 뛰기 클립을 최소 배속(JogMinRate)으로 틀어 그만큼 걸음이 짧다)
             if (_cc.isGrounded && _speedNow > 0.5f)
             {
                 bool running = _speedNow > WalkSpeed + 0.5f;
                 _stride += _speedNow * Time.deltaTime;
-                if (_stride >= (running ? 2.97f : 2.75f))
+                float rate = _speedNow / CharacterAnimator.JogClipSpeed;
+                float step = CharacterAnimator.StepLength(running) * (running ? 1f : rate / Mathf.Max(JogMinRate, rate));
+                if (_stride >= step)
                 {
                     _stride = 0f;
                     if (Game.Sound != null) Game.Sound.Footstep(transform.position, running);
@@ -612,9 +620,9 @@ namespace Fishing.PlayerSystems
                 return;
             }
             bool running = _speedNow > WalkSpeed + 0.5f;
-            // 속도에 맞는 클립 (원래 속도: 걷기 0.98, 뛰기 5.9, 질주 8.9m/s — CharacterAnimator.*ClipSpeed). 걷기 키(4.5m/s)도 뛰는 걸음
+            // 속도에 맞는 클립 (원래 속도는 CharacterAnimator.*ClipSpeed). 걷기 키(4.5m/s)도 뛰는 걸음
             if (running) _anim.SetLoop(CharacterAnimator.Sprint, _speedNow / CharacterAnimator.SprintClipSpeed);
-            else if (_speedNow > 2.6f) _anim.SetLoop(CharacterAnimator.Jog, _speedNow / CharacterAnimator.JogClipSpeed);
+            else if (_speedNow > 2.6f) _anim.SetLoop(CharacterAnimator.Jog, Mathf.Max(JogMinRate, _speedNow / CharacterAnimator.JogClipSpeed));
             else if (_speedNow > 0.5f) _anim.SetLoop(CharacterAnimator.Walk, Mathf.Max(0.6f, _speedNow / CharacterAnimator.WalkClipSpeed));
             else if (fishing) _anim.SetLoop(FishingPose());
             else _anim.SetLoop(CharacterAnimator.Idle);

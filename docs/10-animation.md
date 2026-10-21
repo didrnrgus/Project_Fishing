@@ -1,9 +1,10 @@
-# 10. 캐릭터 애니메이션 (UAL 뼈대 위에 직접 만든 동작 + 낚싯대 팔 IK)
+# 10. 캐릭터 애니메이션 (Unity Starter Assets 로코모션 + UAL 뼈대 위에 직접 만든 동작 + 낚싯대 팔 IK)
 
-캐릭터 동작은 AnimatorController 없이 `CharacterAnimator`(Playables 믹서)가 클립 이름으로 재생한다. 클립은 두 곳에서 찾는다.
+캐릭터 동작은 AnimatorController 없이 `CharacterAnimator`(Playables 믹서)가 클립 이름으로 재생한다. 클립은 세 곳에서 찾는다.
 
 | 라이브러리 | 위치 | 쓰는 동작 |
 |---|---|---|
+| **Unity Starter Assets – Third Person** (Unity Companion License) | `Resources/Animations/StarterAssets/*.anim` (원본 FBX는 `ThirdParty/StarterAssets/Animations`) | 대기·걷기·뛰기·질주·점프·공중 (7장) — 있으면 아래 `Basic_*`보다 먼저 |
 | Quaternius Universal Animation Library (CC0) | `Resources/Animations/UAL1_Standard.fbx` | 앉기, 운전, 춤, 맞기 등 (그리고 위 동작들의 바탕) |
 | **직접 만든 동작** (`tools/blender/build_motions.py`) | `Resources/Animations/Motions.fbx` | 기본 동작 `Basic_*`(대기·걷기·뛰기·질주·말하기·점프·낙하·제자리 돌기, 7장), 낚시꾼 자세 `Fishing_Hold_Loop`(5장), 반응 동작(환호·박수·펄쩍·손짓·움찔, 1장) |
 
@@ -75,9 +76,36 @@ NPC 낚시꾼도 같은 방식이다(10장): 평소 40°, 20~45초마다 다시 
 
 - UAL1(Quaternius): CC0. 직접 만든 동작(`Motions.fbx`, `build_motions.py`): 프로젝트 라이선스(CC BY-NC-SA 4.0).
 - Mixamo: 2026-10-21에 모두 걷어냄(4장). 게임에 넣어 배포는 되지만 원본 FBX 재배포가 안 돼서 공개 저장소에 둘 수 없었다.
-- Human Basic Motions FREE(Asset Store): 2026-10-21에 걷어냄(7장). 에셋 스토어 약관도 원본 재배포를 막는다.
+- Human Basic Motions FREE(Asset Store): 2026-10-21에 걷어냄(7장). 에셋 스토어 표준 약관(EULA)은 원본 재배포를 막는다.
+- Unity Starter Assets – Third Person(Unity Technologies): **Unity Companion License** — 표준 EULA가 아니라 Unity 프로젝트 안에서 쓰고 나누는 것을 허락하는 라이선스라 저장소에 둔다(THIRD_PARTY_NOTICES).
 
-## 7. 대기·걷기·뛰기 (기본 동작 `Basic_*`, 2026-10-21)
+## 7. 대기·걷기·뛰기·점프 (Unity Starter Assets, 2026-10-21)
+
+직접 만든 `Basic_*`(아래 표)가 부자연스러워 보인다는 사용자 의견으로, Unity가 무료로 내는 **Starter Assets – Third Person**의 휴머노이드 로코모션으로 바꿨다. 패키지에서 클립 FBX 5개와 그 아바타 원본(`Armature.fbx`, 클립이 Copy From Other Avatar로 쓴다)만 남겼다.
+
+| 우리 이름 (`CharacterAnimator`) | Starter 클립 | 원래 속도 (블렌드 트리 문턱값) |
+|---|---|---|
+| `Idle` | `Idle` | — |
+| `Walk` | `Walk_N` | 2 m/s |
+| `Jog`·`Sprint` | `Run_N` (질주 클립이 따로 없다) | 6 m/s |
+| `JumpStart` | `Jump` | — |
+| `JumpLoop` | `InAir` | — |
+
+- **연결**: `CharacterAnimator.StarterLocomotion` 표가 우리 이름을 Starter 클립으로 바꾼다(남·녀 공통, `_M`/`_F` 클립을 지운다). `Resources/Animations/StarterAssets`가 비면 `Basic_*`로 돌아간다(`UsesStarterLocomotion`).
+- **방향 (함정)**: Starter 클립은 +Z를 보는데, 우리 클립(UAL·Motions)은 −Z를 보고 VRM을 180° 돌려 둔다(`VrmCharacters`). 그대로 쓰면 로비에서 뒤돌아 서고 뒷걸음질한다. 임포트 설정의 Root Transform Rotation Offset(180)·Body Orientation은 Playables 재생에서 지워져 소용없었다. 그래서 **`StarterClipBake`**(에디터, `BuildWindows`가 빌드 전에 부름, 메뉴 Fishing > Bake Starter Assets Clips)가 FBX 클립의 몸 곡선을 Y축 180° 돌려 `.anim`으로 굽는다: `RootQ (x,y,z,w) → (z, w, −x, −y)`, `RootT (x,y,z) → (−x, y, −z)`. 클립 데이터가 −Z를 보니 다른 클립과 섞여도 몸이 돌지 않는다.
+- **배속** (`PlayerController.UpdateAnimation`): 게임 걷기 키 4.5 m/s, 달리기 7.5 m/s
+  - 달리기 → `Run_N` × (속도 / 6) ≈ 1.25배
+  - 2.6 m/s 넘게 걷기 → `Run_N` × max(0.85, 속도 / 6) — 0.75배는 늘어져 보여서 최소 0.85배(`JogMinRate`)
+  - 더 느릴 때 → `Walk_N` × (속도 / 2)
+- **발소리**: 한 걸음 = 반 바퀴(0.33초) × 6 m/s = 2.0 m (`CharacterAnimator.StepLength`). 걷기 키는 최소 배속만큼 걸음이 짧다(≈1.76 m).
+- **점프**: `PlayOnce(JumpStart, 1.4, cutAt 0.6)` → 공중 `InAir`. 자동 촬영용 `PlayerController.DebugJump`.
+- 확인: autoshot `00a_lobby`(정면), `00d_walk`(걷기 키), `00e_run`(달리기), `00e2_jump`, `00f_idle`.
+
+| 걷기 키 (Run_N ×0.85) | 달리기 (Run_N ×1.25) | 점프 |
+|---|---|---|
+| ![걷기](images/00d_walk.png) | ![달리기](images/00e_run.png) | ![점프](images/00e2_jump.png) |
+
+### 직접 만든 기본 동작 `Basic_*` (Starter Assets가 없을 때, 말하기·제자리 돌기는 지금도)
 
 2026-10-15~21에는 에셋 스토어 **Human Basic Motions FREE**(Kevin Iglesias, 남·녀 따로)를 썼다. UAL의 `Idle_Loop`가 주먹 쥔 슈퍼히어로 자세라서였는데, 공개 준비로 걷어내고(17 문서) `build_motions.py`로 UAL 위에 고쳐 만들었다.
 
@@ -92,18 +120,8 @@ NPC 낚시꾼도 같은 방식이다(10장): 평소 40°, 20~45초마다 다시 
 | `Basic_Fall_Loop` | 편한 대기 | 무릎을 조금 접고(한 발 앞), 두 팔을 옆으로 벌려 균형 | — |
 | `Basic_TurnLeft/Right_Loop` | 편한 대기 | 25프레임에 한 걸음씩 발을 번갈아 들어 도는 쪽으로 옮긴다 (몸 방향은 코드) | — |
 
-- 원래 속도는 Blender에서 땅을 디딘 발(가장 낮을 때)이 골반 기준으로 뒤로 가는 속도로 쟀다 (`CharacterAnimator.WalkClipSpeed`·`JogClipSpeed`·`SprintClipSpeed`).
-- **성별**: 클립을 찾을 때 `이름_F`/`이름_M`을 먼저 찾고 없으면 `이름`을 쓴다(`CharacterAnimator.Female`). 지금은 남·녀 같은 클립이다 — 여자 걸음을 만들면 `_F`로 넣는다.
-- **속도에 맞춘 클립·배속** (`PlayerController.UpdateAnimation`): 게임 걷기 키는 4.5 m/s, 달리기 7.5 m/s라서
-  - 달리기 → `Sprint` × (속도 / 8.9) ≈ 0.84배
-  - 2.6 m/s 넘게 걷기 → `Run`(뛰는 걸음) × (속도 / 5.9) ≈ 0.76배
-  - 더 느릴 때(벽에 미끄러지며 등) → `Walk` × (속도 / 0.98)
-  발이 땅에서 거의 미끄러지지 않는다. 발소리도 클립 한 걸음 길이(뛰기 2.75m, 질주 2.97m)마다 낸다.
-- 확인: autoshot `00d_walk`(걷기 키), `00e_run`(달리기), `00f_idle`.
-
-| 걷기 키 (Run 클립) | 달리기 (Sprint 클립) |
-|---|---|
-| ![걷기](images/00d_walk.png) | ![달리기](images/00e_run.png) |
+- 원래 속도는 Blender에서 땅을 디딘 발(가장 낮을 때)이 골반 기준으로 뒤로 가는 속도로 쟀다. 발소리는 뛰기 2.75 m, 질주 2.97 m마다.
+- **성별**: 클립을 찾을 때 `이름_F`/`이름_M`을 먼저 찾고 없으면 `이름`을 쓴다(`CharacterAnimator.Female`). 지금은 남·녀 같은 클립이다.
 
 ## 8. 상황 동작: 제자리 돌기 · 펄쩍 · 손짓 · 움찔 (2026-10-15, 10-21 직접 만든 동작으로)
 
@@ -125,7 +143,7 @@ NPC 낚시꾼도 같은 방식이다(10장): 평소 40°, 20~45초마다 다시 
 
 | 문제 | 원인 | 고침 |
 |---|---|---|
-| 허리를 숙이고 팔을 휘저으며 살금살금 걷는다 | Mixamo `Walking`(`Walk2_Loop`)이 그런 걸음이었다 | 의사·순찰(군인·특공대)은 Human Basic Motions 기본 걷기(`Basic_Walk_Loop`)로 |
+| 허리를 숙이고 팔을 휘저으며 살금살금 걷는다 | Mixamo `Walking`(`Walk2_Loop`)이 그런 걸음이었다 | 의사·순찰(군인·특공대)은 기본 걷기(`Basic_Walk_Loop`)로 |
 | 발이 미끄러진다 | 클립은 그대로 1배속인데 이동은 1.2 m/s | `Wanderer.Spec.WalkAnimSpeed` 기본 0 = 기본 걷기면 `이동 속도 / CharacterAnimator.BasicWalkSpeed(2 m/s)`로 자동. 의사 1.5 m/s(×0.75), 순찰 1.4 m/s(×0.7) |
 | 끝점에서 돌아설 때 뒷걸음질·옆걸음질 | 몸이 돌기 전에 새 방향으로 움직였다 | 앞과 갈 방향의 내적이 0.7 아래면 그 자리에서 빠르게(5) 돌고, 0.7~0.95 사이에서 서서히 걷기 시작 |
 

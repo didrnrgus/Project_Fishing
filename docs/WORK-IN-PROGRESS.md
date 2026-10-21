@@ -2,6 +2,14 @@
 
 세션이 끊겨도 이 파일만 보고 이어서 작업할 수 있게 남기는 메모. 끝난 일은 로드맵·각 문서에 합쳤다.
 
+## 2026-10-21 (6): 대기·걷기·뛰기·점프를 Unity Starter Assets로 → [10 문서 7장](10-animation.md)
+
+사용자 요청: 직접 만든 기본 동작이 부자연스러우니 유니티 기본 제공 로코모션을 쓰자(라이선스는 Unity Companion License라 괜찮다). 사용자가 Starter Assets – Third Person을 임포트했다.
+- 임포트하면서 프로젝트가 URP로 바뀌었다(렌더 파이프라인·Linear 색 공간·AA 끔·URP·Cinemachine 설치·InputSystem 1.19). 모두 되돌리고 클립 FBX 5개 + `Armature.fbx`만 `Assets/ThirdParty/StarterAssets`에 남김. **다시 임포트할 때는 Animations 폴더만, 의존성 설치는 No**
+- 클립이 +Z를 봐서 로비에서 뒤돌아 서고 뒷걸음질 → 임포트 설정(Rotation Offset 180·Body Orientation)은 Playables에서 안 먹어서 `StarterClipBake`가 RootQ·RootT를 180° 돌려 `.anim`으로 굽는다(빌드 때 자동)
+- 배속: 걷기 키 Run_N ×0.85(최소), 달리기 Run_N ×1.25, 발소리 2.0m(`CharacterAnimator.StepLength`). 점프 클립 이름이 `Jump`(FBX 테이크 이름)
+- 자동 촬영 `00e2_jump` 추가(`PlayerController.DebugJump`), README 사진 표에 달리기·점프
+
 ## 2026-10-21 (4): 대기실 배경 · ESC 메뉴를 원작처럼 → [13 문서 2장](13-original-lobby-video.md), [02 문서 9-1](02-game-design.md)
 
 사용자 요청: 대기실 배경을 원작 클립(01_로비_타이틀_지역이동)과 같게, ESC 메뉴도 원작처럼(지금 것은 디자인이 짜쳐 보인다). 본 프레임: `cpmw_lobby_ship.mp4` 0:02·0:06·0:10(대기실), 2:48~2:52(ESC), `01_o06_00050.mp4` 20초(지중해 대기실 비교).

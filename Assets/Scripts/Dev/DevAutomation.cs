@@ -140,7 +140,7 @@ namespace Fishing.Dev
             yield return new WaitForSeconds(1.5f);
             yield return Shot("00_character");
 
-            // 걷기·달리기 (Motions Basic_Run·Sprint): 옆에서
+            // 걷기·달리기 (Starter Assets Run_N, 없으면 Motions Basic_Run·Sprint): 옆에서
             Game.Player.Teleport(new Vector3(-75f, 1.1f, -64f), 90f);
             Game.CameraRig.Yaw = 0f;
             Game.CameraRig.Pitch = 6f;
@@ -151,6 +151,9 @@ namespace Fishing.Dev
             Game.Player.DebugRun = true;
             yield return new WaitForSeconds(1.2f);
             yield return Shot("00e_run");
+            Game.Player.DebugJump = true;
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("00e2_jump");
             Game.Player.DebugMove = Vector2.zero;
             Game.Player.DebugRun = false;
             yield return new WaitForSeconds(1.2f);

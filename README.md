@@ -15,6 +15,8 @@
 | ![lobby](docs/images/00a_lobby.png) | ![areas](docs/images/00b_area_list.png) |
 | **캐릭터 (VRM, 기본 주인공 여자)** | **의상 (능력치만 — 몸에 보이는 장비는 낚싯대뿐)** |
 | ![character](docs/images/00_character.png) | ![costume](docs/images/21c_costume.png) |
+| **달리기 (Unity Starter Assets 동작)** | **점프** |
+| ![run](docs/images/00e_run.png) | ![jump](docs/images/00e2_jump.png) |
 | **다른 VRM으로 갈아입고 낚시 (기본 제공 11명 + 내가 만든 .vrm, 빌드 없이)** | **캐릭터 모델 고르기 (VRoid 등 .vrm, characters.json)** |
 | ![vrm](docs/images/02v_vrm_155.png) | ![vrm_panel](docs/images/21e_character_model.png) |
 | **홍현 앞바다 (남해)** | **서천 앞바다 (서해, 물때·갯벌)** |
@@ -168,7 +170,7 @@ cd tools/fightsim && dotnet run -- report   # Unity 없이 파이팅 밸런스 (
 | [07-original-data.md](docs/07-original-data.md) | 원작 데이터 검증 (확인된 것 / 근거 없는 것) |
 | [08-quality-plan.md](docs/08-quality-plan.md) | (기록) 예전 Quaternius 캐릭터 퀄리티 계획 — 지금은 VRM(16 문서) |
 | [09-art-plan.md](docs/09-art-plan.md) | 어종별 물고기 모델·도감 그림·아이템 아이콘·해외 소품 (검색 → 설계 → Blender → 적용) |
-| [10-animation.md](docs/10-animation.md) | 캐릭터 애니메이션: UAL + 직접 만든 반응 동작(환호·박수·펄쩍·손짓·움찔, Blender IK로 굽기) + 낚싯대 팔 IK + Human Basic Motions 대기·걷기·뛰기·제자리 돌기 |
+| [10-animation.md](docs/10-animation.md) | 캐릭터 애니메이션: Unity Starter Assets 대기·걷기·뛰기·점프(180° 돌려 굽기) + UAL + 직접 만든 반응 동작(환호·박수·펄쩍·손짓·움찔, Blender IK로 굽기) + 낚싯대 팔 IK |
 | [11-original-crosscheck.md](docs/11-original-crosscheck.md) | 원작 자료집과 구현 대조표 (들어간 것 / 바꾼 것 / 안 넣은 것) |
 | [12-original-fight-video.md](docs/12-original-fight-video.md) | 원작 낚시 영상 프레임 분석: 입질·챔질·파이팅·카운터·랜딩·결과 연출을 원작 시각별로 맞춘 기록 |
 | [13-original-lobby-video.md](docs/13-original-lobby-video.md) | 원작 대기실·퀘스트·배 영상 프레임 분석: NPC 퀘스트, 납품·생태조사, 통발, 로딩·날씨 알림·ESC·인벤토리를 맞춘 기록 |
@@ -202,14 +204,14 @@ tools/        build·autoshot·test·balance 스크립트, fightsim/(Unity 없�
 ```
 
 씬에는 `GameBootstrap` 하나만 있고, 나머지는 모두 코드로 만듭니다.
-에셋 스토어·Mixamo처럼 원본 재배포가 금지된 에셋은 쓰지 않습니다(2026-10-21에 모두 걷어내고 직접 만든 것과 CC0·MIT 자료로 바꿈 → [17 문서](docs/17-open-source.md)). 사람은 실행 중에 읽는 VRM(UniVRM), 물고기·아이콘은 `tools/blender`로 만든 모델, 건물·가로등·나무·배는 Kenney CC0 모델, 땅·물·다리·하늘은 프리미티브와 절차적 텍스처·셰이더(일부 바닥·지형은 Poly Haven CC0 텍스처)입니다. 낚시 소리는 절차적으로 만들고 UI·발소리만 Kenney CC0 녹음을 씁니다. 낚싯대를 든 두 팔(들기·던지기·챔질·릴 감기)은 낚싯대 각도를 따라가는 IK이고, 대기·걷기·뛰기·말하기·점프·제자리 돌기와 반응 동작(환호·박수·펄쩍 기뻐하기·손짓·움찔)은 `tools/blender/build_motions.py`로 Quaternius UAL(CC0) 뼈대 위에 직접 만들었습니다([10 문서](docs/10-animation.md)). 하늘 돔은 Poly Haven 하늘 사진(`tools/sky/build_sky.py`), 나무·덤불·바위·풀은 `tools/blender/build_vegetation.py`(ez-tree·Poly Haven)입니다. 실물 사진·다른 게임 그림은 참고만 하고 저장소에 넣지 않습니다.
+에셋 스토어·Mixamo처럼 원본 재배포가 금지된 에셋은 쓰지 않습니다(2026-10-21에 모두 걷어내고 직접 만든 것과 CC0·MIT 자료로 바꿈 → [17 문서](docs/17-open-source.md)). 사람은 실행 중에 읽는 VRM(UniVRM), 물고기·아이콘은 `tools/blender`로 만든 모델, 건물·가로등·나무·배는 Kenney CC0 모델, 땅·물·다리·하늘은 프리미티브와 절차적 텍스처·셰이더(일부 바닥·지형은 Poly Haven CC0 텍스처)입니다. 낚시 소리는 절차적으로 만들고 UI·발소리만 Kenney CC0 녹음을 씁니다. 낚싯대를 든 두 팔(들기·던지기·챔질·릴 감기)은 낚싯대 각도를 따라가는 IK이고, 대기·걷기·뛰기·점프는 Unity가 무료로 내는 Starter Assets – Third Person(Unity Companion License) 동작, 말하기·제자리 돌기·낚시꾼 자세와 반응 동작(환호·박수·펄쩍 기뻐하기·손짓·움찔)은 `tools/blender/build_motions.py`로 Quaternius UAL(CC0) 뼈대 위에 직접 만들었습니다([10 문서](docs/10-animation.md)). 하늘 돔은 Poly Haven 하늘 사진(`tools/sky/build_sky.py`), 나무·덤불·바위·풀은 `tools/blender/build_vegetation.py`(ez-tree·Poly Haven)입니다. 실물 사진·다른 게임 그림은 참고만 하고 저장소에 넣지 않습니다.
 
 ## 크레딧
 
 - 원작: 「청풍명월」 개발 저스트나인, 서비스 네오위즈게임즈(피망). 이 프로젝트는 원작과 관련이 없는 개인 팬 프로젝트입니다.
 - 캐릭터: VRoid 프로젝트(pixiv)의 VRoid Studio 샘플 모델 11명 (CC0, [OpenGameArt 미러](https://opengameart.org/content/vroid-studio-cc0-models)) — 千駄ヶ谷渋·千駄ヶ谷篠·桜田史利矢·ビビ·ヴィータ·ヴィクトリア・ルービン 등. VRM 읽기: [UniVRM](https://github.com/vrm-c/UniVRM) v0.131.4 (MIT, VRM 컨소시엄).
 - 3D 모델: [Quaternius](https://quaternius.com) — Universal Animation Library, Animated Fish Pack(어종 모델이 없을 때 대체) (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Quaternius/`.
-- 동작: 직접 만듦 (`tools/blender/build_motions.py`, Quaternius UAL1 뼈대) — 대기·걷기·뛰기·질주·말하기·점프·제자리 돌기·낚시꾼 자세·환호·박수·펄쩍·손짓·움찔.
+- 동작: 대기·걷기·뛰기·점프 — [Unity Starter Assets – Third Person](https://assetstore.unity.com/packages/essentials/starter-assets-thirdperson-updates-in-new-charactercontroller-pa-196526) (Unity Technologies, Unity Companion License). 나머지는 직접 만듦 (`tools/blender/build_motions.py`, Quaternius UAL1 뼈대) — 말하기·제자리 돌기·낚시꾼 자세·환호·박수·펄쩍·손짓·움찔.
 - 나무·덤불: [ez-tree](https://github.com/dgreenheck/ez-tree) 1.1.0 (Daniel Greenheck, MIT) — 프리셋 형상·잎 그림, 껍질은 Poly Haven·TextureCan(CC0) → `Assets/Vegetation/SOURCES.md`
 - 바위·풀·들꽃·하늘: [Poly Haven](https://polyhaven.com) (CC0) → `Assets/Vegetation/SOURCES.md`, `Assets/Resources/Sky/SOURCES.md`
 - 배경·배 모델: [Kenney](https://kenney.nl) — City Kit Commercial, City Kit Roads, Nature Kit, Watercraft Kit (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Kenney/`.

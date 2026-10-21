@@ -101,6 +101,7 @@ namespace Fishing.EditorTools
             EnsurePostFx();
             FontSetup.Ensure();
             VegetationBake.Ensure();
+            StarterClipBake.Ensure();
             var options = new BuildPlayerOptions
             {
                 scenes = new[] { ScenePath },

@@ -131,7 +131,8 @@ Assets/
     Sky.shader                   Mode 0 달·별, Mode 1 구름(덮임 정도·노을색, 흐림·비 층구름)
     SkyCube.shader               흐림·비 하늘 큐브맵 돔 (AllSky "Overcast Low", 스카이박스 뒤 Transparent-300에 그린다)
   Resources/
-    Animations/                  Quaternius UAL1_Standard, Motions.fbx(직접 만든 기본 동작·낚시꾼 자세·반응 동작, tools/blender/build_motions.py) → 10 문서
+    Animations/                  Quaternius UAL1_Standard, Motions.fbx(직접 만든 기본 동작·낚시꾼 자세·반응 동작, tools/blender/build_motions.py),
+                                 StarterAssets/*.anim(Unity Starter Assets 대기·걷기·뛰기·점프, StarterClipBake가 180° 돌려 구움) → 10 문서
     Sky/Overcast.png             흐린 하늘 큐브맵 (AllSky Free에서 옮김, 1024)
     NatureKit/Baked/             Nature Starter Kit 2 나무·덤불을 일반 메쉬 프리팹으로 구운 것 (Editor/NatureKitBake)
     Fish/Species, Fish/Textures  어종별 물고기 FBX·텍스처 (tools/blender/build_fish.py)
@@ -147,6 +148,7 @@ Assets/
   Vegetation/                  나무·덤불(ez-tree)·바위·풀 카드(Poly Haven) — tools/blender/build_vegetation.py, 재질·LOD 프리팹은 Editor/VegetationBake (17 문서)
   TextMesh Pro/                TMP 기본 리소스 + Jalnan2 글꼴(라이선스 사본)
   ThirdParty/Quaternius/, ThirdParty/Kenney/   라이선스 사본 (UAL 동작·Kenney)
+  ThirdParty/StarterAssets/    Unity Starter Assets 동작 FBX 원본·아바타(Armature.fbx), SOURCES.md
   StreamingAssets/Characters/   기본 VRM 11개(VRoid CC0 샘플, Git LFS) + characters.json + 읽어주세요.txt — 빌드 뒤에도 바꿀 수 있다 (가이드 07)
   Editor/
     ProjectTools.cs              Setup(씬·빌드 설정·셰이더·후처리), BuildWindows, DeleteSave
@@ -299,7 +301,7 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 
 ### 아트 교체
 - 캐릭터: 모든 사람이 VRM이다. `CharacterFactory.Create(look, parent)` → `CharacterRoster`가 고른(또는 `look.Vrm`) 파일을 `VrmCharacters`가 읽어 복제한다. 바꾸려면 코드가 아니라 `characters.json`·`.vrm`을 바꾼다(가이드 07, 16 문서). 의상은 능력치만이고 몸에 입히지 않는다.
-- 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/Jog/Sprint/HoldRod/Cheer/Clap/Excited/Wave/Scared…)가 클립 이름이다. 클립은 `Resources/Animations/Motions`, `UAL1_Standard`에서 찾고, `이름_M`/`이름_F`가 있으면 캐릭터 성별(`CharacterAnimator.Female`)로 고른다. FBX 안의 `Armature|이름` 테이크가 클립 이름이고(10 문서). 낚시 중 몸은 늘 HoldRod(UAL 대기)이고 두 팔은 낚싯대 각도를 따라가는 IK다(10 문서 5장, 손 자리 표 `Characters/RodArm` — NPC 낚시꾼도 같다). 이동 중 클립과 배속은 `UpdateAnimation()`이 속도로 고른다.
+- 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/Jog/Sprint/HoldRod/Cheer/Clap/Excited/Wave/Scared…)가 클립 이름이다. 클립은 `Resources/Animations/Motions`, `UAL1_Standard`에서 찾고(대기·걷기·뛰기·점프는 `StarterAssets`가 있으면 그것 — `StarterLocomotion` 표), `이름_M`/`이름_F`가 있으면 캐릭터 성별(`CharacterAnimator.Female`)로 고른다. FBX 안의 `Armature|이름` 테이크가 클립 이름이고(10 문서). 낚시 중 몸은 늘 HoldRod(UAL 대기)이고 두 팔은 낚싯대 각도를 따라가는 IK다(10 문서 5장, 손 자리 표 `Characters/RodArm` — NPC 낚시꾼도 같다). 이동 중 클립과 배속은 `UpdateAnimation()`이 속도로 고른다.
 - UniVRM은 `Scripts/Vrm`(asmdef `Fishing.Vrm`)만 직접 참조한다.
 - 물고기: `tools/blender/fish_species.py`에 어종(체형 템플릿 A~H·두족류 O 문어/Q 갑오징어/S 오징어, 색·무늬·지느러미)을 넣고 `build_fish.py --only <id>` → `Resources/Fish/Species/<id>.fbx`·텍스처·아이콘. `FishModels.CreateSpecies`가 길이(cm/100)로 키운다(09 문서).
 - 물: `WaterSurface` + `Fishing/Water` 셰이더 (`_WaveAmp`, `_WaveLen`, 노멀 타일·속도). 하늘 반사는 `DayNightCycle`의 리얼타임 반사 프로브(하늘만, 2초마다).

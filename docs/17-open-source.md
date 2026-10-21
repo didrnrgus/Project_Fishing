@@ -10,7 +10,7 @@
 | 예전 (재배포 금지) | 지금 | 다시 만들기 | 문서 |
 |---|---|---|---|
 | Mixamo 동작 7개 + 받은 동작 약 45개 | 직접 만든 반응 동작(환호·박수·펄쩍·손짓·움찔) + 낚싯대 팔 IK | `bpyenv/Scripts/python -I tools/blender/build_motions.py` | 10 문서 1~2장 |
-| Human Basic Motions FREE (Kevin Iglesias) | 직접 만든 기본 동작(대기·걷기·뛰기·질주·말하기·점프·낙하·제자리 돌기·낚시꾼 자세), 바탕은 Quaternius UAL1(CC0) | 같은 스크립트 | 10 문서 7장 |
+| Human Basic Motions FREE (Kevin Iglesias) | 직접 만든 기본 동작(대기·걷기·뛰기·질주·말하기·점프·낙하·제자리 돌기·낚시꾼 자세), 바탕은 Quaternius UAL1(CC0). 대기·걷기·뛰기·점프는 같은 날 Unity Starter Assets(Unity Companion License)로 다시 바꿈 | 같은 스크립트, `StarterClipBake` | 10 문서 7장 |
 | AllSky Free · Fantasy Skybox FREE | Poly Haven 땅 없는 하늘 사진(CC0), 맑은 날은 해를 지움 | `bpyenv/Scripts/python -I tools/sky/build_sky.py` | `Resources/Sky/SOURCES.md` |
 | EasyChart | `UI/UIChart.cs`: UGUI 메쉬로 직접 그리는 선·막대·도넛·레이더 (같은 API) | — | 아래 2장 |
 | Translucent Image + Paraform (Le Tai, 유료) | `UI/UIShape.cs` + 셰이더 `Fishing/UIShape`(둥근 도형·테두리·바깥 빛·그림자·가장자리 광택) + `UI/UIBlurSource.cs`(뒤 화면 흐림) | — | 아래 3장 |
@@ -62,5 +62,5 @@
 
 ## 6. 바뀐 점·남은 것
 
-- 캐릭터 창의 걸음걸이 남/여: 예전에는 Human Basic Motions의 남·녀 클립을 골랐는데 지금 기본 동작은 하나라 같은 걸음이다(설정은 그대로 남아 있다). 여자 걸음을 따로 만들면 `Basic_Walk_Loop_F`처럼 이름 끝 `_F`로 넣으면 된다(`CharacterAnimator.TryGetClip`).
+- 캐릭터 창의 걸음걸이 남/여: 예전에는 Human Basic Motions의 남·녀 클립을 골랐는데 지금 기본 동작(Unity Starter Assets)은 하나라 같은 걸음이다(설정은 그대로 남아 있다). 여자 걸음을 따로 만들면 `Basic_Walk_Loop_F`처럼 이름 끝 `_F`로 넣으면 된다(`CharacterAnimator.TryGetClip`).
 - 확인: 자동 촬영 전체(`sh tools/autoshot.sh`) — 걷기·뛰기 `00d`·`00e`, 대기 `00f`, 나무 `00g_park_trees`, 반응 동작 `02r_*`, 낚싯대 팔 `02s`·`02t`·`02v`, 차트 `10_result`·`11_dex`·`12_keepnet`, 흐린 하늘 `15b_cloudy_day`, 눈 바위 청진 장면.

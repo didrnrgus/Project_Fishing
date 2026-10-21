@@ -6,7 +6,7 @@
 - Windows Build Support 모듈
 - 패키지: `com.unity.ugui 2.0.0`, `com.unity.burst`, `com.unity.collections`(Translucent Image가 씀), `com.unity.postprocessing 3.4.0`(후처리), `com.unity.inputsystem 1.14.2`(패드 진동만), `com.unity.test-framework 1.5.1` + 기본 모듈
 - 외부 에셋
-  - 동작 클립(`Assets/Resources/Animations`: Quaternius UAL CC0, 직접 만든 동작 `Motions.fbx`). 임포트 설정은 `Assets/Editor/AssetImportRules.cs`가 자동으로 맞춘다.
+  - 동작 클립(`Assets/Resources/Animations`: Quaternius UAL CC0, 직접 만든 동작 `Motions.fbx`, Unity Starter Assets 로코모션 `StarterAssets/*.anim` — 원본 FBX `Assets/ThirdParty/StarterAssets`에서 빌드 때 `StarterClipBake`가 굽는다). 임포트 설정은 `Assets/Editor/AssetImportRules.cs`가 자동으로 맞춘다.
   - 사람은 모두 VRM: `Assets/StreamingAssets/Characters`(기본 11개, Git LFS — `git lfs pull`로 받는다) + `characters.json`. 바꾸는 법은 [가이드 07](guide/07-characters.md).
   - 기본·반응 동작: `bpyenv/Scripts/python -I tools/blender/build_motions.py`가 `Resources/Animations/Motions.fbx`를 만든다 → [10 문서](10-animation.md) 1~2·7장.
   - 하늘 돔: `bpyenv/Scripts/python -I tools/sky/build_sky.py` (Poly Haven CC0) → `Resources/Sky`.
