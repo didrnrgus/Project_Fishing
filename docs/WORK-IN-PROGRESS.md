@@ -9,6 +9,7 @@
 - 클립이 +Z를 봐서 로비에서 뒤돌아 서고 뒷걸음질 → 임포트 설정(Rotation Offset 180·Body Orientation)은 Playables에서 안 먹어서 `StarterClipBake`가 RootQ·RootT를 180° 돌려 `.anim`으로 굽는다(빌드 때 자동)
 - 배속: 걷기 키 Run_N ×0.85(최소), 달리기 Run_N ×1.25, 발소리 2.0m(`CharacterAnimator.StepLength`). 점프 클립 이름이 `Jump`(FBX 테이크 이름)
 - 자동 촬영 `00e2_jump` 추가(`PlayerController.DebugJump`), README 사진 표에 달리기·점프
+- 빌드 뒤 남는 변경: `VegetationBake`가 식생 재질·프리팹(약 100개)을 다시 저장해 `git status`에 수정으로 뜨지만 줄바꿈뿐이라 `git add`하면 사라진다(내용 차이 없음). 잘난체 `Jalnan2TTF.ttf.meta`는 Unity가 기본 TrueTypeFontImporter 설정을 채운 것이라 커밋했다
 
 ## 2026-10-21 (4): 대기실 배경 · ESC 메뉴를 원작처럼 → [13 문서 2장](13-original-lobby-video.md), [02 문서 9-1](02-game-design.md)
 
