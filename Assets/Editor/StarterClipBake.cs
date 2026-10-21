@@ -15,6 +15,7 @@ namespace Fishing.EditorTools
     {
         const string SrcDir = "Assets/ThirdParty/StarterAssets/Animations";
         const string DstDir = "Assets/Resources/Animations/StarterAssets";
+        const string AvatarFbx = "Assets/ThirdParty/StarterAssets/Armature.fbx";
 
         [MenuItem("Fishing/Bake Starter Assets Clips")]
         public static void Run() => Ensure(force: true);
@@ -23,6 +24,7 @@ namespace Fishing.EditorTools
         {
             if (!Directory.Exists(SrcDir)) return;
             Directory.CreateDirectory(DstDir);
+            FixImportSettings();
             foreach (var fbx in Directory.GetFiles(SrcDir, "*.fbx"))
                 foreach (var obj in AssetDatabase.LoadAllAssetsAtPath(fbx.Replace('\\', '/')))
                 {
@@ -35,6 +37,34 @@ namespace Fishing.EditorTools
                     Debug.Log($"[StarterClip] {path} ({src.length:F2}s)");
                 }
             AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>
+        /// 클립 FBX가 Armature.fbx 아바타를 빌려 쓰고(원본 패키지와 같다), 점프 말고는 반복하게 맞춘다.
+        /// 기본값(클립 FBX마다 자기 첫 프레임 뼈대로 아바타 생성)이면 근육값 기준이 T포즈가 아니어서 무릎이 최대 36° 뒤로 꺾이고 발끝이 옆을 본다.
+        /// 반복이 꺼져 있으면 CharacterAnimator가 길이에서 멈춰 한 바퀴 뒤 굳는다.
+        /// </summary>
+        static void FixImportSettings()
+        {
+            Avatar avatar = null;
+            foreach (var o in AssetDatabase.LoadAllAssetsAtPath(AvatarFbx))
+                if (o is Avatar a) avatar = a;
+            if (avatar == null) { Debug.LogError($"[StarterClip] {AvatarFbx} 아바타 없음"); return; }
+            foreach (var fbx in Directory.GetFiles(SrcDir, "*.fbx"))
+            {
+                var imp = (ModelImporter)AssetImporter.GetAtPath(fbx.Replace('\\', '/'));
+                bool loop = !fbx.Contains("Jump--Jump");
+                var clips = imp.clipAnimations.Length > 0 ? imp.clipAnimations : imp.defaultClipAnimations;
+                bool ok = imp.avatarSetup == ModelImporterAvatarSetup.CopyFromOther && imp.sourceAvatar == avatar;
+                foreach (var c in clips) ok &= c.loopTime == loop;
+                if (ok) continue;
+                imp.avatarSetup = ModelImporterAvatarSetup.CopyFromOther;
+                imp.sourceAvatar = avatar;
+                foreach (var c in clips) c.loopTime = loop;
+                imp.clipAnimations = clips;
+                imp.SaveAndReimport();
+                Debug.Log($"[StarterClip] 임포트 설정 고침: {fbx} (아바타 {avatar.name}, 반복 {loop})");
+            }
         }
 
         /// <summary>q' = (Y 180°) · q → (x,y,z,w) = (z, w, −x, −y), 위치는 (−x, y, −z).</summary>

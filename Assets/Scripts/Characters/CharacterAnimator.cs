@@ -66,6 +66,11 @@ namespace Fishing.Characters
         public static bool Has(string clipName) => Clips.ContainsKey(clipName) || Clips.ContainsKey(clipName + "_M");
 
         static Dictionary<string, AnimationClip> _clips;
+        /// <summary>
+        /// Starter Assets 클립. 발 IK 목표가 Starter 아바타 다리 비율 기준이라 VRM에 켜 두면 발을 끌어올려 무릎을 늘 15~20° 굽힌 채 선다
+        /// (VRM 3종에 재생해 잰 값, 10 문서 7장). 끄면 무릎은 원래 아바타와 3° 안, 디딤발 높이도 3cm 안이다.
+        /// </summary>
+        static readonly HashSet<AnimationClip> _noFootIK = new HashSet<AnimationClip>();
 
         PlayableGraph _graph;
         AnimationMixerPlayable _mixer;
@@ -100,6 +105,7 @@ namespace Fishing.Characters
                         if (pair.Value == c.name)
                         {
                             _clips[pair.Key] = c;
+                            _noFootIK.Add(c);
                             _clips.Remove(pair.Key + "_M");
                             _clips.Remove(pair.Key + "_F");
                             UsesStarterLocomotion = true;
@@ -141,6 +147,7 @@ namespace Fishing.Characters
             if (!TryGetClip(clipName, out var clip)) return -1;
             var p = AnimationClipPlayable.Create(_graph, clip);
             if (!clip.isLooping) p.SetDuration(clip.length);
+            if (_noFootIK.Contains(clip)) p.SetApplyFootIK(false);
             _mixer.SetInputCount(_names.Count + 1);
             _graph.Connect(p, 0, _mixer, _names.Count);
             _mixer.SetInputWeight(_names.Count, 0f);
