@@ -133,8 +133,8 @@ Assets/
   Resources/
     Animations/                  Quaternius UAL1_Standard, Motions.fbx(직접 만든 기본 동작·낚시꾼 자세·반응 동작, tools/blender/build_motions.py),
                                  StarterAssets/*.anim(Unity Starter Assets 대기·걷기·뛰기·점프, StarterClipBake가 180° 돌려 구움) → 10 문서
-    Sky/Overcast.png             흐린 하늘 큐브맵 (AllSky Free에서 옮김, 1024)
-    NatureKit/Baked/             Nature Starter Kit 2 나무·덤불을 일반 메쉬 프리팹으로 구운 것 (Editor/NatureKitBake)
+    Sky/                         하늘 돔 큐브맵 Overcast·Fair01~03 (Poly Haven CC0 하늘 사진, tools/sky/build_sky.py, SOURCES.md)
+    Plants/                      ez-tree 덤불 6·작은 나무 4 LOD 프리팹 (tools/blender/build_vegetation.py → Editor/VegetationBake)
     Fish/Species, Fish/Textures  어종별 물고기 FBX·텍스처 (tools/blender/build_fish.py)
     Icons/Fish, Icons/Items, Icons/Junk, Junk/   아이콘·잡동사니 모델 (build_fish.py, build_icons.py)
     Props/                       해외 소품 FBX: 야자수 둘·펠루카·정크선 (build_props.py, 실제 미터)
@@ -324,8 +324,8 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 | `CoastProps.TetrapodMesh`·`TetrapodBank` | 테트라포드 메쉬와 방파제 바깥 3줄 더미 |
 | `CoastMap.StackMesh` | 바위기둥·석회암 봉우리 (서브메쉬: 절벽 / 젖은 아랫단 / 위를 보는 턱) |
 | `Characters/SitSeat.cs` | 앉은 동작일 때 골반 높이에 맞춘 아이스박스 의자 |
-| `KenneyProps.SpawnBush` | Nature Starter Kit 2 덤불·나무 + 잎 겉면 꽃·열매 (동백·귤·진달래·당산나무). Kenney 나무는 모두 NSK2로 돌린다 |
-| `World/VegetationLibrary.cs` + `Editor/VegetationBake.cs` | 받은 실사풍 소나무·활엽수·바위·풀 참조 묶음 (`Resources/VegetationLibrary.asset`, 빌드 때 채움). `KenneyProps.Spawn`(나무)·`Rocks.Prim`(바위, 눈 맵은 `Rocks.Snowy`)이 있으면 먼저 쓴다 |
+| `KenneyProps.SpawnBush` | `Resources/Plants` 덤불·작은 나무(ez-tree) + 잎 겉면 꽃·열매 (동백·귤·진달래·당산나무). 꽃 없는 나무는 `VegetationLibrary` 활엽수 |
+| `World/VegetationLibrary.cs` + `Editor/VegetationBake.cs` | 직접 만든 침엽수·활엽수(ez-tree)·바위·풀(Poly Haven) 참조 묶음 (`Resources/VegetationLibrary.asset`, 빌드 때 채움). `KenneyProps.Spawn`(나무)·`Rocks.Prim`(바위, 눈 맵은 `Rocks.Snowy`)이 있으면 먼저 쓴다 |
 | `World/GrassField.cs` + `Shaders/Grass.shader` | 풀·들꽃 포기: 지형 풀 층·풀 텍스처 바닥을 레이캐스트로 훑어 심고 48m 칸 메쉬로 굽는다, 바람 흔들림, 130m 밖 칸은 끔(`GrassCuller`). `MapLoader`가 월드를 지은 직후 부른다 |
 | `Characters/RodGrip.cs` | 3인칭 오른손이 낚싯대를 쥔다: 릴 시트를 손바닥 가운데에, 손가락 마디를 낚싯대 축으로 감는다 (플레이어·NPC 낚시꾼) |
 | `Characters/VrmCharacters.cs` · `CharacterRoster.cs` · `Vrm/VrmLoader.cs`(`Fishing.Vrm` asmdef) | 모든 사람이 VRM (게임 폴더 `StreamingAssets/Characters` + 문서/짭풍명월/Characters, 빌드 없이): 폴더 훑기·실행 중 읽기(UniVRM, 맵을 지을 땐 동기)·원본 선반에서 복제·메타(사용 허락)·눈 깜빡임, characters.json으로 누구에게 어떤 모델 (16 문서, 가이드 07) |

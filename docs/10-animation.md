@@ -91,6 +91,8 @@ NPC 낚시꾼도 같은 방식이다(10장): 평소 40°, 20~45초마다 다시 
 | `JumpStart` | `Jump` | — |
 | `JumpLoop` | `InAir` | — |
 
+- **점프 높이**: `PlayerController.JumpSpeed` 8.94 m/s, 중력 20 m/s² → 높이 v²/2g ≈ 2.0 m, 체공 약 0.9초 (2026-10-21, 전 6.2 m/s·0.96 m). 떠 있는 동안은 `InAir`가 돈다.
+
 - **연결**: `CharacterAnimator.StarterLocomotion` 표가 우리 이름을 Starter 클립으로 바꾼다(남·녀 공통, `_M`/`_F` 클립을 지운다). `Resources/Animations/StarterAssets`가 비면 `Basic_*`로 돌아간다(`UsesStarterLocomotion`).
 - **방향 (함정)**: Starter 클립은 +Z를 보는데, 우리 클립(UAL·Motions)은 −Z를 보고 VRM을 180° 돌려 둔다(`VrmCharacters`). 그대로 쓰면 로비에서 뒤돌아 서고 뒷걸음질한다. 임포트 설정의 Root Transform Rotation Offset(180)·Body Orientation은 Playables 재생에서 지워져 소용없었다. 그래서 **`StarterClipBake`**(에디터, `BuildWindows`가 빌드 전에 부름, 메뉴 Fishing > Bake Starter Assets Clips)가 FBX 클립의 몸 곡선을 Y축 180° 돌려 `.anim`으로 굽는다: `RootQ (x,y,z,w) → (z, w, −x, −y)`, `RootT (x,y,z) → (−x, y, −z)`. 클립 데이터가 −Z를 보니 다른 클립과 섞여도 몸이 돌지 않는다. 손·발 IK 목표 곡선(`LeftFootT` 등)은 몸 기준 값이라 돌리지 않아도 된다(돌린 클립과 원본을 같은 아바타에 재생해 무릎각·발끝·발 위치가 똑같음을 쟀다).
 - **임포트 설정 (함정, 2026-10-21 고침)**: 클립만 들여오면 Unity가 클립 FBX마다 **자기 첫 프레임 뼈대로 아바타를 만들고(Create From This Model) 반복도 끈다.** 그러면 근육값 기준이 T포즈가 아니어서 원래 Starter 아바타에서도 무릎이 최대 36° 뒤로 꺾이고 발끝이 옆(60~80°)을 보며, `CharacterAnimator`가 반복 아닌 클립을 길이에서 멈춰 달리기가 0.67초 뒤 굳는다. `StarterClipBake.FixImportSettings`가 굽기 전에 매번 **Copy From Other Avatar = `Armature.fbx` 아바타, 점프 말고 Loop Time 켬**으로 맞춘다.

@@ -2,6 +2,14 @@
 
 세션이 끊겨도 이 파일만 보고 이어서 작업할 수 있게 남기는 메모. 끝난 일은 로드맵·각 문서에 합쳤다.
 
+## 2026-10-21 (7): Starter 로코모션 고침 · 점프 2m · 긴 알림 여백 → [10 문서 7장](10-animation.md)
+
+- 달리다 0.67초 뒤 굳음·무릎이 뒤로 꺾임·엉거주춤 대기: 클립 FBX가 자기 첫 프레임으로 아바타를 만들고 반복도 꺼져 있었다 → `StarterClipBake.FixImportSettings`(Copy From Other Avatar = `Armature.fbx`, 점프 말고 Loop Time), Starter 클립만 발 IK 끔. 검사 `LocomotionClipTests`(반복·무릎 과신전·발끝·디딤발 높이·대기 무릎)
+- 점프 높이 0.96m → 2m (`JumpSpeed` 8.94m/s, 중력 20 그대로, 체공 약 0.9초)
+- 두 줄로 감기는 긴 알림(대회 안내 등) 글자가 알약 테두리에 붙던 것 → 안쪽 여백 좌우 48·위아래 14 (`HudView.Toast`)
+- 문서 정리: 03·tech 08에 남아 있던 Nature Starter Kit 2·`NatureKitBake`·AllSky 설명을 지금 것(ez-tree `Resources/Plants`·`VegetationBake`, Poly Haven 하늘)으로
+- 할 일: `tools/compilecheck.sh`의 rsp가 오래돼 `VrmLoader`에서 UniGLTF.Utils 참조 오류가 난다 — `sh tools/build.sh` 한 번으로 rsp 새로 만들기
+
 ## 2026-10-21 (6): 대기·걷기·뛰기·점프를 Unity Starter Assets로 → [10 문서 7장](10-animation.md)
 
 사용자 요청: 직접 만든 기본 동작이 부자연스러우니 유니티 기본 제공 로코모션을 쓰자(라이선스는 Unity Companion License라 괜찮다). 사용자가 Starter Assets – Third Person을 임포트했다.
