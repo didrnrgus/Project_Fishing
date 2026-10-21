@@ -837,16 +837,22 @@ namespace Fishing.UI
             var root = pill.rectTransform.At(new Vector2(0.5f, 1), Vector2.zero, new Vector2(400, kind == ToastKind.Great ? 42 : 36));
             var t = UIFactory.Text(root, message, kind == ToastKind.Great ? 22 : 18, color, TextAnchor.MiddleCenter,
                 kind == ToastKind.Great ? FontStyle.Bold : FontStyle.Normal);
-            t.rectTransform.Fill();
             t.textWrappingMode = TextWrappingModes.NoWrap;
             const float maxW = 980f;
-            if (t.preferredWidth + 48f <= maxW) root.sizeDelta = new Vector2(t.preferredWidth + 48f, root.sizeDelta.y);
+            if (t.preferredWidth + 48f <= maxW)
+            {
+                t.rectTransform.Fill(24f, 24f);
+                root.sizeDelta = new Vector2(t.preferredWidth + 48f, root.sizeDelta.y);
+            }
             else
             {
-                // 긴 알림은 두 줄 이상으로 감싼다 (한 줄로 두면 화면 밖으로 넘친다)
+                // 긴 알림은 두 줄 이상으로 감싼다 (한 줄로 두면 화면 밖으로 넘친다).
+                // 글자를 알약 안쪽으로 들여 둥근 끝·테두리에 붙지 않게 한다
+                const float padX = 48f, padY = 14f;
+                t.rectTransform.Fill(padX, padX, padY, padY);
                 t.textWrappingMode = TextWrappingModes.Normal;
-                float h = t.GetPreferredValues(message, maxW - 48f, 0f).y;
-                root.sizeDelta = new Vector2(maxW, Mathf.Max(root.sizeDelta.y, h + 14f));
+                float h = t.GetPreferredValues(message, maxW - padX * 2f, 0f).y;
+                root.sizeDelta = new Vector2(maxW, Mathf.Max(root.sizeDelta.y, h + padY * 2f));
             }
             var group = root.gameObject.AddComponent<CanvasGroup>();
             group.blocksRaycasts = false;
