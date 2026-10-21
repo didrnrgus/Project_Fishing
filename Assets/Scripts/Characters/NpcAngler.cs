@@ -8,7 +8,7 @@ namespace Fishing.Characters
 {
     /// <summary>
     /// 배경 NPC. 원작 필드에는 다른 유저들이 줄지어 낚시하고 있었는데, 솔로판에서는 NPC가 그 분위기를 낸다.
-    ///  - Angler: 낚싯대를 들고 서 있다가 가끔 다시 던진다
+    ///  - Angler: 낚싯대를 들고 서 있다가 가끔 다시 던진다 (두 팔 IK, 몸은 UAL 대기)
     ///  - Talker: 낚시점 주인처럼 말하는 동작
     /// </summary>
     public class NpcAngler : MonoBehaviour
@@ -20,6 +20,10 @@ namespace Fishing.Characters
         Transform _hand, _rod, _nameTag;
         RodGrip _grip, _gripL;
         Transform _upperArmL, _lowerArmL, _handL;
+        Transform _upperArmR, _lowerArmR;
+        float _armScale = 1f;
+        /// <summary>다시 던지기 시작한 시각 (-1 = 던지는 중 아님). 낚싯대 각도를 CastPitch 곡선대로 움직이고 오른손이 따라간다.</summary>
+        float _castStart = -1f;
         /// <summary>릴을 감는 동안 (그 시각까지). 왼손이 릴 손잡이를 돌린다.</summary>
         float _reelUntil, _reelAt = -1f;
         float _leftWeight, _crankWeight;
@@ -76,9 +80,12 @@ namespace Fishing.Characters
                 if (an != null && an.isHuman)
                 {
                     _hand = an.GetBoneTransform(HumanBodyBones.RightHand);
+                    _upperArmR = an.GetBoneTransform(HumanBodyBones.RightUpperArm);
+                    _lowerArmR = an.GetBoneTransform(HumanBodyBones.RightLowerArm);
                     _upperArmL = an.GetBoneTransform(HumanBodyBones.LeftUpperArm);
                     _lowerArmL = an.GetBoneTransform(HumanBodyBones.LeftLowerArm);
                     _handL = an.GetBoneTransform(HumanBodyBones.LeftHand);
+                    _armScale = RodArm.ArmScale(_upperArmR, _lowerArmR, _hand);
                 }
                 if (role == Role.Angler)
                 {
@@ -95,7 +102,7 @@ namespace Fishing.Characters
                 _rod = new GameObject("Rod").transform;
                 _rod.SetParent(transform, false);
                 _rod.localPosition = new Vector3(0.3f, 1.05f, 0.25f);
-                _rod.localRotation = Quaternion.Euler(-40f, 0f, 0f);
+                _rod.localRotation = Quaternion.Euler(-RestPitch, 0f, 0f);
                 // NPC마다 장비가 다르게 보이도록 이름으로 고른다
                 string[] rods = { "rod_basic", "rod_carbon", "rod_bamboo", "rod_heavy" };
                 string[] reels = { "reel_basic", "reel_power", "reel_hispeed" };
@@ -171,20 +178,20 @@ namespace Fishing.Characters
                         Role.Stand => CharacterAnimator.Idle,
                         _ => CharacterAnimator.Sit
                     });
-                // 조합 연락관: 보고할 퀘스트가 있고 내가 가까이 오면 손짓해 부른다 (Mixamo Rallying)
+                // 조합 연락관: 보고할 퀘스트가 있고 내가 가까이 오면 손을 흔들어 부른다 (Reactions Wave_Call)
                 if (_mark == Fishing.Core.QuestSystem.Mark.Ready && _faceTarget == null && Game.Player != null && Time.time > _nextRally &&
                     (Game.Player.transform.position - transform.position).sqrMagnitude < 15f * 15f)
                 {
                     _nextRally = Time.time + Random.Range(9f, 14f);
-                    _anim.PlayOnce(CharacterAnimator.Rallying, 1f, 0.8f);
+                    _anim.PlayOnce(CharacterAnimator.Wave, 1f);
                 }
                 if (_role == Role.Angler && !Idle && Time.time > _nextCast)
                 {
                     _nextCast = Time.time + Random.Range(20f, 45f);
-                    // 들기 → 던지기만 Mixamo 한 벌의 앞 절반(낚싯대 쥔 오른손이 던진다). 뒤 절반의 릴 감기는 낚싯대 쥔 오른손이 돌아서
-                    // 손이 반대로 보였다 → 몇 초 기다렸다가 왼손 IK로 릴 손잡이를 돌린다 (내 캐릭터 UpdateCrank와 같다)
-                    _anim.PlayOnce(CharacterAnimator.FishingSequence, 1f, CastPart);
-                    _reelAt = Time.time + 4.3f + Random.Range(2f, 6f);
+                    // 낚싯대를 어깨 너머로 젖혔다가 앞으로 휘둘러 던진다 (오른손은 낚싯대 각도를 따라가는 IK, 내 캐릭터와 같은 손 자리 표).
+                    // 몇 초 기다렸다가 왼손 IK로 릴 손잡이를 돌린다 (내 캐릭터 UpdateCrank와 같다)
+                    _castStart = Time.time;
+                    _reelAt = Time.time + CastTime + Random.Range(2f, 6f);
                 }
                 if (_reelAt > 0f && Time.time >= _reelAt)
                 {
@@ -238,13 +245,48 @@ namespace Fishing.Characters
             _questMark.transform.localScale = Vector3.one * (pop ? 1.15f : 0.9f);
         }
 
-        /// <summary>FishingSequence(약 8.8초)에서 들기·던지기까지 (130/265프레임, 10 문서 2장).</summary>
-        const float CastPart = 0.49f;
+        /// <summary>평소 낚싯대 각도 (RodArm 각도, 허리 앞에 비스듬히 든 대기).</summary>
+        const float RestPitch = 40f;
+        /// <summary>다시 던지기 전체 길이 (젖히기 1초 → 멈춤 → 휘두르기 0.25초 → 앞으로 뻗은 채 → 1초에 걸쳐 원래 각도).</summary>
+        const float CastTime = 3.4f;
         /// <summary>왼손이 쥐는 자리: 릴 시트(오른손)에서 이만큼 뒤 — 오른손 바로 아래 (PlayerController.LeftGripBehind와 같다).</summary>
         const float LeftGripBehind = 0.12f;
 
+        /// <summary>던지기 시작하고 t초 뒤 낚싯대 각도.</summary>
+        static float CastPitch(float t)
+        {
+            if (t < 1.0f) return Mathf.Lerp(RestPitch, 155f, Mathf.SmoothStep(0f, 1f, t / 1.0f));
+            if (t < 1.3f) return 155f;
+            if (t < 1.55f) return Mathf.Lerp(155f, 2f, Mathf.SmoothStep(0f, 1f, (t - 1.3f) / 0.25f));
+            if (t < 2.4f) return 2f;
+            return Mathf.Lerp(2f, RestPitch, Mathf.SmoothStep(0f, 1f, (t - 2.4f) / (CastTime - 2.4f)));
+        }
+
+        /// <summary>오른손을 낚싯대 각도에 맞는 자리로 (낚싯대를 손에 붙이기 전에). 내 캐릭터 UpdateRodArmRight와 같은 표.</summary>
+        void UpdateRightHand()
+        {
+            if (_rod == null) return;
+            float pitch = RestPitch;
+            if (_castStart >= 0f)
+            {
+                float t = Time.time - _castStart;
+                if (t >= CastTime) _castStart = -1f;
+                else pitch = CastPitch(t);
+            }
+            _rod.localRotation = Quaternion.Euler(-pitch, 0f, 0f);
+            // 한 번짜리 클립(손짓·박수) 중에는 팔을 클립에 맡긴다 (왼손 UpdateLeftHand와 같다)
+            bool once = _anim != null && _anim.PlayingOnce;
+            _rightWeight = Mathf.MoveTowards(_rightWeight, once ? 0f : 1f, Time.deltaTime * 4f);
+            if (_rightWeight <= 0.001f || _upperArmR == null || _lowerArmR == null || _hand == null) return;
+            float w = Mathf.SmoothStep(0f, 1f, _rightWeight);
+            var want = _upperArmR.position + transform.rotation * (RodArm.GripOffset(pitch) * _armScale);
+            ArmIK.Solve(_upperArmR, _lowerArmR, _hand, Vector3.Lerp(_hand.position, want, w), transform.rotation * RodArm.ElbowPole(pitch), w);
+        }
+
+        float _rightWeight = 1f;
+
         /// <summary>
-        /// 왼손: 평소엔 손잡이 끝을 감싸 쥐고, 릴을 감을 땐 릴 손잡이(노브)를 돌린다. 던지는 동작(Mixamo) 중에는 클립 그대로.
+        /// 왼손: 평소엔 손잡이 끝을 감싸 쥐고, 릴을 감을 땐 릴 손잡이(노브)를 돌린다. 한 번짜리 동작(손짓·박수) 중에는 클립 그대로.
         /// 낚싯대는 오른손(_grip)에 붙어 있다 — 원작·내 캐릭터와 같은 손.
         /// </summary>
         void UpdateLeftHand()
@@ -278,8 +320,18 @@ namespace Fishing.Characters
             _gripL.Wrap(target, axis, _crankWeight > 0.5f ? 0.016f : 0.032f);
         }
 
-        /// <summary>자동 촬영: 지금부터 10초 릴을 감는다.</summary>
-        public void DebugReel() { _reelUntil = Time.time + 10f; _nextCast = Time.time + 60f; }
+        /// <summary>자동 촬영: reel = 지금부터 10초 릴을 감는다, cast = 지금 다시 던진다, wave = 손짓, clap = 박수.</summary>
+        public void DebugAct(string act)
+        {
+            _nextCast = Time.time + 60f;
+            switch (act)
+            {
+                case "reel": _reelUntil = Time.time + 10f; break;
+                case "cast": _castStart = Time.time; break;
+                case "wave": _anim?.PlayOnce(CharacterAnimator.Wave, 1f); break;
+                case "clap": _anim?.PlayOnce(CharacterAnimator.Clap, 1f, 1.2f); break;
+            }
+        }
 
         void OnDestroy() => Talkable.Remove(this);
 
@@ -300,7 +352,7 @@ namespace Fishing.Characters
             yield return new WaitForSeconds(Random.Range(0.2f, 0.8f));
             var before = _faceTarget;
             _faceTarget = who;
-            if (_role == Role.Talker && _anim != null) _anim.PlayOnce(CharacterAnimator.Clap, 1f, 2.6f);
+            if (_role == Role.Talker && _anim != null) _anim.PlayOnce(CharacterAnimator.Clap, 1f, 1.2f); // 2.5초 반복 클립 × 1.2 = 3초쯤
             yield return new WaitForSeconds(3.2f);
             if (_faceTarget == who) _faceTarget = before;
         }
@@ -322,6 +374,7 @@ namespace Fishing.Characters
             _turning = Mathf.Abs(diff) > 25f ? (diff < 0f ? -1 : 1) : (Mathf.Abs(diff) < 8f ? 0 : _turning);
             transform.localRotation = Quaternion.Slerp(transform.localRotation, want, Time.deltaTime * 6f);
 
+            UpdateRightHand();
             if (_rod != null && _grip != null)
             {
                 _grip.AlignTo(_rod.forward);

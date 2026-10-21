@@ -167,7 +167,7 @@ cd tools/fightsim && dotnet run -- report   # Unity 없이 파이팅 밸런스 (
 | [07-original-data.md](docs/07-original-data.md) | 원작 데이터 검증 (확인된 것 / 근거 없는 것) |
 | [08-quality-plan.md](docs/08-quality-plan.md) | (기록) 예전 Quaternius 캐릭터 퀄리티 계획 — 지금은 VRM(16 문서) |
 | [09-art-plan.md](docs/09-art-plan.md) | 어종별 물고기 모델·도감 그림·아이템 아이콘·해외 소품 (검색 → 설계 → Blender → 적용) |
-| [10-animation.md](docs/10-animation.md) | 캐릭터 애니메이션: UAL + Mixamo 낚시·상황 동작(Fishing Cast 구간 나누기, 임포트 함정 180°, Excited·Rallying·Scared) + Human Basic Motions 대기·걷기·뛰기·제자리 돌기 |
+| [10-animation.md](docs/10-animation.md) | 캐릭터 애니메이션: UAL + 직접 만든 반응 동작(환호·박수·펄쩍·손짓·움찔, Blender IK로 굽기) + 낚싯대 팔 IK + Human Basic Motions 대기·걷기·뛰기·제자리 돌기 |
 | [11-original-crosscheck.md](docs/11-original-crosscheck.md) | 원작 자료집과 구현 대조표 (들어간 것 / 바꾼 것 / 안 넣은 것) |
 | [12-original-fight-video.md](docs/12-original-fight-video.md) | 원작 낚시 영상 프레임 분석: 입질·챔질·파이팅·카운터·랜딩·결과 연출을 원작 시각별로 맞춘 기록 |
 | [13-original-lobby-video.md](docs/13-original-lobby-video.md) | 원작 대기실·퀘스트·배 영상 프레임 분석: NPC 퀘스트, 납품·생태조사, 통발, 로딩·날씨 알림·ESC·인벤토리를 맞춘 기록 |
@@ -199,16 +199,15 @@ Assets/Editor  셋업·빌드 도구, 임포트 규칙, 밸런스 시뮬레이�
 tools/        build·autoshot·test·balance 스크립트, fightsim/(Unity 없는 밸런스), fish_table.py(02 문서 어종 표), blender/(물고기·아이콘·해외 소품 생성)
 ```
 
-씬에는 `GameBootstrap` 하나만 있고, 나머지는 모두 코드로 만듭니다. 사람은 실행 중에 읽는 VRM(UniVRM), 물고기·아이콘은 `tools/blender`로 만든 모델, 건물·가로등·나무·배는 Kenney CC0 모델, 땅·물·다리·하늘은 프리미티브와 절차적 텍스처·셰이더(일부 바닥·지형은 Poly Haven CC0 텍스처)입니다. 낚시 소리는 절차적으로 만들고 UI·발소리만 Kenney CC0 녹음을 씁니다. 낚시 동작(들기·던지기·챔질·릴 감기·환호·박수)과 상황 동작(펄쩍 기뻐하기·손짓·움찔)은 Mixamo 동작을 쪼개 쓰고, 대기·걷기·뛰기·말하기·점프·제자리 돌기는 에셋 스토어 Human Basic Motions FREE를 씁니다([10 문서](docs/10-animation.md)). 흐린 날 하늘은 AllSky Free, 맑은 날 하늘 돔은 Fantasy Skybox FREE, 활엽수는 Nature Starter Kit 2(빌드 전에 일반 메쉬로 굽기)입니다. 에셋 스토어·Mixamo 원본이 들어 있어 **저장소는 비공개**로 둡니다. 실물 사진·다른 게임 그림은 참고만 하고 저장소에 넣지 않습니다.
+씬에는 `GameBootstrap` 하나만 있고, 나머지는 모두 코드로 만듭니다. 사람은 실행 중에 읽는 VRM(UniVRM), 물고기·아이콘은 `tools/blender`로 만든 모델, 건물·가로등·나무·배는 Kenney CC0 모델, 땅·물·다리·하늘은 프리미티브와 절차적 텍스처·셰이더(일부 바닥·지형은 Poly Haven CC0 텍스처)입니다. 낚시 소리는 절차적으로 만들고 UI·발소리만 Kenney CC0 녹음을 씁니다. 낚싯대를 든 두 팔(들기·던지기·챔질·릴 감기)은 낚싯대 각도를 따라가는 IK이고, 반응 동작(환호·박수·펄쩍 기뻐하기·손짓·움찔)은 `tools/blender/build_reactions.py`로 UAL 뼈대 위에 직접 만들었고, 대기·걷기·뛰기·말하기·점프·제자리 돌기는 에셋 스토어 Human Basic Motions FREE를 씁니다([10 문서](docs/10-animation.md)). 흐린 날 하늘은 AllSky Free, 맑은 날 하늘 돔은 Fantasy Skybox FREE, 활엽수는 Nature Starter Kit 2(빌드 전에 일반 메쉬로 굽기)입니다. 에셋 스토어 원본이 들어 있어 **저장소는 비공개**로 둡니다. 실물 사진·다른 게임 그림은 참고만 하고 저장소에 넣지 않습니다.
 
 ## 크레딧
 
 - 원작: 「청풍명월」 개발 저스트나인, 서비스 네오위즈게임즈(피망). 이 프로젝트는 원작과 관련이 없는 개인 팬 프로젝트입니다.
 - 캐릭터: VRoid 프로젝트(pixiv)의 VRoid Studio 샘플 모델 11명 (CC0, [OpenGameArt 미러](https://opengameart.org/content/vroid-studio-cc0-models)) — 千駄ヶ谷渋·千駄ヶ谷篠·桜田史利矢·ビビ·ヴィータ·ヴィクトリア・ルービン 등. VRM 읽기: [UniVRM](https://github.com/vrm-c/UniVRM) v0.131.4 (MIT, VRM 컨소시엄).
 - 3D 모델: [Quaternius](https://quaternius.com) — Universal Animation Library, Animated Fish Pack(어종 모델이 없을 때 대체) (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Quaternius/`.
-- 낚시·상황 동작: [Mixamo](https://www.mixamo.com) (Adobe) — Fishing Idle, Fishing Cast, Cheering, Clapping, Excited, Rallying, Scared.
+- 반응 동작(환호·박수·펄쩍·손짓·움찔): 직접 만듦 (`tools/blender/build_reactions.py`, Quaternius UAL1 뼈대).
 - 흐린 하늘: AllSky Free (rpgwhitelock), 맑은 하늘: Fantasy Skybox FREE, 나무: Nature Starter Kit 2 (Shapes) — Unity Asset Store.
-- 받은 동작: [Mixamo](https://www.mixamo.com) 춤·인사·음주·헤엄 등 (`Resources/Animations/MixamoExtra`).
 - 실사풍 식생·바위: Conifers [BOTD] (forst), Realistic Tree 9·10 (Pixel Games), Rock and Boulders 2, Grass Flowers Pack Free — Unity Asset Store.
 - 대기·걷기·뛰기: [Human Basic Motions FREE](https://assetstore.unity.com/packages/3d/animations/human-basic-motions-free-154271) (Kevin Iglesias, Unity Asset Store).
 - 배경·배 모델: [Kenney](https://kenney.nl) — City Kit Commercial, City Kit Roads, Nature Kit, Watercraft Kit (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Kenney/`.

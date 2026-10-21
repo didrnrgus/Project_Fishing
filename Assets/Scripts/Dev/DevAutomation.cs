@@ -298,6 +298,27 @@ namespace Fishing.Dev
                     Game.Profile.SetCharacterModel(prevVrm, prevFemale);
                     yield return new WaitForSeconds(0.3f);
                 }
+                // 반응 동작 (tools/blender/build_reactions.py): 한 번짜리 동작 중에는 팔 IK를 끄고 클립 그대로
+                {
+                    var front = c + pm.forward * 3.2f + pm.right * 0.4f - Vector3.up * 0.2f;
+                    Game.CameraRig.SetFixed(front, Quaternion.LookRotation(c - Vector3.up * 0.25f - front));
+                    Game.Player.RodPitch = 35f;
+                    Game.Player.BodyLean = 0f;
+                    foreach (var (name, play, at) in new (string, System.Action, float)[]
+                             {
+                                 ("cheer", Game.Player.PlayCheer, 1.0f),
+                                 ("excited", Game.Player.PlayExcited, 0.5f),
+                                 ("excited_pump", Game.Player.PlayExcited, 1.25f),
+                                 ("scared", Game.Player.PlayScared, 0.3f),
+                             })
+                    {
+                        yield return new WaitForSeconds(0.6f);
+                        play();
+                        yield return new WaitForSeconds(at);
+                        yield return Shot($"02r_{name}");
+                        yield return new WaitForSeconds(2.5f);
+                    }
+                }
                 Game.CameraRig.ClearFixed();
             }
             Game.Fishing.DebugResume();
@@ -1281,8 +1302,8 @@ namespace Fishing.Dev
                 var f = item.Split(':');
                 if (f.Length < 5) continue;
                 string map = f[0], name = f[1];
-                bool reel = name.EndsWith("@reel");
-                if (reel) name = name.Substring(0, name.Length - 5);
+                string act = name.Contains("@") ? name.Substring(name.IndexOf('@') + 1) : null;
+                if (act != null) name = name.Substring(0, name.IndexOf('@'));
                 float yaw = float.Parse(f[2], System.Globalization.CultureInfo.InvariantCulture);
                 float pitch = float.Parse(f[3], System.Globalization.CultureInfo.InvariantCulture);
                 float mult = float.Parse(f[4], System.Globalization.CultureInfo.InvariantCulture);
@@ -1305,8 +1326,8 @@ namespace Fishing.Dev
                     Debug.Log($"[Dev] 찾을 수 없음: {map}:{name}");
                     continue;
                 }
-                // "NPC_이름@reel": NPC 낚시꾼이 지금 릴을 감게 (왼손이 릴 손잡이를 돌리는지 확인)
-                if (reel) target.GetComponent<Fishing.Characters.NpcAngler>()?.DebugReel();
+                // "NPC_이름@reel|cast|wave|clap": NPC가 지금 릴을 감게(왼손이 릴 손잡이를 돌리는지) / 다시 던지게(1.2초 뒤 = 어깨 너머로 젖힌 끝) / 손짓·박수
+                if (act != null) target.GetComponent<Fishing.Characters.NpcAngler>()?.DebugAct(act);
                 // 사람(NPC)은 몸만 — 낚싯줄·찌까지 넣으면 경계가 물 위로 늘어나 카메라가 엉뚱한 곳을 본다
                 Renderer[] rs = target.GetComponent<Fishing.Characters.NpcAngler>() != null
                     ? target.GetComponentsInChildren<SkinnedMeshRenderer>()

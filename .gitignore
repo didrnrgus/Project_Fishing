@@ -60,6 +60,6 @@ __pycache__/
 /Assets/Forst/Conifers [[]BOTD]/Conifers_HDRP.unitypackage*
 /Assets/Forst/Conifers [[]BOTD]/Conifers_URP.unitypackage*
 
-# Mixamo 캐릭터에서 꺼낸 텍스처 (CharacterLibraryBake가 빌드 때 다시 꺼낸다)
-/Assets/MixamoCharacters/Textures/
-/Assets/MixamoCharacters/Textures.meta
+# 예전에 받은 Mixamo 캐릭터 (2026-10-20부터 안 씀, Mixamo 원본은 재배포 금지라 저장소에 넣지 않는다)
+/Assets/MixamoCharacters/
+/Assets/MixamoCharacters.meta

@@ -131,7 +131,7 @@ Assets/
     Sky.shader                   Mode 0 달·별, Mode 1 구름(덮임 정도·노을색, 흐림·비 층구름)
     SkyCube.shader               흐림·비 하늘 큐브맵 돔 (AllSky "Overcast Low", 스카이박스 뒤 Transparent-300에 그린다)
   Resources/
-    Animations/                  Quaternius UAL1_Standard, Mixamo/(낚시 동작·환호·박수, AssetImportRules가 쪼갬), KevinIglesias/(대기·걷기·뛰기·질주·말하기·점프 남·녀) → 10 문서
+    Animations/                  Quaternius UAL1_Standard, Reactions.fbx(직접 만든 환호·박수·펄쩍·손짓·움찔, tools/blender/build_reactions.py), KevinIglesias/(대기·걷기·뛰기·질주·말하기·점프 남·녀) → 10 문서
     Sky/Overcast.png             흐린 하늘 큐브맵 (AllSky Free에서 옮김, 1024)
     NatureKit/Baked/             Nature Starter Kit 2 나무·덤불을 일반 메쉬 프리팹으로 구운 것 (Editor/NatureKitBake)
     Fish/Species, Fish/Textures  어종별 물고기 FBX·텍스처 (tools/blender/build_fish.py)
@@ -296,7 +296,7 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 
 ### 아트 교체
 - 캐릭터: 모든 사람이 VRM이다. `CharacterFactory.Create(look, parent)` → `CharacterRoster`가 고른(또는 `look.Vrm`) 파일을 `VrmCharacters`가 읽어 복제한다. 바꾸려면 코드가 아니라 `characters.json`·`.vrm`을 바꾼다(가이드 07, 16 문서). 의상은 능력치만이고 몸에 입히지 않는다.
-- 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/Jog/Sprint/HoldRod/Windup/Cast/Hook/Reel/Cheer…)가 클립 이름이다. 클립은 `Resources/Animations/UAL1_Standard`, `Mixamo`, `KevinIglesias`에서 찾고, `이름_M`/`이름_F`가 있으면 캐릭터 성별(`CharacterAnimator.Female`)로 고른다. Mixamo FBX는 `AssetImportRules.MixamoClips`, Kevin Iglesias는 `KevinClips` 표대로 임포트한다(10 문서). 낚시 중 몸은 늘 HoldRod이고 두 팔은 낚싯대 각도를 따라가는 IK다(10 문서 5장). 이동 중 클립과 배속은 `UpdateAnimation()`이 속도로 고른다.
+- 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/Jog/Sprint/HoldRod/Cheer/Clap/Excited/Wave/Scared…)가 클립 이름이다. 클립은 `Resources/Animations/UAL1_Standard`, `Reactions`, `KevinIglesias`에서 찾고, `이름_M`/`이름_F`가 있으면 캐릭터 성별(`CharacterAnimator.Female`)로 고른다. FBX 안의 `Armature|이름` 테이크가 클립 이름이고, Kevin Iglesias는 `KevinClips` 표대로 임포트한다(10 문서). 낚시 중 몸은 늘 HoldRod(UAL 대기)이고 두 팔은 낚싯대 각도를 따라가는 IK다(10 문서 5장, 손 자리 표 `Characters/RodArm` — NPC 낚시꾼도 같다). 이동 중 클립과 배속은 `UpdateAnimation()`이 속도로 고른다.
 - UniVRM은 `Scripts/Vrm`(asmdef `Fishing.Vrm`)만 직접 참조한다.
 - 물고기: `tools/blender/fish_species.py`에 어종(체형 템플릿 A~H·두족류 O 문어/Q 갑오징어/S 오징어, 색·무늬·지느러미)을 넣고 `build_fish.py --only <id>` → `Resources/Fish/Species/<id>.fbx`·텍스처·아이콘. `FishModels.CreateSpecies`가 길이(cm/100)로 키운다(09 문서).
 - 물: `WaterSurface` + `Fishing/Water` 셰이더 (`_WaveAmp`, `_WaveLen`, 노멀 타일·속도). 하늘 반사는 `DayNightCycle`의 리얼타임 반사 프로브(하늘만, 2초마다).

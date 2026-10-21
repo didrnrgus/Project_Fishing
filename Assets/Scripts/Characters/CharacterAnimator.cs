@@ -8,8 +8,9 @@ namespace Fishing.Characters
     /// <summary>
     /// AnimatorController 에셋 없이 Playables로 클립을 섞어 재생한다.
     /// 클립은 Universal Animation Library(Resources/Animations/UAL1_Standard),
-    /// Mixamo 낚시 동작(Resources/Animations/Mixamo, AssetImportRules.MixamoClips가 쪼갬),
+    /// 직접 만든 반응 동작(Resources/Animations/Reactions, tools/blender/build_reactions.py),
     /// Human Basic Motions(Resources/Animations/KevinIglesias, 남·녀 따로)에서 이름으로 찾는다.
+    /// 낚싯대를 든 팔은 클립이 아니라 IK가 정한다 (PlayerController.UpdateRodArmRight, NpcAngler.UpdateRightHand).
     /// "이름_M"/"이름_F" 클립이 있으면 Female에 맞는 쪽을 먼저 쓴다.
     /// </summary>
     [RequireComponent(typeof(Animator))]
@@ -24,12 +25,8 @@ namespace Fishing.Characters
 
         /// <summary>클립 원래 이동 속도(m/s). 게임 이동 속도 ÷ 이 값 = 재생 배속 (발 미끄러짐 최소)</summary>
         public const float WalkClipSpeed = 2f, JogClipSpeed = 4f, SprintClipSpeed = 6f;
-        public const string HoldRod = "Fishing_Idle_Loop";
-        public const string Windup = "Fishing_Windup";
-        public const string Cast = "Fishing_Cast";
-        public const string Hook = "Fishing_Hook";
-        public const string Reel = "Fishing_Reel_Loop";
-        public const string FishingSequence = "Fishing_Sequence";
+        /// <summary>낚싯대를 들고 서 있을 때 몸 (UAL 대기). 두 팔은 IK가 낚싯대에 붙인다.</summary>
+        public const string HoldRod = "Idle_Loop";
         public const string Cheer = "Cheer_ArmsUp";
         public const string Talk = "Basic_Talk_Loop";
         public const string Clap = "Clap_Loop";
@@ -42,37 +39,8 @@ namespace Fishing.Characters
         public const string TurnLeft = "Basic_TurnLeft_Loop";
         public const string TurnRight = "Basic_TurnRight_Loop";
         public const string Excited = "Excited";
-        public const string Rallying = "Rallying";
+        public const string Wave = "Wave_Call";
         public const string Scared = "Scared";
-        // 받은 Mixamo 동작 (Resources/Animations/MixamoExtra)
-        public const string Angry = "Angry";
-        public const string JoyfulJump = "JoyfulJump";
-        public const string Greeting = "Greeting";
-        public const string OldManIdle = "OldMan_Idle_Loop";
-        public const string PoseFemale = "Pose_Female_Loop";
-        public const string DanceHipHop = "Dance_HipHop_Loop";
-        public const string DanceRumba = "Dance_Rumba_Loop";
-        public const string DanceCapoeira = "Dance_Capoeira_Loop";
-        public const string Dig = "Dig_Loop";
-        public const string SitLaugh = "Sit_Laugh_Loop";
-        public const string ZombieWalk = "Zombie_Walk_Loop";
-        public const string ZombieIdle = "Zombie_Idle_Loop";
-        public const string ZombieScream = "Zombie_Scream";
-        public const string ZombieRun = "Zombie_Run_Loop";
-        public const string Cheer2 = "Cheer2";
-        public const string DanceChicken = "Dance_Chicken_Loop";
-        public const string DanceClub = "Dance_Club_Loop";
-        public const string Drink = "Drink_Loop";
-        public const string DrunkIdle = "Drunk_Idle_Loop";
-        public const string DrunkIdle2 = "Drunk_Idle2_Loop";
-        public const string DrunkWalk = "Drunk_Walk_Loop";
-        public const string SitTalk = "Sit_Talk_Loop";
-        public const string Sleep = "Sleep_Loop";
-        public const string ThumbsUp = "ThumbsUp";
-        public const string Swim = "Swim_Loop";
-        public const string Tread = "Tread_Loop";
-        public const string Victory = "Victory_Loop";
-        public const string Walk2 = "Walk2_Loop";
 
         /// <summary>그 이름의 클립이 있는지 (받은 에셋을 지운 프로젝트에서는 없을 수 있다).</summary>
         public static bool Has(string clipName) => Clips.ContainsKey(clipName) || Clips.ContainsKey(clipName + "_M");
@@ -100,7 +68,7 @@ namespace Fishing.Characters
             {
                 if (_clips != null) return _clips;
                 _clips = new Dictionary<string, AnimationClip>();
-                foreach (var folder in new[] { "Animations/UAL1_Standard", "Animations/Mixamo", "Animations/KevinIglesias", "Animations/MixamoExtra" })
+                foreach (var folder in new[] { "Animations/UAL1_Standard", "Animations/Reactions", "Animations/KevinIglesias" })
                     foreach (var c in Resources.LoadAll<AnimationClip>(folder))
                     {
                         var name = c.name.Contains("|") ? c.name.Substring(c.name.LastIndexOf('|') + 1) : c.name;
@@ -153,7 +121,7 @@ namespace Fishing.Characters
 
         /// <summary>
         /// 반복 상태 전환 (대기, 걷기, 낚싯대 들기 …). 한 번짜리 동작 중이면 끝난 뒤 이 상태로 돌아간다.
-        /// 반복하지 않는 클립(Windup)을 주면 처음부터 한 번 재생하고 끝 자세에서 멈춰 있다.
+        /// 반복하지 않는 클립을 주면 처음부터 한 번 재생하고 끝 자세에서 멈춰 있다.
         /// </summary>
         public void SetLoop(string clipName, float speed = 1f)
         {

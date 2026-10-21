@@ -353,7 +353,15 @@
 
 ### 저장소와 에셋 약관
 
-저장소는 **비공개**다(2026-10-15 확인). 에셋 스토어·Mixamo 약관이 막는 것은 판매가 아니라 원본 파일을 남이 받을 수 있게 올리는 것이라, 비공개로 두면 그대로 커밋해도 된다. **공개로 바꾸려면** 먼저 `Assets/Kevin Iglesias`·`AllSkyFree`·`Fantasy Skybox FREE`·`NatureStarterKit2`·`BigRookGames`·`MixamoAnimation`과 Resources로 옮긴 그 파일들(`Resources/Animations/Mixamo`·`KevinIglesias`, `Resources/Sky`, `Resources/NatureKit`)을 기록에서 빼야 한다.
+저장소는 **비공개**다(2026-10-15 확인). 에셋 스토어 약관이 막는 것은 판매가 아니라 원본 파일을 남이 받을 수 있게 올리는 것이라, 비공개로 두면 그대로 커밋해도 된다. **공개로 바꾸려면** 먼저 `Assets/Kevin Iglesias`·`AllSkyFree`·`Fantasy Skybox FREE`·`NatureStarterKit2`·`BigRookGames`·실사 식생·UI 에셋과 Resources로 옮긴 그 파일들(`Resources/Animations/KevinIglesias`, `Resources/Sky`, `Resources/NatureKit`)을 기록에서 빼야 한다.
+
+**공개 준비 (2026-10-21 시작)**: 사용자가 저장소를 공개해 포크받고 싶어 한다(상업 이용은 막고 싶음 → 비상업 라이선스 후보 CC BY-NC-SA 4.0). 재배포 금지 에셋을 직접 만든 것·CC0로 바꾸는 중.
+- [x] Mixamo → 직접 만든 반응 동작 + 낚싯대 팔 IK (10 문서 1장). 로컬 `Assets/MixamoCharacters/`(1.5GB, 안 씀, git 밖)는 지워도 된다
+- [ ] Human Basic Motions(Kevin Iglesias) → UAL1/UAL2(CC0) 또는 직접
+- [ ] 하늘(AllSky·Fantasy Skybox·`Resources/Sky`) → 절차적 하늘 / Poly Haven HDRI
+- [ ] EasyChart → 직접 만든 차트, Translucent Image·Paraform(유료) → 직접 만든 블러·SDF 패널 셰이더
+- [ ] 실사 식생·바위(Forst·Tree9/10·NSK2·BigRook·Rock and Boulders 2·Grass Flowers, `Resources/NatureKit/Baked`) → Blender 절차적 + Poly Haven CC0
+- [ ] 기록을 새로 시작한 공개 저장소 + LICENSE
 
 ### 받은 실사풍 에셋 (2026-10-15 임포트, 연결 완료)
 

@@ -6,9 +6,9 @@
 - Windows Build Support 모듈
 - 패키지: `com.unity.ugui 2.0.0`, `com.unity.burst`, `com.unity.collections`(Translucent Image가 씀), `com.unity.postprocessing 3.4.0`(후처리), `com.unity.inputsystem 1.14.2`(패드 진동만), `com.unity.test-framework 1.5.1` + 기본 모듈
 - 외부 에셋
-  - 동작 클립(`Assets/Resources/Animations`: Quaternius UAL CC0, Mixamo, Kevin Iglesias). 임포트 설정은 `Assets/Editor/AssetImportRules.cs`가 자동으로 맞춘다.
+  - 동작 클립(`Assets/Resources/Animations`: Quaternius UAL CC0, 직접 만든 반응 동작 `Reactions.fbx`, Kevin Iglesias). 임포트 설정은 `Assets/Editor/AssetImportRules.cs`가 자동으로 맞춘다.
   - 사람은 모두 VRM: `Assets/StreamingAssets/Characters`(기본 11개, Git LFS — `git lfs pull`로 받는다) + `characters.json`. 바꾸는 법은 [가이드 07](guide/07-characters.md).
-  - **Mixamo** 낚시 동작 (`Assets/MixamoAnimation` 원본, 쓰는 3개만 `Resources/Animations/Mixamo`): Fishing Cast를 들기·던지기·챔질·릴 감기 클립으로 쪼갠다 → [10 문서](10-animation.md).
+  - 반응 동작(환호·박수·펄쩍·손짓·움찔): `bpyenv/Scripts/python -I tools/blender/build_reactions.py`가 `Resources/Animations/Reactions.fbx`를 만든다 → [10 문서](10-animation.md) 1~2장. Mixamo는 2026-10-21에 걷어냈다.
   - 에셋 스토어 패키지(2026-10-14 커밋, 아직 게임에 연결 안 함): `Kevin Iglesias`(Human Basic Motions FREE), `AllSkyFree`, `Fantasy Skybox FREE`, `NatureStarterKit2`, `BigRookGames`.
   - Kenney CC0 모델(`Resources/Kenney`)·소리(`Resources/Audio/Kenney`), Poly Haven CC0 텍스처(`Resources/Terrain`). 출처는 각 폴더의 SOURCES.md·라이선스 사본.
   - 캐릭터 옷·물고기·아이콘은 직접 만든 것: `tools/blender`(아래 "Blender 파이프라인").
@@ -44,7 +44,7 @@ sh tools/build.sh                 # 윈도우 빌드
 sh tools/autoshot.sh              # 빌드 실행 → Screenshots/ 에 약 150장 자동 촬영 후 종료, 맵별 평균 FPS 출력
 sh tools/autoshot.sh 06_fight     # 그 장면까지만 찍고 끝낸다 (한 장면 빨리 확인, -autoshotStop)
 sh tools/inspect.sh "seocheon:Pavilion:200:12:1.3;sentosa:merlion:210:5:1.0"   # 맵:물체이름:방위각:고도각:거리배수[:시각] — HUD 없이 물체 가까이 → Screenshots/i_*.png
-sh tools/inspect.sh "hangang:NPC_새벽조사@reel:120:15:1.1"   # NPC는 몸만으로 거리를 잡는다, 이름 뒤 @reel = 바로 릴 감기 (10 문서 10장)
+sh tools/inspect.sh "hangang:NPC_새벽조사@reel:120:15:1.1"   # NPC는 몸만으로 거리를 잡는다, 이름 뒤 @reel = 바로 릴 감기, @cast·@wave·@clap (10 문서 10장)
 bpyenv/Scripts/python -I tools/blender/build_props.py --only merlion --preview3 Screenshots/props   # 소품 앞·3/4·옆 미리보기
 sh tools/balance.sh               # 밸런스 리포트 (전체)
 sh tools/balance.sh -simSummary   # 밸런스 리포트 (대물급만)
@@ -161,7 +161,7 @@ UI나 연출을 바꾼 뒤 `build.sh` → `autoshot.sh`로 실제 화면을 확�
 - 문서용 스크린샷은 `docs/images/`에 복사해서 커밋한다.
 - 원격: `https://github.com/didrnrgus/Project_Fishing.git`
 - 바이너리(이미지·모델·소리·글꼴)는 Git LFS(`.gitattributes`). 처음 받을 때 `git lfs install` 후 clone/pull.
-- 에셋 스토어·Mixamo 원본: 저장소는 **비공개**다(2026-10-15 확인). 에셋 스토어·Mixamo 약관이 막는 것은 판매가 아니라 원본 파일을 남이 받을 수 있게 올리는 것이라, 비공개로 두면 그대로 커밋해도 된다. **공개로 바꾸려면** 먼저 `Assets/Kevin Iglesias`·`AllSkyFree`·`Fantasy Skybox FREE`·`NatureStarterKit2`·`BigRookGames`·`MixamoAnimation`과 Resources로 옮긴 그 파일들(`Resources/Animations/Mixamo`·`KevinIglesias`, `Resources/Sky`, `Resources/NatureKit`)을 기록에서 빼야 한다.
+- 에셋 스토어 원본: 저장소는 **비공개**다(2026-10-15 확인). 에셋 스토어 약관이 막는 것은 판매가 아니라 원본 파일을 남이 받을 수 있게 올리는 것이라, 비공개로 두면 그대로 커밋해도 된다. **공개로 바꾸려면** 먼저 `Assets/Kevin Iglesias`·`AllSkyFree`·`Fantasy Skybox FREE`·`NatureStarterKit2`·`BigRookGames`·실사 식생·UI 에셋과 Resources로 옮긴 그 파일들(`Resources/Animations/KevinIglesias`, `Resources/Sky`, `Resources/NatureKit`)을 기록에서 빼야 한다. Mixamo는 2026-10-21에 걷어냈지만 예전 커밋 기록에는 남아 있다.
 
 ## 코딩 컨벤션
 

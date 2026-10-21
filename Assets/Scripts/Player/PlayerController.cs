@@ -144,18 +144,11 @@ namespace Fishing.PlayerSystems
                 t.gameObject.layer = Fishing.UI.PortraitCamera.Layer;
             if (Head == null) Head = Model;
             FindLeftArm();
-            // 팔 길이 비율: 낚싯대 쥔 손 자리 표(GripCurve)는 기본 캐릭터 팔에 맞춘 값이라, 팔이 짧은 캐릭터는 그만큼 줄인다
-            _armScale = 1f;
-            if (_upperArmR != null && _lowerArmR != null && _handR != null)
-            {
-                float arm = (_lowerArmR.position - _upperArmR.position).magnitude + (_handR.position - _lowerArmR.position).magnitude;
-                if (arm > 0.1f) _armScale = Mathf.Clamp(arm / RefArmLength, 0.6f, 1.3f);
-                Debug.Log($"[Dev] 내 캐릭터 {_character.name}: 팔 길이 {arm:0.000}m → 손 자리 ×{_armScale:0.00}");
-            }
+            // 팔 길이 비율: 낚싯대 쥔 손 자리 표(RodArm)는 기본 캐릭터 팔에 맞춘 값이라, 팔이 짧은 캐릭터는 그만큼 줄인다
+            _armScale = RodArm.ArmScale(_upperArmR, _lowerArmR, _handR);
+            if (_upperArmR != null) Debug.Log($"[Dev] 내 캐릭터 {_character.name}: 손 자리 ×{_armScale:0.00}");
         }
 
-        /// <summary>손 자리 표(GripCurve)를 맞춘 예전 기본 캐릭터의 오른팔 길이 (어깨~손목, m). VRM 팔 길이를 이것과 비교해 늘이거나 줄인다.</summary>
-        const float RefArmLength = 0.453f;
         float _armScale = 1f;
 
         // ---------------- 낚은 고기 들어 보이기 (원작 결과 화면 1:55~1:58) ----------------
@@ -291,41 +284,18 @@ namespace Fishing.PlayerSystems
 
         // ---------------- 낚싯대를 쥔 두 팔 (IK) ----------------
 
-        /// <summary>
-        /// 낚싯대 기울기별 오른 손목 자리 (오른 어깨 기준, 모델 축: x 오른쪽, y 위, z 앞).
-        /// 예전에는 팔은 Mixamo 클립(Windup·Cast·Hook)이 시간대로 움직이고 낚싯대 각도는 코드가 따로 정해서 팔과 낚싯대가 따로 놀았다.
-        /// 이제 낚싯대 각도가 먼저고 손이 따라간다: 2 = 던진 직후 앞으로 뻗음, 35 = 허리 앞 대기, 82 = 챔질(가슴 앞에 세움), 155 = 어깨 너머로 젖힘.
-        /// </summary>
-        static readonly (float pitch, Vector3 off)[] GripCurve =
-        {
-            (0f,   new Vector3(-0.06f, -0.20f, 0.44f)),
-            (35f,  new Vector3(-0.03f, -0.38f, 0.27f)),
-            (82f,  new Vector3(-0.08f, -0.10f, 0.33f)),
-            (120f, new Vector3(-0.04f,  0.10f, 0.22f)),
-            (155f, new Vector3( 0.05f,  0.22f, 0.06f)),
-        };
+        // 오른손 자리는 낚싯대 각도를 따라간다 (RodArm.GripOffset). 예전에는 팔은 Mixamo 클립(Windup·Cast·Hook)이
+        // 시간대로 움직이고 낚싯대 각도는 코드가 따로 정해서 팔과 낚싯대가 따로 놀았다.
 
         /// <summary>왼손이 쥐는 자리: 릴 시트에서 손잡이 끝 쪽으로 (TelescopicRod 손잡이 0.32m).</summary>
         const float LeftGripBehind = 0.12f;
 
         float _rodArmWeight;
 
-        static Vector3 GripOffset(float pitch)
-        {
-            if (pitch <= GripCurve[0].pitch) return GripCurve[0].off;
-            for (int i = 1; i < GripCurve.Length; i++)
-            {
-                if (pitch > GripCurve[i].pitch) continue;
-                var (p0, o0) = GripCurve[i - 1];
-                var (p1, o1) = GripCurve[i];
-                return Vector3.Lerp(o0, o1, Mathf.SmoothStep(0f, 1f, (pitch - p0) / (p1 - p0)));
-            }
-            return GripCurve[GripCurve.Length - 1].off;
-        }
-
-        /// <summary>낚싯대를 들고 서 있을 때만 (걷기·점프·운전·고기 들어 보이기·넣어 둠은 애니메이션 그대로).</summary>
+        /// <summary>낚싯대를 들고 서 있을 때만 (걷기·점프·운전·고기 들어 보이기·넣어 둠·환호 같은 한 번짜리 동작은 애니메이션 그대로).</summary>
         bool RodArmsActive =>
             !RodHidden && _modelVisible && _heldFish == null && !ShowOff && _speedNow < 0.5f && _airTime < 0.15f
+            && !(_anim != null && _anim.PlayingOnce)
             && !(_mount != null && _mountSeated) && Game.Fishing != null && Game.Fishing.State != Angling.FishingState.Idle;
 
         /// <summary>오른손을 낚싯대 각도에 맞는 자리로 (낚싯대를 손에 붙이기 전에).</summary>
@@ -336,10 +306,8 @@ namespace Fishing.PlayerSystems
             float w = Mathf.SmoothStep(0f, 1f, _rodArmWeight);
             // 낚싯대를 좌우로 틀면 손도 어깨를 축으로 따라 돈다
             var rot = Model.rotation * Quaternion.Euler(0f, _currentRodYaw * 0.6f, 0f);
-            var want = _upperArmR.position + rot * (GripOffset(_currentRodPitch) * _armScale);
-            // 팔꿈치: 들고 있을 때는 아래 바깥, 어깨 너머로 젖힐수록 앞 바깥으로 든다
-            float up = Mathf.InverseLerp(70f, 155f, _currentRodPitch);
-            var pole = Model.rotation * Vector3.Lerp(new Vector3(0.7f, -0.7f, -0.1f), new Vector3(0.75f, 0.05f, 0.65f), up);
+            var want = _upperArmR.position + rot * (RodArm.GripOffset(_currentRodPitch) * _armScale);
+            var pole = Model.rotation * RodArm.ElbowPole(_currentRodPitch);
             ArmIK.Solve(_upperArmR, _lowerArmR, _handR, Vector3.Lerp(_handR.position, want, w), pole, w);
         }
 
@@ -474,24 +442,14 @@ namespace Fishing.PlayerSystems
             Mats.Prim(PrimitiveType.Sphere, "Head", parent, new Vector3(0f, 1.65f, 0f), Vector3.one * 0.42f, skin, false);
         }
 
-        /// <summary>낚아 올렸을 때 (두 팔 들고 환호).</summary>
-        /// <summary>랜딩 환호: 두 팔 흔들기, 가끔(40%) 깡충 뛰며 기뻐하기 (받은 Mixamo Joyful Jump).</summary>
-        public void PlayCheer()
-        {
-            if (CharacterAnimator.Has(CharacterAnimator.JoyfulJump) && Random.value < 0.4f) _anim?.PlayOnce(CharacterAnimator.JoyfulJump, 1.1f);
-            else _anim?.PlayOnce(CharacterAnimator.Cheer, 1.1f);
-        }
+        /// <summary>랜딩 환호: 두 팔을 V자로 들고 흔든다 (Reactions Cheer_ArmsUp).</summary>
+        public void PlayCheer() => _anim?.PlayOnce(CharacterAnimator.Cheer, 1.1f);
 
-        /// <summary>괴물·전설 어종을 낚았을 때: 펄쩍 뛰며 기뻐한다 (Mixamo Excited).</summary>
-        public void PlayExcited() => _anim?.PlayOnce(CharacterAnimator.Excited, 1.2f, 0.7f);
+        /// <summary>괴물·전설 어종을 낚았을 때: 펄쩍 뛰며 두 주먹을 치켜든다 (Reactions Excited).</summary>
+        public void PlayExcited() => _anim?.PlayOnce(CharacterAnimator.Excited, 1.1f);
 
-        /// <summary>줄이 끊어졌을 때: 움찔 놀란다 (Mixamo Scared, 앞부분만).</summary>
-        /// <summary>줄이 끊겼을 때: 움찔 놀라기, 가끔(35%) 발 구르며 화내기 (받은 Mixamo Angry).</summary>
-        public void PlayScared()
-        {
-            if (CharacterAnimator.Has(CharacterAnimator.Angry) && Random.value < 0.35f) _anim?.PlayOnce(CharacterAnimator.Angry, 1.2f, 0.6f);
-            else _anim?.PlayOnce(CharacterAnimator.Scared, 1.3f, 0.5f);
-        }
+        /// <summary>줄이 끊어졌을 때: 움찔 놀란다 (Reactions Scared).</summary>
+        public void PlayScared() => _anim?.PlayOnce(CharacterAnimator.Scared, 1f);
 
         public void Teleport(Vector3 pos, float yaw)
         {
