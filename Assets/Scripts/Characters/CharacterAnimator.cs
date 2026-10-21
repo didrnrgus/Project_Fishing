@@ -7,9 +7,8 @@ namespace Fishing.Characters
 {
     /// <summary>
     /// AnimatorController 에셋 없이 Playables로 클립을 섞어 재생한다.
-    /// 클립은 Universal Animation Library(Resources/Animations/UAL1_Standard),
-    /// 직접 만든 반응 동작(Resources/Animations/Reactions, tools/blender/build_reactions.py),
-    /// Human Basic Motions(Resources/Animations/KevinIglesias, 남·녀 따로)에서 이름으로 찾는다.
+    /// 클립은 직접 만든 동작(Resources/Animations/Motions, tools/blender/build_motions.py — 기본 동작 Basic_*·반응 동작)과
+    /// 그 바탕인 Universal Animation Library(Resources/Animations/UAL1_Standard, CC0)에서 이름으로 찾는다.
     /// 낚싯대를 든 팔은 클립이 아니라 IK가 정한다 (PlayerController.UpdateRodArmRight, NpcAngler.UpdateRightHand).
     /// "이름_M"/"이름_F" 클립이 있으면 Female에 맞는 쪽을 먼저 쓴다.
     /// </summary>
@@ -19,14 +18,17 @@ namespace Fishing.Characters
         public const string Idle = "Basic_Idle_Loop";
         public const string Walk = "Basic_Walk_Loop";
         /// <summary>Walk 클립이 원래 가는 속도 (m/s, 10 문서 7장). 다른 속도로 걸릴 때 배속 = 속도 / 이 값.</summary>
-        public const float BasicWalkSpeed = 2f;
+        public const float BasicWalkSpeed = WalkClipSpeed;
         public const string Jog = "Basic_Run_Loop";
         public const string Sprint = "Basic_Sprint_Loop";
 
-        /// <summary>클립 원래 이동 속도(m/s). 게임 이동 속도 ÷ 이 값 = 재생 배속 (발 미끄러짐 최소)</summary>
-        public const float WalkClipSpeed = 2f, JogClipSpeed = 4f, SprintClipSpeed = 6f;
-        /// <summary>낚싯대를 들고 서 있을 때 몸 (UAL 대기). 두 팔은 IK가 낚싯대에 붙인다.</summary>
-        public const string HoldRod = "Idle_Loop";
+        /// <summary>
+        /// 클립 원래 이동 속도(m/s). 게임 이동 속도 ÷ 이 값 = 재생 배속 (발 미끄러짐 최소).
+        /// 바탕 UAL 클립에서 땅을 디딘 발이 골반 기준으로 뒤로 가는 속도를 쟀다 (10 문서 7장).
+        /// </summary>
+        public const float WalkClipSpeed = 0.98f, JogClipSpeed = 5.9f, SprintClipSpeed = 8.9f;
+        /// <summary>낚싯대를 들고 서 있을 때 몸 (왼발 앞·상체 숙이고 오른쪽으로 튼 낚시꾼 자세). 두 팔은 IK가 낚싯대에 붙인다.</summary>
+        public const string HoldRod = "Fishing_Hold_Loop";
         public const string Cheer = "Cheer_ArmsUp";
         public const string Talk = "Basic_Talk_Loop";
         public const string Clap = "Clap_Loop";
@@ -68,7 +70,7 @@ namespace Fishing.Characters
             {
                 if (_clips != null) return _clips;
                 _clips = new Dictionary<string, AnimationClip>();
-                foreach (var folder in new[] { "Animations/UAL1_Standard", "Animations/Reactions", "Animations/KevinIglesias" })
+                foreach (var folder in new[] { "Animations/Motions", "Animations/UAL1_Standard" })
                     foreach (var c in Resources.LoadAll<AnimationClip>(folder))
                     {
                         var name = c.name.Contains("|") ? c.name.Substring(c.name.LastIndexOf('|') + 1) : c.name;

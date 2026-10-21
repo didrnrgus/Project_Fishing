@@ -34,18 +34,17 @@ namespace Fishing.World
         /// <summary>
         /// 모델을 만든다. height > 0이면 높이를, length > 0이면 가장 긴 수평 길이를 그 값에 맞춘다.
         /// </summary>
-        // Kenney 나무(원뿔·공을 쌓은 도형 나무) 자리에 쓰는 Nature Starter Kit 2 나무 (Tree Creator, Resources/NatureKit).
-        // 예전에는 활엽수만 바꾸고 소나무는 Kenney 그대로였는데, 원뿔을 쌓은 소나무가 "도형 올려놓은 것" 같다는 지적으로 모두 바꾼다.
-        // 실사 소나무 에셋(WORK-IN-PROGRESS "사용자가 해야 할 일")이 들어오면 소나무 자리만 그쪽으로 돌린다
+        // Kenney 나무(원뿔·공을 쌓은 도형 나무) 자리에 쓰는 실사풍 나무 (VegetationLibrary: ez-tree로 만든 침엽수·활엽수).
+        // 원뿔을 쌓은 소나무가 "도형 올려놓은 것" 같다는 지적으로 모두 바꾼다.
         static readonly string[] BroadleafKenney =
         {
             "tree_default", "tree_oak", "tree_fat", "tree_detailed", "tree_simple", "tree_tall", "tree_plateau",
             "tree_pineRoundA", "tree_pineRoundB", "tree_pineRoundC", "tree_pineTallA", "tree_pineTallB", "tree_pineDefaultA", "tree_pineDefaultB",
         };
-        // Tree Creator 나무는 빌드에서 메쉬가 빠지므로 에디터가 구워 둔 것(Editor/NatureKitBake → Resources/NatureKit/Baked)을 쓴다
-        static readonly string[] NatureKitTrees = { "NatureKit/Baked/tree01", "NatureKit/Baked/tree02", "NatureKit/Baked/tree03", "NatureKit/Baked/tree04" };
-        static bool? _natureKit;
-        public static bool NatureKitAvailable => _natureKit ??= Resources.Load<GameObject>(NatureKitTrees[0]) != null;
+        // 꽃·열매를 다는 작은 나무와 덤불 (Editor/VegetationBake → Resources/Plants, ez-tree)
+        static readonly string[] PlantTrees = { "Plants/tree01", "Plants/tree02", "Plants/tree03", "Plants/tree04" };
+        static bool? _plants;
+        public static bool PlantsAvailable => _plants ??= Resources.Load<GameObject>(PlantTrees[0]) != null;
 
         /// <summary>
         /// Kenney 장난감 배 → tools/blender/boats.py 배 (사진 대조로 만든 한국 연안 어선·모터보트·나무배·요트). 둘 다 뱃머리 +Z, 기준점 용골 바닥이라 그대로 바꿔 끼운다.
@@ -64,15 +63,15 @@ namespace Fishing.World
         {
             if (BoatSwap.TryGetValue(path, out var swap) && Resources.Load<GameObject>(swap) != null) path = swap;
             string leaf = path.Substring(path.LastIndexOf('/') + 1);
-            // 실사 에셋이 있으면 먼저: 소나무 자리 → Conifers [BOTD], 활엽수 자리 → Realistic Tree 9·10
+            // 실사풍 나무가 있으면 먼저: 소나무 자리 → 침엽수, 활엽수 자리 → 활엽수 (VegetationLibrary)
             if (leaf.StartsWith("tree_pine") && VegetationLibrary.HasConifers)
                 return SpawnRealTree(VegetationLibrary.Lib.conifers, parent, localPos, yaw, height > 0f ? height * 1.25f : 9f, solid);
             if (System.Array.IndexOf(BroadleafKenney, leaf) >= 0 && VegetationLibrary.HasBroadleaf)
                 return SpawnRealTree(VegetationLibrary.Lib.broadleaf, parent, localPos, yaw, height > 0f ? height : 7f, solid);
-            if (System.Array.IndexOf(BroadleafKenney, leaf) >= 0 && NatureKitAvailable)
-                return SpawnNatureKitTree(parent, localPos, yaw, height > 0f ? height : 7f, solid);
-            // Kenney 덤불(각진 초록 덩어리) → Nature Starter Kit 2 덤불
-            if (leaf.StartsWith("plant_bush") && NatureKitAvailable)
+            if (System.Array.IndexOf(BroadleafKenney, leaf) >= 0 && PlantsAvailable)
+                return SpawnPlantTree(parent, localPos, yaw, height > 0f ? height : 7f, solid);
+            // Kenney 덤불(각진 초록 덩어리) → 실사풍 덤불 (Resources/Plants)
+            if (leaf.StartsWith("plant_bush") && PlantsAvailable)
                 return SpawnBush(parent, localPos, yaw, height > 0f ? height : 1.2f);
             var prefab = Resources.Load<GameObject>(path);
             if (prefab == null) return null;
@@ -145,19 +144,19 @@ namespace Fishing.World
             return go;
         }
 
-        /// <summary>Nature Starter Kit 2 활엽수 (위치로 종류를 고른다). 높이를 맞추고 줄기 콜라이더를 붙인다.</summary>
-        static readonly string[] NatureKitBushes = { "bush01", "bush02", "bush03", "bush04", "bush05", "bush06" };
+        /// <summary>덤불 6종 (Resources/Plants/bush01~06, 위치로 종류를 고른다).</summary>
+        static readonly string[] PlantBushes = { "bush01", "bush02", "bush03", "bush04", "bush05", "bush06" };
 
         /// <summary>
-        /// Nature Starter Kit 2 덤불(tree면 나무)을 높이에 맞춰 놓는다 (구 프리미티브 덤불·나무 자리). 없으면 null.
+        /// 덤불(tree면 작은 나무, Resources/Plants)을 높이에 맞춰 놓는다 (구 프리미티브 덤불·나무 자리). 없으면 null.
         /// blossoms > 0이면 잎 덩어리 겉면에 작은 꽃·열매(blossom 재질, 지름 size m)를 흩어 붙인다 (진달래·동백·귤).
         /// </summary>
         public static GameObject SpawnBush(Transform parent, Vector3 localPos, float yaw, float height, int blossoms = 0, Material blossom = null, float size = 0.2f, bool tree = false)
         {
-            if (!NatureKitAvailable) return null;
+            if (!PlantsAvailable) return null;
             if (tree && blossoms == 0 && VegetationLibrary.HasBroadleaf)
                 return SpawnRealTree(VegetationLibrary.Lib.broadleaf, parent, localPos, yaw, height, false);
-            var list = tree ? NatureKitTrees : System.Array.ConvertAll(NatureKitBushes, n => "NatureKit/Baked/" + n);
+            var list = tree ? PlantTrees : System.Array.ConvertAll(PlantBushes, n => "Plants/" + n);
             int k = Mathf.Abs(Mathf.RoundToInt(localPos.x * 5.13f + localPos.z * 2.71f)) % list.Length;
             var prefab = Resources.Load<GameObject>(list[k]);
             if (prefab == null) return null;
@@ -192,10 +191,10 @@ namespace Fishing.World
             return go;
         }
 
-        static GameObject SpawnNatureKitTree(Transform parent, Vector3 localPos, float yaw, float height, bool solid)
+        static GameObject SpawnPlantTree(Transform parent, Vector3 localPos, float yaw, float height, bool solid)
         {
-            int k = Mathf.Abs(Mathf.RoundToInt(localPos.x * 7.31f + localPos.z * 3.17f)) % NatureKitTrees.Length;
-            var prefab = Resources.Load<GameObject>(NatureKitTrees[k]);
+            int k = Mathf.Abs(Mathf.RoundToInt(localPos.x * 7.31f + localPos.z * 3.17f)) % PlantTrees.Length;
+            var prefab = Resources.Load<GameObject>(PlantTrees[k]);
             var go = Object.Instantiate(prefab, parent, false);
             go.name = "NatureTree";
             go.transform.localRotation = Quaternion.identity;

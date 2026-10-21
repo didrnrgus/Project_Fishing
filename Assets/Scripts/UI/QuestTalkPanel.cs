@@ -304,7 +304,7 @@ namespace Fishing.UI
                 UIFactory.SetRadius(card.targetGraphic, 16f);
                 var rt = (RectTransform)card.transform;
                 rt.At(new Vector2(0, 1), new Vector2(22 + i * (cw + gap), -76), new Vector2(cw, 136), new Vector2(0, 1));
-                if (sel) UIFactory.AddBorder((LeTai.Asset.TranslucentImage.TranslucentImage)card.targetGraphic, new Color(0.55f, 0.95f, 0.9f, 0.8f), 2f, 4f);
+                if (sel) UIFactory.AddBorder((UIShape)card.targetGraphic, new Color(0.55f, 0.95f, 0.9f, 0.8f), 2f, 4f);
                 var av = new TranslucentAvatar(rt, new Vector2((cw - 72) / 2f, -10), 72f);
                 av.Set(n.Name, n.Color);
                 var label = card.GetComponentInChildren<TMP_Text>();

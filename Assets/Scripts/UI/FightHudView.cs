@@ -249,7 +249,7 @@ namespace Fishing.UI
             // 경고문: 빨간 화면 테두리 위에서도 읽히게 어두운 유리 알약
             _warnPill = UIFactory.Glass(_root, "WarnPill", UIFactory.Pill, new Color(0.12f, 0.02f, 0.02f, 1f), 0.75f, true, false).rectTransform
                 .At(new Vector2(0.5f, 0), new Vector2(0, 156), new Vector2(800, 42));
-            UIFactory.AddBorder((LeTai.Asset.TranslucentImage.TranslucentImage)_warnPill.GetComponent<Image>(), new Color(1f, 0.35f, 0.3f, 0.6f), 1.5f);
+            UIFactory.AddBorder((UIShape)_warnPill.GetComponent<Image>(), new Color(1f, 0.35f, 0.3f, 0.6f), 1.5f);
             _warnText = UIFactory.Text(_warnPill, "", 22, new Color(1f, 0.5f, 0.45f), TextAnchor.MiddleCenter, FontStyle.Bold);
             _warnText.rectTransform.Fill();
             _staminaText = UIFactory.Text(_root, "", 18, UIFactory.Warn, TextAnchor.MiddleLeft);

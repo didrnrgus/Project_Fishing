@@ -4,7 +4,7 @@
 
 - **씬에는 `GameBootstrap` 하나만 둔다.** 월드, 플레이어, 카메라, UI를 모두 코드로 만든다. 씬에 없어도 `RuntimeInitializeOnLoadMethod`로 자동 생성된다.
 - **월드 아트는 코드로 만든다.** 프리미티브, 런타임 머티리얼(`Mats`), 절차적 텍스처/스프라이트, 절차적 사운드(`SoundFx`) + CC0 에셋(Quaternius·Kenney 모델, Poly Haven 텍스처, Kenney 소리). 사람은 모두 실행 중에 읽는 VRM(`StreamingAssets/Characters` + 문서 폴더, 16 문서), 물고기·아이콘은 `tools/blender`의 headless Blender 스크립트로 만들어 FBX/PNG로 커밋한다. 나중에 에셋으로 바꿀 때는 `WorldBuilder`, `PlayerController.BuildModel`, `FightRodView.Build`, `Bobber.Create`만 교체하면 된다.
-- **UI도 코드로 만들지만 외부 에셋을 쓴다**: Translucent Image + Paraform(유리·둥근 도형), EasyChart(차트), TextMeshPro(Jalnan2 글꼴). 프리팹 없이 `UIFactory`/`UIStyle`/`UIChart`로 조립한다.
+- **UI도 코드로 만든다**: 둥근 유리 도형 `UIShape`(셰이더 `Fishing/UIShape`, 뒤 화면 흐림 `UIBlurSource`), 차트 `UIChart`(메쉬로 직접), TextMeshPro(Jalnan2 글꼴). 프리팹 없이 `UIFactory`/`UIStyle`/`UIChart`로 조립한다.
 - **게임 규칙은 MonoBehaviour와 분리한다.** `FishFight`, `BiteSelector`, `PlayerProfile`, `QuestSystem`은 순수 C#이라서 에디터에서 밸런스 시뮬레이션을 돌릴 수 있다.
 - **데이터는 C# 정적 테이블이다** (`FishDatabase`, `GearDatabase`, `QuestDatabase`, `CostumeDatabase`, `AchievementDatabase` …). 텍스트 diff로 리뷰하기 쉽다. 데이터가 많아지면 ScriptableObject나 JSON으로 옮길 수 있다.
 - **입력은 구 Input Manager**(`UnityEngine.Input`, 키는 `Settings`로 바꿀 수 있음)를 쓴다. 패드 진동만 새 Input System(`Rumble`) — 프로젝트 설정 `activeInputHandler: 2`(둘 다).
@@ -131,7 +131,7 @@ Assets/
     Sky.shader                   Mode 0 달·별, Mode 1 구름(덮임 정도·노을색, 흐림·비 층구름)
     SkyCube.shader               흐림·비 하늘 큐브맵 돔 (AllSky "Overcast Low", 스카이박스 뒤 Transparent-300에 그린다)
   Resources/
-    Animations/                  Quaternius UAL1_Standard, Reactions.fbx(직접 만든 환호·박수·펄쩍·손짓·움찔, tools/blender/build_reactions.py), KevinIglesias/(대기·걷기·뛰기·질주·말하기·점프 남·녀) → 10 문서
+    Animations/                  Quaternius UAL1_Standard, Motions.fbx(직접 만든 기본 동작·낚시꾼 자세·반응 동작, tools/blender/build_motions.py) → 10 문서
     Sky/Overcast.png             흐린 하늘 큐브맵 (AllSky Free에서 옮김, 1024)
     NatureKit/Baked/             Nature Starter Kit 2 나무·덤불을 일반 메쉬 프리팹으로 구운 것 (Editor/NatureKitBake)
     Fish/Species, Fish/Textures  어종별 물고기 FBX·텍스처 (tools/blender/build_fish.py)
@@ -140,9 +140,12 @@ Assets/
     Terrain/                     Poly Haven CC0 바닥 텍스처 (SOURCES.md)
     Audio/Kenney/                Kenney CC0 UI·발소리 (SOURCES.md)
     Kenney/                      Kenney CC0 모델 (도시·도로·자연·배)
-    UI/, Fonts/                  Paraform 재질, Jalnan2 SDF (TMP)
+    Fonts/                       Jalnan2 SDF (TMP)
+    Plants/                      덤불·작은 나무 프리팹 (VegetationBake, KenneyProps가 이름으로)
+    Sky/                         하늘 돔 (Poly Haven, tools/sky/build_sky.py)
     PostFxConfig.asset           후처리 리소스 참조
-  EasyChart/, Le Tai's Asset/, TextMesh Pro/   외부 UI 에셋 (데모 폴더 포함 그대로)
+  Vegetation/                  나무·덤불(ez-tree)·바위·풀 카드(Poly Haven) — tools/blender/build_vegetation.py, 재질·LOD 프리팹은 Editor/VegetationBake (17 문서)
+  TextMesh Pro/                TMP 기본 리소스 + Jalnan2 글꼴(라이선스 사본)
   ThirdParty/Quaternius/, ThirdParty/Kenney/   라이선스 사본 (UAL 동작·Kenney)
   StreamingAssets/Characters/   기본 VRM 11개(VRoid CC0 샘플, Git LFS) + characters.json + 읽어주세요.txt — 빌드 뒤에도 바꿀 수 있다 (가이드 07)
   Editor/
@@ -296,7 +299,7 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 
 ### 아트 교체
 - 캐릭터: 모든 사람이 VRM이다. `CharacterFactory.Create(look, parent)` → `CharacterRoster`가 고른(또는 `look.Vrm`) 파일을 `VrmCharacters`가 읽어 복제한다. 바꾸려면 코드가 아니라 `characters.json`·`.vrm`을 바꾼다(가이드 07, 16 문서). 의상은 능력치만이고 몸에 입히지 않는다.
-- 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/Jog/Sprint/HoldRod/Cheer/Clap/Excited/Wave/Scared…)가 클립 이름이다. 클립은 `Resources/Animations/UAL1_Standard`, `Reactions`, `KevinIglesias`에서 찾고, `이름_M`/`이름_F`가 있으면 캐릭터 성별(`CharacterAnimator.Female`)로 고른다. FBX 안의 `Armature|이름` 테이크가 클립 이름이고, Kevin Iglesias는 `KevinClips` 표대로 임포트한다(10 문서). 낚시 중 몸은 늘 HoldRod(UAL 대기)이고 두 팔은 낚싯대 각도를 따라가는 IK다(10 문서 5장, 손 자리 표 `Characters/RodArm` — NPC 낚시꾼도 같다). 이동 중 클립과 배속은 `UpdateAnimation()`이 속도로 고른다.
+- 애니메이션: `CharacterAnimator`의 상수(Idle/Walk/Jog/Sprint/HoldRod/Cheer/Clap/Excited/Wave/Scared…)가 클립 이름이다. 클립은 `Resources/Animations/Motions`, `UAL1_Standard`에서 찾고, `이름_M`/`이름_F`가 있으면 캐릭터 성별(`CharacterAnimator.Female`)로 고른다. FBX 안의 `Armature|이름` 테이크가 클립 이름이고(10 문서). 낚시 중 몸은 늘 HoldRod(UAL 대기)이고 두 팔은 낚싯대 각도를 따라가는 IK다(10 문서 5장, 손 자리 표 `Characters/RodArm` — NPC 낚시꾼도 같다). 이동 중 클립과 배속은 `UpdateAnimation()`이 속도로 고른다.
 - UniVRM은 `Scripts/Vrm`(asmdef `Fishing.Vrm`)만 직접 참조한다.
 - 물고기: `tools/blender/fish_species.py`에 어종(체형 템플릿 A~H·두족류 O 문어/Q 갑오징어/S 오징어, 색·무늬·지느러미)을 넣고 `build_fish.py --only <id>` → `Resources/Fish/Species/<id>.fbx`·텍스처·아이콘. `FishModels.CreateSpecies`가 길이(cm/100)로 키운다(09 문서).
 - 물: `WaterSurface` + `Fishing/Water` 셰이더 (`_WaveAmp`, `_WaveLen`, 노멀 타일·속도). 하늘 반사는 `DayNightCycle`의 리얼타임 반사 프로브(하늘만, 2초마다).

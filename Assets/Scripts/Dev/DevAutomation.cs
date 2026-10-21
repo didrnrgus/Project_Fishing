@@ -140,7 +140,7 @@ namespace Fishing.Dev
             yield return new WaitForSeconds(1.5f);
             yield return Shot("00_character");
 
-            // 걷기·달리기 (Human Basic Motions): 옆에서
+            // 걷기·달리기 (Motions Basic_Run·Sprint): 옆에서
             Game.Player.Teleport(new Vector3(-75f, 1.1f, -64f), 90f);
             Game.CameraRig.Yaw = 0f;
             Game.CameraRig.Pitch = 6f;
@@ -298,7 +298,7 @@ namespace Fishing.Dev
                     Game.Profile.SetCharacterModel(prevVrm, prevFemale);
                     yield return new WaitForSeconds(0.3f);
                 }
-                // 반응 동작 (tools/blender/build_reactions.py): 한 번짜리 동작 중에는 팔 IK를 끄고 클립 그대로
+                // 반응 동작 (tools/blender/build_motions.py): 한 번짜리 동작 중에는 팔 IK를 끄고 클립 그대로
                 {
                     var front = c + pm.forward * 3.2f + pm.right * 0.4f - Vector3.up * 0.2f;
                     Game.CameraRig.SetFixed(front, Quaternion.LookRotation(c - Vector3.up * 0.25f - front));
@@ -1338,7 +1338,7 @@ namespace Fishing.Dev
                 if (b.extents.magnitude > 120f) b = new Bounds(target.position + Vector3.up * 3f, Vector3.one * 8f);
                 var cam = Camera.main;
                 Game.CameraRig.enabled = false;
-                // HUD 숨기기: 캔버스를 끄면 TranslucentImage(블러 패널)가 다시 켤 때 예외를 낸다 → CanvasGroup 알파로 감춘다
+                // HUD 숨기기: CanvasGroup 알파로 감춘다 (예전 Translucent Image는 캔버스를 끄면 다시 켤 때 예외를 냈다)
                 var groups = new System.Collections.Generic.List<CanvasGroup>();
                 foreach (var c in UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None))
                 {

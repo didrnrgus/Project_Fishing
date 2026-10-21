@@ -1,12 +1,11 @@
-# 10. 캐릭터 애니메이션 (UAL + 직접 만든 반응 동작 + Human Basic Motions)
+# 10. 캐릭터 애니메이션 (UAL 뼈대 위에 직접 만든 동작 + 낚싯대 팔 IK)
 
-캐릭터 동작은 AnimatorController 없이 `CharacterAnimator`(Playables 믹서)가 클립 이름으로 재생한다. 클립은 세 곳에서 찾는다.
+캐릭터 동작은 AnimatorController 없이 `CharacterAnimator`(Playables 믹서)가 클립 이름으로 재생한다. 클립은 두 곳에서 찾는다.
 
 | 라이브러리 | 위치 | 쓰는 동작 |
 |---|---|---|
-| Quaternius Universal Animation Library (CC0) | `Resources/Animations/UAL1_Standard.fbx` | 낚싯대 들고 선 몸(`Idle_Loop`), 점프, 말하기, 앉기, 운전, 춤 |
-| **반응 동작** (직접 만듦, `tools/blender/build_reactions.py`) | `Resources/Animations/Reactions.fbx` | 환호, 박수, 펄쩍 뛰기, 손짓, 움찔 |
-| **Human Basic Motions FREE** (Kevin Iglesias, Asset Store) | `Resources/Animations/KevinIglesias/*.fbx` | 맨손 대기, 걷기, 뛰기, 질주, 말하기, 점프·낙하 (남·녀 따로, 7장) |
+| Quaternius Universal Animation Library (CC0) | `Resources/Animations/UAL1_Standard.fbx` | 앉기, 운전, 춤, 맞기 등 (그리고 위 동작들의 바탕) |
+| **직접 만든 동작** (`tools/blender/build_motions.py`) | `Resources/Animations/Motions.fbx` | 기본 동작 `Basic_*`(대기·걷기·뛰기·질주·말하기·점프·낙하·제자리 돌기, 7장), 낚시꾼 자세 `Fishing_Hold_Loop`(5장), 반응 동작(환호·박수·펄쩍·손짓·움찔, 1장) |
 
 모두 휴머노이드로 임포트해서(`AssetImportRules`) 어떤 VRM 캐릭터(내 캐릭터·NPC, 16 문서)에도 그대로 붙는다.
 낚싯대를 든 두 팔은 클립이 아니라 낚싯대 각도를 따라가는 IK다(5장). 그래서 낚시 전용 동작 클립(들기·던지기·챔질·릴 감기)은 없다.
@@ -25,26 +24,26 @@
 | `Wave_Call` | 72프레임 (2.4초) | | 보고할 퀘스트가 있으면 조합 연락관이 오른손을 머리 위로 들어 세 번 흔든다 | `NpcAngler` `_nextRally` |
 | `Scared` | 40프레임 (1.3초) | | 줄이 끊겼을 때: 두 손을 가슴 앞으로 홱 올리며 뒤로 젖히고 무릎을 굽혔다 풀린다 | `PlayerController.PlayScared` |
 
-## 2. 만드는 방법 (`build_reactions.py`)
+## 2. 만드는 방법 (`build_motions.py`)
 
 ```bash
-bpyenv/Scripts/python -I tools/blender/build_reactions.py --preview Screenshots/reactions   # 10초쯤
+bpyenv/Scripts/python -I tools/blender/build_motions.py --preview Screenshots/motions   # 20초쯤
 ```
 
-- 바탕은 UAL1 `Idle_Loop`(숨쉬기·무게 이동, 75프레임). 프레임마다 그 자세를 놓고 위에 얹는다:
+- 바탕은 UAL1 클립(대기 `Idle_Loop` 75프레임 — 숨쉬기·무게 이동, 걷기 `Walk_Formal_Loop`, 뛰기 `Jog_Fwd_Loop`, 질주 `Sprint_Loop`, 말하기 `Idle_Talking_Loop`). 대부분 **편한 대기**(`relaxed_idle`: UAL 대기의 어깨보다 넓은 다리를 골반 폭으로 모으고 골반을 올려 무릎을 펴고, 주먹 쥔 팔을 몸 옆으로 내려 손을 편다)를 먼저 깐다. 프레임마다 그 자세를 놓고 위에 얹는다:
   - 손·발 자리를 시간 함수로 정하고 **2관절 IK**(어깨-팔꿈치-손목, 엉덩이-무릎-발목)로 맞춘다. 팔꿈치·무릎이 굽는 쪽(pole)은 무게 `w`에 맞춰 원래 자세에서 섞어 튀지 않는다.
-  - 손 방향(`orient_hand`: 손가락·손바닥이 볼 쪽), 주먹(`curl_fingers`), 골반 높이(`move_pelvis`, 뛰기·들썩임 — 발은 IK로 땅에 붙인다), 허리 숙임(`lean`).
+  - 손 방향(`orient_hand`: 손가락·손바닥이 볼 쪽), 손가락(`set_fingers`: 뼈대 기본 = 편 손에서 0~1만큼 감기), 골반 높이(`move_pelvis`, 뛰기·들썩임 — 발은 IK로 땅에 붙인다), 허리 숙임(`lean`).
   - 처음·끝에 0.3~0.5초씩 대기 자세에서 섞어 들어가고 나온다. 반복 클립(박수)은 대기 길이(75)와 같게 해 이음새가 없다.
 - 결과를 키로 구워 뼈대만 FBX로 내보낸다(`Armature|이름` 테이크 → 클립 `이름`). 같은 뼈대(UAL1)라 `rotationOffset` 없이 UAL 클립과 같은 쪽을 본다.
 - `--preview`: 마네킹으로 클립마다 앞·옆 6프레임씩(`<폴더>/<클립>.png`). 축: 캐릭터는 +Y를 보고 오른쪽 +X.
-- 새 반응 동작: 함수 하나(`def 이름(f): ... return 길이`)를 만들어 `CLIPS`에 넣고 `CharacterAnimator`에 상수를 만든다. 이름에 `Loop`가 있으면 반복.
+- 새 동작: 함수 하나(`def 이름(f): ... return 길이`, None이면 바탕 길이)를 만들어 `CLIPS`에 `(클립, 바탕 UAL 클립, 함수)`로 넣고 `CharacterAnimator`에 상수를 만든다. 편한 대기 위에 얹으려면 `relaxed(함수)`. 이름에 `Loop`가 있으면 반복.
 - 확인: `sh tools/autoshot.sh 02r_scared` → `02r_cheer`·`02r_excited`·`02r_excited_pump`·`02r_scared`(내 캐릭터 앞에서). NPC는 `sh tools/inspect.sh "lobby:NPC_이름@wave:180:5:1.4"`처럼 이름 뒤 `@wave`·`@clap`·`@cast`·`@reel`.
 
 ## 3. 임포트 설정과 함정
 
 `AssetImportRules`가 매번 같은 설정을 넣는다(손으로 인스펙터를 고치면 다음 임포트에서 덮어써진다 → 코드를 고친다).
 
-- 휴머노이드, 아바타는 각 파일에서 만든다(자동 매핑으로 유효). Kevin Iglesias만 패키지 아바타를 복사(7장).
+- 휴머노이드, 아바타는 각 파일에서 만든다(자동 매핑으로 유효).
 - 루트 회전·높이·위치는 모두 포즈에 굽고(Bake Into Pose) 원본 기준. 그래서 `Excited`에서 골반이 올라가면 몸 전체가 뜬다.
 - 포스트프로세서 코드만 바꾸면 Unity가 FBX를 다시 임포트하지 않는다. 규칙을 고친 뒤에는 에디터에서 해당 FBX를 Reimport하거나, `.meta`를 건드려 배치모드 빌드가 다시 임포트하게 한다.
 - 클립 이름에 `Loop`가 있으면 반복(loopTime·loopPose).
@@ -61,7 +60,7 @@ bpyenv/Scripts/python -I tools/blender/build_reactions.py --preview Screenshots/
 
 낚싯대 각도(`PlayerController.RodPitch`·`RodYaw`, `BodyLean`)는 코드가 정하고, **내 캐릭터의 두 팔은 그 각도를 따라가는 2관절 IK**다. 예전에는 젖히기·던지기·챔질을 Mixamo 클립(`Windup`·`Cast`·`Hook`)이 시간대로 재생하고 낚싯대 각도는 마우스를 따라 따로 움직여서, 팔과 낚싯대가 따로 놀았다(사용자 지적: 어색하다).
 
-- 몸은 낚시 중 늘 `HoldRod`(UAL `Idle_Loop`, 2026-10-21까지 Mixamo Fishing Idle) + 상체 젖힘/숙임(`BodyLean`) + 낚싯대를 좌우로 틀면 가슴이 반쯤 따라 돈다.
+- 몸은 낚시 중 늘 `HoldRod` = `Fishing_Hold_Loop`(왼발을 앞으로 엇갈려 서고 상체를 11° 숙이고 가슴을 오른쪽으로 16° 틀어 왼 어깨가 앞으로 — 2026-10-21까지 Mixamo Fishing Idle) + 상체 젖힘/숙임(`BodyLean`) + 낚싯대를 좌우로 틀면 가슴이 반쯤 따라 돈다.
 - **오른손** (`UpdateRodArmRight`): 오른 어깨 기준 손목 자리를 낚싯대 각도 표 `RodArm.GripCurve`에서 고른다(NPC 낚시꾼도 같은 표) — 2° 던진 직후 앞으로 뻗음, 35° 허리 앞 대기, 82° 챔질(가슴 앞에 세움), 120°, 155° 어깨 너머로 젖힘. 사이는 부드럽게 섞는다. 팔꿈치 방향(pole)은 들고 있을 땐 아래 바깥, 젖힐수록 앞 바깥.
 - 낚싯대는 오른손 손바닥 앞(`RodGrip.Grip`)에 붙는다.
 - **왼손** (`UpdateRodArmLeft`): 릴 시트에서 0.24m 뒤(손잡이 끝 쪽)를 감싸 쥔다. 릴을 감을 때(`UpdateCrank`)와 고기를 들 때(`UpdateHold`)는 그 위에서 손잡이·고기로 옮겨 간다.
@@ -74,32 +73,32 @@ NPC 낚시꾼도 같은 방식이다(10장): 평소 40°, 20~45초마다 다시 
 
 ## 6. 라이선스
 
-- UAL1(Quaternius): CC0. 반응 동작(`Reactions.fbx`, `build_reactions.py`): 직접 만든 것이라 프로젝트 라이선스.
+- UAL1(Quaternius): CC0. 직접 만든 동작(`Motions.fbx`, `build_motions.py`): 프로젝트 라이선스(CC BY-NC-SA 4.0).
 - Mixamo: 2026-10-21에 모두 걷어냄(4장). 게임에 넣어 배포는 되지만 원본 FBX 재배포가 안 돼서 공개 저장소에 둘 수 없었다.
-- Human Basic Motions FREE(Asset Store): 에셋 스토어 약관도 원본 재배포를 막는다. **공개 전에 바꿀 것** (7장).
+- Human Basic Motions FREE(Asset Store): 2026-10-21에 걷어냄(7장). 에셋 스토어 약관도 원본 재배포를 막는다.
 
-## 7. 대기·걷기·뛰기 (Human Basic Motions FREE)
+## 7. 대기·걷기·뛰기 (기본 동작 `Basic_*`, 2026-10-21)
 
-UAL의 `Idle_Loop`는 주먹 쥔 슈퍼히어로 자세라서, 에셋 스토어 무료 패키지 **Human Basic Motions FREE**(Kevin Iglesias, `Assets/Kevin Iglesias`)에서 4동작 × 남·녀 8개 FBX를 `Resources/Animations/KevinIglesias/`로 옮겨 이름을 바꿨다(`.meta` GUID 유지 → 패키지 데모 씬도 그대로 동작).
+2026-10-15~21에는 에셋 스토어 **Human Basic Motions FREE**(Kevin Iglesias, 남·녀 따로)를 썼다. UAL의 `Idle_Loop`가 주먹 쥔 슈퍼히어로 자세라서였는데, 공개 준비로 걷어내고(17 문서) `build_motions.py`로 UAL 위에 고쳐 만들었다.
 
-| 파일 | 원본 | 클립 (`AssetImportRules.KevinClips`) | 원래 이동 속도 |
+| 클립 | 바탕 (UAL1) | 고친 것 | 원래 이동 속도 |
 |---|---|---|---|
-| `Idle_M/F.fbx` | HumanM/F@Idle01 | `Basic_Idle_Loop_M/_F` | — |
-| `Walk_M/F.fbx` | Walk01_Forward | `Basic_Walk_Loop_M/_F` | 2.0 m/s (0.8초에 두 걸음) |
-| `Run_M/F.fbx` | Run01_Forward | `Basic_Run_Loop_M/_F` | 4.0 m/s (0.6초) |
-| `Sprint_M/F.fbx` | Sprint01_Forward | `Basic_Sprint_Loop_M/_F` | 6.0 m/s (0.52초) |
-| `Talk_M/F.fbx` | Talk01 | `Basic_Talk_Loop_M/_F` | — (NPC 대화 상대, 예전 UAL Idle_Talking) |
-| `JumpBegin_M/F.fbx` | Jump01 - Begin | `Basic_JumpBegin_M/_F` | — (Space 점프 시작, 한 번) |
-| `Fall_M/F.fbx` | Fall01 | `Basic_Fall_Loop_M/_F` | — (공중) |
+| `Basic_Idle_Loop` | Idle_Loop | 편한 대기(다리 모으고 팔 내리고 손 펴기, 상체 5° 세우기) | — |
+| `Basic_Walk_Loop` | Walk_Formal_Loop (Walk_Loop은 몸을 숙인 걸음) | 주먹 풀기 | 0.98 m/s (40프레임에 두 걸음) |
+| `Basic_Run_Loop` | Jog_Fwd_Loop | 느슨한 주먹 | 5.9 m/s (28프레임) |
+| `Basic_Sprint_Loop` | Sprint_Loop | 주먹 | 8.9 m/s (20프레임) |
+| `Basic_Talk_Loop` | Idle_Talking_Loop | 다리 모으기, 손 펴기 | — (NPC 대화 상대) |
+| `Basic_JumpBegin` | 편한 대기 | 웅크렸다가 팔을 앞으로 휘두르며 펴 오르기 (20프레임, UAL Jump_Start는 두 팔을 T자로 벌렸다) | — |
+| `Basic_Fall_Loop` | 편한 대기 | 무릎을 조금 접고(한 발 앞), 두 팔을 옆으로 벌려 균형 | — |
+| `Basic_TurnLeft/Right_Loop` | 편한 대기 | 25프레임에 한 걸음씩 발을 번갈아 들어 도는 쪽으로 옮긴다 (몸 방향은 코드) | — |
 
-- 원래 속도는 같은 패키지의 루트 모션(`[RM]`) 판을 Blender로 열어 엉덩이가 한 바퀴에 간 거리로 쟀다.
-- **임포트**: 휴머노이드, 아바타는 패키지 그대로 **Copy From Other**(HumanM/F_Model) — 우리 규칙이 `CreateFromThisModel`로 덮지 않게 경로를 따로 처리한다. 루트는 포즈에 굽고, +Z를 보므로(UAL은 -Z) `rotationOffset = 180`.
-- **성별**: `CharacterFactory`가 `CharacterAnimator.Female`을 정하면, 클립을 찾을 때 `이름_F`/`이름_M`을 먼저 찾고 없으면 `이름`을 쓴다. 첫 재생은 `Start`(성별이 정해진 뒤).
+- 원래 속도는 Blender에서 땅을 디딘 발(가장 낮을 때)이 골반 기준으로 뒤로 가는 속도로 쟀다 (`CharacterAnimator.WalkClipSpeed`·`JogClipSpeed`·`SprintClipSpeed`).
+- **성별**: 클립을 찾을 때 `이름_F`/`이름_M`을 먼저 찾고 없으면 `이름`을 쓴다(`CharacterAnimator.Female`). 지금은 남·녀 같은 클립이다 — 여자 걸음을 만들면 `_F`로 넣는다.
 - **속도에 맞춘 클립·배속** (`PlayerController.UpdateAnimation`): 게임 걷기 키는 4.5 m/s, 달리기 7.5 m/s라서
-  - 달리기 → `Sprint` × (속도 / 6) ≈ 1.25배
-  - 2.6 m/s 넘게 걷기 → `Run`(뛰는 걸음) × (속도 / 4) ≈ 1.1배
-  - 더 느릴 때(벽에 미끄러지며 등) → `Walk` × (속도 / 2)
-  발이 땅에서 거의 미끄러지지 않는다. 발소리도 클립 한 걸음 길이(뛰기 1.2m, 질주 1.56m)마다 낸다.
+  - 달리기 → `Sprint` × (속도 / 8.9) ≈ 0.84배
+  - 2.6 m/s 넘게 걷기 → `Run`(뛰는 걸음) × (속도 / 5.9) ≈ 0.76배
+  - 더 느릴 때(벽에 미끄러지며 등) → `Walk` × (속도 / 0.98)
+  발이 땅에서 거의 미끄러지지 않는다. 발소리도 클립 한 걸음 길이(뛰기 2.75m, 질주 2.97m)마다 낸다.
 - 확인: autoshot `00d_walk`(걷기 키), `00e_run`(달리기), `00f_idle`.
 
 | 걷기 키 (Run 클립) | 달리기 (Sprint 클립) |
@@ -110,7 +109,7 @@ UAL의 `Idle_Loop`는 주먹 쥔 슈퍼히어로 자세라서, 에셋 스토어 
 
 | 동작 | 클립 | 언제 | 코드 |
 |---|---|---|---|
-| 제자리 돌기 | `Basic_TurnLeft_Loop` / `Basic_TurnRight_Loop` (Human Basic Motions Turn01, 남·녀) | NPC가 플레이어 쪽으로 25° 넘게 몸을 돌릴 때 발을 옮기며 돈다. 8° 안으로 들어오면 멈춤(사이는 이전 상태 유지 — 떨림 방지). 앉은 NPC는 그대로 | `NpcAngler` `_turning` |
+| 제자리 돌기 | `Basic_TurnLeft_Loop` / `Basic_TurnRight_Loop` (7장) | NPC가 플레이어 쪽으로 25° 넘게 몸을 돌릴 때 발을 옮기며 돈다. 8° 안으로 들어오면 멈춤(사이는 이전 상태 유지 — 떨림 방지). 앉은 NPC는 그대로 | `NpcAngler` `_turning` |
 | 펄쩍 | `Excited` (1장) | 괴물 어종(`Boss`)이나 희귀도 5 어종을 낚았을 때, 보통 환호 대신 | `FishingController` → `PlayerController.PlayExcited` |
 | 손짓 | `Wave_Call` (1장) | 보고할 퀘스트가 있고 플레이어가 15m 안에 오면 조합 연락관(`union`)이 9~14초마다 | `NpcAngler` `_nextRally` |
 | 움찔 | `Scared` (1장) | 줄이 끊어졌을 때 (낚싯대 자세를 돌린 뒤 한 번) | `FishingController` → `PlayerController.PlayScared` |

@@ -1,0 +1,10 @@
+{
+  "name": "fishing-eztree",
+  "private": true,
+  "type": "module",
+  "description": "ez-tree(MIT)로 나무 형상을 뽑는다 — tools/blender/build_vegetation.py가 부른다",
+  "dependencies": {
+    "@dgreenheck/ez-tree": "1.1.0",
+    "three": "0.186.1"
+  }
+}

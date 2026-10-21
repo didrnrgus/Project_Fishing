@@ -100,7 +100,6 @@ namespace Fishing.EditorTools
             else AlwaysIncludeShaders();
             EnsurePostFx();
             FontSetup.Ensure();
-            NatureKitBake.Ensure();
             VegetationBake.Ensure();
             var options = new BuildPlayerOptions
             {

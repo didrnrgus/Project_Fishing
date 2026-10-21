@@ -2,7 +2,6 @@ using System.Linq;
 using Fishing.Characters;
 using Fishing.Core;
 using Fishing.Data;
-using LeTai.Asset.TranslucentImage;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -37,7 +36,7 @@ namespace Fishing.UI
 
         sealed class GearSlotView
         {
-            public TranslucentImage Bg;
+            public UIShape Bg;
             public Image Icon;
             public TMP_Text Fallback, Badge;
         }
@@ -99,7 +98,7 @@ namespace Fishing.UI
             var btn = UIFactory.Button(parent, "", () => { _selected = i; Refresh(); }, UIFactory.TabOff, 12);
             var rt = (RectTransform)btn.transform;
             rt.At(new Vector2(right ? 1 : 0, 1), new Vector2(right ? -10 : 10, y), new Vector2(62, 62), new Vector2(right ? 1 : 0, 1));
-            v.Bg = (TranslucentImage)btn.targetGraphic;
+            v.Bg = (UIShape)btn.targetGraphic;
             UIFactory.AddBorder(v.Bg, new Color(1f, 1f, 1f, 0.18f), 1.5f);
             v.Icon = UIFactory.Image(rt, Color.white, null, "Icon");
             v.Icon.preserveAspect = true;

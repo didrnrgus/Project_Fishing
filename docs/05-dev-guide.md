@@ -6,14 +6,15 @@
 - Windows Build Support 모듈
 - 패키지: `com.unity.ugui 2.0.0`, `com.unity.burst`, `com.unity.collections`(Translucent Image가 씀), `com.unity.postprocessing 3.4.0`(후처리), `com.unity.inputsystem 1.14.2`(패드 진동만), `com.unity.test-framework 1.5.1` + 기본 모듈
 - 외부 에셋
-  - 동작 클립(`Assets/Resources/Animations`: Quaternius UAL CC0, 직접 만든 반응 동작 `Reactions.fbx`, Kevin Iglesias). 임포트 설정은 `Assets/Editor/AssetImportRules.cs`가 자동으로 맞춘다.
+  - 동작 클립(`Assets/Resources/Animations`: Quaternius UAL CC0, 직접 만든 동작 `Motions.fbx`). 임포트 설정은 `Assets/Editor/AssetImportRules.cs`가 자동으로 맞춘다.
   - 사람은 모두 VRM: `Assets/StreamingAssets/Characters`(기본 11개, Git LFS — `git lfs pull`로 받는다) + `characters.json`. 바꾸는 법은 [가이드 07](guide/07-characters.md).
-  - 반응 동작(환호·박수·펄쩍·손짓·움찔): `bpyenv/Scripts/python -I tools/blender/build_reactions.py`가 `Resources/Animations/Reactions.fbx`를 만든다 → [10 문서](10-animation.md) 1~2장. Mixamo는 2026-10-21에 걷어냈다.
-  - 에셋 스토어 패키지(2026-10-14 커밋, 아직 게임에 연결 안 함): `Kevin Iglesias`(Human Basic Motions FREE), `AllSkyFree`, `Fantasy Skybox FREE`, `NatureStarterKit2`, `BigRookGames`.
+  - 기본·반응 동작: `bpyenv/Scripts/python -I tools/blender/build_motions.py`가 `Resources/Animations/Motions.fbx`를 만든다 → [10 문서](10-animation.md) 1~2·7장.
+  - 하늘 돔: `bpyenv/Scripts/python -I tools/sky/build_sky.py` (Poly Haven CC0) → `Resources/Sky`.
+  - 나무·덤불·바위·풀: `bpyenv/Scripts/python -I tools/blender/build_vegetation.py` (ez-tree MIT·Poly Haven CC0, 처음엔 `tools/eztree`에서 `npm ci` — Node 22) → `Assets/Vegetation`, 빌드 때 `Editor/VegetationBake`가 재질·LOD 프리팹을 만든다 → [17 문서](17-open-source.md).
+  - 에셋 스토어·Mixamo 에셋은 없다(2026-10-21에 모두 걷어냄, 17 문서).
   - Kenney CC0 모델(`Resources/Kenney`)·소리(`Resources/Audio/Kenney`), Poly Haven CC0 텍스처(`Resources/Terrain`). 출처는 각 폴더의 SOURCES.md·라이선스 사본.
   - 캐릭터 옷·물고기·아이콘은 직접 만든 것: `tools/blender`(아래 "Blender 파이프라인").
-  - **Translucent Image 7.0.3 + Paraform 1.5.0** (`Assets/Le Tai's Asset`): 유리 UI. 스크립팅 심볼 `LETAI_PARAFORM`이 있어야 둥근 도형이 나온다(ProjectSettings에 등록됨, 에디터가 열릴 때도 자동 추가).
-  - **EasyChart** 무료판 (`Assets/EasyChart`): 선·막대·파이(도넛)·레이더만. 가로 막대·게이지 등은 Pro 전용이라 쓰면 에러 로그가 난다.
+  - 유리 UI·둥근 도형은 직접 만든 `UI/UIShape`(셰이더 `Fishing/UIShape`)·`UI/UIBlurSource`, 차트는 `UI/UIChart` (2026-10-21까지는 Translucent Image + Paraform·EasyChart, 17 문서).
   - **TextMesh Pro** + Jalnan2 글꼴: `Assets/Editor/FontSetup.cs`가 `Resources/Fonts/Jalnan2 SDF`를 만든다(없을 때만). 다시 만들려면 메뉴 **Fishing > Rebuild Jalnan2 TMP Font**.
 - 렌더 파이프라인: Built-in, 입력: 구 Input Manager + 새 Input System(진동만, `activeInputHandler: 2`)
 
@@ -161,7 +162,7 @@ UI나 연출을 바꾼 뒤 `build.sh` → `autoshot.sh`로 실제 화면을 확�
 - 문서용 스크린샷은 `docs/images/`에 복사해서 커밋한다.
 - 원격: `https://github.com/didrnrgus/Project_Fishing.git`
 - 바이너리(이미지·모델·소리·글꼴)는 Git LFS(`.gitattributes`). 처음 받을 때 `git lfs install` 후 clone/pull.
-- 에셋 스토어 원본: 저장소는 **비공개**다(2026-10-15 확인). 에셋 스토어 약관이 막는 것은 판매가 아니라 원본 파일을 남이 받을 수 있게 올리는 것이라, 비공개로 두면 그대로 커밋해도 된다. **공개로 바꾸려면** 먼저 `Assets/Kevin Iglesias`·`AllSkyFree`·`Fantasy Skybox FREE`·`NatureStarterKit2`·`BigRookGames`·실사 식생·UI 에셋과 Resources로 옮긴 그 파일들(`Resources/Animations/KevinIglesias`, `Resources/Sky`, `Resources/NatureKit`)을 기록에서 빼야 한다. Mixamo는 2026-10-21에 걷어냈지만 예전 커밋 기록에는 남아 있다.
+- 라이선스: 직접 만든 것은 CC BY-NC-SA 4.0(`LICENSE`), 서드파티는 `THIRD_PARTY_NOTICES.md`. **에셋 스토어·Mixamo 원본은 넣지 않는다**(원본 재배포 금지). 새 에셋은 CC0·MIT·OFL처럼 재배포 가능한 것만 쓰고 출처를 그 폴더 SOURCES.md에 적는다 → [17 문서](17-open-source.md).
 
 ## 코딩 컨벤션
 

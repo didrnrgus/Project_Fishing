@@ -377,10 +377,12 @@ namespace Fishing.World
                 // 정자 주변과 곶 끝(바다를 보는 쪽)은 비워 둔다
                 if (new Vector2(x - top.x, z - top.y).magnitude < 11f) continue;
                 float gy = SeocheonTerrain.HeightAt(x, z);
+                float s = R(0.8f, 1.4f);
+                // 실사풍 작은 나무 + 잎 사이 붉은 꽃 (Resources/Plants), 없으면 아래 구를 얹은 도형 나무
+                if (KenneyProps.SpawnBush(_root, new Vector3(x, gy - 0.05f, z), R(0f, 360f), 4.4f * s, 16, flower, 0.24f, true) != null) continue;
                 var tree = new GameObject("Camellia").transform;
                 tree.SetParent(_root, false);
                 tree.localPosition = new Vector3(x, gy, z);
-                float s = R(0.8f, 1.4f);
                 Mats.Prim(PrimitiveType.Cylinder, "Trunk", tree, new Vector3(0f, 1.2f * s, 0f), new Vector3(0.35f * s, 1.2f * s, 0.35f * s), trunk, false);
                 for (int k = 0; k < 4; k++)
                 {

@@ -161,7 +161,7 @@ namespace Fishing.UI
                 stats[i] = reel ? g.ReelSpeed : g.Power;
             }
             UIChart.SetValues(_statChart.Serie(), stats);
-            _statChart.Profile.axes.Find(a => a.id == _statChart.Profile.yAxisId).labelFormat = reel ? "0.00" : "0.0";
+            _statChart.Profile.yFormat = reel ? "0.00" : "0.0";
             _statChart.Refresh();
             var now = reel ? RodUpgrade.Apply(gear, lv).ReelSpeed : RodUpgrade.Apply(gear, lv).Power;
             _statTitle.text = $"단계별 {(reel ? "감기 속도 (m/s)" : "힘")}   <color=#5ce0cc>지금 +{lv} · {now:0.00}</color>";

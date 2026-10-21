@@ -110,15 +110,16 @@
 - **성장·수집**: 레벨 1~40(레벨 보상 장비), 장비(낚싯대·릴·줄·배) 강화 +15, 미끼 + 해체 미끼 5등급, 도감, 살림망, 이야기 퀘스트 87개(낚시터마다), **일일 의뢰**, **대물 도전**, **업적**·칭호, **빙고 5×5**, **출석 체크**, 낚시 일지, 소라고동 교환소, **납품소**(살림망 고기를 팔면 납품 게이지가 차고, 가득 차면 다음 납품 두 배), **통발**(낚시터에 설치해 두고 20시간 뒤 수거), **내 캐릭터 창**(장착 장비 칸 + 최종 능력치 표 + 캐릭터 모델), **의상**(6부위 25벌, 부위별 능력치), 대기실 **수족관**.
 - **조합 낚시 대회**: 매일 09~15시, AI 낚시꾼 7명과 마릿수·최장·길이 합계로 겨룬다. 계급 엠블럼, 우승 상품 거거 낚시대·나팔고둥 릴.
 - **손맛**: 마디를 펼치는 뽑기대가 줄 방향으로 휘고 출렁인다. 장비별 릴이 돌고, 릴·드랙·카운터 소리, 게임패드 진동.
-- **화면**: 원작풍 UI(짙은 남색 판·파란 빛 테두리·각진 모서리·파란 탭, Translucent Image + Paraform), EasyChart 차트, 후처리(블룸·톤매핑·AO), 낮밤(하루 24분)·노을·해달별(은하수·반짝이는 별), 날씨(흐린 날 층구름·비·겨울 눈), 물결 셰이더, 새벽 물안개. 바닥·지형은 반복 무늬를 깨는 셰이더(`Fishing/Ground`·`Fishing/Terrain`, 절벽은 옆 투영), 벽·호안·석상·집은 풍화 셰이더(`Fishing/Weathered`: 월드 트라이플래너 + 물 자국·빗물 줄·이끼), 테트라포드·등대·바위기둥·한옥 정자는 절차적 메쉬, 석상(머라이언·독수리·사자상·대불·돌하르방)은 Blender에서 한 덩어리로 깎은 조각, 배(한국 연안 어선·모터보트·고무보트·나무배·카이크·요트)는 Blender 로프트 선체, 나무·바위·풀은 실사풍 에셋(Conifers [BOTD], Realistic Tree 9·10, Rock and Boulders 2, Grass Flowers Pack Free).
+- **화면**: 원작풍 UI(짙은 남색 판·파란 빛 테두리·각진 모서리·파란 탭 — 직접 만든 둥근 도형·배경 흐림 셰이더 `Fishing/UIShape`), 직접 그리는 차트(선·막대·도넛·레이더), 후처리(블룸·톤매핑·AO), 낮밤(하루 24분)·노을·해달별(은하수·반짝이는 별), 날씨(흐린 날 층구름·비·겨울 눈), 물결 셰이더, 새벽 물안개. 바닥·지형은 반복 무늬를 깨는 셰이더(`Fishing/Ground`·`Fishing/Terrain`, 절벽은 옆 투영), 벽·호안·석상·집은 풍화 셰이더(`Fishing/Weathered`: 월드 트라이플래너 + 물 자국·빗물 줄·이끼), 테트라포드·등대·바위기둥·한옥 정자는 절차적 메쉬, 석상(머라이언·독수리·사자상·대불·돌하르방)은 Blender에서 한 덩어리로 깎은 조각, 배(한국 연안 어선·모터보트·고무보트·나무배·카이크·요트)는 Blender 로프트 선체, 나무·덤불은 [ez-tree](https://github.com/dgreenheck/ez-tree)(MIT)로 만든 실사풍 나무(잎 양면 셰이더 `Fishing/Foliage`, 먼 거리는 십자 판), 바위·풀·들꽃·하늘은 Poly Haven(CC0).
 - **사람은 모두 VRM (애니풍)**: 내 캐릭터·낚시점 사장·조합 연락관·낚시꾼 NPC가 모두 VRM 파일이다. 기본 캐릭터(주인공은 여자 + 흰 원피스, 남자로 바꿀 수 있다)와 NPC는 VRoid CC0 샘플 11명(NPC는 사람마다 머리·옷 색·키를 바꿔 다양하게), [VRoid Studio](https://vroid.com/studio)로 만든 내 `.vrm`을 `문서\짭풍명월\Characters`에 넣으면 **빌드 없이** 캐릭터 창에서 골라 플레이한다. 기본 캐릭터·NPC도 `characters.json`만 고치면 빌드한 뒤에 갈아입힐 수 있다 → [캐릭터 바꾸기 설명서](docs/guide/07-characters.md). 의상은 능력치만 있고 몸에 보이는 장비는 낚싯대뿐. 대기실 **[옷 바꾸기]** 로 다른 VRoid 모델의 옷을 무작위로 입고(`outfitUrls`를 적으면 웹에서 받아 입기), 입은 옷은 저장된다.
 - **물고기는 직접 만든 3D 모델**: headless Blender 스크립트(`tools/blender`)로 물고기 165종의 어종별 모델·텍스처·헤엄 애니메이션(오징어·문어·갑오징어는 다리마다 뼈)을 만들고, 아이템 아이콘도 렌더.
 - **인트로**: Unity 스플래시 → 사업자 로고 「제쓰로네 게임공방」(낙관이 쾅 찍히고 이름이 붓으로 써진다) → 타이틀 「짭풍명월」(달밤 수묵 산수화 겹 그림이 시차·물안개·배·꽃잎으로 움직이고, 붓글씨·징·가야금풍 음악) → 아무 키 → 대기실. 아무 키로 건너뛸 수 있다. 그림은 `tools/intro/build_intro_art.py`, 소리는 절차적(`IntroAudio`).
 - **편의**: 옵션(O) — 음량·감도·해상도·그림자·후처리·진동·**키 설정**.
 
-## 실행
+## 실행 (포크해서 시작하기)
 
-1. **Unity 6000.3.17f1**로 이 폴더를 연다.
+0. 저장소를 받는다. 그림·모델·소리·VRM은 **Git LFS**라서 먼저 `git lfs install`을 하고 clone한다 (이미 받았으면 `git lfs pull`).
+1. **Unity 6000.3.17f1**로 이 폴더를 연다. 에셋 스토어 패키지는 필요 없다(모두 저장소 안에 있거나 Unity 패키지 관리자가 받는다).
 2. `Assets/Scenes/HanRiver.unity`를 열고 Play한다.
 
 명령줄로 빌드할 수도 있다 (Git Bash).
@@ -174,8 +175,9 @@ cd tools/fightsim && dotnet run -- report   # Unity 없이 파이팅 밸런스 (
 | [14-original-sea-video.md](docs/14-original-sea-video.md) | 원작 동남아 거점 영상 프레임 분석(앙코르와트·하롱베이·빈펄·돈콘·센토사·플라우 탱글·텔록 바텍·티오만)과 원작 전체 맵 목록 |
 | [15-original-clip-library.md](docs/15-original-clip-library.md) | 원작 기능별 클립 라이브러리(814개·문서 17개) 대조: WARNING·재도전·복수혈전, RESULT 토스트·BONUS·이벤트 어종, 조준 업적, 배 소환·엔진, 원작풍 UI 팔레트 |
 | [16-vrm-characters.md](docs/16-vrm-characters.md) | VRM 캐릭터: 모든 사람이 VRM, 실행 중 읽기·복제(UniVRM), characters.json(기본 캐릭터·NPC 배정, 빌드 뒤 교체), 걷어낸 옛 캐릭터 |
+| [17-open-source.md](docs/17-open-source.md) | 공개 준비: 재배포 금지 에셋(에셋 스토어·Mixamo)을 직접 만든 것·CC0·MIT로 바꾼 기록(하늘·동작·차트·UI 유리·나무·바위·풀), 다시 만드는 명령, 라이선스 |
 | [fish-db/](docs/fish-db/00_README_어종DB_가이드.md) | **맵별 서식 어종 DB**: 한국·동남아·지중해 약 145종 (실제 서식 어종 기준, 희귀도·파워·경계심·파이팅 유형·낚시터 매핑) |
-| [WORK-IN-PROGRESS.md](docs/WORK-IN-PROGRESS.md) | 지금 상태, **사용자가 해야 할 일**(에셋 스토어 로그인이 필요한 것), 다음 후보 |
+| [WORK-IN-PROGRESS.md](docs/WORK-IN-PROGRESS.md) | 지금 상태, 다음 후보 |
 | [guide/](docs/guide/README.md) | **레벨별 플레이 가이드**: Lv.1~40 구간마다 열리는 것, 장비 사는 순서, 낚시터·어군·퀘스트 요령, 기본기 |
 | [tech/](docs/tech/README.md) | **기술 문서**: 만들면서 도움이 된 알고리즘·기법 (파이팅 모형, 헤드리스 밸런스, 가중치 확률, 제스처 인식, 스프링·IK, 절차적 지형, 셰이더, 성능, 절차적 콘텐츠, 개발 흐름) |
 
@@ -199,19 +201,23 @@ Assets/Editor  셋업·빌드 도구, 임포트 규칙, 밸런스 시뮬레이�
 tools/        build·autoshot·test·balance 스크립트, fightsim/(Unity 없는 밸런스), fish_table.py(02 문서 어종 표), blender/(물고기·아이콘·해외 소품 생성)
 ```
 
-씬에는 `GameBootstrap` 하나만 있고, 나머지는 모두 코드로 만듭니다. 사람은 실행 중에 읽는 VRM(UniVRM), 물고기·아이콘은 `tools/blender`로 만든 모델, 건물·가로등·나무·배는 Kenney CC0 모델, 땅·물·다리·하늘은 프리미티브와 절차적 텍스처·셰이더(일부 바닥·지형은 Poly Haven CC0 텍스처)입니다. 낚시 소리는 절차적으로 만들고 UI·발소리만 Kenney CC0 녹음을 씁니다. 낚싯대를 든 두 팔(들기·던지기·챔질·릴 감기)은 낚싯대 각도를 따라가는 IK이고, 반응 동작(환호·박수·펄쩍 기뻐하기·손짓·움찔)은 `tools/blender/build_reactions.py`로 UAL 뼈대 위에 직접 만들었고, 대기·걷기·뛰기·말하기·점프·제자리 돌기는 에셋 스토어 Human Basic Motions FREE를 씁니다([10 문서](docs/10-animation.md)). 흐린 날 하늘은 AllSky Free, 맑은 날 하늘 돔은 Fantasy Skybox FREE, 활엽수는 Nature Starter Kit 2(빌드 전에 일반 메쉬로 굽기)입니다. 에셋 스토어 원본이 들어 있어 **저장소는 비공개**로 둡니다. 실물 사진·다른 게임 그림은 참고만 하고 저장소에 넣지 않습니다.
+씬에는 `GameBootstrap` 하나만 있고, 나머지는 모두 코드로 만듭니다.
+에셋 스토어·Mixamo처럼 원본 재배포가 금지된 에셋은 쓰지 않습니다(2026-10-21에 모두 걷어내고 직접 만든 것과 CC0·MIT 자료로 바꿈 → [17 문서](docs/17-open-source.md)). 사람은 실행 중에 읽는 VRM(UniVRM), 물고기·아이콘은 `tools/blender`로 만든 모델, 건물·가로등·나무·배는 Kenney CC0 모델, 땅·물·다리·하늘은 프리미티브와 절차적 텍스처·셰이더(일부 바닥·지형은 Poly Haven CC0 텍스처)입니다. 낚시 소리는 절차적으로 만들고 UI·발소리만 Kenney CC0 녹음을 씁니다. 낚싯대를 든 두 팔(들기·던지기·챔질·릴 감기)은 낚싯대 각도를 따라가는 IK이고, 대기·걷기·뛰기·말하기·점프·제자리 돌기와 반응 동작(환호·박수·펄쩍 기뻐하기·손짓·움찔)은 `tools/blender/build_motions.py`로 Quaternius UAL(CC0) 뼈대 위에 직접 만들었습니다([10 문서](docs/10-animation.md)). 하늘 돔은 Poly Haven 하늘 사진(`tools/sky/build_sky.py`), 나무·덤불·바위·풀은 `tools/blender/build_vegetation.py`(ez-tree·Poly Haven)입니다. 실물 사진·다른 게임 그림은 참고만 하고 저장소에 넣지 않습니다.
 
 ## 크레딧
 
 - 원작: 「청풍명월」 개발 저스트나인, 서비스 네오위즈게임즈(피망). 이 프로젝트는 원작과 관련이 없는 개인 팬 프로젝트입니다.
 - 캐릭터: VRoid 프로젝트(pixiv)의 VRoid Studio 샘플 모델 11명 (CC0, [OpenGameArt 미러](https://opengameart.org/content/vroid-studio-cc0-models)) — 千駄ヶ谷渋·千駄ヶ谷篠·桜田史利矢·ビビ·ヴィータ·ヴィクトリア・ルービン 등. VRM 읽기: [UniVRM](https://github.com/vrm-c/UniVRM) v0.131.4 (MIT, VRM 컨소시엄).
 - 3D 모델: [Quaternius](https://quaternius.com) — Universal Animation Library, Animated Fish Pack(어종 모델이 없을 때 대체) (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Quaternius/`.
-- 반응 동작(환호·박수·펄쩍·손짓·움찔): 직접 만듦 (`tools/blender/build_reactions.py`, Quaternius UAL1 뼈대).
-- 흐린 하늘: AllSky Free (rpgwhitelock), 맑은 하늘: Fantasy Skybox FREE, 나무: Nature Starter Kit 2 (Shapes) — Unity Asset Store.
-- 실사풍 식생·바위: Conifers [BOTD] (forst), Realistic Tree 9·10 (Pixel Games), Rock and Boulders 2, Grass Flowers Pack Free — Unity Asset Store.
-- 대기·걷기·뛰기: [Human Basic Motions FREE](https://assetstore.unity.com/packages/3d/animations/human-basic-motions-free-154271) (Kevin Iglesias, Unity Asset Store).
+- 동작: 직접 만듦 (`tools/blender/build_motions.py`, Quaternius UAL1 뼈대) — 대기·걷기·뛰기·질주·말하기·점프·제자리 돌기·낚시꾼 자세·환호·박수·펄쩍·손짓·움찔.
+- 나무·덤불: [ez-tree](https://github.com/dgreenheck/ez-tree) 1.1.0 (Daniel Greenheck, MIT) — 프리셋 형상·잎 그림, 껍질은 Poly Haven·TextureCan(CC0) → `Assets/Vegetation/SOURCES.md`
+- 바위·풀·들꽃·하늘: [Poly Haven](https://polyhaven.com) (CC0) → `Assets/Vegetation/SOURCES.md`, `Assets/Resources/Sky/SOURCES.md`
 - 배경·배 모델: [Kenney](https://kenney.nl) — City Kit Commercial, City Kit Roads, Nature Kit, Watercraft Kit (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Kenney/`.
 - 텍스처: [Poly Haven](https://polyhaven.com) (CC0) — 모래·풀·바위·해안·나무 데크·콘크리트·아스팔트(갯벌 진흙·눈은 모래를 바꿔 만듦), 2026-10-20 추가: 거친 콘크리트·벽 콘크리트·회벽·점토 기와·회색 기와·사암·암벽·초가·판재·현무암·흰 사암 벽돌·돌담·녹슨 철·대리석 → `Assets/Resources/Terrain/SOURCES.md`
 - 소리: [Kenney](https://kenney.nl) Interface Sounds · Impact Sounds (CC0, UI 클릭·경고·발소리) → `Assets/Resources/Audio/Kenney/SOURCES.md`
-- UI 에셋: Translucent Image · Paraform (Le Tai), EasyChart, TextMesh Pro, 글꼴 여기어때 잘난체2(Jalnan2).
+- UI: 직접 만든 도형·흐림 셰이더와 차트, TextMesh Pro, 글꼴 여기어때 잘난체2(Jalnan2, ㈜여기어때컴퍼니 — 라이선스 사본 `Assets/TextMesh Pro/Fonts/Jalnan2-LICENSE.txt`).
+
+## 라이선스
+
+직접 만든 코드·그림·모델·동작·문서는 **[CC BY-NC-SA 4.0](LICENSE)** (저작자표시-비영리-동일조건변경허락)입니다. 포크해서 고치고 나눠도 되지만, **판매 등 상업적 이용은 안 되고**, 고친 것도 같은 라이선스로 공개해야 하며 출처(제쓰로네 게임공방, 이 저장소)를 밝혀야 합니다. 서드파티 구성 요소는 각자의 라이선스를 따릅니다 → [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). 원작 「청풍명월」의 이름·상표·저작물에 대한 권리는 원작 권리자에게 있으며 이 라이선스로 주어지지 않습니다.
 

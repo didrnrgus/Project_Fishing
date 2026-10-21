@@ -167,7 +167,7 @@ namespace Fishing.Characters
         {
             if (_anim != null)
             {
-                // 몸을 크게 돌리는 중이면 발을 옮기며 돈다 (Human Basic Motions Turn), 앉은 사람은 그대로
+                // 몸을 크게 돌리는 중이면 발을 옮기며 돈다 (Motions Basic_Turn), 앉은 사람은 그대로
                 if (_turning != 0 && _role != Role.Sitter)
                     _anim.SetLoop(_turning < 0 ? CharacterAnimator.TurnLeft : CharacterAnimator.TurnRight, 1.2f);
                 else
@@ -178,7 +178,7 @@ namespace Fishing.Characters
                         Role.Stand => CharacterAnimator.Idle,
                         _ => CharacterAnimator.Sit
                     });
-                // 조합 연락관: 보고할 퀘스트가 있고 내가 가까이 오면 손을 흔들어 부른다 (Reactions Wave_Call)
+                // 조합 연락관: 보고할 퀘스트가 있고 내가 가까이 오면 손을 흔들어 부른다 (Motions Wave_Call)
                 if (_mark == Fishing.Core.QuestSystem.Mark.Ready && _faceTarget == null && Game.Player != null && Time.time > _nextRally &&
                     (Game.Player.transform.position - transform.position).sqrMagnitude < 15f * 15f)
                 {

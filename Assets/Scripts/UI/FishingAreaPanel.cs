@@ -30,7 +30,7 @@ namespace Fishing.UI
         TMP_Text _hubTitle;
         readonly List<(Image bg, TMP_Text text, FishingHub hub)> _hubTabs = new List<(Image, TMP_Text, FishingHub)>();
         RectTransform _listRoot, _markerRoot, _map;
-        LeTai.Asset.TranslucentImage.TranslucentImage _mapImage;
+        UIShape _mapImage;
         int _fishIndex;
         int _channel = 1;
 

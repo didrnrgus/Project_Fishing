@@ -442,13 +442,13 @@ namespace Fishing.PlayerSystems
             Mats.Prim(PrimitiveType.Sphere, "Head", parent, new Vector3(0f, 1.65f, 0f), Vector3.one * 0.42f, skin, false);
         }
 
-        /// <summary>랜딩 환호: 두 팔을 V자로 들고 흔든다 (Reactions Cheer_ArmsUp).</summary>
+        /// <summary>랜딩 환호: 두 팔을 V자로 들고 흔든다 (Motions Cheer_ArmsUp).</summary>
         public void PlayCheer() => _anim?.PlayOnce(CharacterAnimator.Cheer, 1.1f);
 
-        /// <summary>괴물·전설 어종을 낚았을 때: 펄쩍 뛰며 두 주먹을 치켜든다 (Reactions Excited).</summary>
+        /// <summary>괴물·전설 어종을 낚았을 때: 펄쩍 뛰며 두 주먹을 치켜든다 (Motions Excited).</summary>
         public void PlayExcited() => _anim?.PlayOnce(CharacterAnimator.Excited, 1.1f);
 
-        /// <summary>줄이 끊어졌을 때: 움찔 놀란다 (Reactions Scared).</summary>
+        /// <summary>줄이 끊어졌을 때: 움찔 놀란다 (Motions Scared).</summary>
         public void PlayScared() => _anim?.PlayOnce(CharacterAnimator.Scared, 1f);
 
         public void Teleport(Vector3 pos, float yaw)
@@ -545,12 +545,12 @@ namespace Fishing.PlayerSystems
             _cc.Move(motion * Time.deltaTime);
 
             _speedNow = new Vector2(motion.x, motion.z).magnitude;
-            // 발소리: 애니메이션 한 걸음마다 (뛰기 클립 0.3초 × 4m/s = 1.2m, 질주 0.26초 × 6m/s = 1.56m)
+            // 발소리: 애니메이션 한 걸음마다 (Motions 뛰기 클립 반 바퀴 14프레임 × 5.9m/s = 2.75m, 질주 10프레임 × 8.9m/s = 2.97m — 배속을 속도에 맞추므로 땅 위 거리는 같다)
             if (_cc.isGrounded && _speedNow > 0.5f)
             {
                 bool running = _speedNow > WalkSpeed + 0.5f;
                 _stride += _speedNow * Time.deltaTime;
-                if (_stride >= (running ? 1.56f : 1.2f))
+                if (_stride >= (running ? 2.97f : 2.75f))
                 {
                     _stride = 0f;
                     if (Game.Sound != null) Game.Sound.Footstep(transform.position, running);
@@ -612,7 +612,7 @@ namespace Fishing.PlayerSystems
                 return;
             }
             bool running = _speedNow > WalkSpeed + 0.5f;
-            // 속도에 맞는 클립 (Human Basic Motions 원래 속도: 걷기 2, 뛰기 4, 질주 6m/s). 걷기 키(4.5m/s)도 뛰는 걸음
+            // 속도에 맞는 클립 (원래 속도: 걷기 0.98, 뛰기 5.9, 질주 8.9m/s — CharacterAnimator.*ClipSpeed). 걷기 키(4.5m/s)도 뛰는 걸음
             if (running) _anim.SetLoop(CharacterAnimator.Sprint, _speedNow / CharacterAnimator.SprintClipSpeed);
             else if (_speedNow > 2.6f) _anim.SetLoop(CharacterAnimator.Jog, _speedNow / CharacterAnimator.JogClipSpeed);
             else if (_speedNow > 0.5f) _anim.SetLoop(CharacterAnimator.Walk, Mathf.Max(0.6f, _speedNow / CharacterAnimator.WalkClipSpeed));

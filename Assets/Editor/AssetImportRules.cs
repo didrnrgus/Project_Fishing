@@ -5,13 +5,13 @@ namespace Fishing.EditorTools
     /// <summary>
     /// 외부 에셋 임포트 규칙. (캐릭터 모델은 에셋이 아니라 실행 중에 읽는 VRM — Characters/VrmCharacters)
     ///  - Resources/Animations: 휴머노이드 리그 (애니메이션 리타깃, 동작 클립만). FBX 안의 "Armature|이름" 테이크가 클립 "이름"
-    ///    (UAL1_Standard = Quaternius CC0, Reactions = tools/blender/build_reactions.py로 만든 반응 동작)
-    ///  - Resources/Animations/KevinIglesias: Human Basic Motions FREE의 대기·걷기·뛰기 (남·녀). 아바타는 패키지 모델(HumanM/F_Model)에서 복사
+    ///    (UAL1_Standard = Quaternius CC0, Motions = tools/blender/build_motions.py로 만든 기본·반응 동작)
     ///  - 이름에 "Loop"가 들어간 클립은 반복 재생
     ///  - Resources/Fish: 레거시 애니메이션 (Animation 컴포넌트). Fish/Species는 build_fish.py가 만든 어종별 모델(클립 5개)
     ///  - Resources/Fish/Textures: *_n = 노멀 맵, *_m = 금속성·매끈함(선형), 나머지 = 알베도(알파 = 지느러미)
     ///  - Resources/Icons: UI 스프라이트 (투명 배경, 밉맵 없음). Items·Junk = build_icons.py, Fish = build_fish.py
     ///  - Resources/Junk: 잡동사니 정적 모델 (build_icons.py)
+    ///  - Assets/Vegetation: 나무·덤불·바위·풀 카드 (build_vegetation.py, 재질·프리팹은 VegetationBake)
     /// </summary>
     public class AssetImportRules : AssetPostprocessor
     {
@@ -20,15 +20,7 @@ namespace Fishing.EditorTools
         void OnPreprocessModel()
         {
             var importer = (ModelImporter)assetImporter;
-            if (assetPath.Contains("Resources/Animations/KevinIglesias/"))
-            {
-                // 아바타 설정(Copy From Other → Kevin Iglesias/Human Animations/Models)은 패키지 그대로 둔다
-                importer.animationType = ModelImporterAnimationType.Human;
-                importer.isReadable = false;
-                importer.materialImportMode = ModelImporterMaterialImportMode.None;
-                importer.importAnimation = true;
-            }
-            else if (IsHumanoid(assetPath))
+            if (IsHumanoid(assetPath))
             {
                 importer.animationType = ModelImporterAnimationType.Human;
                 importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
@@ -56,6 +48,20 @@ namespace Fishing.EditorTools
                 importer.importAnimation = false;
                 importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
                 importer.addCollider = false;
+            }
+            else if (assetPath.StartsWith("Assets/Vegetation/"))
+            {
+                // 나무·덤불·바위 (tools/blender/build_vegetation.py): 재질·LOD는 Editor/VegetationBake가 오브젝트 이름(LOD0_재질)으로 붙인다
+                importer.animationType = ModelImporterAnimationType.None;
+                importer.importAnimation = false;
+                importer.materialImportMode = ModelImporterMaterialImportMode.None;
+                importer.addCollider = false;
+                importer.importBlendShapes = false;
+                importer.importCameras = false;
+                importer.importLights = false;
+                importer.isReadable = false;
+                importer.importNormals = ModelImporterNormals.Import;
+                importer.importTangents = ModelImporterTangents.CalculateMikk;
             }
             else if (assetPath.Contains("Resources/Kenney/"))
             {
@@ -86,6 +92,18 @@ namespace Fishing.EditorTools
                 // 알베도·노멀 2048, 금속성·매끈함 1024. 어종마다 쓸 때만 불러오므로(Resources) 메모리 부담은 그때뿐이다
                 importer.maxTextureSize = assetPath.EndsWith("_m.png") ? 1024 : 2048;
                 importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            }
+            else if (assetPath.StartsWith("Assets/Vegetation/"))
+            {
+                // *_nor = 법선, 잎·십자 판·풀 카드 = 알파로 자르는 그림 (밉맵에서 잎이 줄지 않게 알파 덮개 보존)
+                bool cutout = assetPath.Contains("/Leaves_") || assetPath.Contains("_billboard_") || assetPath.Contains("/Grass/");
+                importer.textureType = assetPath.Contains("_nor") ? TextureImporterType.NormalMap : TextureImporterType.Default;
+                importer.mipmapEnabled = true;
+                importer.alphaIsTransparency = cutout;
+                importer.mipMapsPreserveCoverage = cutout;
+                importer.alphaTestReferenceValue = 0.4f;
+                importer.wrapMode = cutout ? UnityEngine.TextureWrapMode.Clamp : UnityEngine.TextureWrapMode.Repeat;
+                importer.maxTextureSize = assetPath.Contains("/Grass/") ? 512 : 1024;
             }
             else if (assetPath.Contains("Resources/Terrain/"))
             {
@@ -118,32 +136,10 @@ namespace Fishing.EditorTools
             }
         }
 
-        /// <summary>
-        /// Human Basic Motions FREE(Kevin Iglesias, Resources/Animations/KevinIglesias) 파일 → 클립 이름. 파일 끝 _M/_F가 남·녀.
-        /// CharacterAnimator가 "이름_M"/"이름_F"를 캐릭터 성별로 골라 쓴다.
-        /// </summary>
-        static readonly (string file, string clip)[] KevinClips =
-        {
-            ("Idle", "Basic_Idle_Loop"),     // HumanM/F@Idle01: 팔을 내린 자연스러운 대기
-            ("Walk", "Basic_Walk_Loop"),     // Walk01_Forward: 0.8초 한 걸음 쌍, 원래 2.0m/s
-            ("Run", "Basic_Run_Loop"),       // Run01_Forward: 0.6초, 원래 4.0m/s (게임 걷기 4.5m/s)
-            ("Sprint", "Basic_Sprint_Loop"), // Sprint01_Forward: 0.52초, 원래 6.0m/s (게임 달리기 7.5m/s)
-            ("Talk", "Basic_Talk_Loop"),     // Talk01: 손짓하며 말하기 (NPC 대화 상대)
-            ("JumpBegin", "Basic_JumpBegin"),// Jump01 - Begin: 웅크렸다 뛰어오르기 (한 번)
-            ("Fall", "Basic_Fall_Loop"),     // Fall01: 공중에서 떨어지는 자세
-            ("TurnLeft", "Basic_TurnLeft_Loop"),   // Turn01_Left: 제자리에서 발을 옮기며 왼쪽으로 돌기 (몸 방향은 코드가 돌린다)
-            ("TurnRight", "Basic_TurnRight_Loop"), // Turn01_Right
-        };
-
         void OnPreprocessAnimation()
         {
             if (!assetPath.Contains("Resources/Animations/") && !assetPath.Contains("Resources/Fish/")) return;
             var importer = (ModelImporter)assetImporter;
-            if (assetPath.Contains("Resources/Animations/KevinIglesias/"))
-            {
-                PreprocessKevin(importer);
-                return;
-            }
             var clips = importer.defaultClipAnimations;
             foreach (var clip in clips)
             {
@@ -159,34 +155,6 @@ namespace Fishing.EditorTools
                 clip.keepOriginalPositionXZ = true;
             }
             importer.clipAnimations = clips;
-        }
-
-        static void PreprocessKevin(ModelImporter importer)
-        {
-            var defaults = importer.defaultClipAnimations;
-            if (defaults.Length == 0) return;
-            string file = System.IO.Path.GetFileNameWithoutExtension(importer.assetPath); // Walk_M
-            int us = file.LastIndexOf('_');
-            if (us < 0) return;
-            string kind = file.Substring(0, us), gender = file.Substring(us);
-            foreach (var (f, name) in KevinClips)
-            {
-                if (f != kind) continue;
-                var c = defaults[0];
-                c.name = name + gender;
-                bool loop = name.Contains("Loop");
-                c.loopTime = loop;
-                c.loopPose = loop;
-                c.lockRootRotation = true;
-                c.lockRootHeightY = true;
-                c.lockRootPositionXZ = true;
-                c.keepOriginalOrientation = true;
-                c.keepOriginalPositionY = true;
-                c.keepOriginalPositionXZ = true;
-                // Kevin Iglesias는 +Z를 본다 → UAL(-Z)에 맞춘다
-                c.rotationOffset = 180f;
-                importer.clipAnimations = new[] { c };
-            }
         }
     }
 }

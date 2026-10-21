@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Fishing.Core;
 using Fishing.Data;
-using LeTai.Asset.TranslucentImage;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -118,7 +117,7 @@ namespace Fishing.UI
             gold.rectTransform.At(new Vector2(1, 0.5f), Vector2.zero, new Vector2(150, 30), new Vector2(1, 0.5f));
         }
 
-        void FillSlot(TranslucentImage cell, Entry e)
+        void FillSlot(UIShape cell, Entry e)
         {
             UIFactory.AddBorder(cell, e.Border, 1.5f);
             var rt = cell.rectTransform;

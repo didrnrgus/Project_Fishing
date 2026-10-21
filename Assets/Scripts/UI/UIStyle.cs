@@ -1,20 +1,16 @@
-using LeTai.Asset.TranslucentImage;
-using LeTai.Paraform.Scaffold;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using PfShadow = LeTai.Paraform.Scaffold.Shadow;
-using PfOutline = LeTai.Paraform.Scaffold.Outline;
 
 namespace Fishing.UI
 {
     /// <summary>
     /// 원작풍 UI (clips 07 인벤토리·내 캐릭터 창, 04 HUD 명세 §4): 짙은 남색 반투명 판 + 청록·파랑 빛 테두리, 모서리는 거의 각지게,
-    /// 탭·버튼은 파란 판. Translucent Image(배경 블러)와 Paraform(도형·그림자·테두리·가장자리 광택)으로
-    /// 창·HUD 판·버튼·바를 그린다.
+    /// 탭·버튼은 파란 판. <see cref="UIShape"/>(둥근 도형·그림자·테두리·가장자리 광택, 셰이더 Fishing/UIShape)와
+    /// <see cref="UIBlurSource"/>(뒤 화면 흐림)로 창·HUD 판·버튼·바를 그린다 (2026-10-21까지는 Translucent Image + Paraform).
     ///  - <see cref="Glass"/>: 뒤의 3D 화면이 흐리게 비치는 어두운 유리 판 (창, HUD 패널)
     ///  - <see cref="Shape"/>: 블러 없는 둥근 도형 (버튼, 칩, 바, 배지)
-    /// 재질은 Resources/UI/UIGlass·UISolid (빌드에서 셰이더 키워드가 빠지지 않도록 에셋으로 둔다).
+    /// 셰이더는 그래픽 설정의 Always Included에 들어 있다.
     /// </summary>
     public static partial class UIFactory
     {
@@ -46,53 +42,36 @@ namespace Fishing.UI
         public const float Pill = 999f;
 
         static Material _glassMat, _solidMat;
-        static TranslucentImageSource _blurSource;
+        static UIBlurSource _blurSource;
 
         /// <summary>메인 카메라에 배경 블러 소스를 붙인다. UI를 만들기 전에 한 번 부른다.</summary>
         public static void InitStyle(Camera cam)
         {
             if (_blurSource != null || cam == null) return;
-            var config = ScriptableObject.CreateInstance<ScalableBlurConfig>();
-            config.Mode = ScalableBlurConfig.BlurMode.Balanced;
-            config.Strength = 26f;
-            _blurSource = cam.gameObject.AddComponent<TranslucentImageSource>();
-            _blurSource.BlurConfig = config;
-            _blurSource.Downsample = 1;
+            _blurSource = cam.gameObject.AddComponent<UIBlurSource>();
         }
 
-        static Material GlassMaterial => _glassMat ??= LoadMaterial("UI/UIGlass", false);
-        static Material SolidMaterial => _solidMat ??= LoadMaterial("UI/UISolid", true);
+        static Material GlassMaterial => _glassMat ??= ShapeMaterial(true);
+        static Material SolidMaterial => _solidMat ??= ShapeMaterial(false);
 
-        static Material LoadMaterial(string path, bool opaque)
+        static Material ShapeMaterial(bool glass)
         {
-            // 복사본을 쓴다: 블러 텍스처를 재질에 넣으므로 에디터에서 원본 에셋이 바뀌지 않게
-            var asset = Resources.Load<Material>(path);
-            if (asset != null) return new Material(asset) { name = asset.name };
-            Material mat;
-            // 에셋이 아직 임포트되지 않았으면 기본 Paraform 재질에서 키워드만 바꿔 만든다 (에디터용 대비책)
-            mat = new Material(DefaultResources.Instance.paraformMaterial) { name = path };
-            foreach (var kw in new[] { "_BACKGROUND_MODE_NORMAL", "_BACKGROUND_MODE_COLORFUL", "_BACKGROUND_MODE_OPAQUE", "_REFRACTION_MODE_OFF", "_REFRACTION_MODE_ON", "_REFRACTION_MODE_CHROMATIC" })
-                mat.DisableKeyword(kw);
-            mat.EnableKeyword(opaque ? "_BACKGROUND_MODE_OPAQUE" : "_BACKGROUND_MODE_NORMAL");
-            mat.EnableKeyword(opaque ? "_REFRACTION_MODE_OFF" : "_REFRACTION_MODE_ON");
-            mat.EnableKeyword("_USE_EDGE_GLINT");
+            var mat = new Material(Shader.Find("Fishing/UIShape")) { name = glass ? "UIGlass" : "UISolid" };
+            mat.SetFloat("_Glass", glass ? 1f : 0f);
             return mat;
         }
 
-        static TranslucentImage NewTranslucent(Transform parent, string name, Material mat, Color color, float radius, float bevel)
+        static UIShape NewShape(Transform parent, string name, Material mat, Color color, float radius, float bevel, bool glass)
         {
             var rt = Node(name, parent);
-            var img = rt.gameObject.AddComponent<TranslucentImage>();
+            var img = rt.gameObject.AddComponent<UIShape>();
             img.material = mat;
             img.sprite = White;
             img.color = color;
             img.raycastTarget = false;
-            if (_blurSource != null) img.source = _blurSource;
-            img.paraformConfig.FormMode = FormMode.RoundedBox;
-            img.paraformConfig.CornerCurvature = 1.6f;
-            img.paraformConfig.CornerRadii = Vector4.one * radius;
-            img.paraformConfig.BevelWidth = bevel;
-            img.paraformConfig.Elevation = 40f;
+            img.IsGlass = glass;
+            img.Radius = radius;
+            img.Bevel = bevel;
             return img;
         }
 
@@ -100,14 +79,11 @@ namespace Fishing.UI
         /// 어두운 유리 판. 뒤 화면이 흐리게 비치고, 둥근 모서리·은은한 테두리·그림자가 붙는다.
         /// opacity가 클수록 tint 색이 진하게 덮인다(글씨가 많은 창은 0.6 이상).
         /// </summary>
-        public static TranslucentImage Glass(Transform parent, string name = "Glass", float radius = RadiusPanel, Color? tint = null,
+        public static UIShape Glass(Transform parent, string name = "Glass", float radius = RadiusPanel, Color? tint = null,
             float opacity = 0.62f, bool shadow = true, bool raycast = true)
         {
-            var img = NewTranslucent(parent, name, GlassMaterial, tint ?? GlassTint, radius, 14f);
+            var img = NewShape(parent, name, GlassMaterial, tint ?? GlassTint, radius, 14f, true);
             img.foregroundOpacity = opacity;
-            img.vibrancy = 0.9f;
-            img.brightness = -0.06f;
-            img.flatten = 0.3f;
             img.raycastTarget = raycast;
             if (shadow) AddShadow(img, 28f, new Vector2(0, -8), 0.45f);
             // 원작 창: 파란 빛 테두리 (안쪽 선 + 바깥으로 번지는 빛)
@@ -116,42 +92,16 @@ namespace Fishing.UI
         }
 
         /// <summary>블러 없는 둥근 도형 (버튼·칩·바·배지). radius에 <see cref="Pill"/>을 주면 알약/원 모양.</summary>
-        public static TranslucentImage Shape(Transform parent, Color color, float radius = RadiusButton, string name = "Shape", float bevel = 6f)
+        public static UIShape Shape(Transform parent, Color color, float radius = RadiusButton, string name = "Shape", float bevel = 6f)
         {
-            return NewTranslucent(parent, name, SolidMaterial, color, radius, bevel);
+            return NewShape(parent, name, SolidMaterial, color, radius, bevel, false);
         }
 
-        /// <summary>그림자(아래 깔림). Paraform 효과라 둥근 모양을 그대로 따른다.</summary>
-        public static void AddShadow(TranslucentImage img, float softness, Vector2 offset, float alpha)
-        {
-            using (var scope = img.paraformConfig.EditEffects())
-                scope.effects.Add(new PfShadow
-                {
-                    name = "Shadow",
-                    color = new Color(0f, 0f, 0f, alpha),
-                    useGraphicColor = false,
-                    softness = softness,
-                    offset = offset,
-                });
-            img.SetAllDirty();
-        }
+        /// <summary>그림자(아래 깔림). 둥근 모양을 그대로 따른다.</summary>
+        public static void AddShadow(UIShape img, float softness, Vector2 offset, float alpha) => img.SetShadow(softness, offset, alpha);
 
-        /// <summary>안쪽 가는 테두리 선 (유리 가장자리, 선택 표시, 빛나는 테두리).</summary>
-        public static void AddBorder(TranslucentImage img, Color color, float width, float glow = 0f)
-        {
-            using (var scope = img.paraformConfig.EditEffects())
-                scope.effects.Add(new PfOutline
-                {
-                    name = "Border",
-                    color = color,
-                    useGraphicColor = false,
-                    useGraphicAlpha = true,
-                    innerWidth = width,
-                    outerWidth = glow,
-                    outerSoftness = glow,
-                });
-            img.SetAllDirty();
-        }
+        /// <summary>안쪽 가는 테두리 선 + 바깥으로 번지는 빛(glow) (유리 가장자리, 선택 표시, 빛나는 테두리). 다시 부르면 바꾼다.</summary>
+        public static void AddBorder(UIShape img, Color color, float width, float glow = 0f) => img.SetBorder(color, width, glow);
 
         /// <summary>창 뒤를 덮는 반투명 막 (클릭을 막는다).</summary>
         public static Image Dim(Transform parent, string name, float alpha = 0.45f)
@@ -163,7 +113,7 @@ namespace Fishing.UI
         }
 
         /// <summary>행·카드 배경 (유리 판 안). highlight면 조금 더 밝게.</summary>
-        public static TranslucentImage RowBg(RectTransform row, bool highlight = false, float radius = RadiusCard)
+        public static UIShape RowBg(RectTransform row, bool highlight = false, float radius = RadiusCard)
         {
             var bg = Shape(row, highlight ? SurfaceHi : Surface, radius, "Bg", 0f);
             bg.rectTransform.Fill();
@@ -203,16 +153,14 @@ namespace Fishing.UI
         public static Button IconButton(Transform parent, string label, System.Action onClick, Color? bg = null, int fontSize = 20)
         {
             var b = Button(parent, label, onClick, bg ?? BtnGhost, fontSize);
-            var img = (TranslucentImage)b.targetGraphic;
-            img.paraformConfig.CornerRadii = Vector4.one * Pill;
+            ((UIShape)b.targetGraphic).Radius = Pill;
             return b;
         }
 
         /// <summary>렌더 텍스처를 둥근 모서리로 보여 준다 (초상화, 전신 미리보기).</summary>
-        public static TranslucentImage RoundedTexture(Transform parent, Texture texture, float radius, string name = "Texture")
+        public static UIShape RoundedTexture(Transform parent, Texture texture, float radius, string name = "Texture")
         {
             var img = Shape(parent, Color.white, radius, name, 0f);
-            img.imageMode = TranslucentImage.ImageMode.Texture;
             img.rawTexture = texture;
             return img;
         }
@@ -220,19 +168,16 @@ namespace Fishing.UI
         /// <summary>도형의 모서리 반지름을 바꾼다.</summary>
         public static void SetRadius(Graphic g, float radius)
         {
-            if (g is TranslucentImage ti) ti.paraformConfig.CornerRadii = Vector4.one * radius;
+            if (g is UIShape s) s.Radius = radius;
         }
 
         /// <summary>
         /// 화면 전체를 흐리게 덮는 막 (테두리·그림자 없는 유리). 원작 ESC 메뉴처럼 뒤 게임 화면이 뿌옇게 보인다. 클릭을 막는다.
         /// </summary>
-        public static TranslucentImage BlurBackdrop(Transform parent, string name, float opacity = 0.25f)
+        public static UIShape BlurBackdrop(Transform parent, string name, float opacity = 0.25f)
         {
-            var img = NewTranslucent(parent, name, GlassMaterial, new Color(0f, 0f, 0f, 1f), 0f, 0f);
+            var img = NewShape(parent, name, GlassMaterial, new Color(0f, 0f, 0f, 1f), 0f, 0f, true);
             img.foregroundOpacity = opacity;
-            img.vibrancy = 0.6f;
-            img.brightness = -0.08f;
-            img.flatten = 0.2f;
             img.raycastTarget = true;
             img.rectTransform.Fill();
             return img;

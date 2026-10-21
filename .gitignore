@@ -48,18 +48,13 @@ __pycache__/
 # Blender 파이썬 가상환경 (tools/blender)
 /bpyenv/
 
-# 에셋 스토어·Mixamo 에셋 (재배포 금지, 각자 받아서 넣기)
+# 에셋 스토어·Mixamo 에셋은 재배포 금지라 저장소에 넣지 않는다 (2026-10-21에 모두 걷어냄)
 /[Aa]ssets/[Aa]sset[Ss]tore/
 /[Aa]ssets/[Aa]sset[Ss]tore.meta
-
-# 받은 에셋 중 게임에서 안 쓰는 큰 파일 (데모 씬·다른 렌더 파이프라인 설치 패키지). 로컬에만 둔다
-/Assets/ALP_Assets/GrassFlowersFREE/Demo/
-/Assets/ALP_Assets/GrassFlowersFREE/Demo.meta
-/Assets/ALP_Assets/GrassFlowersFREE/Textures/Ground/
-/Assets/ALP_Assets/GrassFlowersFREE/Textures/Ground.meta
-/Assets/Forst/Conifers [[]BOTD]/Conifers_HDRP.unitypackage*
-/Assets/Forst/Conifers [[]BOTD]/Conifers_URP.unitypackage*
 
 # 예전에 받은 Mixamo 캐릭터 (2026-10-20부터 안 씀, Mixamo 원본은 재배포 금지라 저장소에 넣지 않는다)
 /Assets/MixamoCharacters/
 /Assets/MixamoCharacters.meta
+
+# ez-tree 도구 패키지 (tools/eztree: npm ci)
+node_modules/
