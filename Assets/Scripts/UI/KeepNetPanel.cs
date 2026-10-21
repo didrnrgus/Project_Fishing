@@ -20,7 +20,7 @@ namespace Fishing.UI
 
         public KeepNetPanel(Transform canvas)
         {
-            BuildFrame(canvas, "KeepNetPanel", "살림망", new Vector2(1240, 820));
+            BuildFrame(canvas, "KeepNetPanel", UIFactory.Caption("살림망", "KEEP NET"), new Vector2(1240, 820));
             _list = UIFactory.Node("List", Body).Fill(0, SideW + 20, 0, 0);
 
             var side = UIFactory.Shape(Body, UIFactory.Surface, UIFactory.RadiusCard, "Side", 0f).rectTransform;
@@ -44,7 +44,7 @@ namespace Fishing.UI
         {
             var p = Game.Profile;
             var net = p.Data.keepNet;
-            Title.text = $"살림망  <size=20><color=#8fa3b5>{net.Count}/{Game.Profile.KeepNetSize}</color></size>";
+            Title.text = $"{UIFactory.Caption("살림망", "KEEP NET")}  <size=20><color=#8fa3b5>{net.Count}/{Game.Profile.KeepNetSize}</color></size>";
             UIFactory.ClearChildren(_list);
 
             var rows = new RowCursor(_list);

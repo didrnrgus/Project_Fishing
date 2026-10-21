@@ -13,7 +13,7 @@ namespace Fishing.UI
     {
         public AquariumPanel(Transform canvas)
         {
-            BuildFrame(canvas, "AquariumPanel", "수족관", new Vector2(760, 860));
+            BuildFrame(canvas, "AquariumPanel", UIFactory.Caption("수족관", "AQUARIUM"), new Vector2(760, 860));
             Frame.anchoredPosition = new Vector2(520f, 0f);
             // 수조가 보이도록 뒤를 어둡게 덮지 않는다
             Root.GetComponent<UnityEngine.UI.Image>().color = new Color(0, 0, 0, 0f);
@@ -36,7 +36,7 @@ namespace Fishing.UI
         {
             var p = Game.Profile;
             var d = p.Data;
-            Title.text = $"수족관  <size=18><color=#a0b0c0>{d.aquarium.Count}/{Aquarium.Capacity}마리 · 장식 {d.aquariumDecor.Count}/{Aquarium.MaxDecor}</color></size>";
+            Title.text = $"{UIFactory.Caption("수족관", "AQUARIUM")}  <size=18><color=#a0b0c0>{d.aquarium.Count}/{Aquarium.Capacity}마리 · 장식 {d.aquariumDecor.Count}/{Aquarium.MaxDecor}</color></size>";
             UIFactory.ClearChildren(Body);
             var rows = new RowCursor(Body);
 

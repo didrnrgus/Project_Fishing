@@ -25,7 +25,7 @@ namespace Fishing.UI
 
         public ExchangePanel(Transform canvas)
         {
-            BuildFrame(canvas, "ExchangePanel", "소라고동 교환소", new Vector2(900, 860));
+            BuildFrame(canvas, "ExchangePanel", UIFactory.Caption("소라고동 교환소", "EXCHANGE"), new Vector2(900, 860));
             _offers = new[]
             {
                 new Offer { Name = "별모래 1개", Icon = RodUpgrade.StarSandId, Desc = "강화 성공 확률 +15%", Cost = 5, Give = () => P.AddItem(RodUpgrade.StarSandId, 1) },
@@ -53,7 +53,7 @@ namespace Fishing.UI
         {
             int conch = P.Count(AchievementDatabase.ConchId);
             int coins = P.Count(ItemDatabase.BigCoinId);
-            Title.text = $"소라고동 교환소   <size=20><color=#ffd060>소라고동 {conch}개</color>  ·  <color=#ffb040>대물 코인 {coins}개</color></size>";
+            Title.text = $"{UIFactory.Caption("소라고동 교환소", "EXCHANGE")}   <size=20><color=#ffd060>소라고동 {conch}개</color>  ·  <color=#ffb040>대물 코인 {coins}개</color></size>";
             UIFactory.ClearChildren(Body);
             var rows = new RowCursor(Body);
             Cell(rows.Next(28), "소라고동: 도감 등록 1 · 일일 의뢰 1 · 대물 도전 3 · 업적 1~10 · 빙고 한 줄 2", 4, 820, 16, UIFactory.TextDim);

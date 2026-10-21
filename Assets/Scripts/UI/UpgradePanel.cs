@@ -26,7 +26,7 @@ namespace Fishing.UI
 
         public UpgradePanel(Transform canvas)
         {
-            BuildFrame(canvas, "UpgradePanel", "장비 강화", new Vector2(1300, 700));
+            BuildFrame(canvas, "UpgradePanel", UIFactory.Caption("장비 강화", "UPGRADE"), new Vector2(1300, 700));
             _main = UIFactory.Node("Main", Body).Fill(0, SideW + 20, 0, 0);
 
             // 오른쪽: 단계별 성공 확률(막대) + 단계별 성능(꺾은선)
@@ -65,7 +65,7 @@ namespace Fishing.UI
             var p = Game.Profile;
             var gear = p.EquippedBase(_slot);
             int lv = p.GearLevel(gear.Id);
-            Title.text = $"장비 강화  <size=18><color=#a0b0c0>{Fishing.World.FieldMap.ShopName}</color></size>";
+            Title.text = $"{UIFactory.Caption("장비 강화", "UPGRADE")}  <size=18><color=#a0b0c0>{Fishing.World.FieldMap.ShopName}</color></size>";
             UIFactory.ClearChildren(_main);
             RefreshCharts(gear, lv);
 

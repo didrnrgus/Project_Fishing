@@ -37,7 +37,7 @@ namespace Fishing.UI
 
         public TrapPanel(Transform canvas)
         {
-            BuildFrame(canvas, "TrapPanel", "통발 설치/수거  <size=15><color=#8fa3b5>INSTALL / HARVEST FISH TRAPS</color></size>", new Vector2(1040, 660));
+            BuildFrame(canvas, "TrapPanel", UIFactory.Caption("통발 설치/수거", "INSTALL / HARVEST FISH TRAPS"), new Vector2(1040, 660));
             _leftHead = UIFactory.Text(Body, "", 19, HeadColor, TextAnchor.MiddleLeft, FontStyle.Bold);
             _leftHead.rectTransform.At(new Vector2(0, 1), new Vector2(6, 0), new Vector2(LeftW, 30), new Vector2(0, 1));
             var leftBox = UIFactory.Shape(Body, UIFactory.Surface, UIFactory.RadiusCard, "LeftBox", 0f).rectTransform;

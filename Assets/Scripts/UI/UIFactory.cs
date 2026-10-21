@@ -237,9 +237,8 @@ namespace Fishing.UI
             var canvas = go.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = order;
-            // UIShape(둥근 도형·유리)가 쓰는 정점 채널
-            canvas.additionalShaderChannels |= AdditionalCanvasShaderChannels.TexCoord1 | AdditionalCanvasShaderChannels.TexCoord2 | AdditionalCanvasShaderChannels.TexCoord3
-                | AdditionalCanvasShaderChannels.Normal | AdditionalCanvasShaderChannels.Tangent;
+            // Paraform(둥근 유리 도형)이 쓰는 정점 채널
+            canvas.additionalShaderChannels |= AdditionalCanvasShaderChannels.TexCoord1 | AdditionalCanvasShaderChannels.TexCoord2 | AdditionalCanvasShaderChannels.TexCoord3;
             var scaler = go.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
@@ -284,9 +283,16 @@ namespace Fishing.UI
             return img;
         }
 
-        /// <summary>HUD·창의 유리 판 (raycast 막음). 예전 이름을 그대로 둔다.</summary>
+        /// <summary>
+        /// HUD 판 (raycast 막음). 원작 HUD(초상화·미니맵·퀘스트 목록·메뉴 바, clips 02·07)는 창과 달리 파란 빛이 없는
+        /// 검은 반투명 판에 회색 금속 테두리, 모서리는 거의 각지다. 알약(<see cref="Pill"/>)은 그대로 둔다.
+        /// </summary>
         public static Graphic Panel(Transform parent, string name, float radius = RadiusHud, float opacity = 0.62f)
-            => Glass(parent, name, radius, null, opacity);
+        {
+            var img = Glass(parent, name, radius >= Pill ? Pill : Mathf.Min(radius, RadiusHud), HudTint, Mathf.Max(opacity, 0.66f));
+            AddBorder(img, HudEdge, 1f);
+            return img;
+        }
 
         /// <summary>
         /// TMP 텍스트. 가로는 줄바꿈, 세로는 넘쳐도 그린다. 그림자는 글꼴 기본 머티리얼(underlay)에 들어 있다.
@@ -420,16 +426,21 @@ namespace Fishing.UI
             colors.fadeDuration = 0.08f;
             btn.colors = colors;
             btn.onClick.AddListener(() => { if (Fishing.Core.Game.Sound != null) Fishing.Core.Game.Sound.UiClick(); onClick?.Invoke(); });
+            // 원작 버튼·탭: 판 색보다 밝은 가는 테두리 (clips 07 수리하기 창 "수리 하기 / 취 소", 인벤토리 탭)
+            AddBorder(img, Color.Lerp(img.color, new Color(0.55f, 0.82f, 1f, 1f), 0.55f), 0.75f);
             var t = Text(img.transform, label, fontSize, TextMain, TextAnchor.MiddleCenter);
             t.rectTransform.Fill(6, 6, 2, 2);
             return btn;
         }
 
-        /// <summary>알약 모양 트랙 + 채움 막대. 반환값은 채움 이미지(fillAmount로 조절, 부모가 트랙).</summary>
+        /// <summary>
+        /// 각진 트랙 + 채움 막대 (원작 HP·CP·EXP 바: 어두운 홈에 가는 회색 테두리, 채움은 네모). 반환값은 채움 이미지(fillAmount로 조절, 부모가 트랙).
+        /// </summary>
         public static Image Bar(Transform parent, Color bg, Color fill, string name = "Bar")
         {
-            var back = Shape(parent, bg, Pill, name, 0f);
-            var front = Shape(back.transform, fill, Pill, "Fill", 0f);
+            var back = Shape(parent, bg, 2f, name, 0f);
+            AddBorder(back, new Color(0.45f, 0.5f, 0.55f, 0.5f), 1f);
+            var front = Shape(back.transform, fill, 1.5f, "Fill", 2f);
             front.rectTransform.Fill();
             front.type = UnityEngine.UI.Image.Type.Filled;
             front.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;

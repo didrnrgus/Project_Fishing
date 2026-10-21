@@ -102,8 +102,8 @@ namespace Fishing.UI
             // 원작 월척·대물 도장: 오른쪽에 동그란 구릿빛 도장이 굴러 들어와 찍힌다
             _stamp = UIFactory.Shape(root, new Color(0.16f, 0.1f, 0.06f, 0.95f), UIFactory.Pill, "Stamp", 6f).rectTransform;
             _stamp.At(new Vector2(1, 0.5f), new Vector2(-150, 70), new Vector2(190, 190));
-            UIFactory.AddBorder((UIShape)_stamp.GetComponent<Image>(), new Color(0.85f, 0.6f, 0.3f, 0.9f), 5f);
-            UIFactory.AddShadow((UIShape)_stamp.GetComponent<Image>(), 24f, new Vector2(0, -6), 0.6f);
+            UIFactory.AddBorder((LeTai.Asset.TranslucentImage.TranslucentImage)_stamp.GetComponent<Image>(), new Color(0.85f, 0.6f, 0.3f, 0.9f), 5f);
+            UIFactory.AddShadow((LeTai.Asset.TranslucentImage.TranslucentImage)_stamp.GetComponent<Image>(), 24f, new Vector2(0, -6), 0.6f);
             _badge = UIFactory.Text(_stamp, "", 58, new Color(1f, 0.85f, 0.45f), TextAnchor.MiddleCenter, FontStyle.Bold);
             _badge.rectTransform.Fill(8, 8, 8, 8);
             _badge.rectTransform.localRotation = Quaternion.Euler(0, 0, -10f);
@@ -112,7 +112,7 @@ namespace Fishing.UI
             // 원작 "EXP +200%" 이벤트 어종 도장 (월척 도장 위)
             _eventStamp = UIFactory.Shape(root, new Color(0.08f, 0.12f, 0.2f, 0.95f), UIFactory.Pill, "EventStamp", 6f).rectTransform;
             _eventStamp.At(new Vector2(1, 0.5f), new Vector2(-370, 70), new Vector2(160, 160));
-            UIFactory.AddBorder((UIShape)_eventStamp.GetComponent<Image>(), new Color(0.35f, 0.8f, 1f, 0.95f), 5f);
+            UIFactory.AddBorder((LeTai.Asset.TranslucentImage.TranslucentImage)_eventStamp.GetComponent<Image>(), new Color(0.35f, 0.8f, 1f, 0.95f), 5f);
             _eventBadge = UIFactory.Text(_eventStamp, "", 40, new Color(0.55f, 0.92f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold);
             _eventBadge.rectTransform.Fill(8, 8, 8, 8);
             _eventBadge.rectTransform.localRotation = Quaternion.Euler(0, 0, 8f);

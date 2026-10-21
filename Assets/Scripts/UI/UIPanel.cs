@@ -21,18 +21,14 @@ namespace Fishing.UI
         {
             Root = UIFactory.Dim(canvas, name, 0.42f).gameObject;
 
-            // 유리 창: 뒤 화면이 흐리게 비친다. 제목 줄 아래에 가는 구분선
-            Frame = UIFactory.Glass(Root.transform, "Frame", UIFactory.RadiusPanel, null, 0.7f).rectTransform
-                .At(new Vector2(0.5f, 0.5f), Vector2.zero, size);
-            UIFactory.Shape(Frame, UIFactory.Accent, UIFactory.Pill, "TitleMark", 0f).rectTransform
-                .At(new Vector2(0, 1), new Vector2(26, -24), new Vector2(5, 28));
-            Title = UIFactory.Text(Frame, title, 27, UIFactory.TextMain, TextAnchor.MiddleLeft, FontStyle.Bold);
-            Title.rectTransform.At(new Vector2(0, 1), new Vector2(42, -14), new Vector2(size.x - 160, 46));
-            UIFactory.Divider(Frame, "TitleLine").rectTransform.At(new Vector2(0.5f, 1), new Vector2(0, -68), new Vector2(size.x - 48, 1));
+            // 원작 창 틀: 푸른 유리 띠 + 검은 안쪽 판. 제목은 왼쪽 위에 흰 글씨 + 작은 파란 영문, 닫기는 오른쪽 위 빨간 네모
+            Frame = UIFactory.Window(Root.transform, "Frame", size).rectTransform;
+            Title = UIFactory.Text(Frame, title, 26, UIFactory.TitleColor, TextAnchor.MiddleLeft, FontStyle.Bold);
+            Title.rectTransform.At(new Vector2(0, 1), new Vector2(24, -16), new Vector2(size.x - 140, 44));
             if (closable)
             {
-                var close = UIFactory.IconButton(Frame, "×", Close, UIFactory.BtnGhost, 20);
-                ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(-18, -16), new Vector2(40, 40));
+                var close = UIFactory.CloseButton(Frame, Close);
+                ((RectTransform)close.transform).At(new Vector2(1, 1), new Vector2(-20, -22), new Vector2(30, 30));
             }
             Body = UIFactory.Node("Body", Frame).Fill(28, 28, 82, 24);
             Root.SetActive(false);

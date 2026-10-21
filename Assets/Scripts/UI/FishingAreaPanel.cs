@@ -30,7 +30,7 @@ namespace Fishing.UI
         TMP_Text _hubTitle;
         readonly List<(Image bg, TMP_Text text, FishingHub hub)> _hubTabs = new List<(Image, TMP_Text, FishingHub)>();
         RectTransform _listRoot, _markerRoot, _map;
-        UIShape _mapImage;
+        LeTai.Asset.TranslucentImage.TranslucentImage _mapImage;
         int _fishIndex;
         int _channel = 1;
 
@@ -39,7 +39,7 @@ namespace Fishing.UI
 
         public FishingAreaPanel(Transform canvas)
         {
-            BuildFrame(canvas, "FishingAreaPanel", "낚시터 목록  <size=16><color=#80c8ff>FISHINGAREA LIST</color></size>", new Vector2(1240, 900));
+            BuildFrame(canvas, "FishingAreaPanel", UIFactory.Caption("낚시터 목록", "FISHINGAREA LIST"), new Vector2(1240, 900));
 
             // ---- 지도 ----
             var mapFrame = UIFactory.Shape(Body, UIFactory.Surface, UIFactory.RadiusCard, "MapFrame", 0f);

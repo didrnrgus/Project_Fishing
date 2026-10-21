@@ -47,7 +47,7 @@ namespace Fishing.UI
 
         public DexPanel(Transform canvas)
         {
-            BuildFrame(canvas, "DexPanel", "어류 도감", new Vector2(FrameW, FrameH));
+            BuildFrame(canvas, "DexPanel", UIFactory.Caption("어류 도감", "FISH BOOK"), new Vector2(FrameW, FrameH));
             _grid = UIFactory.Node("Grid", Body).Fill(0, SideW + 20, 0, 0);
             BuildSide();
             BuildDetail();
@@ -185,7 +185,7 @@ namespace Fishing.UI
                 if (child.name == "DexTab") Object.Destroy(child.gameObject);
             var species = FishDatabase.DexOf(_tab).ToList();
             int known = species.Count(s => p.Dex(s.Id) != null);
-            Title.text = $"어류 도감 · {Fishing.World.Maps.Get(_tab).ShortName}  <size=20><color=#8fa3b5>{known}/{species.Count}</color></size>";
+            Title.text = $"{UIFactory.Caption($"어류 도감 · {Fishing.World.Maps.Get(_tab).ShortName}", "FISH BOOK")}  <size=20><color=#8fa3b5>{known}/{species.Count}</color></size>";
             UIFactory.ClearChildren(_grid);
 
             // 낚시터 탭 (제목 줄 오른쪽, 닫기 버튼 옆). 제목 자리(TitleRoom)를 비우고 남은 폭에 맵 수만큼 나눠 한 줄로.

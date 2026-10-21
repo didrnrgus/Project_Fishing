@@ -38,8 +38,6 @@ namespace Fishing.UI
             // 원작처럼 뒤 화면을 거의 가리지 않는다 (왼쪽 대화 카드)
             Root.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.12f);
             Frame.At(new Vector2(0, 0.5f), new Vector2(34, 30), new Vector2(W, H), new Vector2(0, 0.5f));
-            var mark = Frame.Find("TitleMark");
-            if (mark != null) mark.gameObject.SetActive(false);
             _avatar = new TranslucentAvatar(Frame, new Vector2(24, -10), 58f);
             Title.rectTransform.At(new Vector2(0, 1), new Vector2(96, -14), new Vector2(W - 170, 46));
             Title.fontSize = 24;
@@ -304,7 +302,7 @@ namespace Fishing.UI
                 UIFactory.SetRadius(card.targetGraphic, 16f);
                 var rt = (RectTransform)card.transform;
                 rt.At(new Vector2(0, 1), new Vector2(22 + i * (cw + gap), -76), new Vector2(cw, 136), new Vector2(0, 1));
-                if (sel) UIFactory.AddBorder((UIShape)card.targetGraphic, new Color(0.55f, 0.95f, 0.9f, 0.8f), 2f, 4f);
+                if (sel) UIFactory.AddBorder((LeTai.Asset.TranslucentImage.TranslucentImage)card.targetGraphic, new Color(0.55f, 0.95f, 0.9f, 0.8f), 2f, 4f);
                 var av = new TranslucentAvatar(rt, new Vector2((cw - 72) / 2f, -10), 72f);
                 av.Set(n.Name, n.Color);
                 var label = card.GetComponentInChildren<TMP_Text>();

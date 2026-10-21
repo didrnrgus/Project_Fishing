@@ -14,7 +14,7 @@
   - 에셋 스토어·Mixamo 에셋은 없다(2026-10-21에 모두 걷어냄, 17 문서).
   - Kenney CC0 모델(`Resources/Kenney`)·소리(`Resources/Audio/Kenney`), Poly Haven CC0 텍스처(`Resources/Terrain`). 출처는 각 폴더의 SOURCES.md·라이선스 사본.
   - 캐릭터 옷·물고기·아이콘은 직접 만든 것: `tools/blender`(아래 "Blender 파이프라인").
-  - 유리 UI·둥근 도형은 직접 만든 `UI/UIShape`(셰이더 `Fishing/UIShape`)·`UI/UIBlurSource`, 차트는 `UI/UIChart` (2026-10-21까지는 Translucent Image + Paraform·EasyChart, 17 문서).
+  - 유리 UI·둥근 도형은 Translucent Image + Paraform(`Assets/Le Tai's Asset`, 심볼 `LETAI_PARAFORM`), 차트는 `UI/UIChart` (10-21~22 하루는 직접 만든 UIShape, 17 문서).
   - **TextMesh Pro** + Jalnan2 글꼴: `Assets/Editor/FontSetup.cs`가 `Resources/Fonts/Jalnan2 SDF`를 만든다(없을 때만). 다시 만들려면 메뉴 **Fishing > Rebuild Jalnan2 TMP Font**.
 - 렌더 파이프라인: Built-in, 입력: 구 Input Manager + 새 Input System(진동만, `activeInputHandler: 2`)
 

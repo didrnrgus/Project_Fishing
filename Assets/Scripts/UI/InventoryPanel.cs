@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Fishing.Core;
 using Fishing.Data;
+using LeTai.Asset.TranslucentImage;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -31,7 +32,7 @@ namespace Fishing.UI
         public InventoryPanel(Transform canvas)
         {
             var size = new Vector2(430, 640);
-            BuildFrame(canvas, "InventoryPanel", "인벤토리 <size=15><color=#9fc8e0>INVENTORY</color></size>", size);
+            BuildFrame(canvas, "InventoryPanel", UIFactory.Caption("인벤토리", "INVENTORY"), size);
             // 원작처럼 오른쪽에 붙이고 뒤를 어둡게 덮지 않는다 (클릭은 막는다)
             Root.GetComponent<Image>().color = Color.clear;
             Frame.At(new Vector2(1, 0.5f), new Vector2(-24, 30), size, new Vector2(1, 0.5f));
@@ -72,7 +73,7 @@ namespace Fishing.UI
             public string Text;          // 그림이 없을 때 칸 가운데 글씨
             public string Badge;         // 오른쪽 아래 (x50, 30cm)
             public string Corner;        // 왼쪽 위 (+7, 장착)
-            public Color Border = new Color(1f, 1f, 1f, 0.14f);
+            public Color Border = new Color(0.42f, 0.46f, 0.5f, 0.75f);
             public string Tip;
             public System.Action Click;
             public int Sort;
@@ -100,8 +101,10 @@ namespace Fishing.UI
 
             for (int i = 0; i < Cols * Rows; i++)
             {
-                var cell = UIFactory.Shape(_grid, new Color(0f, 0f, 0f, i < capacity ? 0.4f : 0.15f), 8f, "Slot", 0f);
+                // 원작 칸: 검은 회색 판 + 회색 금속 테두리, 모서리는 살짝만 둥글게 (clips 07 인벤토리)
+                var cell = UIFactory.Shape(_grid, i < capacity ? new Color(0.07f, 0.08f, 0.09f, 0.96f) : new Color(0.03f, 0.035f, 0.04f, 0.7f), 4f, "Slot", 3f);
                 cell.rectTransform.At(new Vector2(0, 1), new Vector2((i % Cols) * (Slot + Gap), -(i / Cols) * (Slot + Gap)), new Vector2(Slot, Slot), new Vector2(0, 1));
+                UIFactory.AddBorder(cell, new Color(0.42f, 0.46f, 0.5f, i < capacity ? 0.75f : 0.35f), 1.2f);
                 if (i >= entries.Count) continue;
                 FillSlot(cell, entries[i]);
             }
@@ -117,7 +120,7 @@ namespace Fishing.UI
             gold.rectTransform.At(new Vector2(1, 0.5f), Vector2.zero, new Vector2(150, 30), new Vector2(1, 0.5f));
         }
 
-        void FillSlot(UIShape cell, Entry e)
+        void FillSlot(TranslucentImage cell, Entry e)
         {
             UIFactory.AddBorder(cell, e.Border, 1.5f);
             var rt = cell.rectTransform;

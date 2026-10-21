@@ -19,7 +19,7 @@ namespace Fishing.UI
 
         public QuestPanel(Transform canvas)
         {
-            BuildFrame(canvas, "QuestPanel", "조합 퀘스트", new Vector2(1000, 880));
+            BuildFrame(canvas, "QuestPanel", UIFactory.Caption("조합 퀘스트", "QUEST"), new Vector2(1000, 880));
         }
 
         public void ShowTab(int tab)
@@ -46,7 +46,7 @@ namespace Fishing.UI
                     _tab == t ? UIFactory.TabOn : UIFactory.TabOff, true, 16);
                 UIFactory.SetRadius(tb.targetGraphic, UIFactory.Pill);
             }
-            Title.text = $"조합 퀘스트   <size=18><color=#ffd060>소라고동 {Game.Profile.Count(AchievementDatabase.ConchId)}개</color></size>";
+            Title.text = $"{UIFactory.Caption("조합 퀘스트", "QUEST")}   <size=18><color=#ffd060>소라고동 {Game.Profile.Count(AchievementDatabase.ConchId)}개</color></size>";
             switch (_tab)
             {
                 case 0: QuestBook(); break;         // 원작 퀘스트 책: 왼쪽 목록 + 오른쪽 상세
@@ -490,7 +490,7 @@ namespace Fishing.UI
     {
         public HelpPanel(Transform canvas)
         {
-            BuildFrame(canvas, "HelpPanel", "청풍명월 솔로 · 도움말", new Vector2(1180, 800));
+            BuildFrame(canvas, "HelpPanel", UIFactory.Caption("청풍명월 솔로 · 도움말", "HELP"), new Vector2(1180, 800));
             var text = UIFactory.Text(Body,
                 "<b><color=#55dcc8>필드</color></b>\n" +
                 "  WASD 이동 · Shift 달리기 · Space 점프 · B 배 꺼내기/내리기 · 오른쪽 버튼 드래그 시점 회전 · 휠 줌 · 숫자 1~6 미끼 선택\n" +

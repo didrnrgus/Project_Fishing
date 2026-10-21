@@ -21,7 +21,7 @@ namespace Fishing.UI
 
         public ItemBagPopup(Transform canvas)
         {
-            BuildFrame(canvas, "ItemBagPopup", "아이템 획득  <size=15><color=#8fa3b5>ITEM BAG</color></size>", new Vector2(520, 470), closable: false);
+            BuildFrame(canvas, "ItemBagPopup", UIFactory.Caption("아이템 획득", "ITEM BAG"), new Vector2(520, 470), closable: false);
             _list = UIFactory.Node("List", Body).Fill(0, 0, 0, 64);
             _empty = UIFactory.Text(Body, "받을 아이템이 없습니다.", 17, UIFactory.TextDim, TextAnchor.MiddleCenter);
             _empty.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(0, 30), new Vector2(400, 40));

@@ -1,5 +1,7 @@
 # 17. 공개 준비: 재배포 금지 에셋 걷어내기와 라이선스 (2026-10-21)
 
+> **2026-10-22 바뀜**: 사용자가 마음을 바꿨다 — 소스는 비공개로 두고 릴리즈 빌드만 배포한다. 그래서 UI는 다시 Translucent Image + Paraform(유료, 저장소에 넣음)으로 그린다(아래 3장 끝). 나머지 교체는 그대로 둔다.
+
 사용자 요청: 저장소를 공개해서 남이 포크해 쓸 수 있게 하되, 유료로 파는 건 막고 싶다.
 
 에셋 스토어와 Mixamo 약관은 **게임에 넣어 배포하는 건 허락하지만 원본 파일을 남이 받을 수 있게 올리는 건 막는다**(무료 에셋도 같다).
@@ -37,6 +39,9 @@
   정점 채널: uv1 = 중심 기준 위치·반폭, uv2 = 반지름·광택·테두리·빛 폭, uv3 = 그림자, tangent = 테두리 색, normal.x = 유리 판 색 진하기 → 캔버스에 Normal·Tangent 채널을 켠다(`UIFactory.CreateCanvas`).
 - 유리(`Glass`·`BlurBackdrop`)는 메인 카메라 `UIBlurSource.OnRenderImage`가 화면을 1/4로 줄여 Kawase 흐림 5번 → 전역 `_UIBlurTex`. 셰이더가 화면 좌표로 읽어 채도를 올리고 대비를 줄이고 조금 어둡게 한 뒤 판 색으로 덮는다.
 - 테두리는 하나(다시 `AddBorder`하면 바뀐다), 그림자도 하나. 셰이더 `Fishing/UIShape`·`Hidden/Fishing/UIBlur`는 그래픽 설정 Always Included.
+- **2026-10-22**: 소스 비공개로 바꾸며 `UIShape`·`UIBlurSource`·두 셰이더를 지우고 Translucent Image + Paraform으로 되돌렸다(`UIStyle.cs`, 재질 `Resources/UI/UIGlass·UISolid`, 심볼 `LETAI_PARAFORM`).
+  `AddBorder`는 같은 이름("Border") 테두리를 바꾼다(UIShape 때 규칙 유지). 이 버전 Paraform은 테두리 폭이 예전보다 두껍게 나와서 1px 안팎으로 준다, 가장자리 광택(bevel)이 넓으면 띠 전체가 밝아진다(유리 3px, 창 틀 2.5px).
+  색 공간은 Gamma(Linear로 바꾸면 반투명 판이 회색으로 뜬다).
 
 ## 4. 나무·덤불·바위·풀 (`build_vegetation.py` → `VegetationBake`)
 

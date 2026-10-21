@@ -4,7 +4,7 @@
 
 - **씬에는 `GameBootstrap` 하나만 둔다.** 월드, 플레이어, 카메라, UI를 모두 코드로 만든다. 씬에 없어도 `RuntimeInitializeOnLoadMethod`로 자동 생성된다.
 - **월드 아트는 코드로 만든다.** 프리미티브, 런타임 머티리얼(`Mats`), 절차적 텍스처/스프라이트, 절차적 사운드(`SoundFx`) + CC0 에셋(Quaternius·Kenney 모델, Poly Haven 텍스처, Kenney 소리). 사람은 모두 실행 중에 읽는 VRM(`StreamingAssets/Characters` + 문서 폴더, 16 문서), 물고기·아이콘은 `tools/blender`의 headless Blender 스크립트로 만들어 FBX/PNG로 커밋한다. 나중에 에셋으로 바꿀 때는 `WorldBuilder`, `PlayerController.BuildModel`, `FightRodView.Build`, `Bobber.Create`만 교체하면 된다.
-- **UI도 코드로 만든다**: 둥근 유리 도형 `UIShape`(셰이더 `Fishing/UIShape`, 뒤 화면 흐림 `UIBlurSource`), 차트 `UIChart`(메쉬로 직접), TextMeshPro(Jalnan2 글꼴). 프리팹 없이 `UIFactory`/`UIStyle`/`UIChart`로 조립한다.
+- **UI도 코드로 만든다**: 둥근 유리 도형·뒤 화면 흐림은 Translucent Image + Paraform(`UIStyle`), 차트 `UIChart`(메쉬로 직접), TextMeshPro(Jalnan2 글꼴). 프리팹 없이 `UIFactory`/`UIStyle`/`UIChart`로 조립한다.
 - **게임 규칙은 MonoBehaviour와 분리한다.** `FishFight`, `BiteSelector`, `PlayerProfile`, `QuestSystem`은 순수 C#이라서 에디터에서 밸런스 시뮬레이션을 돌릴 수 있다.
 - **데이터는 C# 정적 테이블이다** (`FishDatabase`, `GearDatabase`, `QuestDatabase`, `CostumeDatabase`, `AchievementDatabase` …). 텍스트 diff로 리뷰하기 쉽다. 데이터가 많아지면 ScriptableObject나 JSON으로 옮길 수 있다.
 - **입력은 구 Input Manager**(`UnityEngine.Input`, 키는 `Settings`로 바꿀 수 있음)를 쓴다. 패드 진동만 새 Input System(`Rumble`) — 프로젝트 설정 `activeInputHandler: 2`(둘 다).

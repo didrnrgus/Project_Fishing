@@ -15,7 +15,7 @@ namespace Fishing.UI
 
         public OptionsPanel(Transform canvas)
         {
-            BuildFrame(canvas, "OptionsPanel", "옵션", new Vector2(1300, 820));
+            BuildFrame(canvas, "OptionsPanel", UIFactory.Caption("옵션", "OPTION"), new Vector2(1300, 820));
         }
 
         public override void Close()

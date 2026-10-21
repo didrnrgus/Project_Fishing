@@ -31,7 +31,7 @@ namespace Fishing.UI
 
         public DeliveryPanel(Transform canvas)
         {
-            BuildFrame(canvas, "DeliveryPanel", "납품", new Vector2(1060, 780));
+            BuildFrame(canvas, "DeliveryPanel", UIFactory.Caption("납품", "DELIVERY"), new Vector2(1060, 780));
         }
 
         public override void Open()
@@ -57,7 +57,7 @@ namespace Fishing.UI
             _selected.RemoveWhere(f => !net.Contains(f));
             int pages = Mathf.Max(1, Mathf.CeilToInt(net.Count / (float)PerPage));
             _page = Mathf.Clamp(_page, 0, pages - 1);
-            Title.text = $"납품 <size=17><color=#8fa3b5>DELIVERY</color></size>   <size=20><color=#ffd060>{p.Data.gold:N0} GOLD</color></size>";
+            Title.text = $"{UIFactory.Caption("납품", "DELIVERY")}   <size=20><color=#ffd060>{p.Data.gold:N0} GOLD</color></size>";
             UIFactory.ClearChildren(Body);
 
             BuildTopBar(p, net);

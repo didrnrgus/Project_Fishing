@@ -36,7 +36,7 @@ namespace Fishing.UI
 
         public AreaMapPanel(Transform canvas)
         {
-            BuildFrame(canvas, "AreaMapPanel", "지역 지도", new Vector2(1240, 720));
+            BuildFrame(canvas, "AreaMapPanel", UIFactory.Caption("지역 지도", "AREA MAP"), new Vector2(1240, 720));
             Rebuild();
         }
 

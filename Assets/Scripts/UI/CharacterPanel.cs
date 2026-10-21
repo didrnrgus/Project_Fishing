@@ -2,6 +2,7 @@ using System.Linq;
 using Fishing.Characters;
 using Fishing.Core;
 using Fishing.Data;
+using LeTai.Asset.TranslucentImage;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -36,14 +37,14 @@ namespace Fishing.UI
 
         sealed class GearSlotView
         {
-            public UIShape Bg;
+            public TranslucentImage Bg;
             public Image Icon;
             public TMP_Text Fallback, Badge;
         }
 
         public CharacterPanel(Transform canvas)
         {
-            BuildFrame(canvas, "CharacterPanel", "내 캐릭터", new Vector2(1320, 800));
+            BuildFrame(canvas, "CharacterPanel", UIFactory.Caption("내 캐릭터", "CHARACTER"), new Vector2(1320, 800));
             var cam = PortraitCamera.FullBody ?? PortraitCamera.CreateFullBody();
 
             _tabs = UIFactory.Node("Tabs", Body).At(new Vector2(0, 1), Vector2.zero, new Vector2(420, 42), new Vector2(0, 1));
@@ -98,7 +99,7 @@ namespace Fishing.UI
             var btn = UIFactory.Button(parent, "", () => { _selected = i; Refresh(); }, UIFactory.TabOff, 12);
             var rt = (RectTransform)btn.transform;
             rt.At(new Vector2(right ? 1 : 0, 1), new Vector2(right ? -10 : 10, y), new Vector2(62, 62), new Vector2(right ? 1 : 0, 1));
-            v.Bg = (UIShape)btn.targetGraphic;
+            v.Bg = (TranslucentImage)btn.targetGraphic;
             UIFactory.AddBorder(v.Bg, new Color(1f, 1f, 1f, 0.18f), 1.5f);
             v.Icon = UIFactory.Image(rt, Color.white, null, "Icon");
             v.Icon.preserveAspect = true;
@@ -154,7 +155,7 @@ namespace Fishing.UI
         public override void Refresh()
         {
             var p = Game.Profile;
-            Title.text = $"내 캐릭터   <size=20><color=#a0b0c0>Lv.{p.Data.level} {p.CurrentTitle}</color>   <color=#ffd060>{p.Data.gold:N0} 골드</color></size>";
+            Title.text = $"{UIFactory.Caption("내 캐릭터", "CHARACTER")}   <size=20><color=#a0b0c0>Lv.{p.Data.level} {p.CurrentTitle}</color>   <color=#ffd060>{p.Data.gold:N0} 골드</color></size>";
 
             UIFactory.ClearChildren(_tabs);
             bool gear = !_avatar && !_model;
@@ -201,7 +202,7 @@ namespace Fishing.UI
 
             var rows = new RowCursor(_list);
 
-            UIFactory.SectionTitle(rows.Next(30), "체력 정보", 4, 19);
+            UIFactory.TableHeader(rows.Next(28), "체력 정보");
             Stat(rows, "체력", $"{p.Data.stamina:0} / {p.StaminaCap:0}", $"기본 {PlayerProfile.MaxStamina:0}" + (st.Stamina > 0f ? $" + 의상 {st.Stamina:0}" : ""));
             Stat(rows, "분당 체력 회복", p.Regenerating(now) ? $"+{p.Data.regenPerMin:0.#}" : "0",
                 p.Regenerating(now) ? $"음식 효과 · 게임 {p.Data.regenUntil - now:0}분 남음" : "김밥 같은 음식을 먹으면 회복");
@@ -215,7 +216,7 @@ namespace Fishing.UI
             Stat(rows, "컨디션", state, stateNote, stateColor);
             rows.Next(6);
 
-            UIFactory.SectionTitle(rows.Next(30), "데미지 정보", 4, 19);
+            UIFactory.TableHeader(rows.Next(28), "데미지 정보");
             float dmgMul = p.FightPower * p.StaminaFactor;
             Stat(rows, "기본 데미지", $"{rod.Power * dmgMul * 100f:0.0}", "낚싯대 힘 × 데미지 배율 × 컨디션 (기본 낚싯대 = 100)");
             Stat(rows, "낚싯대 힘", $"{rod.Power:0.00}", $"{rodBase.Name} {rodBase.Power:0.00}" + (rodLv > 0 ? $" · 강화 +{rodLv} (+{rodLv * 3}%)" : ""));
@@ -226,7 +227,7 @@ namespace Fishing.UI
             Stat(rows, "대물 확률", $"+{st.BigFish * 100f:0}%", "의상 · 먼바다에선 +8% 더");
             rows.Next(6);
 
-            UIFactory.SectionTitle(rows.Next(30), "컨트롤 정보", 4, 19);
+            UIFactory.TableHeader(rows.Next(28), "컨트롤 정보");
             Stat(rows, "캐스팅 비거리", $"{rod.CastRange + st.Cast:0.0}m",
                 $"낚싯대 {rodBase.CastRange:0}m" + (rodLv > 0 ? $" + 강화 {rodLv * 0.4f:0.0}m" : "") + (st.Cast > 0f ? $" + 의상 {st.Cast:0.0}m" : ""));
             Stat(rows, "릴 감는 속도", $"{reel.ReelSpeed * p.ReelFactor:0.00}m/s",
@@ -237,7 +238,7 @@ namespace Fishing.UI
             Stat(rows, "낚싯대 탄성", FlexName(rod.Flex), "연조일수록 충격을 흡수하고, 경조일수록 장력이 빨리 오른다");
             rows.Next(6);
 
-            UIFactory.SectionTitle(rows.Next(30), "안전성 정보", 4, 19);
+            UIFactory.TableHeader(rows.Next(28), "안전성 정보");
             Stat(rows, "줄 강도", $"{line.Strength:0.0}", $"{line.Name} · 높을수록 장력을 버틴다");
             bool broken = p.Data.rodDurability <= 0f;
             Stat(rows, "낚싯대 내구도", $"{p.Data.rodDurability:0}%", broken ? "낚시점에서 수리하세요 (데미지 절반)" : "파이팅할수록 닳는다 · 낚시점에서 수리",
