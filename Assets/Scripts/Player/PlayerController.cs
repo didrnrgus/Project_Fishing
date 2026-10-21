@@ -579,11 +579,12 @@ namespace Fishing.PlayerSystems
         }
 
         /// <summary>
-        /// 낚시 중 몸은 늘 낚싯대 들고 대기 자세. 젖히기·던지기·챔질의 팔은 낚싯대 각도를 따라가는 IK가 정한다
-        /// (<see cref="UpdateRodArmRight"/>, 예전 Windup·Cast·Hook 클립은 마우스와 상관없이 시간대로 움직여 낚싯대와 따로 놀았다).
+        /// 낚시 중 몸은 평소 대기(Idle) 그대로. 두 팔은 낚싯대 각도를 따라가는 IK가 정한다
+        /// (<see cref="UpdateRodArmRight"/>·<see cref="UpdateRodArmLeft"/>). 낚싯대 들고 대기 클립(HoldRod)은 몸통이 어색해서 안 쓴다
+        /// (예전 Windup·Cast·Hook 클립은 마우스와 상관없이 시간대로 움직여 낚싯대와 따로 놀았다).
         /// 찌·루어를 감을 때도 같은 자세에서 왼손만 릴 손잡이를 돌린다 (<see cref="UpdateCrank"/>).
         /// </summary>
-        static string FishingPose() => CharacterAnimator.HoldRod;
+        static string FishingPose() => CharacterAnimator.Idle;
 
         float _crankWeight;
 
