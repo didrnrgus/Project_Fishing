@@ -68,7 +68,8 @@ namespace Fishing.PlayerSystems
         SitSeat _sitSeat;
         RodGrip _grip;
         float _airTime;
-        const float JumpSpeed = 6.2f;
+        /// <summary>점프 높이 2m: √(2 × 중력 20 × 2) ≈ 8.94m/s, 체공 약 0.9초.</summary>
+        const float JumpSpeed = 8.94f;
         float _stride;
         int _extendedSections;
         string _rodId, _reelId;
