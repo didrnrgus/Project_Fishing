@@ -63,7 +63,7 @@ namespace Fishing.World
         /// night: 창마다 켜짐·꺼짐(따뜻한 빛, 사무실 형광등빛 섞어서). nightTiles > 1이면 낮 한 장의 nightTiles × nightTiles배를 덮는
         /// 아틀라스로 만들어(재질에도 같은 값, Mat(nightTiles)) 건물이 커도 불빛 배치가 되풀이되지 않는다.
         /// </summary>
-        internal static Texture2D Facade(int floors, int bays, Color glassTop, Color glassBottom, Color frame, float bandFrac, float mullionFrac, int seed, out Texture2D night, float litChance, int nightTiles = 1)
+        internal static Texture2D Facade(int floors, int bays, Color glassTop, Color glassBottom, Color frame, float bandFrac, float mullionFrac, int seed, out Texture2D night, float litChance, int nightTiles = 1, int nightCellPx = 16)
         {
             const int W = 256, H = 256;
             var tex = new Texture2D(W, H, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Repeat, anisoLevel = 4 };
@@ -85,9 +85,9 @@ namespace Fishing.World
             }
             tex.SetPixels(px); tex.Apply(true);
 
-            // 밤 불빛: 창 한 칸에 16px 이상
+            // 밤 불빛: 창 한 칸에 nightCellPx 이상
             int nb = bays * nightTiles, nf = floors * nightTiles;
-            int NW = Mathf.Max(256, nb * 16), NH = Mathf.Max(256, nf * 16);
+            int NW = Mathf.Max(256, nb * nightCellPx), NH = Mathf.Max(256, nf * nightCellPx);
             night = new Texture2D(NW, NH, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Repeat };
             var npx = new Color[NW * NH];
             var lit = LitPattern(nf, nb, litChance, new System.Random(seed));
@@ -287,8 +287,10 @@ namespace Fishing.World
             t.localRotation = Quaternion.Euler(0f, 18f, 0f); // 이음매 하나가 서북쪽(서울 도심)을 본다
             float H = LotteHeight, bodyTop = 0.855f;
             // 층선: 123층을 300m로 줄였으니 한 층 약 2.1m. 한 장 = 6층 × 10칸
-            var glass = Facade(6, 10, new Color(0.78f, 0.84f, 0.9f), new Color(0.42f, 0.5f, 0.58f), new Color(0.93f, 0.94f, 0.95f), 0.16f, 0.07f, 11, out var night, 0.33f);
-            var body = Mat(Color.white, glass, night, new Color(1f, 0.95f, 0.88f) * 1.7f, 0.85f, 0.35f, Vector2.one);
+            // 밤 불빛은 20 × 20장(120층 256m × 가로 280m, 아래 둘레 약 165m) 아틀라스 하나로 몸통 전체를 덮는다: 한 장을 되풀이하면 위로 좁아지며
+            // 같은 무늬가 둘레를 따라 비스듬히 밀려 꽈배기처럼 보였다
+            var glass = Facade(6, 10, new Color(0.78f, 0.84f, 0.9f), new Color(0.42f, 0.5f, 0.58f), new Color(0.93f, 0.94f, 0.95f), 0.16f, 0.07f, 11, out var night, 0.3f, 20, 10);
+            var body = Mat(Color.white, glass, night, new Color(1f, 0.95f, 0.88f) * 1.7f, 0.85f, 0.35f, Vector2.one, 20);
             var angles = LotteAngles();
             var rings = new List<Vector2[]>();
             var ys = new List<float>();
