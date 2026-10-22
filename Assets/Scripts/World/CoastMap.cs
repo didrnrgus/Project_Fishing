@@ -42,6 +42,7 @@ namespace Fishing.World
         Windmills = 262144,   // 절벽 위 하얀 풍차 (키클라데스)
         Pyramids = 524288,    // 사막 너머 피라미드 (나일강 하류)
         Feluccas = 1048576,   // 큰 삼각돛 펠루카 (나일강)
+        SeaRocks = 2097152,   // 바위 해안 앞 얕은 물에 솟은 날카로운 갯바위 무리 (헌화로 사진: 청록 물 위 검은 바위들)
     }
 
     /// <summary>
@@ -307,7 +308,7 @@ namespace Fishing.World
             return z;
         }
 
-        float KindWeight(float x, ShoreKind kind)
+        internal float KindWeight(float x, ShoreKind kind)
         {
             float w = 0f;
             foreach (var s in S.Shores)
@@ -322,7 +323,26 @@ namespace Fishing.World
 
         float LandHeight(float x, float back)
         {
+            // 절벽 요철 (사용자 참고 사진: 헌화로·등대섬·거문도의 바위 절벽): 예전에는 해안을 따라 똑같은 기울기의 매끈한 벽이었다.
+            // ① 골·버팀벽: 오르막이 시작하는 자리를 x마다 리지 노이즈로 앞뒤로 밀어 세로로 팬 골과 튀어나온 바위 능을 낸다 (평지는 그대로)
+            // ② 층 턱: 가파른 절벽(높이/폭 0.5 넘게)만 오르막을 계단처럼 꺾어 층리 턱을 낸다
+            float w = Smooth(S.FlatWidth - 1f, S.FlatWidth + 5f, back) * Smooth(S.FlatWidth + S.CliffWidth + 30f, S.FlatWidth + S.CliffWidth + 8f, back);
+            if (w > 0f)
+            {
+                float n1 = Mathf.PerlinNoise(x * 0.045f + S.Seed * 1.7f, back * 0.012f);
+                float n2 = Mathf.PerlinNoise(x * 0.14f + 31f, back * 0.035f + S.Seed);
+                float relief = (1f - Mathf.Abs(n1 * 2f - 1f) - 0.5f) + (n2 - 0.5f) * 0.6f;
+                back -= relief * Mathf.Min(9f, S.CliffWidth * 0.3f) * w;
+            }
             float rise = Smooth(S.FlatWidth, S.FlatWidth + S.CliffWidth, back);
+            float steepK = Smooth(0.5f, 0.95f, S.CliffHeight / Mathf.Max(1f, S.CliffWidth));
+            if (steepK > 0f && rise > 0f && rise < 1f)
+            {
+                float steps = Mathf.Max(3f, Mathf.Round(S.CliffHeight / 6f));
+                float k = rise * steps + (Mathf.PerlinNoise(x * 0.03f, S.Seed * 0.3f) - 0.5f) * 0.6f;
+                float stair = (Mathf.Floor(k) + Smooth(0.45f, 1f, k - Mathf.Floor(k))) / steps;
+                rise = Mathf.Clamp01(Mathf.Lerp(rise, stair, 0.45f * steepK));
+            }
             float hills = (Mathf.PerlinNoise(x * 0.018f + S.Seed, back * 0.02f) - 0.4f) * S.CliffHeight * 0.5f * rise;
             float y = LandY + S.CliffHeight * rise + hills;
             if ((S.Features & CoastFeature.Mountains) != 0) y += Smooth(S.FlatWidth + S.CliffWidth, S.FlatWidth + S.CliffWidth + 70f, back) * 22f;
@@ -601,7 +621,8 @@ namespace Fishing.World
             {
                 new TerrainBuilder.LayerSpec(S.Snow ? "snow" : "grass", 9f, S.Snow ? 0.35f : 0.05f),
                 new TerrainBuilder.LayerSpec(S.SandTexture, S.SandTexture == "sand" ? 6f : 2.5f, 0.15f, S.SandTint),
-                new TerrainBuilder.LayerSpec(S.CliffTexture, 11f, 0.2f, S.CliffTint),
+                // seacliff(Marble Cliff)는 사진의 동해·남해 해안 절벽보다 희다 → 따로 색을 안 줬으면 회갈색으로 눌러 쓴다
+                new TerrainBuilder.LayerSpec(S.CliffTexture, 11f, 0.2f, S.CliffTint.a == 0f && S.CliffTexture == "seacliff" ? new Color(0.66f, 0.63f, 0.58f) : S.CliffTint),
                 new TerrainBuilder.LayerSpec("shore", 7f, 0.3f),
                 new TerrainBuilder.LayerSpec("mud", 5f, 0.7f),
             };
@@ -1350,24 +1371,22 @@ namespace Fishing.World
 
         void BuildFarIslands()
         {
-            var near = Mats.Lit(S.Snow ? new Color(0.5f, 0.55f, 0.6f) : new Color(0.22f, 0.3f, 0.24f));
-            var far = Mats.Lit(new Color(0.35f, 0.4f, 0.42f));
+            // 예전: 찌그러뜨린 공 프리미티브 → 사진처럼 물가 바위 절벽 + 능선·골짜기 + 숲 결 (FarLand). 열대·지중해 맵은 그 색으로
+            Material Mat(float fog) => S.Snow ? FarLand.SnowForest(fog)
+                : S.TreeKind == TreeStyle.Palm || S.TreeKind == TreeStyle.Tropical ? FarLand.Jungle(fog)
+                : S.TreeKind == TreeStyle.Mediterranean ? FarLand.Maquis(fog) : FarLand.KoreaForest(fog);
             for (int i = 0; i < S.FarIslands.Length; i++)
             {
                 var v = S.FarIslands[i];
-                Mats.Prim(PrimitiveType.Sphere, "FarIsland", _root, new Vector3(v.x, -v.w * 0.35f, v.y), new Vector3(v.z, v.w, v.z * 0.45f), v.y > 600f ? far : near, false);
+                FarLand.Place(_root, "FarIsland", new Vector3(v.x, _map.BaseWaterY, v.y), v.z * 0.5f, v.z * 0.24f, v.w * 0.9f, S.Seed * 31 + i, Mat(v.y > 600f ? 0.85f : 0.6f));
             }
             if ((S.Features & CoastFeature.Mountains) != 0)
             {
-                // 육지 뒤 산줄기 (지형 밖 남쪽): 바다에서 돌아보면 보인다
-                var ridge = Mats.Lit(S.Snow ? new Color(0.78f, 0.8f, 0.84f) : new Color(0.16f, 0.26f, 0.18f));
-                var ridgeFar = Mats.Lit(S.Snow ? new Color(0.62f, 0.66f, 0.72f) : new Color(0.26f, 0.33f, 0.32f));
-                for (int i = 0; i < 9; i++)
-                {
-                    float x = -360f + i * 90f + R(-20f, 20f);
-                    float h = R(70f, 120f);
-                    Mats.Prim(PrimitiveType.Sphere, "Ridge", _root, new Vector3(x, h * 0.1f, -300f + R(-30f, 30f)), new Vector3(R(140f, 200f), h, 110f), i % 2 == 0 ? ridge : ridgeFar, false);
-                }
+                // 육지 뒤 산줄기 (지형 밖 남쪽): 바다에서 돌아보면 보인다. 예전 공 9개 → 능선이 이어진 산 두 덩어리
+                var near = Mat(0.5f);
+                var far = Mat(0.75f);
+                MapKit.Place(_root, "Ridge", MapKit.Mountain(320f, 110f, 115f, S.Seed * 7 + 1, 2f, 3), new[] { near, near }, new Vector3(-170f, LandYPlus(4f), -320f));
+                MapKit.Place(_root, "RidgeFar", MapKit.Mountain(300f, 100f, 140f, S.Seed * 7 + 2, 2f, 3), new[] { far, far }, new Vector3(190f, LandYPlus(4f), -400f));
             }
         }
 
@@ -1383,6 +1402,7 @@ namespace Fishing.World
             if ((S.Features & CoastFeature.SeaBridge) != 0) SeaBridge();
             if ((S.Features & CoastFeature.Cranes) != 0) Cranes();
             if ((S.Features & CoastFeature.FarRocks) != 0) FarRocks();
+            if ((S.Features & CoastFeature.SeaRocks) != 0) SeaRocks();
             if ((S.Features & CoastFeature.SuspensionBridge) != 0) SuspensionBridge();
             if ((S.Features & CoastFeature.Azaleas) != 0) Azaleas();
             if ((S.Features & CoastFeature.IceFloes) != 0) IceFloes();
@@ -1397,15 +1417,17 @@ namespace Fishing.World
         /// <summary>한라산: 육지 뒤로 완만하게 솟은 큰 방패 화산, 꼭대기에 백록담 분화구 테.</summary>
         void Hallasan()
         {
-            var slope = Mats.Lit(new Color(0.2f, 0.3f, 0.24f), 0.1f);
-            var far = Mats.Lit(new Color(0.3f, 0.38f, 0.4f), 0.05f);
+            // 예전 공 프리미티브 → 숲 결 산 (FarLand). 봉우리 하나인 완만한 방패 화산, 위쪽은 현무암이 드러난다
             var rim = Mats.Lit(new Color(0.42f, 0.4f, 0.36f), 0.1f);
-            Mats.Prim(PrimitiveType.Sphere, "Hallasan", _root, new Vector3(-40f, -40f, -700f), new Vector3(1600f, 330f, 700f), far, false);
-            Mats.Prim(PrimitiveType.Sphere, "HallasanNear", _root, new Vector3(-60f, -30f, -560f), new Vector3(900f, 210f, 400f), slope, false);
-            Mats.Prim(PrimitiveType.Cylinder, "Baengnokdam", _root, new Vector3(-40f, 122f, -700f), new Vector3(130f, 4f, 70f), rim, false);
-            // 오름 (작은 기생 화산)
+            var far = FarLand.Forest(FarLand.KoreaDark, FarLand.KoreaLight, "darkrock", new Color(0.36f, 0.35f, 0.34f), 0.7f, 0f, null, 0f, 0.5f);
+            var near = FarLand.Forest(FarLand.KoreaDark, FarLand.KoreaLight, "darkrock", new Color(0.36f, 0.35f, 0.34f), 0.5f, 0f, null, 0f, 0.5f);
+            var halla = FarLand.Place(_root, "Hallasan", new Vector3(-40f, LandYPlus(-6f), -700f), 800f, 350f, 140f, 1950, far, 0f, 0f, 1);
+            FarLand.Place(_root, "HallasanNear", new Vector3(-60f, LandYPlus(-6f), -560f), 450f, 200f, 70f, 1951, near, 0f, 0f, 2);
+            float top = halla.transform.localPosition.y + halla.GetComponent<MeshFilter>().sharedMesh.bounds.max.y;
+            Mats.Prim(PrimitiveType.Cylinder, "Baengnokdam", _root, new Vector3(-40f, top - 4f, -700f), new Vector3(110f, 4f, 60f), rim, false);
+            // 오름 (작은 기생 화산): 봉우리 하나인 둥근 언덕
             for (int i = 0; i < 6; i++)
-                Mats.Prim(PrimitiveType.Sphere, "Oreum", _root, new Vector3(-320f + i * 120f + R(-30f, 30f), -6f, -300f + R(-40f, 30f)), new Vector3(R(60f, 110f), R(30f, 50f), R(50f, 90f)), slope, false);
+                FarLand.Place(_root, "Oreum", new Vector3(-320f + i * 120f + R(-30f, 30f), LandYPlus(-6f), -300f + R(-40f, 30f)), R(30f, 55f), R(25f, 45f), R(30f, 50f), 1960 + i, near, R(0f, 180f), 0f, 1);
         }
 
         /// <summary>돌하르방: 구멍 숭숭 현무암, 벙거지 모자, 큰 코, 배에 얹은 두 손.</summary>
@@ -1741,15 +1763,51 @@ namespace Fishing.World
         /// <summary>먼바다 바위섬 무리 (거문도 백도): 뾰족한 바위들이 수평선에 솟아 있다.</summary>
         void FarRocks()
         {
-            var rock = Mats.Lit(new Color(0.55f, 0.52f, 0.48f), 0.2f);
+            // 백도 사진: 깎아지른 회백색 바위섬 꼭대기에만 풀·나무. 예전 캡슐 → 물가 절벽이 몸통 대부분인 FarLand 섬
+            var rock = FarLand.Forest(FarLand.KoreaDark, FarLand.KoreaLight, "seacliff", new Color(0.6f, 0.58f, 0.54f), 0.6f, 0f, null, 0f, 0.28f, 6f);
             var cx = 240f; var cz = 520f;
             for (int i = 0; i < 26; i++)
             {
                 float h = R(12f, 45f);
-                var p = new Vector3(cx + R(-120f, 120f), _map.BaseWaterY - 3f + h * 0.45f, cz + R(-50f, 60f));
-                Mats.Prim(PrimitiveType.Capsule, "FarRock", _root, p, new Vector3(R(8f, 22f), h, R(8f, 18f)), rock, false, Quaternion.Euler(R(-12f, 12f), R(0f, 360f), R(-12f, 12f)));
+                float r = R(5f, 12f);
+                FarLand.Place(_root, "FarRock", new Vector3(cx + R(-120f, 120f), _map.BaseWaterY, cz + R(-50f, 60f)), r, r * R(0.6f, 0.9f), h, 2000 + i, rock, R(0f, 360f), 0.8f, 1);
             }
         }
+
+        /// <summary>
+        /// 갯바위 무리 (사용자 참고 사진: 헌화로 — 청록 물 위로 검은 바위가 날카롭게 솟아 해안을 따라 흩어져 있다).
+        /// 바위 해안(포구·해변·갯벌 아닌 곳) 앞 3~28m 물에, 방파제·곶 끝·데크는 피해서. 실사 바위 에셋(Rocks.Prim)을 세로로 길게, 반쯤 잠기게.
+        /// </summary>
+        void SeaRocks()
+        {
+            var mat = Mats.Lit(new Color(0.3f, 0.29f, 0.28f), 0.25f);
+            int placed = 0;
+            for (int tries = 0; tries < 400 && placed < 46; tries++)
+            {
+                float x = R(-200f, 200f);
+                if (_map.KindWeight(x, ShoreKind.Beach) + _map.KindWeight(x, ShoreKind.Quay) + _map.KindWeight(x, ShoreKind.Mud) > 0.01f) continue;
+                float d = 3f + Mathf.Pow(R(0f, 1f), 1.6f) * 25f;
+                float z = _map.ShoreAt(x) + d;
+                var at = new Vector2(x, z);
+                bool blocked = false;
+                foreach (var b in S.Breakwaters)
+                    if (Grow(b.Stem, 8f).Contains(at) || (b.Arm.width > 0f && Grow(b.Arm, 8f).Contains(at))) blocked = true;
+                foreach (var pf in S.Platforms) if (Grow(pf.Area, 6f).Contains(at)) blocked = true;
+                foreach (var c in S.Capes) if (Vector2.Distance(at, c.Tip) < 14f) blocked = true;
+                foreach (var st in S.Stacks) if (Vector2.Distance(at, new Vector2(st.Pos.x, st.Pos.z)) < st.Radius + 5f) blocked = true;
+                if (blocked) continue;
+                float bed = H(x, z);
+                float size = R(1.6f, 5.5f) * (d < 10f ? 1f : 0.8f);
+                float top = _map.BaseWaterY + size * R(0.25f, 0.7f);
+                float hgt = top - bed;
+                if (hgt < 0.8f) continue;
+                Rocks.Prim("SeaRock", _root, new Vector3(x, bed + hgt * 0.5f, z), new Vector3(size, hgt, size * R(0.6f, 1f)), mat,
+                    Quaternion.Euler(R(-15f, 15f), R(0f, 360f), R(-15f, 15f)));
+                placed++;
+            }
+        }
+
+        static Rect Grow(Rect r, float m) => new Rect(r.xMin - m, r.yMin - m, r.width + m * 2f, r.height + m * 2f);
 
         /// <summary>출렁다리: 첫 곶 끝에서 첫 바위기둥까지 늘어진 줄다리.</summary>
         void SuspensionBridge()

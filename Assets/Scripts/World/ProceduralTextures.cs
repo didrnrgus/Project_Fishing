@@ -39,7 +39,7 @@ namespace Fishing.World
         }
 
         /// <summary>u, v는 0~1. 주기가 정수라 텍스처 경계에서 이어진다.</summary>
-        static float Fbm(float u, float v, int basePeriod, int octaves, int seed)
+        internal static float Fbm(float u, float v, int basePeriod, int octaves, int seed)
         {
             float sum = 0f, amp = 0.5f, norm = 0f;
             int period = basePeriod;

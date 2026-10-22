@@ -169,7 +169,7 @@ namespace Fishing.World
                 new StackSpec { Pos = new Vector3(150f, 0f, -12f), Radius = 2.4f, Height = 15f, Name = "추암 촛대바위" },
                 new StackSpec { Pos = new Vector3(161f, 0f, -4f), Radius = 3.6f, Height = 9f, Name = "형제바위" },
             },
-            Features = CoastFeature.SquidBoats | CoastFeature.Mountains,
+            Features = CoastFeature.SquidBoats | CoastFeature.Mountains | CoastFeature.SeaRocks,
             Grid = new[,]
             {
                 { R, R, S, S, D, D, R, R },
@@ -220,7 +220,7 @@ namespace Fishing.World
                 new IsletSpec { Center = new Vector3(128f, 0f, 150f), Radius = 12f, Height = 4f, Walkable = true, Name = "동쪽 여" },
             },
             Stacks = new[] { new StackSpec { Pos = new Vector3(112f, 0f, 30f), Radius = 5f, Height = 14f, Pines = true, Name = "삼형제굴바위" } },
-            Features = CoastFeature.SquidBoats,
+            Features = CoastFeature.SquidBoats | CoastFeature.SeaRocks,
             Grid = new[,]
             {
                 { D, R, R, R, S, S, R, D },
@@ -272,7 +272,7 @@ namespace Fishing.World
             Islets = new[] { new IsletSpec { Center = new Vector3(60f, 0f, 46f), Radius = 9f, Height = 3f, Walkable = true, Name = "앞 여" } },
             Stacks = new[] { new StackSpec { Pos = new Vector3(-38f, 0f, 22f), Radius = 3f, Height = 11f, Name = "부채바위" } },
             Platforms = new[] { new PlatformSpec { Area = new Rect(20f, -42.2f, 86f, 3.2f), Kind = PlatformKind.Boardwalk, Name = "바다부채길" } },
-            Features = CoastFeature.Mountains | CoastFeature.Azaleas | CoastFeature.SquidBoats,
+            Features = CoastFeature.Mountains | CoastFeature.Azaleas | CoastFeature.SquidBoats | CoastFeature.SeaRocks,
             Grid = new[,]
             {
                 { R, R, R, R, R, R, R, R },
@@ -493,7 +493,7 @@ namespace Fishing.World
                 new StackSpec { Pos = new Vector3(-58f, 0f, 62f), Radius = 4f, Height = 18f, Name = "각시바위" },
                 new StackSpec { Pos = new Vector3(-40f, 0f, 76f), Radius = 3f, Height = 11f, Name = "서방바위" },
             },
-            Features = CoastFeature.FarRocks,
+            Features = CoastFeature.FarRocks | CoastFeature.SeaRocks,
             Grid = new[,]
             {
                 { R, R, R, S, S, D, R, R },

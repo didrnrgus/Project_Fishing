@@ -208,7 +208,9 @@ namespace Fishing.Core
             RenderSettings.ambientSkyColor = sky;
             RenderSettings.ambientEquatorColor = sky * 0.8f;
             RenderSettings.ambientGroundColor = sky * 0.45f;
-            RenderSettings.fogColor = Color.Lerp(sky, new Color(0.6f, 0.62f, 0.65f) * day, 1f - _weatherDim);
+            // 공기 원근감: 맑은 낮 안개는 지평선 하늘빛(밝은 푸른 회색, 노을엔 주황). 예전에는 어두운 환경광 색이라 먼 섬이 뿌옇게 바래지 않고 거뭇하게 남았다
+            var haze = Color.Lerp(sky, Color.Lerp(new Color(0.64f, 0.72f, 0.82f), new Color(0.9f, 0.66f, 0.5f), warm * 0.7f), day * 0.75f);
+            RenderSettings.fogColor = Color.Lerp(haze, new Color(0.6f, 0.62f, 0.65f) * day, 1f - _weatherDim);
             // 해무가 잦은 곳(FogBoost)은 흐린 날·새벽에 훨씬 짙다
             var map = Fishing.World.FieldMap.Current;
             float seaFog = map != null && Game.Mode == GameMode.Field

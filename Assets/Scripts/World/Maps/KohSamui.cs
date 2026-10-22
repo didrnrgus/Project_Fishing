@@ -95,17 +95,16 @@ namespace Fishing.World
             MapKit.Prop(root, "buddha_gold", at, MapKit.Face(at, new Vector3(20f, 0f, -45f)), 20f);
 
             // --- 사용자 참고 사진(코사무이): 앙통 해상공원의 숲 덮인 섬들 + 모래톱으로 이어진 낭유안 세 섬 ---
-            var jungle = MapKit.FarRock(new Color(0.16f, 0.32f, 0.15f), "grass", 18f, 0.8f, 0.05f);
+            var jungle = FarLand.Jungle(0.7f);
             var granite = MapKit.FarRock(new Color(0.55f, 0.5f, 0.44f), "granite", 20f, 0.8f);
             foreach (var (x, z, rx, h, seed) in new[] { (-260f, 420f, 90f, 60f, 1), (-140f, 470f, 60f, 48f, 2), (-330f, 520f, 120f, 75f, 3), (240f, 460f, 70f, 52f, 4), (330f, 380f, 50f, 34f, 5) })
             {
-                var isl = MapKit.Place(root, "AngThong", HanRiverLandmarks.HillMesh(rx, rx * 0.7f, h, seed + 40), jungle, new Vector3(x, water - 0.5f, z));
-                isl.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                FarLand.Place(root, "AngThong", new Vector3(x, water, z), rx, rx * 0.7f, h, seed + 40, jungle, 0f, 0.2f);
             }
             // 낭유안: 봉긋한 세 섬 사이를 흰 모래톱이 Y자로 잇는다
             var ny = new Vector3(60f, water, 330f);
             foreach (var (dx, dz, rx, h) in new[] { (0f, 0f, 34f, 30f), (-58f, 40f, 26f, 22f), (52f, 46f, 22f, 18f) })
-                MapKit.Place(root, "NangYuan", HanRiverLandmarks.HillMesh(rx, rx * 0.8f, h, (int)(dx + 77)), jungle, ny + new Vector3(dx, -0.5f, dz));
+                FarLand.Place(root, "NangYuan", ny + new Vector3(dx, 0f, dz), rx, rx * 0.8f, h, (int)(dx + 77), FarLand.Jungle(0.5f), 0f, 0.18f);
             var sand = Mats.Textured("sand", new Color(1f, 0.97f, 0.9f), 6f, 0.1f);
             foreach (var (tx, tz) in new[] { (-58f, 40f), (52f, 46f) })
             {

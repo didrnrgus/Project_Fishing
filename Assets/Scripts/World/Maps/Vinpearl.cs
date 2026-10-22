@@ -180,7 +180,7 @@ namespace Fishing.World
                 foreach (float zz in new[] { poolZ - 9f, poolZ + 9f })
                     KenneyProps.Spawn("Props/palm_a", root, new Vector3(x, b.Height(x, zz), zz), b.Rand(0f, 360f), b.Rand(8f, 11f));
             // 뒤 혼째 섬 산 (짙은 열대림)
-            var jungle = MapKit.FarRock(new Color(0.18f, 0.32f, 0.16f), "grass", 22f, 0.8f, 0.05f);
+            var jungle = FarLand.Jungle(0.6f);
             var rock = MapKit.FarRock(new Color(0.42f, 0.4f, 0.34f), "granite", 30f, 0.8f);
             MapKit.Place(root, "HonTre", MapKit.Mountain(420f, 140f, 190f, 51, 0.85f, 3), new[] { jungle, rock }, new Vector3(40f, land, -360f));
         }

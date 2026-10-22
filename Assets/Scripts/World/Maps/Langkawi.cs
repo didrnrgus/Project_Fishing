@@ -82,7 +82,7 @@ namespace Fishing.World
 
             // --- 맛친창 산 + 스카이 브리지 (산마루를 휘감는 굽은 다리, 기울어진 기둥 하나에 줄로 매단다) ---
             var hill = new Vector3(110f, land, -330f);
-            var jungle = MapKit.FarRock(new Color(0.2f, 0.34f, 0.17f), "grass", 25f, 0.8f, 0.05f);
+            var jungle = FarLand.Jungle(0.6f, "seacliff");
             var cliffs = MapKit.FarRock(new Color(0.46f, 0.46f, 0.4f), "cliff", 35f);
             // 능선이 들쭉날쭉한 산 (위쪽 서브메쉬 = 바위가 드러난 꼭대기)
             MapKit.Place(root, "MatCincang", MapKit.Mountain(240f, 120f, 200f, 56, 0.72f, 3), new[] { jungle, cliffs }, hill);

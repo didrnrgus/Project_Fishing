@@ -393,8 +393,7 @@ namespace Fishing.World
             t.SetParent(root, false);
             t.localPosition = NamsanPos;
             // 산: 노이즈로 울퉁불퉁한 돔. 숲 텍스처를 넓게
-            var forestTex = Resources.Load<Texture2D>("Terrain/grass_diff");
-            var forest = Mat(new Color(0.42f, 0.6f, 0.38f), forestTex, null, Color.black, 0.05f, 0f, new Vector2(18f, 18f));
+            var forest = Fishing.World.FarLand.Forest(Fishing.World.FarLand.KoreaDark * 1.3f, Fishing.World.FarLand.KoreaLight * 1.15f, "seacliff", null, 0.45f);
             Place(t, "NamsanHill", HillMesh(260f, 190f, NamsanHill, 7), forest, Vector3.zero);
             float baseY = NamsanHill - 2f;
             var concreteTex = Facade(8, 24, new Color(0.95f, 0.95f, 0.94f), new Color(0.82f, 0.82f, 0.8f), new Color(0.88f, 0.88f, 0.87f), 0.02f, 0.06f, 3, out _, 0f);

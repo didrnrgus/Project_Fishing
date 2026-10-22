@@ -40,11 +40,13 @@ void TerrainVert(inout appdata_full v, out Input data)
 
 static const float2x2 FishRot = float2x2(0.7986, -0.6018, 0.6018, 0.7986);
 
-void SampleLayer(sampler2D tex, sampler2D nor, float4 st, half nscale, float2 tc, float m, out half3 col, out half3 n)
+// far = 카메라에서 멀수록 0→0.5: 같은 텍스처를 1/5 배율로 한 번 더 읽어 섞는다 (먼 풀밭·절벽에 격자처럼 되풀이되는 무늬가 사진과 가장 다른 점)
+void SampleLayer(sampler2D tex, sampler2D nor, float4 st, half nscale, float2 tc, float m, float far, out half3 col, out half3 n)
 {
     float2 uv = tc * st.xy + st.zw;
     float2 uv2 = mul(FishRot, uv) * 0.73 + float2(0.37, 0.61);
     col = lerp(tex2D(tex, uv).rgb, tex2D(tex, uv2).rgb, m);
+    if (far > 0.01) col = lerp(col, tex2D(tex, mul(FishRot, uv) * 0.19 + 0.5).rgb, far);
     half3 na = UnpackScaleNormal(tex2D(nor, uv), nscale);
     half3 nb = UnpackScaleNormal(tex2D(nor, uv2), nscale);
     nb.xy = mul(nb.xy, FishRot);
@@ -61,6 +63,17 @@ half3 SideColor(sampler2D tex, float4 st, float3 wp, float perM, half3 tw, half3
     return planar * tw.y + cx * tw.x + cz * tw.z;
 }
 
+// 절벽 법선: 옆 두 방향 투영 법선을 월드로 (화이트아웃). 예전에는 색만 옆 투영이고 법선은 늘어난 위 투영이라 절벽이 판판한 벽처럼 빛을 받았다
+float3 SideNormal(sampler2D nor, float4 st, half nscale, float3 wp, float perM, half3 tw, float3 N)
+{
+    float k = perM * st.x;
+    half3 tx = UnpackScaleNormal(tex2D(nor, wp.zy * k), nscale * 1.4);
+    half3 tz = UnpackScaleNormal(tex2D(nor, wp.xy * k + 0.31), nscale * 1.4);
+    tx = half3(tx.xy + N.zy, abs(tx.z) * N.x);
+    tz = half3(tz.xy + N.xy, abs(tz.z) * N.z);
+    return tx.zyx * tw.x + tz.xyz * tw.z;
+}
+
 void TerrainSurf(Input IN, inout SurfaceOutputStandard o)
 {
     half4 ctrl = tex2D(_Control, IN.tc);
@@ -72,23 +85,34 @@ void TerrainSurf(Input IN, inout SurfaceOutputStandard o)
 
     float2 w = IN.worldPos.xz;
     float m = smoothstep(0.35, 0.65, FishNoise(w * 0.09) * 0.6 + FishNoise(w * 0.031 + 5.7) * 0.4);
+    float far = smoothstep(25.0, 140.0, distance(_WorldSpaceCameraPos, IN.worldPos)) * 0.5;
     half3 c0, c1, c2, c3, n0, n1, n2, n3;
-    SampleLayer(_Splat0, _Normal0, _Splat0_ST, _NormalScale0, IN.tc, m, c0, n0);
-    SampleLayer(_Splat1, _Normal1, _Splat1_ST, _NormalScale1, IN.tc, m, c1, n1);
-    SampleLayer(_Splat2, _Normal2, _Splat2_ST, _NormalScale2, IN.tc, m, c2, n2);
-    SampleLayer(_Splat3, _Normal3, _Splat3_ST, _NormalScale3, IN.tc, m, c3, n3);
+    SampleLayer(_Splat0, _Normal0, _Splat0_ST, _NormalScale0, IN.tc, m, far, c0, n0);
+    SampleLayer(_Splat1, _Normal1, _Splat1_ST, _NormalScale1, IN.tc, m, far, c1, n1);
+    SampleLayer(_Splat2, _Normal2, _Splat2_ST, _NormalScale2, IN.tc, m, far, c2, n2);
+    SampleLayer(_Splat3, _Normal3, _Splat3_ST, _NormalScale3, IN.tc, m, far, c3, n3);
     // 절벽 트라이플래너: 경사 40도부터 섞기 시작해 수직이면 옆 투영만
     float3 nw = normalize(IN.wn);
     half3 tw = pow(abs(nw), 4);
     tw /= (tw.x + tw.y + tw.z);
+    float3 sideN = 0;
     if (tw.y < 0.97)
     {
         float perM = (length(ddx(IN.tc)) + length(ddy(IN.tc))) / max(length(ddx(IN.worldPos.xz)) + length(ddy(IN.worldPos.xz)), 1e-5);
-        if (ctrl.r > 0.01) c0 = SideColor(_Splat0, _Splat0_ST, IN.worldPos, perM, tw, c0);
-        if (ctrl.g > 0.01) c1 = SideColor(_Splat1, _Splat1_ST, IN.worldPos, perM, tw, c1);
-        if (ctrl.b > 0.01) c2 = SideColor(_Splat2, _Splat2_ST, IN.worldPos, perM, tw, c2);
-        if (ctrl.a > 0.01) c3 = SideColor(_Splat3, _Splat3_ST, IN.worldPos, perM, tw, c3);
+        if (ctrl.r > 0.01) { c0 = SideColor(_Splat0, _Splat0_ST, IN.worldPos, perM, tw, c0); sideN += ctrl.r * SideNormal(_Normal0, _Splat0_ST, _NormalScale0, IN.worldPos, perM, tw, nw); }
+        if (ctrl.g > 0.01) { c1 = SideColor(_Splat1, _Splat1_ST, IN.worldPos, perM, tw, c1); sideN += ctrl.g * SideNormal(_Normal1, _Splat1_ST, _NormalScale1, IN.worldPos, perM, tw, nw); }
+        if (ctrl.b > 0.01) { c2 = SideColor(_Splat2, _Splat2_ST, IN.worldPos, perM, tw, c2); sideN += ctrl.b * SideNormal(_Normal2, _Splat2_ST, _NormalScale2, IN.worldPos, perM, tw, nw); }
+        if (ctrl.a > 0.01) { c3 = SideColor(_Splat3, _Splat3_ST, IN.worldPos, perM, tw, c3); sideN += ctrl.a * SideNormal(_Normal3, _Splat3_ST, _NormalScale3, IN.worldPos, perM, tw, nw); }
     }
+#if !defined(TERRAIN_SPLAT_ADDPASS)
+    // 높이 섞기: 층 경계를 텍스처 밝기(돌·풀 포기 높이 대신)로 들쭉날쭉하게 — 풀이 바위 틈으로 파고들고 모래가 자갈 사이를 메운다.
+    // 예전에는 가중치 그대로 섞어 경계가 수 m 폭의 흐릿한 띠였다
+    half4 hgt = half4(dot(c0, 0.333), dot(c1, 0.333), dot(c2, 0.333), dot(c3, 0.333));
+    half4 hb = ctrl + hgt * 0.6;
+    half hmax = max(max(hb.r, hb.g), max(hb.b, hb.a));
+    hb = max(hb - (hmax - 0.18), 0) * step(0.003, ctrl);
+    ctrl = lerp(ctrl, hb / max(dot(hb, 1), 1e-4), 0.85);
+#endif
     // 풀(첫 층): 사진의 한국 바닷가 언덕처럼 초록 풀밭에 마른 풀·흙이 드러난 얼룩이 수십 m 단위로 섞인다
     // (텍스처에 얼룩을 넣으면 반복돼 물방울 무늬가 되므로 월드 좌표 노이즈로)
     float dryN = FishNoise(w * 0.018 + 11.3) * 0.6 + FishNoise(w * 0.07 + 2.9) * 0.3 + FishNoise(w * 0.31) * 0.1;
@@ -107,7 +131,16 @@ void TerrainSurf(Input IN, inout SurfaceOutputStandard o)
     col = lerp(lum.xxx, col, lerp(0.85, 1.08, macro));
 
     o.Albedo = col;
-    o.Normal = normalize(n + half3(0, 0, 1e-4));
+    n = normalize(n + half3(0, 0, 1e-4));
+    if (tw.y < 0.97)
+    {
+        // 위 투영 법선(접선 공간)을 월드로 → 옆 투영과 섞기 → 다시 접선 공간. 지형 접선은 TerrainVert와 같은 cross(N, +Z), 부호 -1
+        float3 T = normalize(cross(nw, float3(0, 0, 1)));
+        float3 B = -cross(nw, T);
+        float3 nW = normalize((T * n.x + B * n.y + nw * n.z) * tw.y + sideN);
+        n = float3(dot(nW, T), dot(nW, B), dot(nW, nw));
+    }
+    o.Normal = n;
     half smooth = dot(ctrl, half4(_Smoothness0, _Smoothness1, _Smoothness2, _Smoothness3));
     o.Smoothness = saturate(smooth * lerp(0.7, 1.25, macro));
     o.Metallic = dot(ctrl, half4(_Metallic0, _Metallic1, _Metallic2, _Metallic3));

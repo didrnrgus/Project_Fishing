@@ -99,7 +99,7 @@ namespace Fishing.World
             // --- 레프카 오리 (하얀 산): 마을 뒤로 눈을 인 산줄기 ---
             var mountain = MapKit.Mountain(620f, 140f, 210f, 61, 0.6f, 4);
             MapKit.Place(root, "LefkaOri", mountain, new[] { MapKit.FarRock(new Color(0.62f, 0.58f, 0.52f), "cliff", 45f), MapKit.FarRock(new Color(0.95f, 0.96f, 0.98f), "snow", 30f, 0.5f, 0.3f) }, new Vector3(-60f, land, -560f));
-            MapKit.Place(root, "Foothills", HanRiverLandmarks.HillMesh(360f, 90f, 70f, 62), MapKit.FarRock(new Color(0.42f, 0.44f, 0.3f), "grass", 25f, 0.75f, 0.05f), new Vector3(120f, land, -330f));
+            MapKit.Place(root, "Foothills", HanRiverLandmarks.HillMesh(360f, 90f, 70f, 62), FarLand.Maquis(0.6f), new Vector3(120f, land, -330f));
 
             // 항구 안 작은 어선들
             b.PlaceBoats("Kenney/Watercraft/boat-fishing-small", 4, 7f);

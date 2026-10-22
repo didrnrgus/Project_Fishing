@@ -412,11 +412,7 @@ namespace Fishing.World
 
         void BuildFarIslands()
         {
-            // 남해 다도해 (사진: 잔잔한 만 건너 산이 겹겹인 섬들): 가까운 섬은 숲 결, 먼 섬은 푸른 안개빛
-            var forestTex = Resources.Load<Texture2D>("Terrain/grass_diff");
-            var near = HanRiverLandmarks.Mat(new Color(0.22f, 0.32f, 0.22f), forestTex, null, Color.black, 0.05f, 0f, new Vector2(14f, 14f));
-            var mid = HanRiverLandmarks.Mat(new Color(0.3f, 0.38f, 0.36f), forestTex, null, Color.black, 0.05f, 0f, new Vector2(8f, 8f));
-            var far = HanRiverLandmarks.Mat(new Color(0.42f, 0.5f, 0.52f), null, null, Color.black, 0.05f, 0f, Vector2.one);
+            // 남해 다도해 (사진: 잔잔한 만 건너 산이 겹겹인 섬들): 숲 결 섬, 물가는 바위 절벽, 멀수록 푸른 안개빛 (FarLand)
             float[,] isl =
             {
                 { -230f, 380f, 150f, 70f }, { 60f, 430f, 210f, 95f }, { 300f, 400f, 160f, 75f },
@@ -424,13 +420,8 @@ namespace Fishing.World
             };
             for (int i = 0; i < isl.GetLength(0); i++)
             {
-                var go = new GameObject("FarIsland");
-                go.transform.SetParent(_root, false);
-                go.transform.localPosition = new Vector3(isl[i, 0], _map.WaterY - 0.5f, isl[i, 1]);
-                go.AddComponent<MeshFilter>().sharedMesh = HanRiverLandmarks.HillMesh(isl[i, 2], isl[i, 2] * 0.55f, isl[i, 3], 11 + i);
-                var mr = go.AddComponent<MeshRenderer>();
-                mr.sharedMaterial = i < 3 ? near : i < 5 ? mid : far;
-                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                FarLand.Place(_root, "FarIsland", new Vector3(isl[i, 0], _map.WaterY, isl[i, 1]), isl[i, 2], isl[i, 2] * 0.55f, isl[i, 3], 11 + i,
+                    FarLand.KoreaForest(i < 3 ? 0.45f : i < 5 ? 0.6f : 0.75f));
             }
         }
 

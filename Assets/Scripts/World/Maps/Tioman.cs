@@ -141,7 +141,7 @@ namespace Fishing.World
 
             // ===== 사용자 참고 사진(티오만 섬): 원작 특징(곡선 호텔·보라 파라솔)에 실제 티오만을 합친다 =====
             // --- 정글로 덮인 높은 산줄기 (섬 전체가 밀림 산, 능선 위로 구름) ---
-            var jungle = MapKit.FarRock(new Color(0.17f, 0.3f, 0.15f), "grass", 22f, 0.8f, 0.05f);
+            var jungle = FarLand.Jungle(0.6f);
             var jungleRock = MapKit.FarRock(new Color(0.4f, 0.4f, 0.34f), "granite", 30f, 0.8f);
             MapKit.Place(root, "TiomanRange", MapKit.Mountain(520f, 150f, 230f, 59, 0.85f, 4), new[] { jungle, jungleRock }, new Vector3(-40f, land, -380f));
             MapKit.Place(root, "TiomanRidge", MapKit.Mountain(260f, 90f, 120f, 60, 0.9f, 2), new[] { jungle, jungleRock }, new Vector3(-260f, land, -250f));
