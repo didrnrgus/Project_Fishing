@@ -3,6 +3,7 @@ namespace UnityEngine
 {
     public static class Mathf
     {
+        public const float PI = (float)System.Math.PI;
         public static float Abs(float v) => System.Math.Abs(v);
         public static int Abs(int v) => System.Math.Abs(v);
         public static float Min(float a, float b) => a < b ? a : b;

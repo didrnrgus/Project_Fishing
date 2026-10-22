@@ -128,7 +128,10 @@ namespace Fishing.Angling
             if (f.Tension > 1f) target += (f.Tension - 1f) * 40f;
 
             // 물고기가 날뛰면 초릿대가 떨린다
-            float shake = f.Mood == FishMood.Burst ? 1f : f.Mood == FishMood.Run ? 0.5f : 0.15f;
+            float shake = f.Mood switch
+            {
+                FishMood.Burst or FishMood.Shake => 1f, FishMood.Dive => 0.8f, FishMood.Run => 0.5f, FishMood.Hold => 0.3f, _ => 0.15f
+            };
             float jitter = (Mathf.PerlinNoise(Time.time * 11f, 0.3f) - 0.5f) * 2f * shake * (2f + Mathf.Clamp01(f.Tension) * 7f);
             _rod.Drive(target * FirstPersonBend, BendPull(fishPos), jitter, Time.deltaTime);
         }
@@ -233,7 +236,14 @@ namespace Fishing.Angling
             // 원작: 낚싯대가 물고기 쪽으로 크게 끌려가고, 감을 때는 들썩이며 펌핑한다
             bool reeling = _reelTurns > 0.1f;
             float pump = reeling ? Mathf.Sin(Time.time * 9f) * 3f : 0f;
-            float tug = f.Mood == FishMood.Burst ? Mathf.Sin(Time.time * 23f) * 2.5f : 0f;
+            // 질주는 잘게 떨고, 바늘털이는 크게 흔들리고, 처박기는 초릿대가 쿡 숙여진다
+            float tug = f.Mood switch
+            {
+                FishMood.Burst => Mathf.Sin(Time.time * 23f) * 2.5f,
+                FishMood.Shake => Mathf.Sin(Time.time * 15f) * 4f,
+                FishMood.Dive => 5f,
+                _ => 0f
+            };
             // 원작: 낚싯대는 거의 세워 들고(초릿대가 화면 위쪽까지), 마우스로 트는 만큼 낚싯대·릴·두 팔이 통째로
             // 화면 왼쪽 끝 ↔ 오른쪽 끝까지 쓸려 간다 (예전엔 오른쪽에 거의 붙어 있어 위아래로만 움직여 보였다).
             // 덜 감쇠된 스프링으로 따라가서 휙 틀면 살짝 넘쳤다 돌아오고, 쓸려 가는 동안 초릿대가 뒤로 처진다
@@ -279,19 +289,24 @@ namespace Fishing.Angling
             _line.startColor = _line.endColor = f.IsDanger ? new Color(1f, 0.3f, 0.3f) : f.IsHighTension ? new Color(1f, 0.45f, 0.6f) : new Color(0.6f, 0.85f, 1f);
 
             // 원작: 물고기는 안 보이고, 그 자리에 하얀 물보라 기둥이 쉬지 않고 솟는다 (질주·폭주면 더 크게)
-            if (Time.time >= _nextSplash && Lift <= 0f)
+            if (Time.time >= _nextSplash && Lift <= 0f && !f.Airborne)
             {
-                float intensity = f.Mood == FishMood.Burst ? 1.4f : f.Mood == FishMood.Run ? 1f : f.HpLow ? 0.35f : 0.6f;
+                float intensity = f.Mood switch
+                {
+                    FishMood.Burst or FishMood.Shake => 1.4f, FishMood.Run or FishMood.Dive => 1f, FishMood.Hold => 0.35f, _ => f.HpLow ? 0.35f : 0.6f
+                };
                 _nextSplash = Time.time + Mathf.Lerp(0.16f, 0.07f, intensity / 1.4f);
                 Effects.FightSpray(fishPos, intensity);
                 if (Random.value < 0.25f) Effects.Ripple(fishPos, 1.6f + intensity * 1.4f, 1.1f);
             }
 
+            // 가까우면 물고기가 보이고, 점프하면 멀리서도 물 밖으로 솟는 모습이 보인다
             bool near = f.Distance < 9f;
-            _fish.SetActive(near);
-            if (near)
+            bool air = f.Airborne;
+            _fish.SetActive(near || air);
+            if (near || air)
             {
-                float surface = f.HpLow ? 0.05f : -0.12f;
+                float surface = air ? Mathf.Sin(f.AirPhase * Mathf.PI) * (0.8f + f.Length / 120f) : f.HpLow ? 0.05f : -0.12f;
                 // 들어 올리면 물 밖으로 끌려 나와 카메라 앞으로 날아든다
                 float lifted = Mathf.SmoothStep(0f, 1f, Lift);
                 _fish.transform.position = Vector3.Lerp(fishPos + Vector3.up * surface, transform.position + transform.forward * 2.2f + Vector3.up * 0.9f, lifted * 0.85f);
@@ -299,8 +314,11 @@ namespace Fishing.Angling
                 look.y = 0f;
                 float wiggle = Mathf.Sin(Time.time * (f.HpLow ? 6f : 14f)) * (f.HpLow ? 10f : 25f);
                 _fish.transform.rotation = Quaternion.LookRotation(look.normalized) * Quaternion.Euler(0f, 90f + wiggle * 0.4f, 0f);
+                // 점프: 머리를 들고 솟았다가 고꾸라지며 떨어진다
+                if (air) _fish.transform.rotation *= Quaternion.Euler(Mathf.Lerp(-55f, 60f, f.AirPhase), 0f, 0f);   // 머리 +Z, X축 음수 = 머리 듦
                 // 질주·폭주하면 몸부림, 지치면 천천히, 그 밖에는 빠르게 헤엄
-                string clip = Lift > 0f ? FishModels.Thrash : f.HpLow ? FishModels.SwimSlow : f.Mood == FishMood.Burst ? FishModels.Thrash : FishModels.SwimFast;
+                string clip = Lift > 0f || air ? FishModels.Thrash : f.HpLow ? FishModels.SwimSlow
+                    : f.Mood == FishMood.Burst || f.Mood == FishMood.Shake ? FishModels.Thrash : FishModels.SwimFast;
                 if (clip != _fishClip && _fishBody != null)
                 {
                     _fishClip = clip;

@@ -13,8 +13,8 @@ namespace Fishing.Angling
 
         public bool Landed => _state == State.Floating;
         public Vector3 Position => transform.position;
-        /// <summary>찌가 잠긴 정도 0~1. 예신은 0.15 정도, 본신은 1까지.</summary>
-        public float SinkAmount => _state == State.Floating ? Mathf.Clamp01(_dip / MaxDip) : 0f;
+        /// <summary>찌가 잠긴 정도. 예신은 0.15 정도, 본신은 1까지, 찌올림이면 음수(솟음).</summary>
+        public float SinkAmount => _state == State.Floating ? Mathf.Clamp(_dip / MaxDip, -1f, 1f) : 0f;
 
         State _state = State.Hidden;
         Vector3 _from, _to;
@@ -22,6 +22,8 @@ namespace Fishing.Angling
         float _dip, _dipTarget;
         float _nibbleTimer;
         bool _sunk;
+        float _side, _sideTarget, _sideFxAt;
+        Vector3 _sideDir;
 
         public static Bobber Create()
         {
@@ -103,22 +105,32 @@ namespace Fishing.Angling
             Effects.Ripple(transform.position, 0.8f, 0.8f);
         }
 
-        /// <summary>본 입질: 찌가 점점 빨려 들어간다. progress 0~1.</summary>
-        public void SetSink(float progress)
+        /// <summary>
+        /// 본 입질: 어종 입질 패턴(FishPatterns.BiteAt)대로 찌를 움직인다.
+        /// dip 1 = 다 잠김, 음수 = 솟아오름(찌올림), side = 옆으로 끌려간 거리(m, 시선과 직각).
+        /// </summary>
+        public void SetBite(float dip, float side)
         {
             if (!_sunk)
             {
                 _sunk = true;
-                Effects.Ripple(transform.position, 1.4f, 1f);
-                Effects.Splash(transform.position, 8, 0.5f);
+                Effects.Ripple(transform.position, 1.1f, 1f);
+                var cam = Camera.main;
+                var look = cam != null ? transform.position - cam.transform.position : Vector3.forward;
+                look.y = 0f;
+                _sideDir = Vector3.Cross(Vector3.up, look.sqrMagnitude > 0.01f ? look.normalized : Vector3.forward);
             }
-            _dipTarget = MaxDip * Mathf.Clamp01(progress);
+            // 다 잠기는 순간 물보라
+            if (dip >= 0.85f && _dipTarget < MaxDip * 0.85f) Effects.Splash(transform.position, 8, 0.5f);
+            _dipTarget = MaxDip * Mathf.Clamp(dip, -1f, 1f);
+            _sideTarget = side;
         }
 
         public void ResetFloat()
         {
             _sunk = false;
             _dipTarget = 0f;
+            _side = _sideTarget = 0f;
         }
 
         void Update()
@@ -146,9 +158,18 @@ namespace Fishing.Angling
                         _nibbleTimer -= Time.deltaTime;
                         if (_nibbleTimer <= 0f && !_sunk) _dipTarget = 0f;
                     }
-                    _dip = Mathf.Lerp(_dip, _dipTarget, Time.deltaTime * (_sunk ? 14f : 18f));
+                    _dip = Mathf.Lerp(_dip, _dipTarget, Time.deltaTime * 18f);
+                    float prevSide = _side;
+                    _side = Mathf.Lerp(_side, _sideTarget, Time.deltaTime * 8f);
+                    // 끌려가는 찌 뒤로 물결이 남는다
+                    if (Mathf.Abs(_side - prevSide) > 0.002f && Time.time >= _sideFxAt)
+                    {
+                        _sideFxAt = Time.time + 0.18f;
+                        Effects.Ripple(transform.position, 0.6f, 0.8f);
+                    }
                     float bob = Mathf.Sin(Time.time * 2.1f) * 0.012f;
-                    transform.position = new Vector3(_to.x, FieldMap.WaterY + FloatOffset + bob - _dip - (_lureLook ? 0.05f : 0f), _to.z);
+                    var at = _to + _sideDir * _side;
+                    transform.position = new Vector3(at.x, FieldMap.WaterY + FloatOffset + bob - _dip - (_lureLook ? 0.05f : 0f), at.z);
                     transform.rotation = Quaternion.Euler(Mathf.Sin(Time.time * 1.3f) * 4f, 0f, Mathf.Cos(Time.time * 1.1f) * 4f);
                     break;
             }

@@ -64,6 +64,10 @@ namespace Fishing.UI
             _detailText = UIFactory.Text(_detail, "", 18, UIFactory.TextMain, TextAnchor.UpperLeft);
             _detailText.rectTransform.At(new Vector2(0, 1), new Vector2(860, -24), new Vector2(480, 640), new Vector2(0, 1));
             _detailText.lineSpacing = 8f;
+            // 찌·파이팅 패턴 설명까지 붙으면 길어서, 넘치면 글자를 조금 줄인다
+            _detailText.enableAutoSizing = true;
+            _detailText.fontSizeMin = 14;
+            _detailText.fontSizeMax = 18;
             var back = UIFactory.Button(_detail, "◀ 목록으로", () => ShowDetail(null), UIFactory.BtnNeutral, 18);
             UIFactory.SetRadius(back.targetGraphic, UIFactory.Pill);
             ((RectTransform)back.transform).At(new Vector2(0, 0), new Vector2(860, 22), new Vector2(180, 44), Vector2.zero);
@@ -101,8 +105,14 @@ namespace Fishing.UI
                 $"미끼   {Lock(BaitUnlock, string.Join(", ", s.Baits.Select(Names.Of)))}\n" +
                 $"시간   {Lock(HabitatUnlock, string.Join(", ", s.Times.Select(Names.Of)))}\n" +
                 $"장소   {Lock(HabitatUnlock, string.Join(", ", s.Habitats.Select(Names.Of)))}\n" +
-                $"날씨   {Lock(HabitatUnlock, string.Join(", ", (s.Weathers ?? new Weather[0]).Select(Names.Of)))}";
+                $"날씨   {Lock(HabitatUnlock, string.Join(", ", (s.Weathers ?? new Weather[0]).Select(Names.Of)))}" +
+                // 어종 패턴: 한 마리 낚아 보면 찌가 어떻게 움직이고 어떻게 싸우는지 적힌다
+                (s.IsJunk ? "" :
+                    $"\n\n찌   {Lock(1, PatternLine(FishPatterns.Name(FishPatterns.BiteOf(s)), FishPatterns.Hint(FishPatterns.BiteOf(s))))}\n" +
+                    $"파이팅   {Lock(1, PatternLine(FishPatterns.Name(FishPatterns.FightOf(s)), FishPatterns.Hint(FishPatterns.FightOf(s))))}");
         }
+
+        static string PatternLine(string name, string hint) => $"<b>{name}</b>  <size=80%><color=#8fa3b5>{hint}</color></size>";
 
         /// <summary>미리보기 물고기를 돌린다 (GameUI.Update에서).</summary>
         public void Tick()

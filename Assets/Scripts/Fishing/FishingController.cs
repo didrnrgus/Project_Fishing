@@ -27,8 +27,7 @@ namespace Fishing.Angling
         const float PushWindow = 0.15f;
         // 챔질 제스처
         const float ShakeThreshold = 14f;
-        const float SinkTime = 1.1f;    // 찌가 완전히 잠기기까지
-        const float SunkHold = 0.6f;    // 완전히 잠긴 뒤 고기가 뱉기까지
+        // 본신 찌 모양·챔질 시간은 어종 입질 패턴이 정한다 (FishPatterns.BiteAt / BiteEnd)
 
         public FishingState State { get; private set; }
         public float CastPower { get; private set; }
@@ -40,8 +39,16 @@ namespace Fishing.Angling
         public bool BigBite { get; private set; }
         public string CastCellLabel { get; private set; } = "";
         public Vector3 BobberPosition => _bobber != null ? _bobber.Position : Vector3.zero;
-        /// <summary>찌가 잠긴 정도 0~1 (챔질 게이지 표시용).</summary>
+        /// <summary>찌가 잠긴 정도 (챔질 게이지 표시용). 1 = 다 잠김, 음수 = 찌올림으로 솟음.</summary>
         public float BobberSink => _bobber != null ? _bobber.SinkAmount : 0f;
+        /// <summary>지금 챔질하면 받을 점수 0~1 (본신 중에만). 등급은 이것으로 매긴다.</summary>
+        public float BiteQuality => State == FishingState.Bite ? _biteFrame.Quality : 0f;
+        /// <summary>이번 입질의 찌 패턴 (찌올림·톡톡·오르내림 …).</summary>
+        public BiteStyle CurrentBiteStyle => _biteStyle;
+        BiteStyle _biteStyle;
+        int _biteSeed;
+        BiteFrame _biteFrame;
+        float _biteDipMark;
         /// <summary>찌가 날아가는 동안 지금까지 날아간 거리(m). 화면의 큰 비거리 숫자가 따라 올라간다.</summary>
         public float FlyingDistance { get; private set; }
         /// <summary>챔질에 성공해 파이팅으로 넘어가기 직전(낚싯대를 홱 채는 연출 중).</summary>
@@ -729,7 +736,8 @@ namespace Fishing.Angling
 
             _waitTimer = BiteSelector.WaitSeconds(_ctx) * slowdown * (_waitInSpot ? 0.7f : 1f) * Tide.WaitFactor * Game.Weather.WaitFactor; // 서해: 들물이면 빨리, 흐리거나 비 오면 빨리
             if (revenge) _waitTimer *= 0.5f;
-            _nibblesLeft = PendingBite.Species.Aggression > 0.75f ? Random.Range(0, 2) : Random.Range(0, 4);
+            var (nibMin, nibMax) = FishPatterns.Nibbles(FishPatterns.BiteOf(PendingBite.Species));
+            _nibblesLeft = Random.Range(nibMin, nibMax);
             _lureMode = IsLureBait(Game.Profile.Bait.Kind);
             _bobber.SetLureLook(_lureMode, Game.Profile.Bait.Kind);
             if (_lureMode)
@@ -823,8 +831,7 @@ namespace Fishing.Angling
 
             if (_waitTimer <= 0f && _nibblesLeft <= 0)
             {
-                State = FishingState.Bite;
-                _biteTimer = 0f;
+                StartBite(FishPatterns.BiteOf(PendingBite.Species));
                 Game.Player.BodyLean = 12f;  // 원작 챔질 클로즈업: 무릎을 굽히고 앞으로 숙여 버틴다
                 Game.Player.Rod.Kick(160f); // 본신: 초릿대가 쭉 빨려 들어간다
                 BigBite = PendingBite.IsTrophy || PendingBite.Species.Rarity >= 4;
@@ -912,8 +919,7 @@ namespace Fishing.Angling
 
             if (_waitTimer <= 0f)
             {
-                State = FishingState.Bite;
-                _biteTimer = 0f;
+                StartBite(BiteStyle.Snap);   // 루어는 덥석 문다
                 if (Game.Boat != null && Game.Boat.Riding) Game.Boat.ForceStop();
                 Game.Player.Rod.Kick(200f); // 루어는 확 낚아챈다
                 BigBite = PendingBite.IsTrophy || PendingBite.Species.Rarity >= 4;
@@ -999,14 +1005,22 @@ namespace Fishing.Angling
             SwayRod(true);
 
             _biteTimer += Time.deltaTime;
-            float sink = Mathf.Clamp01(_biteTimer / SinkTime);
-            _bobber.SetSink(sink);
+            _biteFrame = FishPatterns.BiteAt(_biteStyle, _biteTimer, _biteSeed);
+            _bobber.SetBite(_biteFrame.Dip, _biteFrame.Side);
+            // 찌가 툭 내려갈 때마다 (톡톡·오르내림·찌올림 첫 깜빡) 초릿대가 까딱하고 물결이 인다
+            if (_biteFrame.Dip > _biteDipMark + 0.22f)
+            {
+                _biteDipMark = _biteFrame.Dip;
+                Game.Player.Rod.Kick(60f);
+                Game.Sound.Tick();
+                Effects.Ripple(_bobber.Position, 0.9f, 0.9f);
+            }
+            else if (_biteFrame.Dip < _biteDipMark - 0.22f) _biteDipMark = _biteFrame.Dip;
 
-            float shown = _bobber.SinkAmount; // 눈에 보이는 찌 위치로 판정해야 공정하다
-            bool shook = Autoplay ? shown >= 0.97f : DetectShake();
+            bool shook = Autoplay ? _biteFrame.Quality >= 0.97f : DetectShake();
             if (shook)
             {
-                var grade = GradeFor(Mathf.Min(1f, shown + Game.Weather.HookBonus)); // 맑으면 챔질이 쉽다
+                var grade = GradeFor(Mathf.Min(1f, _biteFrame.Quality + Game.Weather.HookBonus)); // 맑으면 챔질이 쉽다
                 ShowGrade(grade);
                 if (grade == HookGrade.Bad)
                 {
@@ -1037,12 +1051,23 @@ namespace Fishing.Angling
                 HitStop(0.12f, 0.12f);
                 return;
             }
-            if (_biteTimer > SinkTime + SunkHold)
+            if (_biteTimer > FishPatterns.BiteEnd(_biteStyle, _biteSeed))
             {
                 Game.Profile.ConsumeItem(Game.Profile.Bait.Id);
                 Game.Toast("늦었다! 미끼만 따먹혔다. 다시 던지세요.", ToastKind.Warn);
                 ToIdle();
             }
+        }
+
+        /// <summary>본신을 시작한다: 찌 패턴을 정하고 시계를 0으로.</summary>
+        void StartBite(BiteStyle style)
+        {
+            State = FishingState.Bite;
+            _biteTimer = 0f;
+            _biteStyle = style;
+            _biteSeed = Random.Range(0, 1 << 20);
+            _biteFrame = default;
+            _biteDipMark = 0f;
         }
 
         static HookGrade GradeFor(float sink) =>
@@ -1094,6 +1119,7 @@ namespace Fishing.Angling
             Fight.Countered += OnCounter;
             Fight.Burst += OnBurst;
             Fight.EscapeRun += OnEscapeRun;
+            Fight.Special += OnSpecial;
             Game.Schools.OnHooked(_ctx.School, bite.Species.Id); // 물속 그림자 고기가 걸리면 실루엣을 감춘다
 
             State = FishingState.Fighting;
@@ -1220,6 +1246,39 @@ namespace Fishing.Angling
             _rodView.Kick(260f);
         }
 
+        /// <summary>어종 패턴 기술: 처박기는 묵직한 진동, 바늘털이는 잔떨림, 점프는 수면을 박차는 물보라(떨어질 때 한 번 더), 바닥 붙기는 낮은 울림.</summary>
+        void OnSpecial(FishMood mood)
+        {
+            var pos = _rodView.FishWorldPos(Fight);
+            switch (mood)
+            {
+                case FishMood.Dive:
+                    Rumble.Pulse(0.8f, 0.35f, 0.5f);
+                    Game.CameraRig.Shake(0.5f);
+                    Game.CameraRig.Punch(3.5f);
+                    _rodView.Kick(320f);
+                    Effects.Ripple(pos, 2.4f, 1f);
+                    break;
+                case FishMood.Shake:
+                    Rumble.Pulse(0.35f, 0.6f, 1.2f);
+                    Game.Sound.Splash(0.7f);
+                    Effects.Splash(pos, 14, 0.8f);
+                    break;
+                case FishMood.Jump:
+                    Rumble.Pulse(0.5f, 0.4f, 0.4f);
+                    Game.Sound.Splash(1.2f);
+                    Effects.BigSplash(pos, 0.8f);
+                    _jumpSplashAt = Time.time + 0.7f;   // FishFight 점프 체공 시간
+                    break;
+                case FishMood.Hold:
+                    Rumble.Pulse(0.6f, 0.2f, 1.5f);
+                    Game.CameraRig.Shake(0.25f);
+                    break;
+            }
+        }
+
+        float _jumpSplashAt;
+
         void OnEscapeRun()
         {
             Rumble.Pulse(0.6f, 0.3f, 0.5f);
@@ -1232,6 +1291,16 @@ namespace Fishing.Angling
         {
             var f = Fight;
             var p = Game.Profile;
+
+            // 점프한 고기가 떨어지는 순간: 철썩 (장력이 튄다)
+            if (_jumpSplashAt > 0f && Time.time >= _jumpSplashAt)
+            {
+                _jumpSplashAt = 0f;
+                Effects.BigSplash(_rodView.FishWorldPos(f), 1f);
+                Game.Sound.Splash(1.3f);
+                Game.CameraRig.Shake(0.4f);
+                _rodView.Kick(280f);
+            }
 
             if (f.Landing)
             {

@@ -267,6 +267,68 @@ namespace Fishing.EditorTools.Tests
         }
     }
 
+    public class FishPatternTests
+    {
+        /// <summary>어느 어종·어느 입질이든 뱉기 전에 PERFECT(0.97)를 낼 순간이 있고, 처음엔 BAD 구간에서 시작한다.</summary>
+        [Test]
+        public void EveryBiteHasAPerfectMomentBeforeTheFishSpits()
+        {
+            foreach (BiteStyle style in System.Enum.GetValues(typeof(BiteStyle)))
+                for (int seed = 0; seed < 8; seed++)
+                {
+                    float end = FishPatterns.BiteEnd(style, seed), best = 0f;
+                    for (float t = 0f; t < end; t += 1f / 120f) best = Mathf.Max(best, FishPatterns.BiteAt(style, t, seed).Quality);
+                    Assert.GreaterOrEqual(best, 0.97f, $"{style} seed {seed}");
+                    Assert.Less(FishPatterns.BiteAt(style, 0.02f, seed).Quality, 0.2f, $"{style}: 입질 첫 순간은 BAD여야 한다");
+                }
+        }
+
+        [Test]
+        public void RiseBitePeaksWhenTheBobberIsHighest()
+        {
+            var top = FishPatterns.BiteAt(BiteStyle.Rise, 2.1f, 0);
+            Assert.Less(top.Dip, -0.5f, "찌올림은 찌가 솟는다");
+            Assert.GreaterOrEqual(top.Quality, 0.97f, "꼭대기에서 멈춘 순간이 PERFECT");
+            Assert.Less(FishPatterns.BiteAt(BiteStyle.Rise, 2.8f, 0).Quality, 0.97f, "다시 잠기면 늦다");
+        }
+
+        [Test]
+        public void SpeciesGetTheirPatterns()
+        {
+            Assert.AreEqual(BiteStyle.Rise, FishPatterns.BiteOf(FishDatabase.Get("crucian")));
+            Assert.AreEqual(FightStyle.Diver, FishPatterns.FightOf(FishDatabase.Get("blackseabream")));
+            Assert.AreEqual(FightStyle.Shaker, FishPatterns.FightOf(FishDatabase.Get("seabass")));
+            Assert.AreEqual(FightStyle.Leaper, FishPatterns.FightOf(FishDatabase.Get("sailfish")));
+            foreach (var s in FishDatabase.All)
+            {
+                FishPatterns.BiteOf(s);
+                FishPatterns.FightOf(s);
+            }
+        }
+
+        /// <summary>패턴 어종은 파이팅 중에 자기 기술(처박기·바늘털이·점프·바닥 붙기)을 실제로 쓴다.</summary>
+        [Test]
+        public void SpecialMovesHappenInFights()
+        {
+            Random.InitState(7);
+            var cases = new (string id, float len, FishMood move)[]
+            {
+                ("blackseabream", 55f, FishMood.Dive), ("seabass", 90f, FishMood.Shake), ("sailfish", 250f, FishMood.Jump), ("giantstingray", 200f, FishMood.Hold),
+            };
+            foreach (var (id, len, move) in cases)
+            {
+                int seen = 0;
+                for (int i = 0; i < 5; i++)
+                {
+                    var f = new FishFight(FishDatabase.Get(id), len, 18f, 0.8f, GearDatabase.GetGear("rod_heavy"), GearDatabase.GetGear("reel_jigging"), GearDatabase.GetGear("line_pe8"));
+                    f.Special += m => { if (m == move) seen++; };
+                    for (float t = 0f; t < 40f && f.Outcome == FightOutcome.None && !f.Landing; t += 1f / 60f) f.Tick(1f / 60f, FightBot.Input(f, 0f));
+                }
+                Assert.Greater(seen, 0, $"{id}: {move}을(를) 한 번도 안 썼다");
+            }
+        }
+    }
+
     public class VillageTradeTests
     {
         [Test]

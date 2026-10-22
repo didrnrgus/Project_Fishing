@@ -1082,8 +1082,11 @@ namespace Fishing.UI
             {
                 float sink = f.BobberSink;
                 float bob = Mathf.Sin(Time.time * 2.1f) * 4f;
-                _gaugeBobber.anchoredPosition = new Vector2(100, GaugeHeight * 0.5f - sink * 160f + bob);
-                int current = f.State != FishingState.Bite ? -1 : sink < 0.2f ? 0 : sink < 0.45f ? 1 : sink < 0.7f ? 2 : sink < 0.97f ? 3 : 4;
+                // 잠기면 내려가고, 찌올림이면 솟는다 (게이지 위로 덜 삐져나오게 솟는 쪽은 짧게)
+                _gaugeBobber.anchoredPosition = new Vector2(100, GaugeHeight * 0.5f - sink * (sink < 0f ? 90f : 160f) + bob);
+                // 등급은 찌 깊이가 아니라 입질 패턴의 챔질 점수로 (찌올림은 솟은 꼭대기, 오르내림은 깊이 내려간 순간이 높다)
+                float q = f.BiteQuality;
+                int current = f.State != FishingState.Bite ? -1 : q < 0.2f ? 0 : q < 0.45f ? 1 : q < 0.7f ? 2 : q < 0.97f ? 3 : 4;
                 for (int i = 0; i < _gradeLabels.Length; i++)
                 {
                     bool on = i == current;

@@ -6,6 +6,6 @@
     <Compile Include="../../Assets/Scripts/Data/GearDatabase.cs" />
     <Compile Include="../../Assets/Scripts/Data/RodUpgrade.cs" />
     <Compile Include="../../Assets/Scripts/Data/FishDatabase*.cs" />
-    <Compile Include="../../Assets/Scripts/Data/Enums.cs" /><Compile Include="../../Assets/Scripts/Fishing/BiteSelector.cs" /><Compile Include="../../Assets/Scripts/Data/Seasons.cs" />
+    <Compile Include="../../Assets/Scripts/Data/Enums.cs" /><Compile Include="../../Assets/Scripts/Data/FishPatterns.cs" /><Compile Include="../../Assets/Scripts/Fishing/BiteSelector.cs" /><Compile Include="../../Assets/Scripts/Data/Seasons.cs" />
   </ItemGroup>
 </Project>

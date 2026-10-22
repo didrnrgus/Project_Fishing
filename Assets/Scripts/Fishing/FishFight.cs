@@ -8,7 +8,11 @@ namespace Fishing.Angling
 {
     public enum FightOutcome { None, Landed, LineBroken, HookOut, LineRunOut }
 
-    public enum FishMood { Run, Rest, Burst }
+    /// <summary>
+    /// 물고기 기분. Run·Rest·Burst는 모든 어종, 나머지는 어종 패턴(<see cref="FightStyle"/>) 전용:
+    /// Dive 처박기 · Shake 바늘털이 · Jump 점프 · Hold 바닥에 붙기.
+    /// </summary>
+    public enum FishMood { Run, Rest, Burst, Dive, Shake, Jump, Hold }
 
     public struct FightInput
     {
@@ -45,6 +49,8 @@ namespace Fishing.Angling
         const float DragMin = -0.45f;
 
         public readonly FishSpecies Species;
+        /// <summary>이 어종의 파이팅 패턴 (질주·처박기·바늘털이·점프·묵직·바닥 붙기·갈팡질팡).</summary>
+        public readonly FightStyle Style;
         public readonly float Length;
         public readonly GearDef Rod;
         public readonly GearDef Reel;
@@ -117,6 +123,18 @@ namespace Fishing.Angling
         public event Action Countered;
         public event Action Burst;
         public event Action EscapeRun;
+        /// <summary>패턴 기술을 시작할 때 (처박기·바늘털이·점프·바닥 붙기). 연출·안내용.</summary>
+        public event Action<FishMood> Special;
+
+        /// <summary>점프: 물 밖에 떠 있는 동안 (장력이 빠진다).</summary>
+        public bool Airborne => Mood == FishMood.Jump && _moodAge < JumpAir;
+        /// <summary>점프 진행 0~1 (물 밖에 뜬 동안).</summary>
+        public float AirPhase => Airborne ? _moodAge / JumpAir : 0f;
+        /// <summary>패턴 기술 중인지 (HUD 안내).</summary>
+        public bool InSpecial => Mood >= FishMood.Dive;
+
+        const float JumpAir = 0.7f, JumpTotal = 1.05f;
+        float _moodAge;
 
         float _damagePool;
 
@@ -134,6 +152,7 @@ namespace Fishing.Angling
         {
             Combo = startCombo;
             Species = species;
+            Style = FishPatterns.FightOf(species);
             Length = length;
             Rod = rod;
             Reel = reel;
@@ -185,6 +204,9 @@ namespace Fishing.Angling
             // 거리: 줄을 풀거나 드랙이 미끄러지면 멀어지고, 감으면 가까워진다
             float takeLine = input.Releasing ? Pull * 3.5f + 1f : Mathf.Max(0f, Tension - 0.85f) * 10f;
             float reelIn = input.Reeling ? Reel.ReelSpeed * (reelFactor >= 0f ? reelFactor : staminaFactor) * Mathf.Clamp01(1.15f - Pull * 0.6f) : 0f;
+            if (Mood == FishMood.Hold) reelIn *= 0.35f;         // 바닥에 붙으면 감아도 잘 안 끌려온다
+            if (Airborne) reelIn *= 1.6f;                       // 뛰어오른 동안 늘어진 줄을 빨리 감아 들인다
+            if (Mood == FishMood.Dive) takeLine += 2.5f;        // 처박으면 줄을 끌고 바닥으로
             Distance = Mathf.Max(0.5f, Distance + (takeLine - reelIn) * dt);
 
             // 체력이 남은 물고기를 너무 가까이 끌어오면 놀라서 도망간다
@@ -206,6 +228,9 @@ namespace Fishing.Angling
             if (Tension < 0.1f) Hook -= 9f * dt;
             else if (Tension < DangerTension) Hook = Mathf.Min(100f, Hook + 3f * dt);
             if (Mood == FishMood.Burst && Tension > DangerTension) Hook -= 5f * dt;
+            // 바늘털이·점프: 줄이 늘어진 틈에 바늘을 턴다 → 감아서 팽팽하게 버텨야 한다
+            if (Mood == FishMood.Shake && Tension < 0.3f) Hook -= 22f * dt;
+            if (Airborne && !input.Reeling) Hook -= 30f * dt;
 
             // 데미지: 하이텐션 구간에서 크게 들어간다
             float zone = Tension < 0.25f ? 0.25f : Tension < HighTension ? 0.75f : Tension < DangerTension ? 1.3f : 1.6f;
@@ -280,18 +305,33 @@ namespace Fishing.Angling
         void UpdateFish(float dt)
         {
             _moodTimer -= dt;
+            _moodAge += dt;
             _counterCooldown -= dt;
             if (_moodTimer <= 0f) PickMood();
 
             float exhaustion = HP <= 0f ? 0.12f : Mathf.Lerp(0.3f, 1f, HP / MaxHP);
-            float moodPull = Mood switch { FishMood.Run => 1f, FishMood.Burst => 1.85f, _ => 0.3f };
+            bool heavy = Style == FightStyle.Heavy;
+            float moodPull = Mood switch
+            {
+                FishMood.Run => heavy ? 1.15f : 1f,
+                FishMood.Burst => 1.85f,
+                FishMood.Dive => _moodAge < 0.25f ? Mathf.Lerp(1f, 1.95f, _moodAge / 0.25f) : 1.95f,   // 쿡 처박는다
+                FishMood.Shake => 1f + 0.85f * Mathf.Sin(_moodAge * Mathf.PI * 2f * 2.4f),           // 머리를 흔들 때마다 장력이 출렁
+                FishMood.Jump => Airborne ? 0.05f : 1.9f,                                           // 물 밖이면 줄이 빠지고, 떨어지면 철썩
+                FishMood.Hold => 1.1f,
+                _ => heavy ? 0.6f : 0.3f
+            };
             float wobble = 1f + Mathf.Sin(Elapsed * 7.3f) * 0.04f;
             Pull = _basePull * moodPull * exhaustion * wobble;
 
+            float speed = Species.Speed * (Style == FightStyle.Runner ? 1.15f : 1f);
             float targetVX = Mood switch
             {
-                FishMood.Run => _dir * Species.Speed * 0.45f,
-                FishMood.Burst => _dir * Species.Speed * 0.9f,
+                FishMood.Run => _dir * speed * 0.45f,
+                FishMood.Burst => _dir * speed * 0.9f,
+                FishMood.Dive or FishMood.Hold => -FishX * 0.5f,
+                FishMood.Shake => Mathf.Sin(_moodAge * 17f) * 0.8f,
+                FishMood.Jump => _fishVX,
                 _ => -FishX * 0.2f
             };
             _fishVX = Mathf.Lerp(_fishVX, targetVX * exhaustion, 1f - Mathf.Exp(-4f * dt));
@@ -310,19 +350,48 @@ namespace Fishing.Angling
             else _edgeTimer = 0f;
         }
 
+        /// <summary>
+        /// 다음 기분을 고른다. 어종 패턴마다 기술(처박기·바늘털이·점프·바닥 붙기)을 쓸 확률, 질주 확률·길이, 방향 바꾸기가 다르다.
+        /// 기술 바로 다음에는 같은 기술을 잇달아 쓰지 않는다(쉬거나 달린다).
+        /// </summary>
         void PickMood()
         {
+            if (HP <= 0f) { SetMood(FishMood.Rest, 1f); return; }
+            var (special, burstK, run, runLen, flip) = Style switch
+            {
+                FightStyle.Runner => (FishMood.Rest, 1.3f, 0.75f, 1.6f, 0.5f),
+                FightStyle.Diver => (FishMood.Dive, 0.5f, 0.6f, 1f, 0.6f),
+                FightStyle.Shaker => (FishMood.Shake, 0.6f, 0.62f, 1f, 0.6f),
+                FightStyle.Leaper => (FishMood.Jump, 0.6f, 0.65f, 1.1f, 0.6f),
+                FightStyle.Heavy => (FishMood.Rest, 0.35f, 0.75f, 1.4f, 0.4f),
+                FightStyle.Clinger => (FishMood.Hold, 0.25f, 0.55f, 1f, 0.5f),
+                FightStyle.Darter => (FishMood.Rest, 0.6f, 0.8f, 0.45f, 0.85f),
+                _ => (FishMood.Rest, 1f, 0.65f, 1f, 0.6f),
+            };
+            float specialChance = special != FishMood.Rest && Mood < FishMood.Dive ? 0.3f : 0f;
             float r = Random.value;
-            if (HP <= 0f) SetMood(FishMood.Rest, 1f);
-            else if (r < 0.25f * Species.Aggression)
+            if (r < specialChance)
+            {
+                switch (special)
+                {
+                    case FishMood.Dive: SetMood(special, Random.Range(0.7f, 1.1f)); break;
+                    case FishMood.Shake: SetMood(special, Random.Range(1f, 1.5f)); break;
+                    case FishMood.Jump: SetMood(special, JumpTotal); break;
+                    default: SetMood(special, Random.Range(1.5f, 2.5f)); break;
+                }
+                Special?.Invoke(special);
+                return;
+            }
+            r = Random.value;
+            if (r < 0.25f * Species.Aggression * burstK)
             {
                 SetMood(FishMood.Burst, 0.7f);
                 Burst?.Invoke();
             }
-            else if (r < 0.65f)
+            else if (r < run)
             {
-                if (Random.value < 0.6f) _dir = -_dir;
-                SetMood(FishMood.Run, Random.Range(1.5f, 3.5f) / Mathf.Max(0.4f, Species.Aggression));
+                if (Random.value < flip) _dir = -_dir;
+                SetMood(FishMood.Run, Random.Range(1.5f, 3.5f) * runLen / Mathf.Max(0.4f, Species.Aggression));
             }
             else SetMood(FishMood.Rest, Random.Range(0.8f, 2f));
         }
@@ -331,6 +400,7 @@ namespace Fishing.Angling
         {
             Mood = mood;
             _moodTimer = duration;
+            _moodAge = 0f;
         }
 
         void TryCounter(float staminaFactor, float durability)

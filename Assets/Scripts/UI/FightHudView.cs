@@ -378,6 +378,26 @@ namespace Fishing.UI
 
         public void ShowEscape() => _escapeUntil = Time.time + 2.5f;
 
+        /// <summary>어종 패턴 기술 경고 (경고 알약에 짧게).</summary>
+        static string SpecialCue(FishFight f) => f.Mood switch
+        {
+            FishMood.Dive => "처박기! 줄을 풀어 버티세요",
+            FishMood.Shake => "바늘털이! 감아서 팽팽하게",
+            FishMood.Jump => f.Airborne ? "점프! 지금 감으세요" : "철썩! 줄을 풀어 받으세요",
+            FishMood.Hold => "바닥에 붙었다! 버티며 지치게",
+            _ => ""
+        };
+
+        /// <summary>어종 패턴 기술 안내문 (아래 안내 칸).</summary>
+        static string SpecialTip(FishMood m) => m switch
+        {
+            FishMood.Dive => "처박기: 물고기가 바닥으로 쿡 처박으며 장력이 확 오릅니다. 오른쪽 버튼으로 줄을 풀어 버티다가, 멈추면 바로 감으세요.",
+            FishMood.Shake => "바늘털이: 머리를 흔들어 바늘을 털어 냅니다. 줄이 느슨하면 바늘이 빠지니 계속 감아 장력을 유지하세요.",
+            FishMood.Jump => "점프: 물 밖에 뜬 동안 줄이 늘어지니 감아 들이고, 떨어지는 순간 장력이 튀면 풀어 주세요.",
+            FishMood.Hold => "바닥 붙기: 바닥에 들러붙어 감아도 잘 안 끌려옵니다. 장력을 HIGH에 두고 버티면 지쳐서 떨어집니다.",
+            _ => ""
+        };
+
         public void ShowLandingChance() => _landingFlashUntil = Time.time + 1.2f;
 
         /// <summary>물고기 위치에 데미지 숫자를 띄운다. 카운터는 크고 금색.</summary>
@@ -548,6 +568,7 @@ namespace Fishing.UI
             string tip;
             if (f.Landing) tip = "랜딩 찬스! SPACE BAR를 빠르게 누르거나, 마우스 왼쪽 버튼을 빠르게 클릭하세요.";
             else if (counterChance) tip = "화살표 방향으로 낚시대를 빠르게 당겨주세요! 카운터로 질주하는 물고기를 멈출 수 있어요.";
+            else if (f.InSpecial) tip = SpecialTip(f.Mood);
             else if (Time.time < _escapeUntil || (f.Distance < FishFight.LandDistance + 2f && !f.HpLow)) tip = "체력이 높은 물고기를 5m안으로 당겨오면 물고기가 도망가게 됩니다.";
             else if (far) tip = "물고기와의 거리가 멀어지면 놓치게 됩니다. 거리를 좁히세요.";
             else if (running) tip = "물고기가 도망가는 반대 방향으로 당겨주세요. 물고기가 한쪽으로 몰리면 도망가기 쉽답니다.";
@@ -570,6 +591,7 @@ namespace Fishing.UI
 
             if (f.IsDanger) _warnText.text = "줄이 끊어지려 한다! 물고기 쪽으로 끌거나 오른쪽 버튼으로 풀어주세요";
             else if (f.Hook < 30f) _warnText.text = "바늘이 빠지려 한다! 줄을 감아 팽팽하게";
+            else if (f.InSpecial) _warnText.text = SpecialCue(f);
             else _warnText.text = "";
             _warnPill.gameObject.SetActive(_warnText.text.Length > 0);
             if (_warnText.text.Length > 0) _warnPill.sizeDelta = new Vector2(_warnText.preferredWidth + 56f, 42f);
