@@ -42,6 +42,12 @@ namespace Fishing.UI
         RectTransform _mapRoot;
         RectTransform _playerArrow, _bobberDot;
         readonly List<RectTransform> _schoolMarks = new List<RectTransform>();
+        // 미니맵의 물속 그림자: 어종 아이콘을 검게 칠한 실루엣 + 빛나는 고리 + 퀘스트(!)·정체 모름(?) 표시
+        RectTransform _shadowMark;
+        Image _shadowHalo, _shadowIcon;
+        TMP_Text _shadowTag;
+        string _shadowSpecies;
+        bool _shadowFacesRight;
 
         // 캐스팅
         TMP_Text _castDistance;
@@ -288,6 +294,7 @@ namespace Fishing.UI
             _mapBuiltFor = map.Id;
             if (_mapContent != null) Object.Destroy(_mapContent.gameObject);
             _schoolMarks.Clear();
+            _shadowMark = null;
             _mapContent = UIFactory.Node("Content", _mapRoot).Fill();
             _mapContent.SetAsFirstSibling();
             _mapScale = Mathf.Min(320f / map.View.width, 212f / map.View.height);
@@ -973,8 +980,56 @@ namespace Fishing.UI
                 _schoolMarks[i].anchoredPosition = MapPos(c.x, c.z) + new Vector2(Mathf.Sin(Time.time * 1.5f + i) * 3f, 0f);
                 _schoolMarks[i].localScale = Vector3.one * (schools[i].Special || schools[i].Kind != Fishing.World.SchoolKind.Normal ? 1.6f : schools[i].Big ? 1.15f : 0.65f);
                 _schoolMarks[i].GetComponent<TMPro.TMP_Text>().color = schools[i].Kind == Fishing.World.SchoolKind.Normal ? new Color(1f, 0.75f, 0.3f) : schools[i].Tint;
-                _schoolMarks[i].gameObject.SetActive(!schools[i].Hidden);
+                _schoolMarks[i].gameObject.SetActive(!schools[i].Hidden && !schools[i].Shadow);
+                if (schools[i].Shadow) UpdateShadowMark(schools[i]);
             }
+        }
+
+        /// <summary>
+        /// 원작에는 없지만 미니맵에도 물속 그림자를 띄운다: 그 어종 아이콘을 검게 칠한 실루엣이 헤엄치는 쪽을 보고 천천히 움직이고,
+        /// 둘레에 고리가 숨 쉬듯 빛난다. 퀘스트 고기면 금빛 고리와 "!", 아니면 물빛 고리와 "?".
+        /// </summary>
+        void UpdateShadowMark(FishSchool s)
+        {
+            bool show = !s.Hidden && !s.Hooked && s.SpeciesIds.Length > 0;
+            if (!show)
+            {
+                if (_shadowMark != null) _shadowMark.gameObject.SetActive(false);
+                return;
+            }
+            if (_shadowMark == null)
+            {
+                _shadowMark = UIFactory.Node("Shadow", _mapContent).At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(40, 40));
+                _shadowHalo = UIFactory.Image(_shadowMark, Color.white, UIFactory.Circle, "Halo");
+                _shadowHalo.rectTransform.At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(34, 34));
+                _shadowIcon = UIFactory.Image(_shadowMark, new Color(0.03f, 0.05f, 0.07f, 0.95f), null, "Silhouette");
+                _shadowIcon.preserveAspect = true;
+                _shadowIcon.rectTransform.At(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(34, 17));
+                _shadowTag = UIFactory.Text(_shadowMark, "", 13, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold, "Tag");
+                _shadowTag.rectTransform.At(new Vector2(0.5f, 0.5f), new Vector2(13, 12), new Vector2(16, 16));
+                _shadowSpecies = null;
+            }
+            _shadowMark.gameObject.SetActive(true);
+            var sp = FishDatabase.Get(s.SpeciesIds[0]);
+            var icon = FishModels.Icon(sp);
+            if (_shadowSpecies != sp.Id)
+            {
+                _shadowSpecies = sp.Id;
+                _shadowIcon.sprite = icon != null ? icon : UIFactory.Fish;
+            }
+            _shadowMark.anchoredPosition = MapPos(s.Spot.x, s.Spot.z);
+            // 아이콘은 왼쪽을, 기본 물고기 그림은 오른쪽을 본다. 헤엄치는 쪽으로 돌려 세우고 위아래로 조금 기울인다
+            if (Mathf.Abs(s.Heading.x) > 0.2f) _shadowFacesRight = s.Heading.x > 0f;
+            float tilt = Mathf.Clamp(Mathf.Atan2(s.Heading.z, Mathf.Abs(s.Heading.x)) * Mathf.Rad2Deg, -35f, 35f);
+            bool flip = _shadowFacesRight == (icon != null);
+            _shadowIcon.rectTransform.localScale = new Vector3(flip ? -1f : 1f, 1f, 1f);
+            _shadowIcon.rectTransform.localRotation = Quaternion.Euler(0f, 0f, _shadowFacesRight ? tilt : -tilt);
+            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3f);
+            var ring = s.Quest ? new Color(1f, 0.82f, 0.3f) : s.Tint;
+            _shadowHalo.color = new Color(ring.r, ring.g, ring.b, 0.25f + 0.25f * pulse);
+            _shadowHalo.rectTransform.localScale = Vector3.one * (0.9f + 0.2f * pulse);
+            _shadowTag.text = s.Quest ? "!" : "?";
+            _shadowTag.color = s.Quest ? UIFactory.Gold : new Color(0.7f, 0.92f, 1f);
         }
 
         void UpdateCasting()

@@ -51,6 +51,7 @@ namespace Fishing.World
     {
         public string[] SpeciesIds = new string[0];
         public float BiteBoost = 4f, WaitFactor = 0.5f, LengthSkew = 1.7f;
+        public bool Shadow;
         public bool Contains(string speciesId) => System.Array.IndexOf(SpeciesIds, speciesId) >= 0;
     }
 }

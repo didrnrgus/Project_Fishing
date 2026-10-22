@@ -111,6 +111,7 @@ Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.ex
 | 00a_lobby, 00b_area_list | 대기실(한국 낚시 조합) → 낚시터 목록 → 한강 CH.1 입장 |
 | 01_field_morning, 00c_rod_extend, 00_character | 시작 위치(새벽), 낚싯대 펼치기, 한낮 캐릭터 정면(기본 캐릭터 VRM) |
 | 01b_fish_school | 데크 앞 수면의 어군 소용돌이 |
+| 01c_fish_shadow | 물속 그림자: 검은 실루엣 + 물빛 소용돌이, 공지 토스트, 미니맵 실루엣 |
 | 02_casting, 02b_cast_flight, 03_waiting, 04a_bite_alert, 04_bite_gauge | 밤 데크 캐스팅, 날아가는 찌, 찌 대기(원작 구도), 본신 머리 위 `!`, 어깨 뒤 챔질 클로즈업 |
 | 05_hook_perfect | PERFECT 챔질 → HIT → PERFECT!!! |
 | 06_fight, 06b_tension_danger, 06c_speedlines | 82cm 잉어 파이팅(1인칭 팔·장갑), 장력 위험 테두리, 카운터 집중선 |

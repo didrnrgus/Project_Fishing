@@ -168,6 +168,8 @@ FIGHTSIM_REACTION=0.5 dotnet run -- table giantgrouper  # 봇 반응을 사람�
 | `FishFight` 생성자 | `MaxHP` 식의 `12.5` | 파이팅 길이 |
 | `FishFight.UpdateFish` | 기분 배율 Run/Burst/Rest | 물고기 힘 |
 | `BiteSelector.RarityWeight` | 희귀도 가중치 | 희귀어 출현율 |
+| `BiteSelector.ShadowWeight` | 3 (희귀도 무게 대신) | 물속 그림자 둘레에 던졌을 때 그 고기가 무는 비율 (맞는 미끼·시간이면 절반쯤) |
+| `FishSchoolManager` | `ShadowQuestChance = 0.3`, `ShadowRareChance = 0.08`, `ShadowMinutes = 300`, `ShadowCooldownMinutes = 60`, `ShadowSpeed = 0.55` | 물속 그림자가 얼마나 자주·오래 나오는지, 헤엄 속도 |
 | `BiteSelector.RollLength` | 지수 2.2 / 어군 1.7 | 대물 출현율 |
 | `GameClock.GameMinutesPerSecond` | 1 | 하루 길이 (24분). 체력 자연 소모는 현실 30초에 1로 따로 고정 |
 | `PlayerProfile.ExpToNext` | `100 × lv^1.5` | 레벨업 속도 |

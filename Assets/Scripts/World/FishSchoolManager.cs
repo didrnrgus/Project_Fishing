@@ -8,8 +8,9 @@ namespace Fishing.World
     /// <summary>
     /// 원작 어군 3종 (게임메카 동남아 업데이트 기사): 고기떼(입질이 빠르지만 횟수 제한) /
     /// 히든 어군(고기떼를 모두 낚으면 나타난다) / 포식자 어군(그 지역의 어군을 모두 흩어 놓고, 포식자를 낚으면 어군이 다시 나타난다).
+    /// 그림자: 원작처럼 퀘스트 고기나 귀한 고기 한 마리가 물속에 검은 실루엣으로 보이며 천천히 헤엄쳐 다닌다.
     /// </summary>
-    public enum SchoolKind { Normal, Hidden, Predator }
+    public enum SchoolKind { Normal, Hidden, Predator, Shadow }
 
     public class FishSchool
     {
@@ -45,21 +46,33 @@ namespace Fishing.World
         /// <summary>작은 어군이 된 게임 시각(TotalMinutes). 일정 시간이 지나면 다시 큰 어군으로 모인다.</summary>
         public float ShrankAt;
 
+        /// <summary>그림자: 지금 헤엄치는 방향(수평 단위 벡터)·향하는 곳·헤엄 속도(m/s).</summary>
+        public Vector3 Heading = Vector3.forward;
+        public Vector3 Waypoint;
+        public float Speed;
+        /// <summary>그림자 고기가 진행 중인 퀘스트의 목표 어종이다 (이름을 밝히고 미니맵에 퀘스트 표시).</summary>
+        public bool Quest;
+        /// <summary>그림자 고기가 바늘에 걸려 파이팅 중이다 (실루엣·소용돌이를 감춘다).</summary>
+        public bool Hooked;
+        public FishShadowFx Silhouette;
+
+        public bool Shadow => Kind == SchoolKind.Shadow;
+
         public bool Contains(string speciesId) => System.Array.IndexOf(SpeciesIds, speciesId) >= 0;
 
         /// <summary>해당 어종의 입질 가중치 배율.</summary>
-        public float BiteBoost => Kind == SchoolKind.Hidden ? 6f : Kind == SchoolKind.Predator ? 3f : Big ? 4f : 2f;
+        public float BiteBoost => Kind == SchoolKind.Shadow ? 1f : Kind == SchoolKind.Hidden ? 6f : Kind == SchoolKind.Predator ? 3f : Big ? 4f : 2f;
         /// <summary>입질까지 기다리는 시간 배율.</summary>
-        public float WaitFactor => Kind == SchoolKind.Hidden ? 0.45f : Kind == SchoolKind.Predator ? 0.65f : Big ? 0.5f : 0.75f;
+        public float WaitFactor => Kind == SchoolKind.Shadow ? 0.45f : Kind == SchoolKind.Hidden ? 0.45f : Kind == SchoolKind.Predator ? 0.65f : Big ? 0.5f : 0.75f;
         /// <summary>길이 분포 지수 (작을수록 큰 고기가 잘 나온다).</summary>
-        public float LengthSkew => Kind == SchoolKind.Hidden ? 1.4f : Kind == SchoolKind.Predator ? 1.3f : Big ? 1.7f : 2f;
-        public string SizeLabel => Kind == SchoolKind.Hidden ? "히든 어군" : Kind == SchoolKind.Predator ? "포식자 어군" : Special ? "대물 어군" : Big ? "큰 어군" : "작은 어군";
+        public float LengthSkew => Kind == SchoolKind.Shadow ? 1.2f : Kind == SchoolKind.Hidden ? 1.4f : Kind == SchoolKind.Predator ? 1.3f : Big ? 1.7f : 2f;
+        public string SizeLabel => Kind == SchoolKind.Shadow ? (Quest ? "퀘스트 고기" : "정체 모를 고기") : Kind == SchoolKind.Hidden ? "히든 어군" : Kind == SchoolKind.Predator ? "포식자 어군" : Special ? "대물 어군" : Big ? "큰 어군" : "작은 어군";
         /// <summary>지도 표시용 짧은 이름.</summary>
-        public string ShortLabel => Kind == SchoolKind.Hidden ? "히든" : Kind == SchoolKind.Predator ? "포식자" : Special ? "대물" : Big ? "대" : "소";
+        public string ShortLabel => Kind == SchoolKind.Shadow ? "그림자" : Kind == SchoolKind.Hidden ? "히든" : Kind == SchoolKind.Predator ? "포식자" : Special ? "대물" : Big ? "대" : "소";
         /// <summary>소용돌이 반지름(m).</summary>
-        public float SpotRadius => Kind != SchoolKind.Normal ? 4f : Special ? 4.5f : Big ? 3.5f : 2.2f;
-        /// <summary>소용돌이·지도 색: 히든은 금빛, 포식자는 붉은빛.</summary>
-        public Color Tint => Kind == SchoolKind.Hidden ? new Color(1f, 0.85f, 0.35f) : Kind == SchoolKind.Predator ? new Color(1f, 0.4f, 0.35f) : Color.white;
+        public float SpotRadius => Kind == SchoolKind.Shadow ? 3f : Kind != SchoolKind.Normal ? 4f : Special ? 4.5f : Big ? 3.5f : 2.2f;
+        /// <summary>소용돌이·지도 색: 히든은 금빛, 포식자는 붉은빛, 그림자는 물빛.</summary>
+        public Color Tint => Kind == SchoolKind.Shadow ? new Color(0.6f, 0.88f, 1f) : Kind == SchoolKind.Hidden ? new Color(1f, 0.85f, 0.35f) : Kind == SchoolKind.Predator ? new Color(1f, 0.4f, 0.35f) : Color.white;
 
         /// <summary>찌가 소용돌이 안(어군 한가운데)에 떨어졌는지.</summary>
         public bool InSpot(Vector3 p)
@@ -77,6 +90,7 @@ namespace Fishing.World
     /// 어군이 있는 칸에 찌를 던지면 입질이 빠르고 해당 어종이 잘 낚인다. 소용돌이 한가운데면 더 빠르다.
     /// 원작처럼 큰 어군에서 3마리를 낚으면 작은 어군으로 흩어지고, 6시간 뒤 다시 모인다.
     /// 시간표가 있는 특별 어군은 정해진 시간·칸에만 나타난다.
+    /// 가끔 퀘스트 고기·귀한 고기 한 마리가 물속 검은 그림자로 나타나 천천히 헤엄쳐 다닌다(<see cref="SchoolKind.Shadow"/>).
     /// </summary>
     public class FishSchoolManager : MonoBehaviour
     {
@@ -93,17 +107,32 @@ namespace Fishing.World
         /// <summary>포식자가 나타날 확률 (게임 2시간마다 굴린다).</summary>
         public const float PredatorChance = 0.18f;
 
+        /// <summary>그림자가 머무는 게임 시간(분) · 사라진 뒤 다시 나타날 수 있기까지(분).</summary>
+        public const float ShadowMinutes = 300f, ShadowCooldownMinutes = 60f;
+        /// <summary>그림자가 나타날 확률 (게임 1시간마다): 진행 중인 퀘스트 고기가 이 낚시터에 살면 높고, 아니면 귀한 고기가 가끔.</summary>
+        public const float ShadowQuestChance = 0.3f, ShadowRareChance = 0.08f;
+        /// <summary>그림자 헤엄 속도(m/s). 원작처럼 천천히 어슬렁거린다.</summary>
+        public const float ShadowSpeed = 0.55f;
+        float _shadowReadyAt;
+
         /// <summary>낚시터가 바뀌면 그 맵의 어군으로 바꾼다. 히든·포식자 어군 자리도 하나씩 만들어 둔다 (처음엔 숨어 있음).</summary>
         public void Reset(List<FishSchool> schools)
         {
             foreach (var s in Schools)
+            {
                 if (s.Fx != null) Destroy(s.Fx.gameObject);
+                if (s.Silhouette != null) Destroy(s.Silhouette.gameObject);
+            }
             Schools.Clear();
             Schools.AddRange(schools);
             var hidden = MakeKind(SchoolKind.Hidden, schools);
             if (hidden != null) Schools.Add(hidden);
             var predator = MakeKind(SchoolKind.Predator, schools);
             if (predator != null) Schools.Add(predator);
+            if (schools.Count > 0)
+                Schools.Add(new FishSchool { Kind = SchoolKind.Shadow, Hidden = true, Name = "검은 그림자", SpeciesIds = new string[0],
+                    MinRow = schools[0].MinRow, MaxRow = schools[0].MaxRow, Col = schools[0].Col, Row = schools[0].Row, CatchesLeft = 1 });
+            _shadowReadyAt = 0f;
             if (Game.Clock != null) ApplySchedules(Game.Clock.Band);
         }
 
@@ -189,14 +218,17 @@ namespace Fishing.World
         void Vanish(FishSchool s, string why)
         {
             s.Hidden = true;
+            s.Hooked = false;
+            if (s.Shadow && Game.Clock != null) _shadowReadyAt = Game.Clock.TotalMinutes + ShadowCooldownMinutes;
             if (why != null && Game.Mode == GameMode.Field) Game.Toast(why, ToastKind.Info);
         }
 
-        /// <summary>테스트·자동 촬영용: 히든/포식자 어군을 바로 띄운다.</summary>
-        public FishSchool DebugAppear(SchoolKind kind)
+        /// <summary>테스트·자동 촬영용: 히든/포식자 어군·그림자를 바로 띄운다. 그림자는 near가 있으면 그 둘레에.</summary>
+        public FishSchool DebugAppear(SchoolKind kind, Vector3? near = null)
         {
             var s = OfKind(kind);
             if (s == null) return null;
+            if (kind == SchoolKind.Shadow) return !s.Hidden || TryShadow(true, near) ? s : null;
             if (kind == SchoolKind.Predator) PredatorArrives(s, Schools.Find(x => x.Kind == SchoolKind.Normal && !x.Special));
             else Appear(s, null, HiddenMinutes);
             return s;
@@ -239,8 +271,10 @@ namespace Fishing.World
             }
             float now = Game.Clock.TotalMinutes;
             foreach (var s in Schools)
-                if (s.Kind != SchoolKind.Normal && !s.Hidden && now >= s.ExpiresAt)
-                    Vanish(s, s.Kind == SchoolKind.Hidden ? "히든 어군이 깊은 곳으로 사라졌습니다." : $"{s.Name}가 먼바다로 떠났습니다.");
+                if (s.Kind != SchoolKind.Normal && !s.Hidden && !s.Hooked && now >= s.ExpiresAt)
+                    Vanish(s, s.Kind == SchoolKind.Hidden ? "히든 어군이 깊은 곳으로 사라졌습니다."
+                        : s.Shadow ? "물속을 어슬렁거리던 검은 그림자가 깊은 곳으로 사라졌습니다." : $"{s.Name}가 먼바다로 떠났습니다.");
+            TryShadow(false, null);
             if (Game.Clock.Hour % 2 != 0) return;
 
             // 포식자: 가끔 큰 고기가 나타나 고기떼를 모두 흩어 놓는다 (원작: 그 지역 어군이 모두 사라진다)
@@ -294,12 +328,154 @@ namespace Fishing.World
             s.MoveAt = Time.time + Random.Range(StayMinSeconds, StayMaxSeconds);
         }
 
+        // ---------- 물속 그림자 ----------
+
+        /// <summary>그림자가 될 수 있는 어종: 그 낚시터에 살고, 어군 전용·먼바다 전용·괴물이 아닌 고기.</summary>
+        static bool ShadowCandidate(FishSpecies sp) => !sp.SchoolOnly && !sp.FarSeaOnly && !sp.Boss && sp.Id != "smelt";
+
+        /// <summary>
+        /// 원작: 퀘스트 고기나 귀한 고기는 어군과 함께 물속에 검은 실루엣이 보인다.
+        /// 진행 중인 퀘스트가 요구하는 어종이 이 낚시터에 살면 그 고기가, 아니면 귀한 고기(희귀도 3 이상)가 나타난다.
+        /// 나타나면 공지(토스트)와 시스템 줄로 알리고, 미니맵에 실루엣을 띄운다. force면 확률·쿨타임을 무시한다.
+        /// </summary>
+        bool TryShadow(bool force, Vector3? near)
+        {
+            var s = OfKind(SchoolKind.Shadow);
+            if (s == null || !s.Hidden) return false;
+            if (!force && (Game.Mode != GameMode.Field || Game.Clock.TotalMinutes < _shadowReadyAt)) return false;
+            var quest = new List<FishSpecies>();
+            var rare = new List<FishSpecies>();
+            foreach (var sp in FishDatabase.DexOf(FieldMap.Id))
+            {
+                if (!ShadowCandidate(sp)) continue;
+                if (Game.Quests != null && Game.Quests.IsQuestSpecies(sp.Id)) quest.Add(sp);
+                else if (sp.Rarity >= 3) rare.Add(sp);
+            }
+            bool isQuest = quest.Count > 0;
+            var pool = isQuest ? quest : rare;
+            if (pool.Count == 0 || (!force && Random.value >= (isQuest ? ShadowQuestChance : ShadowRareChance))) return false;
+            var pick = pool[Random.Range(0, pool.Count)];
+            if (!ShadowStart(near ?? (Game.Player != null ? Game.Player.transform.position : FieldMap.Spawn), out var start)) return false;
+
+            s.SpeciesIds = new[] { pick.Id };
+            s.Quest = isQuest;
+            s.Name = isQuest ? $"{pick.Name}의 그림자" : "검은 그림자";
+            s.Hidden = false;
+            s.Hooked = false;
+            s.Big = true;
+            s.CatchesLeft = 1;
+            s.ExpiresAt = Game.Clock.TotalMinutes + ShadowMinutes;
+            s.Spot = start;
+            s.Waypoint = start;
+            s.Speed = 0f;
+            var a = Random.Range(0f, Mathf.PI * 2f);
+            s.Heading = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+            s.MoveAt = Time.time;
+            FieldMap.TryCell(start, out s.Col, out s.Row);
+
+            string cell = FieldMap.CellName(s.Col, s.Row);
+            string msg = isQuest
+                ? $"{cell} 근처 물속에 커다란 검은 그림자가 어른거립니다! 퀘스트 목표 [{pick.Name}]인 것 같습니다."
+                : $"{cell} 근처 물속에 커다란 검은 그림자가 어른거립니다… 귀한 고기일지도 모릅니다!";
+            if (Game.Mode == GameMode.Field)
+            {
+                Game.Toast(msg, ToastKind.Great);
+                Game.SysLog(msg, ShadowLogColor);
+            }
+            return true;
+        }
+
+        const string ShadowLogColor = "#9ae0ff";
+
+        /// <summary>그림자가 헤엄칠 수 있는 곳: 격자 안의 물. 먼바다 포인트는 빼서 물가나 배에서 닿게 한다.</summary>
+        static bool ShadowWater(Vector3 p) => FieldMap.TryCell(p, out _, out _) && FieldMap.IsWater(p) && !FieldMap.IsFarSea(p);
+
+        /// <summary>나타날 자리: 눈에 띄게 플레이어(또는 near)에서 14~34m 떨어진 물 위, 안 되면 어군이 다니는 칸 어디든.</summary>
+        bool ShadowStart(Vector3 around, out Vector3 p)
+        {
+            for (int i = 0; i < 40; i++)
+            {
+                var d = Random.insideUnitCircle.normalized * Random.Range(14f, 34f);
+                p = new Vector3(around.x + d.x, FieldMap.WaterY, around.z + d.y);
+                if (ShadowWater(p)) return true;
+            }
+            var first = Schools.Find(x => x.Kind == SchoolKind.Normal);
+            int minRow = first != null ? first.MinRow : 0, maxRow = first != null ? first.MaxRow : FieldMap.Rows - 1;
+            for (int i = 0; i < 40; i++)
+            {
+                var c = FieldMap.CellCenter(Random.Range(0, FieldMap.Cols), Random.Range(minRow, maxRow + 1));
+                p = c + new Vector3(Random.Range(-0.4f, 0.4f) * FieldMap.CellW, 0f, Random.Range(-0.4f, 0.4f) * FieldMap.CellH);
+                p.y = FieldMap.WaterY;
+                if (ShadowWater(p)) return true;
+            }
+            p = default;
+            return false;
+        }
+
+        /// <summary>
+        /// 그림자는 소용돌이처럼 자리를 옮겨 다니지 않고 계속 천천히 헤엄친다: 6~18m 앞의 물 위 한 점을 골라 고개를 돌려 가며 다가가고,
+        /// 닿거나 20~40초가 지나면 다음 점을 고른다. 앞이 땅이면 바로 돌아선다. 가끔 멈칫하듯 느려진다.
+        /// </summary>
+        static void SwimShadow(FishSchool s, float dt)
+        {
+            var to = s.Waypoint - s.Spot;
+            to.y = 0f;
+            bool blocked = !ShadowWater(s.Spot + s.Heading * 2.5f);
+            if (to.magnitude < 1.5f || Time.time >= s.MoveAt || blocked)
+            {
+                for (int i = 0; i < 16; i++)
+                {
+                    // 막혔으면 아무 쪽으로, 아니면 대체로 가던 쪽(앞 ±100°)으로
+                    float yaw = Mathf.Atan2(s.Heading.z, s.Heading.x) + (blocked ? Random.Range(-Mathf.PI, Mathf.PI) : Random.Range(-1.75f, 1.75f));
+                    var p = s.Spot + new Vector3(Mathf.Cos(yaw), 0f, Mathf.Sin(yaw)) * Random.Range(6f, 18f);
+                    if (!ShadowWater(p) || !ShadowWater((s.Spot + p) * 0.5f)) continue;
+                    s.Waypoint = p;
+                    break;
+                }
+                s.MoveAt = Time.time + Random.Range(20f, 40f);
+                to = s.Waypoint - s.Spot;
+                to.y = 0f;
+            }
+            if (to.sqrMagnitude > 0.01f)
+                s.Heading = Vector3.RotateTowards(s.Heading, to.normalized, (blocked ? 1.6f : 0.45f) * dt, 0f).normalized;
+            // 0.15~1배 사이로 느려졌다 빨라졌다 (꼬리를 몇 번 치고 미끄러지는 느낌)
+            float pace = 0.15f + 0.85f * Mathf.SmoothStep(0f, 1f, 0.5f + 0.5f * Mathf.Sin(Time.time * 0.23f + s.Waypoint.x));
+            s.Speed = Mathf.MoveTowards(s.Speed, blocked ? ShadowSpeed * 0.3f : ShadowSpeed * pace, dt * 0.5f);
+            var next = s.Spot + s.Heading * s.Speed * dt;
+            if (ShadowWater(next)) s.Spot = next;
+            s.Spot.y = FieldMap.WaterY;
+            FieldMap.TryCell(s.Spot, out s.Col, out s.Row);
+        }
+
+        /// <summary>그림자 고기가 바늘에 걸렸다: 파이팅 동안 실루엣을 감춘다.</summary>
+        public void OnHooked(FishSchool school, string speciesId)
+        {
+            if (school != null && school.Shadow && !school.Hidden && school.Contains(speciesId)) school.Hooked = true;
+        }
+
+        /// <summary>그림자 고기를 놓쳤다: 다시 물속에서 어슬렁거린다 (놀라서 반대쪽으로).</summary>
+        public void OnLost(FishSchool school)
+        {
+            if (school == null || !school.Shadow || !school.Hooked) return;
+            school.Hooked = false;
+            school.Heading = -school.Heading;
+            school.MoveAt = 0f;
+            if (Game.Mode == GameMode.Field) Game.Toast("놓친 그림자가 다시 물속을 어슬렁거립니다. 한 번 더 노려 보세요!", ToastKind.Info);
+        }
+
         /// <summary>어군 칸에서 그 어군의 어종을 낚았을 때. 큰 어군은 3마리째에 작은 어군이 된다.</summary>
         public void OnCatch(FishSchool school, string speciesId)
         {
             if (school == null || school.Special || !school.Big || !school.Contains(speciesId)) return;
             school.CatchesLeft--;
             if (school.CatchesLeft > 0) return;
+            if (school.Shadow)
+            {
+                Vanish(school, null);
+                var sp = FishDatabase.Get(speciesId);
+                Game.Toast($"물속 그림자의 정체는 [{sp.Name}]{QuestNpcs.Josa(sp.Name, "이었", "였")}습니다!", ToastKind.Great);
+                return;
+            }
             if (school.Kind == SchoolKind.Predator)
             {
                 Vanish(school, null);
@@ -327,11 +503,20 @@ namespace Fishing.World
             }
         }
 
+        /// <summary>그 칸의 어군 (그림자는 칸이 아니라 실루엣 둘레에서만 치므로 뺀다).</summary>
         public FishSchool At(int col, int row)
         {
             foreach (var s in Schools)
-                if (!s.Hidden && s.Col == col && s.Row == row) return s;
+                if (!s.Hidden && !s.Shadow && s.Col == col && s.Row == row) return s;
             return null;
+        }
+
+        /// <summary>찌가 떨어진 자리의 어군: 물속 그림자 바로 둘레면 그림자, 아니면 그 칸의 어군.</summary>
+        public FishSchool At(Vector3 p, int col, int row)
+        {
+            foreach (var s in Schools)
+                if (s.Shadow && !s.Hidden && !s.Hooked && s.InSpot(p)) return s;
+            return At(col, row);
         }
 
         void Update()
@@ -340,6 +525,17 @@ namespace Fishing.World
             bool field = Game.Mode == GameMode.Field;
             foreach (var s in Schools)
             {
+                if (s.Shadow)
+                {
+                    if (!s.Hidden && !s.Hooked) SwimShadow(s, Time.deltaTime);
+                    bool show = field && !s.Hidden && !s.Hooked;
+                    if (s.Fx == null) s.Fx = SchoolSwirlFx.Create();
+                    s.Fx.Show(show ? s.Spot : (Vector3?)null, s.SpotRadius, s.Tint, follow: true);
+                    if (s.Silhouette == null) s.Silhouette = FishShadowFx.Create();
+                    var sp = s.SpeciesIds.Length > 0 ? FishDatabase.Get(s.SpeciesIds[0]) : null;
+                    s.Silhouette.Show(show ? s.Spot : (Vector3?)null, s.Heading, s.Speed, sp != null ? FishShadowFx.LengthFor(sp) : 1.5f);
+                    continue;
+                }
                 if (s.MoveAt <= 0f) PickSpot(s);
                 else if (s.Schedule == null && Time.time >= s.MoveAt) Move(s);
                 if (s.Fx == null) s.Fx = SchoolSwirlFx.Create();
@@ -370,7 +566,7 @@ namespace Fishing.World
         Material _swirlMat, _foamMat;
         Vector3 _target;
         Color _tint = Color.white;
-        bool _visible;
+        bool _visible, _follow;
         float _alpha, _radius = 3f, _targetRadius = 3f;
         float _seed;
 
@@ -394,10 +590,11 @@ namespace Fishing.World
             return go.transform;
         }
 
-        /// <summary>spot이 null이면 사라진다.</summary>
-        public void Show(Vector3? spot, float radius, Color tint)
+        /// <summary>spot이 null이면 사라진다. follow면 자리가 바뀌어도 사라지지 않고 따라간다 (헤엄치는 그림자).</summary>
+        public void Show(Vector3? spot, float radius, Color tint, bool follow = false)
         {
             _tint = tint;
+            _follow = follow;
             _visible = spot.HasValue;
             if (_visible) _target = new Vector3(spot.Value.x, FieldMap.WaterY + 0.12f, spot.Value.z);
             _targetRadius = radius;
@@ -406,7 +603,9 @@ namespace Fishing.World
         void Update()
         {
             bool moving = (transform.position - _target).sqrMagnitude > 0.01f;
-            _alpha = Mathf.MoveTowards(_alpha, _visible && !moving ? 1f : 0f, Time.deltaTime / FadeSeconds);
+            // 따라가는 소용돌이: 보이는 동안엔 그대로 붙어 가고, 새로 나타날 때만 옛 자리에서 사라졌다가 옮겨 온다
+            if (_follow && _visible && _alpha > 0f) { transform.position = _target; moving = false; }
+            _alpha = Mathf.MoveTowards(_alpha, _visible && !moving ? (_follow ? 0.55f : 1f) : 0f, Time.deltaTime / FadeSeconds);
             if (moving && _alpha <= 0f) transform.position = _target;
             _radius = Mathf.Lerp(_radius, _targetRadius, Time.deltaTime);
 

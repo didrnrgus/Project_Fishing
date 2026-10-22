@@ -220,12 +220,20 @@ namespace Fishing.UI
             var lines = new List<string>();
             foreach (var s in Game.Schools.Schools)
             {
+                if (s.Shadow) continue;
                 bool active = Array.IndexOf(s.PreferredTimes, band) >= 0;
                 var lead = FishDatabase.Get(s.SpeciesIds[0]);
                 string bait = lead != null && lead.Baits.Length > 0 ? Names.Of(lead.Baits[0]) : "지렁이";
                 string cell = FieldMap.CellName(s.Col, s.Row);
                 if (active)
                     lines.Add($"· {s.Name}가 {cell} 쪽에 {(s.Big ? "크게" : "조금")} 모여 있어. {bait}가 잘 먹혀.");
+            }
+            // 물속 그림자 소문: 퀘스트 고기면 이름까지
+            var shadow = Game.Schools.Schools.Find(x => x.Shadow && !x.Hidden);
+            if (shadow != null)
+            {
+                string who = shadow.Quest ? $"{FishDatabase.Get(shadow.SpeciesIds[0]).Name} 같던데" : "뭔지는 모르겠는데 엄청 커";
+                lines.Insert(0, $"· {FieldMap.CellName(shadow.Col, shadow.Row)} 쪽 물속에 시커먼 그림자가 어슬렁거려. {who}. 바로 앞에 던져 봐!");
             }
             if (lines.Count == 0) return $"지금은 다들 깊은 데 가라앉았어. {Names.Of(band)}엔 입질이 뜸하니 자리 잘 골라 봐.";
             if (Game.Profile.Boat == null && lines.Count > 0) lines.Add("(3~4행은 둔치에서 안 닿아. 배를 사면 갈 수 있지.)");

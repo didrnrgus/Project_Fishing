@@ -236,6 +236,19 @@ namespace Fishing.Dev
             yield return new WaitForSeconds(8f); // 옛 자리에서 사라졌다 새 자리에 떠오르기까지
             yield return Shot("01b_fish_school");
 
+            // 물속 그림자: 귀한 고기·퀘스트 고기의 검은 실루엣이 소용돌이와 함께 천천히 헤엄친다 (공지 토스트, 미니맵 실루엣)
+            var shadow = Game.Schools.DebugAppear(Fishing.World.SchoolKind.Shadow);
+            if (shadow != null)
+            {
+                shadow.Spot = shadow.Waypoint = new Vector3(27f, Fishing.World.FieldMap.WaterY, -18f);
+                shadow.Heading = Vector3.left;
+                Fishing.World.FieldMap.TryCell(shadow.Spot, out shadow.Col, out shadow.Row);
+                yield return new WaitForSeconds(2.5f);
+                yield return Shot("01c_fish_shadow");
+                shadow.Hidden = true;
+            }
+            else Debug.Log("[Dev] 물속 그림자를 띄우지 못했다 (그림자가 될 어종이나 물 위 자리가 없음)");
+
             // 원작 영상처럼 밤의 낚시 데크에서
             Game.Clock.Set(1, 21 * 60);
             Game.Player.Teleport(new Vector3(25f, 1.1f, -29f), 0f);
@@ -765,11 +778,13 @@ namespace Fishing.Dev
             // 히든 어군(금빛) · 포식자 어군(붉은빛)
             var hiddenSchool = Game.Schools.DebugAppear(Fishing.World.SchoolKind.Hidden);
             var predatorSchool = Game.Schools.DebugAppear(Fishing.World.SchoolKind.Predator);
+            var shadowSchool = Game.Schools.DebugAppear(Fishing.World.SchoolKind.Shadow);
             Game.UI.AreaMap.Refresh();
             yield return new WaitForSeconds(0.4f);
             yield return Shot("17b_hidden_predator");
             if (hiddenSchool != null) hiddenSchool.Hidden = true;
             if (predatorSchool != null) predatorSchool.Hidden = true;
+            if (shadowSchool != null) shadowSchool.Hidden = true;
             Game.UI.AreaMap.Close();
 
             // 배: 낚시 데크 끝에서 고무보트를 꺼내 노을 진 강으로

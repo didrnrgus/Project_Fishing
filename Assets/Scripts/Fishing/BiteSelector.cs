@@ -38,6 +38,8 @@ namespace Fishing.Angling
     public static class BiteSelector
     {
         static readonly float[] RarityWeight = { 0.25f, 1f, 0.55f, 0.25f, 0.1f, 0.025f };
+        /// <summary>물속 그림자 고기의 무게 (희귀도 대신). 맞는 미끼·시간이면 흔한 고기 셋만큼 = 입질의 절반쯤.</summary>
+        public const float ShadowWeight = 3f;
 
         public static float Weight(FishSpecies s, BiteContext ctx)
         {
@@ -46,11 +48,14 @@ namespace Fishing.Angling
             if (s.IsJunk) return w * s.JunkWeight;
             // 대물 퀘스트 고기는 그 어군 안에서만 문다
             if (s.SchoolOnly && (ctx.School == null || !ctx.School.Contains(s.Id))) return 0f;
-            w *= Contains(s.Habitats, ctx.Habitat) ? 1f : 0.12f;
+            // 물속 그림자 고기는 바로 눈앞에 있으니 희귀도·서식지와 상관없이 문다 (미끼·시간은 따진다)
+            bool shadow = ctx.School != null && ctx.School.Shadow && ctx.School.Contains(s.Id);
+            if (shadow) w = ShadowWeight;
+            w *= shadow || Contains(s.Habitats, ctx.Habitat) ? 1f : 0.12f;
             w *= Contains(s.Baits, ctx.Bait) ? Mathf.Max(1f, ctx.BaitPotency) : 0.15f;
             w *= Contains(s.Times, ctx.Band) ? 1f : 0.3f;
             w *= Contains(s.Weathers, ctx.Weather) ? 1.3f : 1f;
-            if (ctx.School != null && ctx.School.Contains(s.Id)) w *= ctx.School.BiteBoost;
+            if (!shadow && ctx.School != null && ctx.School.Contains(s.Id)) w *= ctx.School.BiteBoost;
             if (ctx.UseSeason) w *= Seasons.BiteFactor(s, ctx.Season);
             if (s.FarSeaOnly && !ctx.FarSea) return 0f;
             // 빙어는 얼음 구멍에서만, 얼음 구멍에서는 빙어가 주인공

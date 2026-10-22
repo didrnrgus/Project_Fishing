@@ -699,7 +699,7 @@ namespace Fishing.Angling
                 Bait = Game.Profile.Bait.Kind,
                 Band = Game.Clock.Band,
                 Weather = Game.Weather.Current,
-                School = Game.Schools.At(col, row),
+                School = Game.Schools.At(_bobber.Position, col, row),
                 MapId = FieldMap.Id,
                 BaitPotency = Game.Profile.Bait.Potency,
                 IceFishing = _iceFishing = SeasonFx.OnIce(Game.Player.transform.position),
@@ -951,7 +951,7 @@ namespace Fishing.Angling
                 FieldMap.TryCell(_bobber.Position, out int col, out int row);
                 col = Mathf.Clamp(col, 0, FieldMap.Cols - 1);
                 row = Mathf.Clamp(row, 0, FieldMap.Rows - 1);
-                var school = Game.Schools.At(col, row);
+                var school = Game.Schools.At(_bobber.Position, col, row);
                 bool inSpot = school != null && school.InSpot(_bobber.Position);
                 if (col != _waitCol || row != _waitRow || inSpot != _waitInSpot) BeginWait(1f);
                 return false;
@@ -1094,6 +1094,7 @@ namespace Fishing.Angling
             Fight.Countered += OnCounter;
             Fight.Burst += OnBurst;
             Fight.EscapeRun += OnEscapeRun;
+            Game.Schools.OnHooked(_ctx.School, bite.Species.Id); // 물속 그림자 고기가 걸리면 실루엣을 감춘다
 
             State = FishingState.Fighting;
             Game.Player.RodHidden = false;
@@ -1356,6 +1357,7 @@ namespace Fishing.Angling
                 Game.SysLog($"{f.Species.Name}{Fishing.Data.QuestNpcs.Josa(f.Species.Name, "을", "를")} 놓쳤습니다.");
                 // 원작: 경고 뒤 오른쪽 아래 "재도전 하시겠습니까?" + 오른쪽 위 X2 재도전
                 if (CatchRewards.OnLost(f.Species, f.Length)) Game.UI.Hud.OfferRetry(f.Species.Name, CatchRewards.Mult);
+                Game.Schools.OnLost(_ctx.School);
                 Fight = null;
                 ToIdle();
                 // 줄이 툭 끊기면 움찔 (ToIdle이 낚싯대 자세를 돌린 뒤에 한 번짜리 동작)

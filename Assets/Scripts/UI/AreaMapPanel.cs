@@ -287,14 +287,18 @@ namespace Fishing.UI
                 var (root, halo, label) = _schoolMarks[i];
                 // 같은 칸에 두 어군이 겹치면 살짝 비켜 그린다
                 root.gameObject.SetActive(!s.Hidden);
-                var c = FieldMap.CellCenter(s.Col, s.Row);
-                var offset = new Vector2((i % 2 == 0 ? -1f : 1f) * 22f, (i / 2 == 0 ? 1f : -1f) * 6f);
+                // 물속 그림자는 칸이 아니라 실제로 헤엄치는 자리에
+                var c = s.Shadow ? s.Spot : FieldMap.CellCenter(s.Col, s.Row);
+                var offset = s.Shadow ? Vector2.zero : new Vector2((i % 2 == 0 ? -1f : 1f) * 22f, (i / 2 == 0 ? 1f : -1f) * 6f);
+                if (s.Shadow) root.gameObject.SetActive(!s.Hidden && !s.Hooked);
                 root.anchoredPosition = ToMap(c.x, c.z) + offset;
                 float pulse = 1f + Mathf.Sin(Time.unscaledTime * 3f + i) * 0.08f;
                 halo.rectTransform.localScale = Vector3.one * (s.Special ? 1.4f : s.Big ? 1f : 0.55f) * pulse;
-                halo.color = s.Kind == SchoolKind.Hidden ? new Color(1f, 0.9f, 0.3f, 0.55f) : s.Kind == SchoolKind.Predator ? new Color(1f, 0.25f, 0.4f, 0.5f)
+                halo.color = s.Shadow ? (s.Quest ? new Color(1f, 0.82f, 0.3f, 0.5f) : new Color(0.55f, 0.85f, 1f, 0.5f))
+                    : s.Kind == SchoolKind.Hidden ? new Color(1f, 0.9f, 0.3f, 0.55f) : s.Kind == SchoolKind.Predator ? new Color(1f, 0.25f, 0.4f, 0.5f)
                     : s.Special ? new Color(1f, 0.3f, 0.25f, 0.45f) : new Color(1f, 0.7f, 0.25f, 0.35f);
                 root.GetChild(1).localScale = Vector3.one * (s.Special ? 1.5f : s.Big ? 1.2f : 0.75f);
+                root.GetChild(1).GetComponent<TMPro.TMP_Text>().color = s.Shadow ? new Color(0.04f, 0.07f, 0.1f) : new Color(1f, 0.8f, 0.3f);
                 label.text = s.Kind != SchoolKind.Normal ? s.Name : $"{s.Name} · {s.ShortLabel}";
             }
 
@@ -309,11 +313,19 @@ namespace Fishing.UI
         {
             UIFactory.ClearChildren(_schoolList);
             var schools = Game.Schools.Schools;
+            int line = 0;
             for (int i = 0; i < schools.Count; i++)
             {
                 var s = schools[i];
                 string state;
-                if (s.Kind != SchoolKind.Normal)
+                if (s.Shadow)
+                {
+                    // 그림자는 나타났을 때만 적는다 (언제 나올지 모르는 게 재미, 목록도 아래 설명과 겹치지 않게)
+                    if (s.Hidden) continue;
+                    float left = Mathf.Max(0f, s.ExpiresAt - Game.Clock.TotalMinutes) / 60f;
+                    state = $"<color=#7fd8ff>지금 출현!</color>  {Mathf.CeilToInt(left)}시간 뒤 사라짐 · 천천히 헤엄침";
+                }
+                else if (s.Kind != SchoolKind.Normal)
                 {
                     float left = Mathf.Max(0f, s.ExpiresAt - Game.Clock.TotalMinutes) / 60f;
                     state = s.Hidden
@@ -335,12 +347,12 @@ namespace Fishing.UI
                 foreach (var id in s.SpeciesIds)
                 {
                     var sp = FishDatabase.Get(id);
-                    if (sp != null) names.Add(sp.Name);
+                    if (sp != null) names.Add(s.Shadow && !s.Quest ? "???" : sp.Name);
                 }
                 var t = UIFactory.Text(_schoolList,
                     $"<b>{s.Name}</b>  <color=#80c8ff>{(s.Hidden ? "-" : FieldMap.CellName(s.Col, s.Row))}</color>  <size=11><color=#8a96a0>{string.Join(", ", names)}</color></size>\n{state}",
                     13, UIFactory.TextMain, TextAnchor.UpperLeft);
-                t.rectTransform.At(new Vector2(0, 1), new Vector2(0, -i * 52f), new Vector2(286, 50), new Vector2(0, 1));
+                t.rectTransform.At(new Vector2(0, 1), new Vector2(0, -line++ * 46f), new Vector2(286, 44), new Vector2(0, 1));
             }
         }
     }

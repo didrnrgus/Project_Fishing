@@ -14,6 +14,9 @@ namespace Fishing.World
         public static Texture2D Star => _star ??= MakeStar(32);
         /// <summary>어군 자리의 하얀 소용돌이(물고기 떼가 휘저은 거품). 흰색에 알파만 있다.</summary>
         public static Texture2D SchoolSwirl => _schoolSwirl ??= MakeSchoolSwirl(256);
+        /// <summary>위에서 본 물고기 그림자 (u = 좌우, v = 0 꼬리 끝 ~ 1 머리). 가장자리가 물에 번진 듯 흐릿하다. 흰색에 알파만 있다.</summary>
+        public static Texture2D FishShadow => _fishShadow ??= MakeFishShadow(64, 160);
+        static Texture2D _fishShadow;
 
         // ---- 반복되는 값 노이즈 ----
         static float Hash(int x, int y, int seed)
@@ -156,6 +159,43 @@ namespace Fishing.World
                     a = (ring * (0.35f + 0.65f * arms) + core) * Mathf.SmoothStep(0.25f, 0.75f, foam) * 2.4f * edge;
                 }
                 px[y * size + x] = new Color(1f, 1f, 1f, Mathf.Clamp01(a));
+            }
+            tex.SetPixels(px);
+            tex.Apply();
+            return tex;
+        }
+
+        /// <summary>
+        /// 둥근 머리 → 몸통 가운데(v 0.68)가 가장 넓고 꼬리자루까지 가늘어진다 → 갈라진 꼬리지느러미,
+        /// 몸통 앞쪽 양옆에 뒤로 젖혀진 가슴지느러미. 테두리 안팎 0.13만큼을 흐려 물속에 잠긴 그림자처럼 보이게 한다.
+        /// </summary>
+        static Texture2D MakeFishShadow(int w, int h)
+        {
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp };
+            var px = new Color[w * h];
+            float S(float x) => Mathf.SmoothStep(0f, 1f, x);
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                float u = Mathf.Abs((x + 0.5f) / w * 2f - 1f), v = (y + 0.5f) / h;
+                float body = 0f;
+                if (v > 0.22f && v < 0.98f)
+                    body = v > 0.68f ? 0.62f * Mathf.Sqrt(Mathf.Max(0f, 1f - Mathf.Pow((v - 0.68f) / 0.3f, 2f)))
+                        : 0.62f * Mathf.Lerp(0.2f, 1f, Mathf.Pow(S(Mathf.InverseLerp(0.22f, 0.68f, v)), 0.8f));
+                // 꼬리지느러미: 끝으로 갈수록 넓게 퍼진다
+                float fan = v <= 0.22f ? Mathf.Lerp(0.82f, 0.12f, S(v / 0.22f)) : 0f;
+                float pect = v > 0.52f && v < 0.7f ? 0.26f * (v < 0.64f ? Mathf.InverseLerp(0.52f, 0.64f, v) : Mathf.InverseLerp(0.7f, 0.64f, v)) : 0f;
+                float half = Mathf.Max(body + pect, fan);
+                float a = 1f - S(Mathf.InverseLerp(half - 0.13f, half + 0.13f, u));
+                // 꼬리 끝 가운데가 V자로 갈라진다
+                if (v < 0.09f)
+                {
+                    float fork = Mathf.Lerp(0.55f, 0f, v / 0.09f);
+                    a *= S(Mathf.InverseLerp(fork - 0.12f, fork + 0.1f, u));
+                }
+                // 머리·꼬리 끝도 흐리게
+                a *= S(Mathf.InverseLerp(0f, 0.05f, v)) * S(Mathf.InverseLerp(1f, 0.95f, v));
+                px[y * w + x] = new Color(1f, 1f, 1f, Mathf.Clamp01(a));
             }
             tex.SetPixels(px);
             tex.Apply();

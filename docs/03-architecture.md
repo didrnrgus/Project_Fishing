@@ -89,8 +89,9 @@ Assets/
       WorldBatcher.cs            맵을 지은 뒤 움직이지 않는 Standard 소품을 정적 배칭으로 묶기 (아래 "정적 배칭")
       SkyDecor.cs                해 원판(번지는 빛)·달·별(번지는 사각형 2,200개, 은하수 띠, 반짝임)·구름 돔 (카메라를 따라다님). 해·달 길은 DayNightCycle(고도 최대 30°, 물 쪽)
       KenneyProps.cs             Kenney CC0 모델 배치 헬퍼
-      ProceduralTextures.cs      물 노멀맵, 구름 노이즈, 달 텍스처
-      FishSchoolManager.cs       어군 자리·이동, 큰/작은 어군, 히든·포식자 어군(SchoolKind), 소용돌이(색)·파문
+      ProceduralTextures.cs      물 노멀맵, 구름 노이즈, 달 텍스처, 어군 소용돌이, 위에서 본 물고기 그림자
+      FishSchoolManager.cs       어군 자리·이동, 큰/작은 어군, 히든·포식자 어군·물속 그림자(SchoolKind), 소용돌이(색)·파문, 그림자 헤엄
+      FishShadowFx.cs            물속 그림자 실루엣: 수면 바로 위 납작한 띠를 S자로 휘어 꼬리짓 (Fishing/FishShadow)
       Effects.cs                 물보라(공유 파티클), 파문
     Player/
       PlayerController.cs        3인칭 캐릭터 이동, 발소리, 낚싯대 기울기, 배 탑승(Mount)
@@ -319,6 +320,7 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 | `Shaders/Ground.shader` (`Fishing/Ground`) | `Mats.Textured`가 쓰는 바닥·바위·콘크리트·데크 셰이더. 같은 텍스처를 회전·0.73배로 한 번 더 읽어 노이즈로 섞고, 월드 좌표 큰 얼룩으로 밝기·채도·광택을 흔들어 반복 무늬를 없앤다. 월드 좌표라 정적 배칭해도 같다 (`WorldBatcher`가 Standard와 함께 묶는다) |
 | `Shaders/Terrain.shader` + `Terrain-AddPass.shader` (`FishingTerrain.cginc`, `FishingNoise.cginc`) | Unity Terrain(홍현·서천·해안 맵 틀) 셰이더. 내장 지형과 같은 엔진 속성을 받아 층마다 같은 방법으로 반복을 깬다. 5번째 층부터는 추가 패스. `TerrainBuilder`가 `materialTemplate`로 쓰고 인스턴싱은 끈다 |
 | `Shaders/FishFin.shader` (`Fishing/FishFin`) | 물고기 지느러미 반투명 막 (09 문서 3-16) |
+| `Shaders/FishShadow.shader` (`Fishing/FishShadow`) | 물속 그림자 실루엣. 물이 불투명이라 수면 바로 위(+0.16m)에 그리고, 어군 소용돌이보다 먼저(`Transparent-10`) 그려 거품이 위에 얹힌다. 물결처럼 uv를 일렁이고 안개를 받는다 (`FishShadowFx`) |
 | `World/Rocks.cs` | 절차적 바위 메쉬 8종 (`Rocks.Prim`이 `Mats.Prim(Sphere)` 자리) |
 | `World/LighthouseBuilder.cs` | 방파제 등대·큰 유인 등대 회전체 메쉬 (`CoastProps.Lighthouse`·`GrandLighthouse`, 홍현) |
 | `CoastProps.TetrapodMesh`·`TetrapodBank` | 테트라포드 메쉬와 방파제 바깥 3줄 더미 |
