@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Fishing.Characters;
 using Fishing.Core;
 using Fishing.Data;
@@ -14,6 +15,7 @@ namespace Fishing.UI
     /// NPC 대화창. 가까이 가서 F로 말을 건다.
     ///  - shop (낚시점 김사장): 물건 사고팔기, 낚싯대 강화, 오늘 조황
     ///  - union (조합 연락관: 한강 박주임, 홍현 정계장): [퀘스트 목록보기](QuestTalkPanel), 낚시 대회, 소라고동 교환
+    ///  - fisher (마을 어부): 퀘스트, 나팔고동·황금거거 마을 교환(VillageTradePanel), 통발
     ///  - angler (둔치·뗏목 낚시꾼): 실제 어군 위치를 알려 주는 조황 정보, 한마디
     /// </summary>
     public class DialogPanel : UIPanel
@@ -111,8 +113,13 @@ namespace Fishing.UI
             string line = FishTraps.AnyReady
                 ? "통발 걷을 때가 됐구먼! 뭐가 들었나 같이 보세."
                 : $"이 {where}는 내 손바닥이지. 통발 하나 놓아 두면 {FishTraps.DurationHours:0}시간 뒤엔 고기가 그득하다네.\n수거할 때 수거비용만 내면 돼.";
+            // 마을 교환: 상점에 없는 이 마을 장비를 나팔고동(한국)·황금거거(해외)로
+            string coin = VillageTrade.Name(VillageTrade.CurrencyFor(FieldMap.Id));
+            var offer = VillageTrade.OffersAt(FieldMap.Id).FirstOrDefault(g => !Game.Profile.Owns(g.Id));
+            if (offer != null) line += $"\n{coin}{QuestNpcs.Josa(coin, "을", "를")} 모아 오면 내가 손수 매만진 <color=#ffd060>{offer.Name}</color>{QuestNpcs.Josa(offer.Name, "을", "를")} 내주지. 가게에선 못 구하는 물건이야.";
             Show(line,
                 ("퀘스트 목록보기", OpenQuestList),
+                ($"{coin} 교환", () => { string name = Npc.Look.Name; Close(); Game.UI.Trade.OpenFrom(name); }),
                 ("미끼 조합하기", () => Show("미끼 조합은 아직 연구 중이라네. 큰 고기를 해체하면 좋은 미끼가 나오니 그걸 먼저 써 보게.", ("다른 이야기", FisherGreeting), Bye)),
                 ("통발 설치하기", () => { string name = Npc.Look.Name; Close(); Game.UI.Traps.OpenFrom(name); }),
                 Bye);
@@ -172,7 +179,7 @@ namespace Fishing.UI
             var t = Game.Tournament;
             var s = Game.Profile.Data.tournament;
             string head = $"오늘은 [{TournamentRules.Title(t.Day, t.MapId)}]가 {TournamentRules.TimeText}에 열립니다.\n" +
-                          "가장 많이, 가장 길게, 길이 합계 — 세 미션 점수로 순위를 매기고, 1위는 거거 낚시대, 2위는 나팔고둥 릴을 드려요.\n" +
+                          "가장 많이, 가장 길게, 길이 합계 — 세 미션 점수로 순위를 매기고, 1위는 거거 낚시대, 1~3위는 나팔고동을 드려요.\n" +
                           $"지금 계급은 {TournamentRules.EmblemColored(s.points)} (누적 {s.points}점)이시네요.";
             if (t.Joined && !s.settled)
             {

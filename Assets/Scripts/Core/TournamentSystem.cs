@@ -182,9 +182,15 @@ namespace Fishing.Core
             Profile.AddGold(gold);
             if (conch > 0) Profile.AddItem(AchievementDatabase.ConchId, conch);
             string extra = "";
-            if (me.Rank == 1) extra = GiveGear(TournamentRules.RewardRodId) ?? GiveGear(TournamentRules.RewardReelId) ?? "";
-            else if (me.Rank == 2) extra = GiveGear(TournamentRules.RewardReelId) ?? "";
+            if (me.Rank == 1) extra = GiveGear(TournamentRules.RewardRodId) ?? "";
             if (me.Rank <= 3 && string.IsNullOrEmpty(extra)) Profile.AddItem(RodUpgrade.StarSandId, 1);
+            if (me.Rank <= 3)
+            {
+                // 원작 1~3위 보상 「나팔고둥」: 마을 어부에게 장비로 바꾸는 재화 (대회는 늘 한국 낚시터)
+                int napal = VillageTrade.TournamentTokens[me.Rank - 1];
+                Profile.AddItem(VillageTrade.NapalId, napal);
+                extra += $" · <color=#ffd060>나팔고동 {napal}</color>";
+            }
 
             string winner = entries[0].IsPlayer ? "우승!" : $"우승은 {entries[0].Name}";
             Game.Toast($"{TournamentRules.Title(s.day, s.mapId)} 종료 — 나는 {me.Rank}위 ({me.Points}점, {me.Count}마리 · 최장 {me.Longest:0.0}cm). {winner}",

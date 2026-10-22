@@ -267,6 +267,47 @@ namespace Fishing.EditorTools.Tests
         }
     }
 
+    public class VillageTradeTests
+    {
+        [Test]
+        public void EveryMapHasVillageGearForItsCurrency()
+        {
+            foreach (var area in FishingAreas.All)
+                Assert.IsTrue(VillageTrade.OffersAt(area.MapId).Any(), $"{area.Name} 마을 어부가 내줄 장비가 없다");
+            foreach (var g in GearDatabase.Gear.Where(x => x.TradeMap != null))
+            {
+                Assert.IsTrue(g.NotSold, $"{g.Name}: 마을 장비는 상점에서 팔지 않는다");
+                Assert.Greater(g.TradeCost, 0, g.Name);
+                Assert.GreaterOrEqual(g.Level, FishingAreas.EntryLevel(g.TradeMap), $"{g.Name}: 입장 레벨보다 낮은 장비");
+            }
+            Assert.AreEqual(VillageTrade.NapalId, VillageTrade.CurrencyFor("hangang"));
+            Assert.AreEqual(VillageTrade.NapalId, VillageTrade.CurrencyFor("geomun"));
+            Assert.AreEqual(VillageTrade.GoldGegeId, VillageTrade.CurrencyFor("halong"));
+            Assert.AreEqual(VillageTrade.GoldGegeId, VillageTrade.CurrencyFor("nile"));
+        }
+
+        /// <summary>원작: 상점에서 못 구하고 NPC에게 구하는 장비는 같은 레벨 상점 장비보다 능력치가 좋다.</summary>
+        [Test]
+        public void VillageGearBeatsShopGearOfSameLevel()
+        {
+            foreach (var g in GearDatabase.Gear.Where(x => x.TradeMap != null))
+            {
+                foreach (var shop in GearDatabase.Gear.Where(x => x.Slot == g.Slot && !x.NotSold && x.Level <= g.Level))
+                {
+                    switch (g.Slot)
+                    {
+                        case GearSlot.Rod: Assert.Greater(g.Power, shop.Power, $"{g.Name} vs {shop.Name}"); break;
+                        case GearSlot.Reel:
+                            Assert.Greater(g.ReelSpeed, shop.ReelSpeed, $"{g.Name} vs {shop.Name}");
+                            Assert.GreaterOrEqual(g.Capacity, shop.Capacity, $"{g.Name} vs {shop.Name}");
+                            break;
+                        case GearSlot.Line: Assert.Greater(g.Strength, shop.Strength, $"{g.Name} vs {shop.Name}"); break;
+                    }
+                }
+            }
+        }
+    }
+
     public class PlayerProfileTests
     {
         [Test]

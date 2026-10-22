@@ -329,6 +329,11 @@ namespace Fishing.Core
             if (q.RewardKeepNet > 0) _profile.Data.keepNetBonus += q.RewardKeepNet;
             if (!string.IsNullOrEmpty(q.RewardCostume)) _profile.GiveCostume(q.RewardCostume);
             if (q.RewardConch > 0) _profile.AddItem(AchievementDatabase.ConchId, q.RewardConch);
+            if (q.RewardToken > 0)
+            {
+                _profile.AddItem(q.RewardTokenId, q.RewardToken);
+                Game.SysLog($"{VillageTrade.Name(q.RewardTokenId)} {q.RewardToken}개를 획득했습니다.", ItemColor);
+            }
             QuestCompleted?.Invoke(q, q.RewardGold, q.RewardExp);
             if (q.RewardExp > 0) _profile.AddExp(q.RewardExp);
 
@@ -516,14 +521,16 @@ namespace Fishing.Core
 
         // ================= 대물 도전 =================
 
-        /// <summary>어종마다 대물 기준 길이를 처음 넘기면 소라고동 3개.</summary>
+        /// <summary>어종마다 대물 기준 길이를 처음 넘기면 소라고동 3개 + 그 지역 교환 재화 2개 (한국 나팔고동 · 해외 황금거거).</summary>
         void OnCatchTrophy(CatchInfo c)
         {
             var d = _profile.Data;
             if (!c.Species.IsTrophy(c.Length) || d.trophyDone.Contains(c.Species.Id)) return;
             d.trophyDone.Add(c.Species.Id);
             _profile.AddExp(c.Species.Exp * 2);
-            GiveConch(3, $"대물 도전 달성! {c.Species.TrophyName} {c.Species.Name}");
+            string token = VillageTrade.CurrencyFor(Fishing.World.FieldMap.Id);
+            _profile.AddItem(token, VillageTrade.TrophyTokens);
+            GiveConch(3, $"대물 도전 달성! {c.Species.TrophyName} {c.Species.Name} · {VillageTrade.Name(token)} +{VillageTrade.TrophyTokens}");
         }
 
         // ================= 일일반복 (원작 REPEAT) =================
@@ -566,6 +573,7 @@ namespace Fishing.Core
             {
                 Id = $"daily{i}", Type = QuestType.Repeat, DailyIndex = i, MapId = d.mapId, RequireMap = true,
                 Giver = union, Reporter = union, Count = d.count, RewardGold = d.gold, RewardExp = d.exp, RewardConch = 1,
+                RewardTokenId = VillageTrade.CurrencyFor(d.mapId), RewardToken = VillageTrade.DailyTokens,
                 Lv = FishingAreas.EntryLevel(d.mapId) + (sp?.Rarity ?? 1),
             };
             switch (d.kind)

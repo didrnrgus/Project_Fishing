@@ -33,6 +33,7 @@ namespace Fishing.UI
         public InventoryPanel Inventory { get; private set; }
         public CharacterPanel Character { get; private set; }
         public ExchangePanel Exchange { get; private set; }
+        public VillageTradePanel Trade { get; private set; }
         public AquariumPanel Aquarium { get; private set; }
         public OptionsPanel Options { get; private set; }
         /// <summary>F로 말을 걸 수 있는 가장 가까운 NPC.</summary>
@@ -90,6 +91,7 @@ namespace Fishing.UI
             Inventory = new InventoryPanel(canvas);
             Character = new CharacterPanel(canvas);
             Exchange = new ExchangePanel(canvas);
+            Trade = new VillageTradePanel(canvas);
             Aquarium = new AquariumPanel(canvas);
             Options = new OptionsPanel(canvas);
             Delivery = new DeliveryPanel(canvas);
@@ -106,7 +108,7 @@ namespace Fishing.UI
                     Game.CameraRig.Yaw = 0f;
                 },
                 exitField: EnterLobby);
-            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, QuestTalk, Upgrade,Inventory, Character, Exchange, Aquarium, Options, EscMenu, Traps, ItemBag, Delivery };
+            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, QuestTalk, Upgrade,Inventory, Character, Exchange, Trade, Aquarium, Options, EscMenu, Traps, ItemBag, Delivery };
             LobbyHud.Root.transform.SetAsFirstSibling();
             SysLog = new SystemLogView(canvas);
             Loading = new LoadingScreen(canvas);

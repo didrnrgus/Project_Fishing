@@ -17,7 +17,7 @@ namespace Fishing.Core
     }
 
     /// <summary>
-    /// 빙고 (원작: 25칸 미션 빙고판 — "랜딩으로 낚기 · 수족관에 먹이 주기 · 물고기 방생하기" 같은 미션, 3줄을 채우면 나팔고둥·황금거거).
+    /// 빙고 (원작: 25칸 미션 빙고판 — "랜딩으로 낚기 · 수족관에 먹이 주기 · 물고기 방생하기" 같은 미션, 3줄을 채우면 나팔고둥·황금거거로 바꾸는 보상).
     /// 칸 대부분은 "어느 어종 낚기", 가운데는 빈칸(처음부터 채워짐). 나머지는 방생 · 수족관 먹이 · 콤보 · 길이 · 대물 미션.
     /// 어종은 지금 레벨로 갈 수 있는 낚시터에서 고른다.
     /// 줄(가로·세로·대각선 12줄) 하나마다 소라고동 2 + 1,000골드, 3줄이면 큰 보상을 준다.
@@ -29,15 +29,13 @@ namespace Fishing.Core
 
         public static BingoSave S => Game.Profile.Data.bingo;
 
-        /// <summary>3줄 큰 보상: 첫 판 나팔고둥 릴 → 둘째 판 황금거거 낚싯대 → 그다음은 골드·소라고동.</summary>
-        public static string BigRewardText(BingoSave s)
-        {
-            if (!Game.Profile.Owns(TournamentRules.RewardReelId)) return "나팔고둥 릴";
-            if (!Game.Profile.Owns(GoldGegeId)) return "황금거거 낚싯대";
-            return "10,000골드 · 소라고동 5";
-        }
+        /// <summary>3줄 큰 보상 (원작: 나팔고둥·황금거거로 바꾸는 보상): 마을 교환 재화 + 골드. 해외 거점(Lv.25)부터는 황금거거.</summary>
+        public const int BigNapal = 8, BigGoldGege = 6, BigGold = 5000;
 
-        public const string GoldGegeId = "rod_goldgege";
+        static (string id, int count) BigToken => Game.Profile.Data.level >= FishingAreas.Hubs[1].Level
+            ? (VillageTrade.GoldGegeId, BigGoldGege) : (VillageTrade.NapalId, BigNapal);
+
+        public static string BigRewardText(BingoSave s) => $"{VillageTrade.Name(BigToken.id)} {BigToken.count}개 · {BigGold:N0}골드";
 
         public static void EnsureCard()
         {
@@ -176,9 +174,9 @@ namespace Fishing.Core
                 s.bigPaid = true;
                 s.cardsCleared++;
                 string what = BigRewardText(s);
-                if (!p.Owns(TournamentRules.RewardReelId)) p.Data.ownedGear.Add(TournamentRules.RewardReelId);
-                else if (!p.Owns(GoldGegeId)) p.Data.ownedGear.Add(GoldGegeId);
-                else { p.AddGold(10000); p.AddItem(AchievementDatabase.ConchId, 5); }
+                var (token, count) = BigToken;
+                p.AddItem(token, count);
+                p.AddGold(BigGold);
                 Game.Toast($"빙고 {LinesForBig}줄 달성! 보상: {what}. 퀘스트 창 [빙고]에서 새 빙고판을 받을 수 있습니다.", ToastKind.Great);
                 p.Log($"빙고 {LinesForBig}줄 달성 — {what}");
             }

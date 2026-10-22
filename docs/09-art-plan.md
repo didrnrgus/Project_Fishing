@@ -421,7 +421,7 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --only carp --preview   # �
 | 항목 | 결과 |
 |---|---|
 | 스크립트 | `tools/blender/build_icons.py`: 아이템 Id마다 모델 함수 하나 (`model_rod`, `model_reel`, `model_worm` …), 공통 3/4 시점 정사영 카메라 + 왼쪽 위 주광 + 테두리 빛, 물체 크기에 맞춰 자동으로 칸을 채운다 |
-| 아이콘 | `Resources/Icons/Items/<Id>.png` 37종 (낚싯대 6 · 릴 4 · 줄 3 · 배 4 · 미끼 11 · 해체 미끼 5 · 김밥 · 재료 3), 대회 보상 장비(거거 낚시대·나팔고둥 릴)·플라이대·에기·플라이·돛단배·크루저 포함 |
+| 아이콘 | `Resources/Icons/Items/<Id>.png` 37종 (낚싯대 6 · 릴 4 · 줄 3 · 배 4 · 미끼 11 · 해체 미끼 5 · 김밥 · 재료 3), 대회 보상 장비(거거 낚시대·나팔고둥 릴)·플라이대·에기·플라이·돛단배·크루저 포함. 2026-10-23 마을 장비 29종(색은 `GearDatabase.cs`의 `Trade(...)` 줄을 읽어 C#과 한곳에서 관리)과 교환 재화 2종(나팔고동: 길쭉한 나선 고둥, 황금거거: 금빛 대왕조개 + 청록 외투막) — 시트 `docs/images/72_village_trade_icons.png` |
 | 잡동사니 | `Resources/Icons/Junk/<Id>.png` + `Resources/Junk/<Id>.fbx` 6종 (빈 깡통, 통발, 나무 상자, 생선 캔, 로봇 물고기, 낡은 운동화). 길이 1m 기준 정적 모델, 색은 FBX 머티리얼 그대로. 파이팅·RESULT에 3D로 나온다 |
 | 코드 | `ItemIcons.Get(id)`, `ItemIcons.Place(row, id, x, size)` (그림이 없으면 0을 돌려줘 글자만) |
 | 넣은 곳 | 상점(장비·미끼·김밥), 가방(아이템·배), HUD 미끼 바, 장비 강화(장비 + 비늘·별모래 보유), 소라고동 교환소, RESULT(잡동사니 그림·동그라미 엠블럼 안 어종 아이콘), 도감(물고기 아이콘) |

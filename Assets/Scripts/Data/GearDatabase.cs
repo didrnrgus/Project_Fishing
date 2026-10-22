@@ -28,6 +28,14 @@ namespace Fishing.Data
         public string Desc;
         /// <summary>상점에서 팔지 않는다 (대회 보상 장비).</summary>
         public bool NotSold;
+        /// <summary>
+        /// 마을 교환 장비: 이 낚시터 마을 어부가 나팔고동(한국)·황금거거(해외)를 받고 내준다 (<see cref="VillageTrade"/>).
+        /// 상점에서 안 파는 대신 같은 레벨 상점 장비보다 능력치가 좋다.
+        /// </summary>
+        public string TradeMap;
+        public int TradeCost;
+        /// <summary>낚싯대 블랭크·릴 몸통 / 링·테 색 (#rrggbb). 따로 정한 모양이 없는 장비만 쓴다 (TelescopicRod, build_icons.py와 같은 색).</summary>
+        public string LookMain, LookAccent;
 
         // 낚싯대
         public float Power = 1f;      // 데미지 배율
@@ -129,9 +137,6 @@ namespace Fishing.Data
             new GearDef { Id = "rod_gangbaram", Name = "강바람 낚시대", Slot = GearSlot.Rod, Price = 0, Level = 5, NotSold = true,
                 Power = 1.25f, Flex = 0.65f, CastRange = 21f, Desc = "Lv.5 달성 보상. 강바람에도 흔들리지 않는 중경질대. 카본대보다 장력이 덜 튄다." },
 
-            // 빙고 3줄 보상 (원작: 빙고 보상 「황금거거」)
-            new GearDef { Id = "rod_goldgege", Name = "황금거거 낚싯대", Slot = GearSlot.Rod, Price = 0, Level = 10, NotSold = true,
-                Power = 2.0f, Flex = 0.62f, CastRange = 29f, Desc = "빙고 3줄 보상. 거거 낚시대를 금빛으로 다시 칠하고 블랭크를 보강했다." },
             // 괴물 어종 대물 코인으로 바꾸는 이벤트 채비 (원작: 이벤트 코인 → 풍림화산 채비)
             new GearDef { Id = "rod_pungrim", Name = "풍림화산 낚싯대", Slot = GearSlot.Rod, Price = 0, Level = 12, NotSold = true,
                 Power = 2.3f, Flex = 0.55f, CastRange = 31f, Desc = "대물 코인 교환품. 검은 옻칠에 붉은 띠와 금박 — 바람처럼 빠르고 산처럼 버틴다." },
@@ -146,9 +151,6 @@ namespace Fishing.Data
                 ReelSpeed = 5.5f, Capacity = 120f, Desc = "빠르게 거리를 좁힌다." },
             new GearDef { Id = "reel_jigging", Name = "대형 지깅 릴", Slot = GearSlot.Reel, Price = 70000, Level = 25,
                 ReelSpeed = 6.2f, Capacity = 200f, Desc = "참다랑어·GT용 대형 릴. 권사량 200m, 드랙이 묵직하다." },
-            // 원작 대회 보상 「나팔고둥」 (나팔고둥 껍데기 같은 무늬의 릴)
-            new GearDef { Id = "reel_napal", Name = "나팔고둥 릴", Slot = GearSlot.Reel, Price = 0, Level = 10, NotSold = true,
-                ReelSpeed = 5.0f, Capacity = 140f, Desc = "조합 낚시 대회 입상 상품. 권사량이 넉넉하고 드랙이 부드럽다." },
 
             new GearDef { Id = "reel_pungrim", Name = "풍림화산 릴", Slot = GearSlot.Reel, Price = 0, Level = 12, NotSold = true,
                 ReelSpeed = 6.0f, Capacity = 160f, Desc = "대물 코인 교환품. 옻칠한 검은 몸통에 붉은 핸들 — 괴물 어종도 끌어낸다." },
@@ -177,7 +179,77 @@ namespace Fishing.Data
             new GearDef { Id = "boat_cruiser", Name = "낚시 크루저", Slot = GearSlot.Boat, Price = 60000, Level = 14,
                 BoatSpeed = 11f, FuelCapacity = 80f, FuelPerKm = 25f, Stability = 0.9f,
                 Desc = "선장과 동행 꾼이 함께 타는 큰 낚싯배 (원작: 최대 10명 승선). 파도에도 거의 흔들리지 않아 먼바다 대물 포인트까지 간다." },
+
+            // ---- 마을 교환 장비 (원작: 상점 골드로는 못 사고 마을 NPC에게 한국은 나팔고동, 해외는 황금거거로 바꾼다) ----
+            // 낚시터마다 하나씩, 레벨 = 그 낚시터 입장 레벨. 같은 레벨 상점 장비보다 능력치가 한 단계 좋다 (VillageTrade).
+            Trade("line_hangang", "한강 합사 3호", GearSlot.Line, 3, "hangang", 3, "#3a8fd0", "#2a3440",
+                "한강 둔치 터줏대감이 쓰는 파란 합사. 카본 3호보다 질기다.", strength: 1.4f),
+            Trade("rod_dalaengi", "다랭이 갯바위대", GearSlot.Rod, 5, "honghyeon", 5, "#3d6b3a", "#d9c27a",
+                "다랭이마을 어부가 계단 논 색으로 칠한 갯바위대. 중경조라 감성돔 처박기를 부드럽게 받는다.", power: 1.5f, flex: 0.55f, range: 23f),
+            Trade("reel_hongwon", "홍원항 선상 릴", GearSlot.Reel, 6, "seocheon", 5, "#e8e8e8", "#c8302a",
+                "홍원항 흰 등대·빨간 등대 색 릴. 주꾸미배 선장들이 쓰는 튼튼한 물건.", speed: 4.7f, capacity: 100f),
+            Trade("line_haemu", "해무 PE 3호", GearSlot.Line, 9, "yeongheung", 6, "#c8d4dc", "#2a3440",
+                "해무 낀 날에도 잘 보이는 은회색 합사. PE 4호보다 가늘고 질기다.", strength: 1.85f),
+            Trade("reel_napal", "나팔고동 릴", GearSlot.Reel, 11, "taean", 8, null, null,
+                "나팔고동 껍데기 무늬를 새긴 태안 어부의 릴. 권사량이 넉넉하고 드랙이 부드럽다.", speed: 5.8f, capacity: 150f),
+            Trade("rod_chotdae", "촛대바위 원투대", GearSlot.Rod, 14, "samcheok", 10, "#1f3f6e", "#e0e4ea",
+                "추암 촛대바위처럼 곧고 단단한 쪽빛 원투대. 깊은 동해 바닥까지 멀리 던진다.", power: 2.15f, flex: 0.45f, range: 33f),
+            Trade("line_deungdae", "등대지기 PE 5호", GearSlot.Line, 16, "deungdae", 10, "#f0f0f0", "#d02828",
+                "등대섬 이장님이 등대 색으로 물들인 흰·빨간 합사.", strength: 2.05f),
+            Trade("reel_bucheae", "바다부채 릴", GearSlot.Reel, 18, "heonhwa", 12, "#2a7a8c", "#d86a9a",
+                "바다부채길 물빛 몸통에 절벽 진달래색 테. 대문어도 바닥에서 떼어 낸다.", speed: 6.3f, capacity: 175f),
+            Trade("rod_yokji", "욕지 참돔 연질대", GearSlot.Rod, 19, "yokji", 14, "#d8706a", "#e8d8a0",
+                "참돔 빛깔의 연질대. 낭창하게 휘어 가두리 참돔의 질주를 받아 낸다.", power: 2.3f, flex: 0.72f, range: 30f),
+            Trade("reel_halla", "한라 지깅 릴", GearSlot.Reel, 21, "jeju", 16, "#2a2a2c", "#e8a030",
+                "현무암처럼 검은 몸통에 귤빛 테. 권사량 200m로 먼바다 다금바리도 끝까지 버틴다.", speed: 6.5f, capacity: 200f),
+            Trade("line_myeongtae", "명태잡이 합사 6호", GearSlot.Line, 22, "cheongjin", 16, "#e8eef4", "#4a6a8a",
+                "청진 어로반장이 겨울 명태잡이에 쓰던 눈빛 합사. 얼어도 굳지 않는다.", strength: 2.25f),
+            Trade("rod_baekdo", "백도 대물 갯바위대", GearSlot.Rod, 24, "geomun", 20, "#f2f0ea", "#1a4c8c",
+                "백도 바위처럼 흰 블랭크에 쪽빛 링. 거문도 대물꾼들이 돗돔을 노리는 갯바위대.", power: 2.35f, flex: 0.55f, range: 34f),
+
+            Trade("rod_halong", "하롱 정크 루어대", GearSlot.Rod, 25, "halong", 5, "#2f8f7f", "#b04a2a",
+                "에메랄드빛 블랭크에 정크선 돛 색 링. 석회암 봉우리 사이로 무거운 루어를 날린다.", power: 2.45f, flex: 0.4f, range: 35f),
+            Trade("line_tonlesap", "톤레삽 PE 8호", GearSlot.Line, 26, "angkor", 5, "#8a7a4a", "#c09040",
+                "사원 돌이끼 색 합사. 메콩 대형 메기의 이빨에도 잘 안 쓸린다.", strength: 2.3f),
+            Trade("reel_honche", "혼째 지깅 릴", GearSlot.Reel, 27, "vinpearl", 6, "#f0e0b0", "#2aa0c0",
+                "나트랑 모래빛 몸통에 바다색 테. 코비아·만새기를 빠르게 끌어올린다.", speed: 6.7f, capacity: 220f),
+            Trade("reel_caldera", "칼데라 딥 릴", GearSlot.Reel, 28, "santorini", 7, "#f4f4f4", "#1f5fbf",
+                "하얀 집과 파란 돔 색 심해 릴. 권사량 250m로 칼데라 깊은 바닥까지 닿는다.", speed: 6.8f, capacity: 250f),
+            Trade("rod_mekong", "메콩 메기 원투대", GearSlot.Rod, 28, "donkhone", 7, "#6a4a2a", "#c8a050",
+                "수상 가옥 티크 나무 색 연질 원투대. 여울의 대형 메기를 지치게 만든다.", power: 2.5f, flex: 0.7f, range: 32f),
+            Trade("rod_goldgege", "황금거거 낚싯대", GearSlot.Rod, 30, "phuket", 9, null, null,
+                "황금거거 껍데기처럼 금빛으로 칠한 거거 낚시대의 윗급. 손맛과 힘을 모두 잡았다.", power: 2.6f, flex: 0.6f, range: 35f),
+            Trade("line_chania", "하니아 PE 10호", GearSlot.Line, 30, "crete", 8, "#e8a87a", "#3a6a8a",
+                "베네치아 항구 파스텔 집 색 합사. 덴텍스·그루퍼가 바위로 처박아도 버틴다.", strength: 2.4f),
+            Trade("reel_chao", "짜오프라야 릴", GearSlot.Reel, 31, "bangkok", 9, "#c8a030", "#c03030",
+                "사원 금박 몸통에 붉은 테. 피라루쿠의 힘을 감아 이긴다.", speed: 7.0f, capacity: 240f),
+            Trade("line_nile", "나일 쇼크리더 합사", GearSlot.Line, 31, "nile", 9, "#c8a873", "#26808c",
+                "타이거피시 송곳니를 견디는 모래색 합사에 굵은 목줄을 달았다.", strength: 2.45f),
+            Trade("rod_samui", "사무이 금불 루어대", GearSlot.Rod, 32, "kohsamui", 10, "#e0b040", "#f0f0f0",
+                "바다 위 황금 대불 색 루어대. 와후의 질주에도 줄을 먼저 내주지 않는다.", power: 2.65f, flex: 0.45f, range: 36f),
+            Trade("reel_langkawi", "랑카위 독수리 릴", GearSlot.Reel, 33, "langkawi", 11, "#7a3a1a", "#f0f0f0",
+                "붉은 독수리 상 색 릴. 맹그로브 물길에서 GT를 단숨에 끌어낸다.", speed: 7.1f, capacity: 260f),
+            Trade("rod_navagio", "나바지오 참치대", GearSlot.Rod, 33, "zakynthos", 12, "#3ab0c8", "#f4f0e0",
+                "난파선 해변 물빛 경질대. 참다랑어·황새치를 힘으로 들어 올린다.", power: 2.7f, flex: 0.35f, range: 38f),
+            Trade("line_merlion", "머라이언 PE 12호", GearSlot.Line, 35, "sentosa", 12, "#f0f0f0", "#d03030",
+                "센토사 머라이언처럼 흰 몸에 빨간 표시 합사.", strength: 2.55f),
+            Trade("reel_telok", "텔록 바텍 노을 릴", GearSlot.Reel, 36, "telokbatek", 14, "#e86a2a", "#6a2a7a",
+                "어촌의 금빛 노을 색 릴. 권사량 280m.", speed: 7.3f, capacity: 280f),
+            Trade("rod_duden", "듀덴 폭포 연질대", GearSlot.Rod, 36, "duden", 14, "#5aa0c8", "#e8e8e8",
+                "폭포 물보라 색 연질대. 낭창하게 휘면서도 힘이 세다.", power: 2.8f, flex: 0.7f, range: 35f),
+            Trade("line_tioman", "티오만 용뿔 합사", GearSlot.Line, 37, "tioman", 15, "#8a5ac8", "#2a8a4a",
+                "용의 뿔 봉우리 아래 리조트 어부의 보랏빛 합사.", strength: 2.65f),
+            Trade("rod_tenggol", "탱글 산호 대물대", GearSlot.Rod, 39, "tenggol", 18, "#e86a6a", "#f0d070",
+                "산호빛 블랭크에 금빛 링. 도그투스 참치를 위한 마지막 낚싯대.", power: 2.95f, flex: 0.55f, range: 39f),
         };
+
+        static GearDef Trade(string id, string name, GearSlot slot, int level, string map, int cost, string main, string accent, string desc,
+            float power = 1f, float flex = 0.5f, float range = 18f, float speed = 3f, float capacity = 60f, float strength = 1f) =>
+            new GearDef
+            {
+                Id = id, Name = name, Slot = slot, Level = level, NotSold = true, TradeMap = map, TradeCost = cost, LookMain = main, LookAccent = accent,
+                Desc = desc, Power = power, Flex = flex, CastRange = range, ReelSpeed = speed, Capacity = capacity, Strength = strength,
+            };
 
         public static readonly List<BaitDef> Baits = new List<BaitDef>
         {

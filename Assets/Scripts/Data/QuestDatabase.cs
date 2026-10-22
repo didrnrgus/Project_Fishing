@@ -58,6 +58,9 @@ namespace Fishing.Data
         public string RewardCostume;
         /// <summary>일일반복 보상 소라고동.</summary>
         public int RewardConch;
+        /// <summary>일일반복 보상 교환 재화 (그 낚시터가 한국이면 나팔고동, 해외면 황금거거, <see cref="VillageTrade"/>).</summary>
+        public string RewardTokenId;
+        public int RewardToken;
         /// <summary>일일반복: SaveData.daily 몇 번째인지.</summary>
         public int DailyIndex = -1;
 
@@ -129,6 +132,7 @@ namespace Fishing.Data
                 var costume = CostumeDatabase.Get(RewardCostume);
                 if (costume != null) parts.Add(costume.Name);
                 if (RewardConch > 0) parts.Add($"소라고동\nx{RewardConch}");
+                if (RewardToken > 0) parts.Add($"{VillageTrade.Name(RewardTokenId)}\nx{RewardToken}");
                 return parts;
             }
         }
@@ -146,6 +150,7 @@ namespace Fishing.Data
                 var costume = CostumeDatabase.Get(RewardCostume);
                 if (costume != null) parts.Add(costume.Name);
                 if (RewardConch > 0) parts.Add($"소라고동 {RewardConch}개");
+                if (RewardToken > 0) parts.Add($"{VillageTrade.Name(RewardTokenId)} {RewardToken}개");
                 return string.Join(", ", parts);
             }
         }

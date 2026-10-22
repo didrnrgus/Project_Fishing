@@ -37,7 +37,7 @@ namespace Fishing.Data
     /// 낚시 대회 규칙 (순수 C#, 시뮬레이션·테스트 가능).
     /// 원작(게임메카 2012-08 「대회 시스템」): NPC를 통해 참가, 하루~이틀마다 정해진 시간,
     /// 미션(가장 많이 · 가장 길게 · 길이 합계) 포인트 합산으로 순위, 참가만 해도 포인트, 누적 포인트로 계급 엠블럼,
-    /// 1~3위 보상 「거거 낚시대」·「나팔고둥」.
+    /// 1~3위 보상 「거거 낚시대」·「나팔고둥」 → 1위 거거 낚시대, 1~3위 나팔고동 (<see cref="VillageTrade.TournamentTokens"/>, 마을 어부 교환 재화).
     /// 솔로판에서는 AI 낚시꾼 7명과 겨룬다. 날마다 한강 → 서천 앞바다 → 홍현 앞바다 순서로 열린다.
     /// </summary>
     public static class TournamentRules
@@ -55,7 +55,6 @@ namespace Fishing.Data
         public const int AiCount = 7;
 
         public const string RewardRodId = "rod_gege";
-        public const string RewardReelId = "reel_napal";
 
         /// <summary>미션 순위별 점수 (1~4위, 5위 이하는 한 마리라도 낚았으면 1점).</summary>
         static readonly int[] MissionPoints = { 10, 6, 4, 2 };

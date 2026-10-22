@@ -307,7 +307,43 @@ def model_reel(iid):
     return [o], 'item'
 
 
+def _trade_gear():
+    """마을 교환 장비 색·수치를 GearDatabase.cs의 Trade(...) 줄에서 읽는다 (C#과 한곳에서 관리)."""
+    import re
+    src = open(os.path.join(ROOT, 'Assets', 'Scripts', 'Data', 'GearDatabase.cs'), encoding='utf-8').read()
+    out = {}
+    pat = re.compile(r'Trade\("(\w+)", "[^"]*", GearSlot\.(\w+), \d+, "\w+", \d+, (null|"#\w+"), (null|"#\w+"),\s*"[^"]*",([^)]*)\)')
+    for m in pat.finditer(src):
+        iid, slot, main, accent, rest = m.groups()
+        if main == 'null':
+            continue    # 따로 모양을 정한 장비 (나팔고동 릴·황금거거 낚싯대)
+        kw = dict(re.findall(r'(\w+): ([\d.]+)f', rest))
+        out[iid] = (slot, main.strip('"'), accent.strip('"'), {k: float(v) for k, v in kw.items()})
+    return out
+
+
+def _mix(a, b, t):
+    a, b = a.lstrip('#'), b.lstrip('#')
+    return '#' + ''.join(f'{round(int(a[i:i + 2], 16) * (1 - t) + int(b[i:i + 2], 16) * t):02x}' for i in (0, 2, 4))
+
+
+TRADE = _trade_gear()
+LINE_STYLE = {}
+for _id, (_slot, _main, _accent, _kw) in TRADE.items():
+    if _slot == 'Rod':      # TelescopicRod.StyleFor 기본 갈래와 같은 규칙: 경조면 굵은 4마디
+        stiff = _kw.get('flex', 0.5) <= 0.45
+        ROD_STYLE[_id] = (_main, _accent, '#1f1a17', 4 if stiff else 5, 'heavy' if stiff else 'ring')
+    elif _slot == 'Reel':   # TelescopicRod.BuildReel 기본 갈래와 같은 규칙: 권사량이 클수록 크고, 200m부터 더블 핸들
+        cap = _kw.get('capacity', 60)
+        size = 1.05 + 0.35 * min(1.0, max(0.0, (cap - 80) / 220))
+        REEL_STYLE[_id] = (_main, _accent, _mix(_accent, '#ccd1db', 0.5), size, cap >= 200)
+    elif _slot == 'Line':
+        LINE_STYLE[_id] = (_main, _accent)
+
+
 def model_line(iid):
+    if iid in LINE_STYLE:
+        return model_trade_line(iid)
     objs = []
     mspool = mat('#2a3440', 0.4) if iid != 'line_pe' else mat('#1c1c22', 0.4)
     objs.append(cyl(0.11, 0.11, 0.018, mspool, loc=(0, 0, 0.0)))
@@ -324,6 +360,24 @@ def model_line(iid):
     # 풀린 줄 끝
     objs.append(tube([(0.09, 0.0, 0.08), (0.14, -0.04, 0.1), (0.18, -0.02, 0.16), (0.2, 0.03, 0.2)], 0.0025,
                      mat('#f0f0f0', 0.3) if iid != 'line_pe' else mat('#e8402a', 0.6)))
+    o = join(objs, 'Line')
+    o.rotation_euler = (math.radians(20), 0, 0)
+    return [o], 'item'
+
+
+def model_trade_line(iid):
+    """마을 교환 원줄: 테 색 스풀에 원줄 색 합사, 사이사이 테 색 띠 (PE 합사 표시)."""
+    main, accent = LINE_STYLE[iid]
+    objs = []
+    mspool = mat(_mix(accent, '#101418', 0.35), 0.35, metal=0.3)
+    objs.append(cyl(0.11, 0.11, 0.018, mspool, loc=(0, 0, 0.0)))
+    objs.append(cyl(0.11, 0.11, 0.018, mspool, loc=(0, 0, 0.12)))
+    objs.append(cyl(0.03, 0.03, 0.14, mat('#e0e0e0', 0.3, metal=0.5), loc=(0, 0, 0.06)))
+    mline, mband = mat(main, 0.55), mat(accent, 0.55)
+    n = 7
+    for i in range(n):
+        objs.append(cyl(0.09, 0.09, 0.1 / n, mband if i % 3 == 1 else mline, loc=(0, 0, 0.012 + 0.1 * (i + 0.5) / n), seg=40))
+    objs.append(tube([(0.09, 0.0, 0.08), (0.14, -0.04, 0.1), (0.18, -0.02, 0.16), (0.2, 0.03, 0.2)], 0.0025, mline))
     o = join(objs, 'Line')
     o.rotation_euler = (math.radians(20), 0, 0)
     return [o], 'item'
@@ -834,6 +888,79 @@ def model_conch(iid):
     return [o], 'item'
 
 
+def model_napal(iid):
+    """나팔고동 (나팔고둥): 소라와 같은 나선 관이지만 탑이 높고 길쭉하다. 크림색 바탕에 갈색 초승달 무늬, 주황빛 입구."""
+    bm = bmesh.new()
+    turns, n, sides = 6.0, 320, 40
+    k = math.log(1.75) / (2 * math.pi)       # 한 바퀴에 1.75배 (소라보다 천천히 커져서 탑이 길다)
+    tmax = turns * 2 * math.pi
+    rings, ths = [], []
+    for i in range(n):
+        th = tmax * i / (n - 1)
+        r = math.exp(k * (th - tmax))
+        c = V((math.cos(th) * r * 0.8, math.sin(th) * r * 0.8, -2.4 * r))
+        rr = 0.62 * r
+        flare = 1.0 + 0.4 * max(0.0, (th - (tmax - 0.8)) / 0.8) ** 2   # 입구 쪽 입술이 벌어진다
+        out, up = V((math.cos(th), math.sin(th), 0)), V((0, 0, 1))
+        ring = []
+        for q in range(sides):
+            ph = 2 * math.pi * q / sides
+            ex = 1.0 + 0.05 * math.cos(ph * 7)                         # 나선을 따라 도는 굵은 줄(나륵)
+            ring.append(bm.verts.new(c + (out * math.cos(ph) * flare + up * math.sin(ph) * 1.35) * rr * ex))
+        rings.append(ring)
+        ths.append(th)
+    for i in range(n - 1):
+        for q in range(sides):
+            f = bm.faces.new((rings[i][q], rings[i][(q + 1) % sides], rings[i + 1][(q + 1) % sides], rings[i + 1][q]))
+            ph = 2 * math.pi * q / sides
+            f.material_index = 1 if math.sin(ths[i] * 2.5 + 1.4 * math.sin(ph)) > 0.45 else 0
+    o = obj_from_bm(bm, 'Napal', mat('#efe2c4', 0.35, coat=0.6))
+    o.data.materials.append(mat('#8a4a22', 0.4, coat=0.6))
+    end = V((math.cos(tmax) * 0.8, math.sin(tmax) * 0.8, -2.4))
+    lip = sphere(0.5, mat('#f2a46a', 0.15, coat=1.0, film=300), loc=end + V((0.35, 0.0, 0.0)), scale=(0.3, 0.75, 1.15))
+    o = join([o, lip], 'Napal')
+    o.scale = (0.1, 0.1, 0.1)
+    o.rotation_euler = (math.radians(70), 0, math.radians(135))   # 탑(+z)이 화면을 가로질러 오른쪽 위로 눕게
+    return [o], 'item'
+
+
+def model_goldgege(iid):
+    """황금거거: 금빛 대왕조개(거거) 한 쌍. 부채꼴 껍데기에 굵은 주름 다섯 줄, 벌어진 틈으로 청록 외투막."""
+    gold = mat('#e8b838', 0.22, metal=1.0)
+
+    def valve(sign):
+        bm = bmesh.new()
+        na, ns = 120, 24
+        grid = []
+        for i in range(na + 1):
+            a = math.pi * (0.06 + 0.88 * i / na)
+            row = []
+            for j in range(ns + 1):
+                s = 0.03 + 0.97 * j / ns
+                fold = math.cos(10 * (a - math.pi * 0.06) / 0.88)       # 굵은 주름 다섯 줄
+                x = math.cos(a) * s * 1.0
+                y = math.sin(a) * s * 0.8
+                dome = 0.42 * math.sin(math.pi * 0.5 * s) * math.sin(a) ** 0.6
+                z = (dome + 0.13 * s ** 1.3 * fold) * sign                # 가장자리로 갈수록 주름이 깊어져 입이 물결친다
+                row.append(bm.verts.new((x, y, z)))
+            grid.append(row)
+        for i in range(na):
+            for j in range(ns):
+                f = bm.faces.new((grid[i][j], grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]))
+                if sign < 0:
+                    f.normal_flip()
+        bmesh.ops.solidify(bm, geom=list(bm.faces), thickness=0.045)
+        return obj_from_bm(bm, 'Valve', gold)
+
+    top, bot = valve(1), valve(-1)
+    top.rotation_euler = (math.radians(14), 0, 0)     # 경첩(x축)을 축으로 위 껍데기가 살짝 벌어진다
+    mantle = sphere(0.5, mat('#1f8f9a', 0.3, coat=0.8, film=250), loc=(0, 0.42, 0.04), scale=(1.6, 0.62, 0.1),
+                    rot=(math.radians(7), 0, 0))
+    o = join([top, bot, mantle], 'GoldGege')
+    o.rotation_euler = (math.radians(55), 0, math.radians(25))    # 경첩이 뒤, 불룩한 위 껍데기와 물결 입이 보이게
+    return [o], 'item'
+
+
 # =====================================================================
 #  잡동사니 (아이콘 + FBX)
 # =====================================================================
@@ -1184,7 +1311,10 @@ ITEMS = {
     'food_coffee': model_coffee, 'food_dosirak': model_dosirak,
     'acc_cottongloves': model_gloves,
     'mat_scale': model_scale, 'mat_starsand': model_starsand, 'mat_conch': model_conch,
+    'mat_napal': model_napal, 'mat_goldgege': model_goldgege,
 }
+# 마을 교환 장비 (GearDatabase.cs Trade 줄)
+ITEMS.update({iid: {'Rod': model_rod, 'Reel': model_reel, 'Line': model_line}[slot] for iid, (slot, *_r) in TRADE.items()})
 
 JUNK = {'can': model_can, 'trap': model_trap, 'box': model_box, 'fishcan': model_fishcan, 'robotfish': model_robotfish, 'shoe': model_shoe}
 

@@ -26,7 +26,7 @@ static class FightSim
         ("중급", "rod_carbon", "reel_power", "line_carbon", 0, 0f, 0f),
         ("상급", "rod_bamboo", "reel_power", "line_pe", 0, 0f, 0f),
         ("대물", "rod_heavy", "reel_hispeed", "line_pe", 0, 0f, 0f),
-        ("대회", "rod_gege", "reel_napal", "line_pe", 0, 0f, 0f),
+        ("대회", "rod_gege", "reel_hispeed", "line_pe", 0, 0f, 0f),
         ("대물+10·의상", "rod_heavy", "reel_hispeed", "line_pe", 10, 0.12f, 0.13f),
         ("대물+15·의상", "rod_heavy", "reel_hispeed", "line_pe", 15, 0.12f, 0.13f),
     };

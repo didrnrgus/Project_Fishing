@@ -66,9 +66,23 @@ namespace Fishing.Angling
                     return new Style { Blank = new Color(0.16f, 0.48f, 0.7f), Ferrule = new Color(0.82f, 0.84f, 0.88f), Grip = new Color(0.1f, 0.1f, 0.11f),
                         Length = 3.1f, Sections = 4, ButtDiameter = 0.032f, TipDiameter = 0.006f, Flex = rod.Flex };
                 default:
+                    // 마을 교환 장비: 데이터에 적힌 색 (블랭크 · 링), 경조일수록 굵고 짧게
+                    if (rod != null && Hex(rod.LookMain, out var main))
+                    {
+                        Hex(rod.LookAccent, out var ring);
+                        bool stiff = rod.Flex <= 0.45f;
+                        return new Style { Blank = main, Ferrule = ring, Grip = new Color(0.12f, 0.1f, 0.09f),
+                            Length = stiff ? 3.2f : 3.4f, Sections = stiff ? 4 : 5, ButtDiameter = stiff ? 0.04f : 0.034f, TipDiameter = stiff ? 0.009f : 0.006f, Flex = rod.Flex };
+                    }
                     return new Style { Blank = new Color(0.75f, 0.13f, 0.2f), Ferrule = new Color(0.8f, 0.8f, 0.84f), Grip = new Color(0.13f, 0.13f, 0.13f),
                         Length = 3.0f, Sections = 4, ButtDiameter = 0.032f, TipDiameter = 0.006f, Flex = rod?.Flex ?? 0.8f };
             }
+        }
+
+        static bool Hex(string html, out Color c)
+        {
+            c = new Color(0.8f, 0.8f, 0.84f);
+            return !string.IsNullOrEmpty(html) && ColorUtility.TryParseHtmlString(html, out c);
         }
 
         const int JointsPerSection = 4;
@@ -219,6 +233,16 @@ namespace Fishing.Angling
                     // Lv.4 보상: 빨간 몸통에 은색 테
                     body = new Color(0.78f, 0.12f, 0.16f); accent = new Color(0.9f, 0.9f, 0.93f); spoolCol = new Color(0.7f, 0.72f, 0.76f); size = 1.05f; break;
                 default:
+                    var g = GearDatabase.GetGear(reelId);
+                    if (g != null && Hex(g.LookMain, out body))
+                    {
+                        // 마을 교환 릴: 데이터에 적힌 몸통·테 색, 권사량이 클수록 크다
+                        Hex(g.LookAccent, out accent);
+                        spoolCol = Color.Lerp(accent, new Color(0.8f, 0.82f, 0.86f), 0.5f);
+                        size = Mathf.Lerp(1.05f, 1.4f, Mathf.InverseLerp(80f, 300f, g.Capacity));
+                        doubleKnob = g.Capacity >= 200f;
+                        break;
+                    }
                     body = new Color(0.7f, 0.71f, 0.74f); accent = new Color(0.2f, 0.2f, 0.22f); spoolCol = new Color(0.62f, 0.63f, 0.66f); size = 1f; break;
             }
             var bodyMat = Mats.Lit(body, 0.75f, 0.7f);
