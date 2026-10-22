@@ -617,12 +617,13 @@ namespace Fishing.World
         /// </summary>
         void BuildKenneyCity(Transform city)
         {
-            var aptTex = HanRiverLandmarks.Facade(4, 6, new Color(0.82f, 0.88f, 0.92f), new Color(0.6f, 0.66f, 0.72f), new Color(1f, 1f, 0.98f), 0.4f, 0.1f, 1101, out var aptNight, 0.42f);
+            const int tiles = HanRiverLandmarks.NightTiles;
+            var aptTex = HanRiverLandmarks.Facade(4, 6, new Color(0.82f, 0.88f, 0.92f), new Color(0.6f, 0.66f, 0.72f), new Color(1f, 1f, 0.98f), 0.4f, 0.1f, 1101, out var aptNight, 0.36f, tiles);
             var aptMats = new[]
             {
-                HanRiverLandmarks.Mat(Color.white, aptTex, aptNight, new Color(1f, 0.85f, 0.6f) * 0.9f, 0.25f, 0f, Vector2.one),
-                HanRiverLandmarks.Mat(new Color(0.96f, 0.93f, 0.86f), aptTex, aptNight, new Color(1f, 0.85f, 0.6f) * 0.9f, 0.25f, 0f, Vector2.one),
-                HanRiverLandmarks.Mat(new Color(0.9f, 0.92f, 0.95f), aptTex, aptNight, new Color(1f, 0.85f, 0.6f) * 0.9f, 0.25f, 0f, Vector2.one),
+                HanRiverLandmarks.Mat(Color.white, aptTex, aptNight, new Color(1f, 0.85f, 0.6f) * 0.9f, 0.25f, 0f, Vector2.one, tiles),
+                HanRiverLandmarks.Mat(new Color(0.96f, 0.93f, 0.86f), aptTex, aptNight, new Color(1f, 0.85f, 0.6f) * 0.9f, 0.25f, 0f, Vector2.one, tiles),
+                HanRiverLandmarks.Mat(new Color(0.9f, 0.92f, 0.95f), aptTex, aptNight, new Color(1f, 0.85f, 0.6f) * 0.9f, 0.25f, 0f, Vector2.one, tiles),
             };
             var roofBox = Mats.Lit(new Color(0.82f, 0.82f, 0.8f), 0.2f);
             int dong = 101;
@@ -635,7 +636,7 @@ namespace Fishing.World
                 var pos = new Vector3(x + (row == 1 ? 20f : 0f), HanRiverMap.LandY + h * 0.5f, z);
                 var go = Mats.Prim(PrimitiveType.Cube, "Apartment", city, pos, new Vector3(w, h, d), aptMats[_rng.Next(aptMats.Length)], false, Quaternion.Euler(0f, R(-4f, 4f), 0f));
                 var mf = go.GetComponent<MeshFilter>();
-                mf.sharedMesh = HanRiverLandmarks.TiledCube(mf.sharedMesh, w, h, d);
+                mf.sharedMesh = HanRiverLandmarks.TiledCube(mf.sharedMesh, w, h, d, dong * 7);
                 go.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 // 옥상 물탱크실·계단실
                 Mats.Prim(PrimitiveType.Cube, "RoofBox", city, pos + new Vector3(R(-w * 0.3f, w * 0.3f), h * 0.5f + 2f, 0f), new Vector3(6f, 4f, 6f), roofBox, false);

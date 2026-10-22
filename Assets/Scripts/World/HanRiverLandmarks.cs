@@ -42,12 +42,13 @@ namespace Fishing.World
 
         // ---------- 재질 ----------
 
-        internal static Material Mat(Color color, Texture2D tex, Texture2D night, Color nightColor, float smooth, float metal, Vector2 tiling)
+        internal static Material Mat(Color color, Texture2D tex, Texture2D night, Color nightColor, float smooth, float metal, Vector2 tiling, int nightTiles = 1)
         {
             var shader = Shader.Find("Fishing/Landmark") ?? Shader.Find("Standard");
             var m = new Material(shader) { color = color };
             if (tex != null) { m.mainTexture = tex; m.mainTextureScale = tiling; }
             if (night != null) m.SetTexture("_EmissionMap", night);
+            m.SetFloat("_NightTiles", nightTiles);
             m.SetColor("_EmissionColor", nightColor);
             m.SetFloat("_Glossiness", smooth);
             m.SetFloat("_Metallic", metal);
@@ -59,22 +60,14 @@ namespace Fishing.World
 
         /// <summary>
         /// 커튼월 한 장 = floors층 × bays칸. 유리(하늘이 비친 세로 그러데이션) + 층마다 흰/금 스팬드럴 띠 + 세로 멀리언.
-        /// night: 창마다 켜짐·꺼짐(따뜻한 빛, 사무실 형광등빛 섞어서).
+        /// night: 창마다 켜짐·꺼짐(따뜻한 빛, 사무실 형광등빛 섞어서). nightTiles > 1이면 낮 한 장의 nightTiles × nightTiles배를 덮는
+        /// 아틀라스로 만들어(재질에도 같은 값, Mat(nightTiles)) 건물이 커도 불빛 배치가 되풀이되지 않는다.
         /// </summary>
-        internal static Texture2D Facade(int floors, int bays, Color glassTop, Color glassBottom, Color frame, float bandFrac, float mullionFrac, int seed, out Texture2D night, float litChance)
+        internal static Texture2D Facade(int floors, int bays, Color glassTop, Color glassBottom, Color frame, float bandFrac, float mullionFrac, int seed, out Texture2D night, float litChance, int nightTiles = 1)
         {
             const int W = 256, H = 256;
             var tex = new Texture2D(W, H, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Repeat, anisoLevel = 4 };
-            night = new Texture2D(W, H, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Repeat };
             var px = new Color[W * H];
-            var npx = new Color[W * H];
-            var rng = new System.Random(seed);
-            var lit = new float[floors * bays];
-            for (int i = 0; i < lit.Length; i++)
-            {
-                double r = rng.NextDouble();
-                lit[i] = r < litChance ? (float)(0.55 + rng.NextDouble() * 0.45) * (rng.NextDouble() < 0.3 ? -1f : 1f) : 0f;
-            }
             for (int y = 0; y < H; y++)
             for (int x = 0; x < W; x++)
             {
@@ -89,13 +82,60 @@ namespace Fishing.World
                 Color c = band ? frame * (0.9f + 0.1f * fv / Mathf.Max(0.01f, bandFrac)) : mullion ? frame * 0.85f : glass;
                 c.a = band || mullion ? 0.35f : 1f; // 알파 = 광택 (프레임은 덜 번들)
                 px[y * W + x] = c;
-                float l = lit[fy * bays + bx];
-                npx[y * W + x] = band || mullion || l == 0f ? Color.black
-                    : (l > 0f ? new Color(1f, 0.82f, 0.55f) * l : new Color(0.8f, 0.9f, 1f) * -l) * (0.75f + 0.25f * fv);
             }
             tex.SetPixels(px); tex.Apply(true);
+
+            // 밤 불빛: 창 한 칸에 16px 이상
+            int nb = bays * nightTiles, nf = floors * nightTiles;
+            int NW = Mathf.Max(256, nb * 16), NH = Mathf.Max(256, nf * 16);
+            night = new Texture2D(NW, NH, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Repeat };
+            var npx = new Color[NW * NH];
+            var lit = LitPattern(nf, nb, litChance, new System.Random(seed));
+            for (int y = 0; y < NH; y++)
+            for (int x = 0; x < NW; x++)
+            {
+                float u = x / (float)NW * nb, v = y / (float)NH * nf;
+                int bx = Mathf.Min(nb - 1, (int)u), fy = Mathf.Min(nf - 1, (int)v);
+                float fu = u - bx, fv = v - fy;
+                bool framepx = fv < bandFrac || fu < mullionFrac * 0.5f || fu > 1f - mullionFrac * 0.5f;
+                float l = lit[fy * nb + bx];
+                npx[y * NW + x] = framepx || l == 0f ? Color.black
+                    : (l > 0f ? new Color(1f, 0.82f, 0.55f) * l : new Color(0.8f, 0.9f, 1f) * -l) * (0.75f + 0.25f * fv);
+            }
             night.SetPixels(npx); night.Apply(true);
             return tex;
+        }
+
+        /// <summary>
+        /// 창마다 불빛 세기(0 꺼짐, + 따뜻한 빛, - 형광등빛). 한 칸씩 동전 던지기면 고르게 흩뿌린 무늬가 되니
+        /// 집(1~3칸) 단위로 같이 켜고 끄고, 층마다 켜진 정도가 다르며 가끔 층 하나가 통째로 켜지거나(사무실·복도) 거의 다 꺼진다.
+        /// </summary>
+        static float[] LitPattern(int floors, int bays, float litChance, System.Random rng)
+        {
+            var lit = new float[floors * bays];
+            if (litChance <= 0f) return lit;
+            for (int f = 0; f < floors; f++)
+            {
+                double roll = rng.NextDouble();
+                if (floors >= 3 && roll < 0.05)
+                {
+                    // 층 통째로 켜짐: 한 가지 빛
+                    float b = (float)(0.8 + rng.NextDouble() * 0.2) * (rng.NextDouble() < 0.5 ? -1f : 1f);
+                    for (int x = 0; x < bays; x++) lit[f * bays + x] = b * (float)(0.9 + rng.NextDouble() * 0.1);
+                    continue;
+                }
+                // 층마다 켜진 정도: 거의 빈 층 ~ 꽤 켜진 층
+                float chance = litChance * (floors >= 3 && roll < 0.2 ? 0.15f : (float)(0.4 + rng.NextDouble() * 0.9));
+                for (int x = 0; x < bays;)
+                {
+                    int unit = 1 + rng.Next(3);
+                    bool on = rng.NextDouble() < chance;
+                    float b = (float)(0.45 + rng.NextDouble() * 0.55) * (rng.NextDouble() < 0.3 ? -1f : 1f);
+                    for (int k = 0; k < unit && x < bays; k++, x++)
+                        lit[f * bays + x] = on && rng.NextDouble() > 0.2 ? b * (float)(0.85 + rng.NextDouble() * 0.15) : 0f;
+                }
+            }
+            return lit;
         }
 
         /// <summary>다이아그리드: 'ㅅ'자로 이은 흰 강관 격자. 칸은 비어(알파 0) 하늘이 보이고, 일부 칸엔 유리.</summary>
@@ -534,11 +574,11 @@ namespace Fishing.World
         /// <summary>강 건너 먼 시가지: 판상형 아파트(흰 벽 + 층 띠)와 빌딩 상자. 강변 가까운 쪽은 낮고 멀수록 높다.</summary>
         static void FarCity(Transform root)
         {
-            var aptTex = Facade(5, 8, new Color(0.88f, 0.87f, 0.84f), new Color(0.74f, 0.73f, 0.7f), new Color(0.95f, 0.94f, 0.92f), 0.2f, 0.12f, 21, out var aptNight, 0.45f);
-            var officeTex = Facade(5, 8, new Color(0.62f, 0.7f, 0.78f), new Color(0.3f, 0.36f, 0.42f), new Color(0.7f, 0.72f, 0.74f), 0.15f, 0.08f, 22, out var officeNight, 0.5f);
-            var apt = Mat(Color.white, aptTex, aptNight, new Color(1f, 0.85f, 0.6f) * 0.8f, 0.2f, 0f, Vector2.one);
-            var aptTint = Mat(new Color(0.95f, 0.9f, 0.82f), aptTex, aptNight, new Color(1f, 0.85f, 0.6f) * 0.8f, 0.2f, 0f, Vector2.one);
-            var office = Mat(Color.white, officeTex, officeNight, new Color(0.9f, 0.95f, 1f) * 0.8f, 0.7f, 0.2f, Vector2.one);
+            var aptTex = Facade(5, 8, new Color(0.88f, 0.87f, 0.84f), new Color(0.74f, 0.73f, 0.7f), new Color(0.95f, 0.94f, 0.92f), 0.2f, 0.12f, 21, out var aptNight, 0.38f, NightTiles);
+            var officeTex = Facade(5, 8, new Color(0.62f, 0.7f, 0.78f), new Color(0.3f, 0.36f, 0.42f), new Color(0.7f, 0.72f, 0.74f), 0.15f, 0.08f, 22, out var officeNight, 0.42f, NightTiles);
+            var apt = Mat(Color.white, aptTex, aptNight, new Color(1f, 0.85f, 0.6f) * 0.8f, 0.2f, 0f, Vector2.one, NightTiles);
+            var aptTint = Mat(new Color(0.95f, 0.9f, 0.82f), aptTex, aptNight, new Color(1f, 0.85f, 0.6f) * 0.8f, 0.2f, 0f, Vector2.one, NightTiles);
+            var office = Mat(Color.white, officeTex, officeNight, new Color(0.9f, 0.95f, 1f) * 0.8f, 0.7f, 0.2f, Vector2.one, NightTiles);
             var mats = new[] { apt, aptTint, office };
             int placed = 0;
             for (int i = 0; i < 900 && placed < 330; i++)
@@ -558,34 +598,45 @@ namespace Fishing.World
                     Quaternion.Euler(0f, kind == 2 ? R(0f, 90f) : R(-12f, 12f), 0f));
                 // 상자 면마다 UV가 0~1이라 크기에 맞춰 반복 (아파트 한 장 = 8칸 × 5층 ≈ 20m × 14m)
                 var mf = go.GetComponent<MeshFilter>();
-                mf.sharedMesh = TiledCube(mf.sharedMesh, w, h, d);
+                mf.sharedMesh = TiledCube(mf.sharedMesh, w, h, d, placed * 7);
                 go.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 placed++;
             }
         }
 
-        static readonly Dictionary<Vector3Int, Mesh> _cubes = new Dictionary<Vector3Int, Mesh>();
+        static readonly Dictionary<(Vector3Int, int), Mesh> _cubes = new Dictionary<(Vector3Int, int), Mesh>();
 
-        /// <summary>크기 (w,h,d)인 상자 프리미티브(스케일로 늘림)에 맞춘 UV: 옆면 한 장 = 20m × 14m.</summary>
-        internal static Mesh TiledCube(Mesh src, float w, float h, float d)
+        /// <summary>
+        /// 크기 (w,h,d)인 상자 프리미티브(스케일로 늘림)에 맞춘 UV: 옆면 한 장 = 20m × 14m.
+        /// variant(0~15)마다, 옆면마다 UV를 낮 텍스처 몇 장씩(정수) 밀어 둔다: 낮 무늬는 그대로고 밤 불빛 아틀라스(NightTiles장)에선
+        /// 건물·면마다 다른 곳을 쓰게 되어 이웃 건물끼리 불 켜진 모양이 같지 않다.
+        /// </summary>
+        internal static Mesh TiledCube(Mesh src, float w, float h, float d, int variant = 0)
         {
-            var key = new Vector3Int(Mathf.Max(1, Mathf.RoundToInt(w / 4f)), Mathf.Max(1, Mathf.RoundToInt(h / 4f)), Mathf.Max(1, Mathf.RoundToInt(d / 4f)));
-            if (_cubes.TryGetValue(key, out var m)) return m;
+            var size = new Vector3Int(Mathf.Max(1, Mathf.RoundToInt(w / 4f)), Mathf.Max(1, Mathf.RoundToInt(h / 4f)), Mathf.Max(1, Mathf.RoundToInt(d / 4f)));
+            variant &= 15;
+            if (_cubes.TryGetValue((size, variant), out var m)) return m;
             m = Object.Instantiate(src);
             var v = m.vertices;
             var n = m.normals;
             var uv = new Vector2[v.Length];
+            var shift = new Vector2[4];
+            var r = new System.Random(variant + 1);
+            for (int f = 0; f < 4; f++) shift[f] = new Vector2(r.Next(NightTiles), r.Next(NightTiles));
             for (int i = 0; i < v.Length; i++)
             {
-                var p = Vector3.Scale(v[i] + Vector3.one * 0.5f, new Vector3(key.x * 4f, key.y * 4f, key.z * 4f));
+                var p = Vector3.Scale(v[i] + Vector3.one * 0.5f, new Vector3(size.x * 4f, size.y * 4f, size.z * 4f));
                 if (Mathf.Abs(n[i].y) > 0.5f) uv[i] = new Vector2(0.01f, 0.01f); // 지붕: 프레임 색 한 점
-                else if (Mathf.Abs(n[i].x) > 0.5f) uv[i] = new Vector2(p.z / 20f, p.y / 14f);
-                else uv[i] = new Vector2(p.x / 20f, p.y / 14f);
+                else if (Mathf.Abs(n[i].x) > 0.5f) uv[i] = new Vector2(p.z / 20f, p.y / 14f) + shift[n[i].x > 0f ? 0 : 1];
+                else uv[i] = new Vector2(p.x / 20f, p.y / 14f) + shift[n[i].z > 0f ? 2 : 3];
             }
             m.uv = uv;
-            _cubes[key] = m;
+            _cubes[(size, variant)] = m;
             return m;
         }
+
+        /// <summary>시가지 상자 건물의 밤 불빛 아틀라스 크기(낮 텍스처 NightTiles × NightTiles장 = 가로 160m 남짓 × 세로 112m).</summary>
+        internal const int NightTiles = 8;
 
         // ---------- CU 편의점 (반포 한강공원) ----------
 

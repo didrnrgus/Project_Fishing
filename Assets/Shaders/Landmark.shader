@@ -1,6 +1,6 @@
 // 멀리 보이는 랜드마크(롯데월드타워·63빌딩·남산타워) 셰이더 (Standard 조명).
 //  - 안개를 맵 안개의 _FogScale배만 받는다: 수백 m 밖이라 맵 안개(지수 0.0028)를 다 받으면 회색 덩어리가 된다. 대신 옅게 뿌옇게
-//  - 밤 창문 불빛: _EmissionMap(창마다 켜짐/꺼짐) × _EmissionColor × 전역 _FishingNight (DayNightCycle이 0 낮 ~ 1 밤으로 넣는다)
+//  - 밤 창문 불빛: _EmissionMap(창마다 켜짐/꺼짐, _NightTiles장 아틀라스) × _EmissionColor × 전역 _FishingNight (DayNightCycle이 0 낮 ~ 1 밤으로 넣는다)
 //  - _Cutoff > 0이면 알파로 구멍을 뚫는다 (롯데월드타워 꼭대기 다이아그리드 격자, 양면)
 Shader "Fishing/Landmark"
 {
@@ -12,6 +12,7 @@ Shader "Fishing/Landmark"
         _Metallic ("Metallic", Range(0,1)) = 0.2
         _EmissionMap ("Night Windows", 2D) = "black" {}
         _EmissionColor ("Night Color", Color) = (1,0.85,0.6,1)
+        _NightTiles ("Night Atlas Tiles", Float) = 1
         _DayEmission ("Day Emission", Range(0,1)) = 0
         _FogScale ("Fog Scale", Range(0,1)) = 0.35
         _Cutoff ("Alpha Cutoff", Range(0,1)) = 0
@@ -33,7 +34,7 @@ Shader "Fishing/Landmark"
 
         sampler2D _MainTex, _EmissionMap, _DetailTex;
         fixed4 _DetailAvg;
-        float _DetailTile;
+        float _DetailTile, _NightTiles;
         half _DetailStrength;
         fixed4 _Color, _EmissionColor;
         half _Glossiness, _Metallic, _DayEmission, _FogScale, _Cutoff;
@@ -74,7 +75,8 @@ Shader "Fishing/Landmark"
             o.Albedo = c.rgb;
             o.Smoothness = _Glossiness * c.a;
             o.Metallic = _Metallic;
-            fixed3 win = tex2D(_EmissionMap, IN.uv_MainTex).rgb;
+            // 밤 불빛 아틀라스는 낮 텍스처 _NightTiles × _NightTiles장을 한 장에 담아(창마다 다름) 낮 무늬가 반복돼도 불빛은 반복되지 않는다
+            fixed3 win = tex2D(_EmissionMap, IN.uv_MainTex / _NightTiles).rgb;
             o.Emission = win * _EmissionColor.rgb * max(saturate(_FishingNight), _DayEmission);
         }
 
