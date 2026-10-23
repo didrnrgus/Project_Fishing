@@ -12,6 +12,8 @@
   parasol_cu  보라 팔각 파라솔: 살 8개 사이가 살짝 처진 천, 가장자리 늘어진 띠(한 칸 걸러 흰 "CU"), 꼭대기 바람구멍 덮개, 흰 기둥
   chair_cu    보라 플라스틱 팔걸이 의자 (모노블록): 살짝 오목한 좌판, 세로 홈 난 휜 등판, 팔걸이, 벌어진 다리
   table_cu    흰 정사각 탁자 0.8m: 가운데 파라솔 구멍, 은색 다리 넷
+  crate_cu    BGF로지스 배송 상자 0.6×0.4×0.28m: 위 테·아래 테·가운데 띠 사이로 세로 살(구멍 난 옆면), 손잡이 구멍, 흰 이름표.
+              몸통 재질 'CrateBody' — Unity가 보라·회색·초록·파랑으로 칠한다
 """
 import math
 
@@ -343,4 +345,36 @@ def table_cu(_):
     return o
 
 
-PROPS = {'tent_dome': tent_dome, 'tent_shade': tent_shade, 'parasol_cu': parasol_cu, 'chair_cu': chair_cu, 'table_cu': table_cu}
+def crate_cu(_):
+    body = mat('#5a3a8a', 0.6, name='CrateBody')
+    label = mat('#f0f0f0', 0.6, name='CrateLabel')
+    dark = mat('#1a1a1c', 0.9, name='CrateHole')
+    L, Wd, Hc, t = 0.6, 0.4, 0.28, 0.02
+    # 부품끼리 같은 면을 공유하지 않게 조금씩 어긋낸다 (겹친 면은 게임에서 z-fighting으로 깜박인다)
+    o = [box((L - 0.006, Wd - 0.006, 0.015), body, loc=(0, 0, 0.0085))]
+    for z, h in ((0.02, 0.04), (0.14, 0.025), (Hc - 0.02, 0.04)):        # 아래 테 · 가운데 띠 · 위 테
+        for sy in (-1, 1):
+            o.append(box((L, t, h), body, loc=(0, sy * (Wd - t) / 2, z)))
+        for sx in (-1, 1):
+            o.append(box((t, Wd - 2 * t - 0.002, h), body, loc=(sx * (L - t) / 2, 0, z)))
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            o.append(box((0.034, 0.034, Hc + 0.004), body, loc=(sx * (L / 2 - 0.015), sy * (Wd / 2 - 0.015), Hc / 2)))
+    # 세로 살: 긴 옆 9개, 짧은 옆 5개 (사이가 구멍)
+    for k in range(9):
+        x = -L / 2 + 0.06 + k * (L - 0.12) / 8
+        for sy in (-1, 1):
+            o.append(box((0.016, t * 0.7, Hc - 0.06), body, loc=(x, sy * (Wd - t) / 2, Hc / 2)))
+    for k in range(5):
+        y = -Wd / 2 + 0.06 + k * (Wd - 0.12) / 4
+        for sx in (-1, 1):
+            o.append(box((t * 0.7, 0.016, Hc - 0.06), body, loc=(sx * (L - t) / 2, y, Hc / 2)))
+    # 짧은 옆 손잡이 구멍 (위 테 아래 어두운 칸) + 긴 옆 흰 이름표
+    for sx in (-1, 1):
+        o.append(box((0.005, 0.14, 0.035), dark, loc=(sx * (L / 2 + 0.001), 0, Hc - 0.065)))
+    for sy in (-1, 1):
+        o.append(box((0.16, 0.005, 0.05), label, loc=(0.12, sy * (Wd / 2 + 0.002), 0.205)))
+    return o
+
+
+PROPS = {'crate_cu': crate_cu, 'tent_dome': tent_dome, 'tent_shade': tent_shade, 'parasol_cu': parasol_cu, 'chair_cu': chair_cu, 'table_cu': table_cu}
