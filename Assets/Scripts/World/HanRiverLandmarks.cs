@@ -664,74 +664,119 @@ namespace Fishing.World
             // 패널 0.6m 한 장씩 (상자 면마다 UV 0~1 → 면 크기로 반복)
             Material Panel(float a, float b) => Mat(new Color(1f, 0.99f, 0.97f), PanelTex(), null, Color.black, 0.35f, 0f, new Vector2(a / 0.6f, b / 0.6f));
 
-            // 바닥·벽·지붕 (+z가 강 쪽 앞면)
-            Mats.Prim(PrimitiveType.Cube, "StoreFloor", t, new Vector3(0f, 0.08f, 0f), new Vector3(W, 0.16f, D), floorMat, false);
-            Mats.Prim(PrimitiveType.Cube, "StoreBack", t, new Vector3(0f, Ht * 0.5f, -D * 0.5f + 0.15f), new Vector3(W, Ht, 0.3f), Panel(W, Ht));
+            // 바닥·벽·지붕 (+z가 강 쪽 앞면). 옆벽만 앞뒤 끝까지, 나머지는 옆벽 사이(Wi)에 넣어 면이 겹치지 않게 (겹치면 z-fighting으로 깜박인다)
+            const float Wi = W - 0.62f;
+            var granite = Mats.Weathered("granite", new Color(0.74f, 0.64f, 0.6f), 1.2f, 0.45f, 0f, 0.1f, 0f);
+            Mats.Prim(PrimitiveType.Cube, "StoreFloor", t, new Vector3(0f, 0.08f, 0f), new Vector3(Wi, 0.16f, D - 0.2f), floorMat, false);
+            Mats.Prim(PrimitiveType.Cube, "StoreBack", t, new Vector3(0f, Ht * 0.5f, -D * 0.5f + 0.15f), new Vector3(Wi, Ht, 0.3f), Panel(W, Ht));
             Mats.Prim(PrimitiveType.Cube, "StoreSideL", t, new Vector3(-W * 0.5f + 0.15f, Ht * 0.5f, 0f), new Vector3(0.3f, Ht, D), Panel(D, Ht));
             Mats.Prim(PrimitiveType.Cube, "StoreSideR", t, new Vector3(W * 0.5f - 0.15f, Ht * 0.5f, 0f), new Vector3(0.3f, Ht, D), Panel(D, Ht));
-            Mats.Prim(PrimitiveType.Cube, "StoreHead", t, new Vector3(0f, (GlassTop + Ht) * 0.5f, D * 0.5f - 0.15f), new Vector3(W, Ht - GlassTop, 0.3f), Panel(W, Ht - GlassTop), false);
+            Mats.Prim(PrimitiveType.Cube, "StoreHead", t, new Vector3(0f, (GlassTop + Ht) * 0.5f, D * 0.5f - 0.15f), new Vector3(Wi, Ht - GlassTop, 0.3f), Panel(W, Ht - GlassTop), false);
+            // 입구 양옆 기둥: 분홍빛 화강석 붙임 (벽보다 4cm 앞으로)
             foreach (float sx in new[] { -1f, 1f })
-                Mats.Prim(PrimitiveType.Cube, "StorePier", t, new Vector3(sx * (W * 0.5f - 0.45f), GlassTop * 0.5f, D * 0.5f - 0.15f), new Vector3(0.9f, GlassTop, 0.3f), Panel(0.9f, GlassTop), false);
-            Mats.Prim(PrimitiveType.Cube, "StoreRoof", t, new Vector3(0f, Ht - 0.1f, 0f), new Vector3(W, 0.2f, D), Mats.Wall(new Color(0.72f, 0.72f, 0.7f)), false);
-            // 옥상 난간 덮개 (은회색 알루미늄)
+                Mats.Prim(PrimitiveType.Cube, "StorePier", t, new Vector3(sx * 5.25f, GlassTop * 0.5f, D * 0.5f - 0.13f), new Vector3(0.9f, GlassTop, 0.34f), granite, false);
+            Mats.Prim(PrimitiveType.Cube, "StoreRoof", t, new Vector3(0f, Ht - 0.1f, 0f), new Vector3(Wi, 0.2f, D - 0.62f), Mats.Wall(new Color(0.72f, 0.72f, 0.7f)), false);
+            // 옥상 난간 덮개 (은회색 알루미늄): 앞뒤는 끝까지, 옆은 그 사이만
             Mats.Prim(PrimitiveType.Cube, "CopingF", t, new Vector3(0f, Ht + 0.04f, D * 0.5f - 0.15f), new Vector3(W + 0.06f, 0.08f, 0.36f), coping, false);
             Mats.Prim(PrimitiveType.Cube, "CopingB", t, new Vector3(0f, Ht + 0.04f, -D * 0.5f + 0.15f), new Vector3(W + 0.06f, 0.08f, 0.36f), coping, false);
             foreach (float sx in new[] { -1f, 1f })
-                Mats.Prim(PrimitiveType.Cube, "CopingS", t, new Vector3(sx * (W * 0.5f - 0.15f), Ht + 0.04f, 0f), new Vector3(0.36f, 0.08f, D), coping, false);
+                Mats.Prim(PrimitiveType.Cube, "CopingS", t, new Vector3(sx * (W * 0.5f - 0.15f), Ht + 0.04f, 0f), new Vector3(0.36f, 0.08f, D - 0.74f), coping, false);
             // 옥상 실외기
             for (int k = 0; k < 2; k++)
                 Mats.Prim(PrimitiveType.Cube, "RoofAC", t, new Vector3(-3f + k * 1.3f, Ht + 0.35f, -2.5f), new Vector3(0.9f, 0.7f, 0.4f), Mats.Lit(new Color(0.85f, 0.85f, 0.83f), 0.3f), false);
-            Mats.Prim(PrimitiveType.Cube, "Ceiling", t, new Vector3(0f, GlassTop + 0.05f, 0f), new Vector3(W - 0.6f, 0.06f, D - 0.6f), Mats.Lit(new Color(0.96f, 0.96f, 0.95f)), false);
+            Mats.Prim(PrimitiveType.Cube, "Ceiling", t, new Vector3(0f, GlassTop + 0.05f, 0f), new Vector3(W - 0.64f, 0.06f, D - 0.64f), Mats.Lit(new Color(0.96f, 0.96f, 0.95f)), false);
             for (int k = 0; k < 3; k++)
                 Mats.Prim(PrimitiveType.Cube, "CeilingLight", t, new Vector3(-3.5f + k * 3.5f, GlassTop, 0f), new Vector3(0.3f, 0.04f, D - 1.6f), indoorLight, false);
 
             // 앞면: 통유리 틀(짙은 회색, 가운데 미닫이 자동문)
-            float fz = D * 0.5f - 0.1f, gw = W - 1.8f;
+            float fz = D * 0.5f - 0.1f, gw = W - 2.4f;
             // 유리판은 두지 않는다: 반투명 Standard 판이 빌드에서 안을 다 가려 회색 벽처럼 보였다. 틀만 두면 진열대·포스터가 보인다
-            foreach (float x in new[] { -gw * 0.5f, -gw * 0.25f, -0.9f, 0f, 0.9f, gw * 0.25f, gw * 0.5f })
+            foreach (float x in new[] { -gw * 0.5f, -2.6f, -0.9f, 0f, 0.9f, 2.6f, gw * 0.5f })
                 Mats.Prim(PrimitiveType.Cube, "Mullion", t, new Vector3(x, 1.6f, fz), new Vector3(x == 0f ? 0.04f : 0.08f, 3f, 0.12f), frame, false);
             Mats.Prim(PrimitiveType.Cube, "GlassSill", t, new Vector3(0f, 0.12f, fz), new Vector3(gw + 0.1f, 0.1f, 0.14f), frame, false);
             Mats.Prim(PrimitiveType.Cube, "GlassHead", t, new Vector3(0f, GlassTop, fz), new Vector3(gw + 0.1f, 0.12f, 0.14f), frame, false);
             Mats.Prim(PrimitiveType.Cube, "DoorTransom", t, new Vector3(0f, 2.3f, fz + 0.01f), new Vector3(1.8f, 0.08f, 0.12f), frame, false);
+            Mats.Prim(PrimitiveType.Cube, "DoorSensor", t, new Vector3(0f, 2.93f, fz + 0.1f), new Vector3(0.42f, 0.1f, 0.1f), frame, false);
             foreach (float x in new[] { -0.12f, 0.12f })
                 Mats.Prim(PrimitiveType.Cube, "DoorHandle", t, new Vector3(x, 1.05f, fz + 0.06f), new Vector3(0.03f, 0.5f, 0.03f), coping, false);
-            // 자동문 보라 띠 스티커 + 유리 안쪽 포스터 (행사·한강라면)
             Mats.Prim(PrimitiveType.Cube, "DoorStripe", t, new Vector3(0f, 1.45f, fz + 0.035f), new Vector3(1.7f, 0.08f, 0.01f), purple, false);
-            Mats.Prim(PrimitiveType.Cube, "Poster", t, new Vector3(2.4f, 1.55f, fz - 0.04f), new Vector3(1.6f, 1.1f, 0.01f), Mats.Emissive(new Color(0.25f, 0.3f, 0.6f), 0.5f), false);
-            Mats.Prim(PrimitiveType.Cube, "Poster", t, new Vector3(-3.4f, 1.3f, fz - 0.04f), new Vector3(0.75f, 1.05f, 0.01f), Mats.Emissive(new Color(0.92f, 0.3f, 0.2f), 0.5f), false);
-            var p1 = UIFactory.WorldText(t, "1+1", new Vector3(2.4f, 1.6f, fz - 0.05f), new Color(1f, 0.92f, 0.3f), 6f, "PosterText");
-            p1.transform.localRotation = Quaternion.Euler(0f, 180f, 0f); p1.fontStyle = TMPro.FontStyles.Bold; UIFactory.OneSided(p1);
-            var p2 = UIFactory.WorldText(t, "한강\n라면", new Vector3(-3.4f, 1.3f, fz - 0.05f), Color.white, 2.6f, "PosterText");
-            p2.transform.localRotation = Quaternion.Euler(0f, 180f, 0f); p2.fontStyle = TMPro.FontStyles.Bold; UIFactory.OneSided(p2);
+            // 유리에 붙인 것들 (판은 없어도 같은 면 fz에): "Nice to CU" 스티커, 행사·get커피·한강라면 포스터
+            void Text(string s, Vector3 p, Color c, float size, bool bold = true)
+            {
+                var tx = UIFactory.WorldText(t, s, p, c, size, "StoreText");
+                tx.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+                if (bold) tx.fontStyle = TMPro.FontStyles.Bold;
+                UIFactory.OneSided(tx);
+            }
+            var cuPurple = new Color(0.4f, 0.18f, 0.6f);
+            Mats.Prim(PrimitiveType.Cube, "GlassSticker", t, new Vector3(1.75f, 2.05f, fz), new Vector3(1.4f, 0.42f, 0.01f), Mats.Lit(new Color(0.97f, 0.97f, 0.97f), 0.4f), false);
+            Mats.Prim(PrimitiveType.Cube, "GlassStickerPill", t, new Vector3(2.08f, 2.05f, fz + 0.008f), new Vector3(0.62f, 0.24f, 0.01f), lime, false);
+            Text("Nice to", new Vector3(2.08f, 2.05f, fz + 0.02f), cuPurple, 1.5f);
+            Text("CU", new Vector3(1.4f, 2.04f, fz + 0.02f), cuPurple, 3.2f);
+            void Poster(Vector3 p, Vector2 size, Color c) =>
+                Mats.Prim(PrimitiveType.Cube, "Poster", t, p, new Vector3(size.x, size.y, 0.01f), Mats.Emissive(c, 0.45f), false);
+            Poster(new Vector3(3.7f, 1.1f, fz), new Vector2(1.5f, 1.2f), new Color(0.22f, 0.3f, 0.62f));
+            Text("1+1", new Vector3(3.7f, 1.25f, fz + 0.02f), new Color(1f, 0.92f, 0.3f), 6f);
+            Text("행사 상품", new Vector3(3.7f, 0.75f, fz + 0.02f), Color.white, 1.8f);
+            Poster(new Vector3(-1.75f, 1.0f, fz), new Vector2(0.7f, 1f), new Color(0.42f, 0.26f, 0.16f));
+            Text("get\n커피", new Vector3(-1.75f, 1.05f, fz + 0.02f), new Color(1f, 0.95f, 0.85f), 2.2f);
+            Poster(new Vector3(-3.7f, 1.1f, fz), new Vector2(0.8f, 1.1f), new Color(0.88f, 0.26f, 0.18f));
+            Text("한강\n라면", new Vector3(-3.7f, 1.15f, fz + 0.02f), Color.white, 2.6f);
+            // 문 앞 알루미늄 경사판 (가게 바닥 → 보도블록)
+            Mats.Prim(PrimitiveType.Cube, "DoorRamp", t, new Vector3(0f, 0.11f, D * 0.5f + 0.48f), new Vector3(1.9f, 0.04f, 1f), Mats.Lit(new Color(0.7f, 0.72f, 0.74f), 0.55f, 0.85f), false, Quaternion.Euler(5.7f, 0f, 0f));
+            // 오른쪽 기둥 도로명 주소판, 왼쪽 처마 밑 CCTV
+            Mats.Prim(PrimitiveType.Cube, "AddressPlate", t, new Vector3(-5.25f, 2.45f, D * 0.5f + 0.05f), new Vector3(0.44f, 0.26f, 0.02f), Mats.Lit(new Color(0.1f, 0.28f, 0.58f), 0.4f), false);
+            Text("신반포로11길", new Vector3(-5.25f, 2.52f, D * 0.5f + 0.07f), Color.white, 0.75f, false);
+            Text("40", new Vector3(-5.25f, 2.4f, D * 0.5f + 0.07f), Color.white, 1.6f);
+            Mats.Prim(PrimitiveType.Cube, "Cctv", t, new Vector3(5.5f, 3.17f, D * 0.5f + 0.32f), new Vector3(0.1f, 0.1f, 0.24f), Mats.Lit(new Color(0.92f, 0.92f, 0.9f), 0.4f), false, Quaternion.Euler(18f, -25f, 0f));
+            Mats.Prim(PrimitiveType.Cube, "CctvMount", t, new Vector3(5.5f, 3.23f, D * 0.5f + 0.24f), new Vector3(0.04f, 0.06f, 0.04f), frame, false);
             // 문 앞 막이(들어가지 못하게): 투명 콜라이더
             var block = new GameObject("StoreBlock").AddComponent<BoxCollider>();
             block.transform.SetParent(t, false);
             block.center = new Vector3(0f, Ht * 0.5f, 0f);
             block.size = new Vector3(W, Ht, D);
 
-            // 간판 (앞에서 보면 +x가 왼쪽): 흰 패널 벽에 연두 띠, 왼쪽 연두 알약 "Nice to" + 보라 "CU", 띠 위 오른쪽에 점포 이름
-            float signZ = D * 0.5f + 0.03f, by = 3.85f;
-            Mats.Prim(PrimitiveType.Cube, "SignBand", t, new Vector3(-0.9f, by, signZ), new Vector3(W - 2.8f, 0.34f, 0.08f), lime, false);
-            Mats.Prim(PrimitiveType.Cube, "NicePill", t, new Vector3(4.35f, by, signZ + 0.01f), new Vector3(1.3f, 0.5f, 0.1f), lime, false);
-            foreach (float sx in new[] { -1f, 1f })
-                Mats.Prim(PrimitiveType.Cylinder, "NicePillEnd", t, new Vector3(4.35f + sx * 0.65f, by, signZ + 0.01f), new Vector3(0.5f, 0.05f, 0.5f), lime, false, Quaternion.Euler(90f, 0f, 0f));
-            var nice = UIFactory.WorldText(t, "Nice to", new Vector3(4.35f, by - 0.01f, signZ + 0.07f), Color.white, 3.4f, "CU_Nice");
-            nice.transform.localRotation = Quaternion.Euler(0f, 180f, 0f); nice.fontStyle = TMPro.FontStyles.Bold; UIFactory.OneSided(nice);
+            // 간판 (사용자 참고 사진): 앞으로 튀어나온 보라 간판 상자, 왼쪽 연두 알약 "Nice to" + 흰 입체 글자 "CU" + 오른쪽 끝까지 연두 띠.
+            // 앞에서 보면 +x가 왼쪽. 아래 처마에 다운라이트
+            var fascia = Mats.Emissive(new Color(0.36f, 0.15f, 0.55f), 0.18f);
+            const float FasciaFront = D * 0.5f + 0.5f, by = 3.8f;
+            Mats.Prim(PrimitiveType.Cube, "Fascia", t, new Vector3(0f, 3.8f, D * 0.5f + 0.225f), new Vector3(W + 0.3f, 1.1f, 0.55f), fascia, false);
+            for (int k = 0; k < 4; k++)
+                Mats.Prim(PrimitiveType.Cylinder, "Downlight", t, new Vector3(-4.5f + k * 3f, 3.245f, D * 0.5f + 0.25f), new Vector3(0.16f, 0.006f, 0.16f), Mats.Emissive(new Color(1f, 0.97f, 0.9f), 2f), false);
+            float signZ = FasciaFront + 0.03f;
+            void Pill(string name, float x0, float x1)
+            {
+                Mats.Prim(PrimitiveType.Cube, name, t, new Vector3((x0 + x1) * 0.5f, by, signZ), new Vector3(x1 - x0, 0.48f, 0.06f), lime, false);
+                foreach (float x in new[] { x0, x1 })
+                    Mats.Prim(PrimitiveType.Cylinder, name + "End", t, new Vector3(x, by, signZ - 0.003f), new Vector3(0.48f, 0.025f, 0.48f), lime, false, Quaternion.Euler(90f, 0f, 0f));
+            }
+            Pill("NicePill", 3.7f, 5.2f);
+            Text("Nice to", new Vector3(4.45f, by - 0.01f, signZ + 0.04f), cuPurple, 3.6f);
+            // 흰 CU: 뒤에 연보라 글자를 살짝 비켜 겹쳐 두께가 보이게 (채널 글자)
             var cuBack = Mats.Emissive(new Color(0.42f, 0.2f, 0.62f), 0.45f);
-            Mats.Prim(PrimitiveType.Cube, "CuPanel", t, new Vector3(2.75f, by, signZ + 0.02f), new Vector3(1.5f, 0.86f, 0.12f), cuBack, false);
-            var cu = UIFactory.WorldText(t, "CU", new Vector3(2.75f, by - 0.02f, signZ + 0.09f), new Color(0.98f, 0.97f, 1f), 9f, "CU");
-            cu.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-            cu.fontStyle = TMPro.FontStyles.Bold;
-            UIFactory.OneSided(cu);
-            var name = UIFactory.WorldText(t, "한강공원 반포점", new Vector3(-4.2f, 4.33f, signZ + 0.01f), new Color(0.37f, 0.16f, 0.55f), 2.2f, "CU_Name");
-            name.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-            UIFactory.OneSided(name);
+            Text("CU", new Vector3(2.83f, by - 0.02f, FasciaFront + 0.015f), new Color(0.7f, 0.64f, 0.86f), 9.5f);
+            Text("CU", new Vector3(2.85f, by, FasciaFront + 0.035f), new Color(0.99f, 0.98f, 1f), 9.5f);
+            Pill("SignBand", -5.5f, 1.9f);
+            Text("한강공원 반포점", new Vector3(-3.9f, by - 0.01f, signZ + 0.04f), cuPurple, 2.4f);
             // 옆벽 둥근 보라 간판
             Mats.Prim(PrimitiveType.Cylinder, "SideSign", t, new Vector3(W * 0.5f + 0.03f, 3.8f, D * 0.5f - 1f), new Vector3(0.9f, 0.04f, 0.9f), cuBack, false, Quaternion.Euler(0f, 0f, 90f));
             var side = UIFactory.WorldText(t, "CU", new Vector3(W * 0.5f + 0.08f, 3.78f, D * 0.5f - 1f), Color.white, 4.5f, "CU_Side");
             side.transform.localRotation = Quaternion.Euler(0f, -90f, 0f);
             side.fontStyle = TMPro.FontStyles.Bold;
             UIFactory.OneSided(side);
+
+            // 기둥 앞 배송 상자 더미 (BGF로지스: 보라·회색·초록·파랑) + 쓰레기봉투
+            Color[] crateCols = { new Color(0.36f, 0.2f, 0.55f), new Color(0.5f, 0.52f, 0.55f), new Color(0.15f, 0.48f, 0.3f), new Color(0.15f, 0.3f, 0.65f) };
+            var stacks = new[] { (x: 5.1f, z: 4.38f, n: 5, yaw: 2f), (x: 5.72f, z: 4.42f, n: 3, yaw: -3f), (x: 5.35f, z: 4.95f, n: 2, yaw: 88f), (x: -5.2f, z: 4.38f, n: 4, yaw: -2f), (x: -5.8f, z: 4.42f, n: 2, yaw: 4f) };
+            int ci = 0;
+            foreach (var st in stacks)
+                for (int k = 0; k < st.n; k++, ci++)
+                {
+                    var crate = KenneyProps.Spawn("Props/crate_cu", t, new Vector3(st.x, 0.06f + k * 0.285f, st.z), st.yaw + (ci * 37 % 7 - 3), 0f, 0f, false);
+                    if (crate != null) KenneyProps.Tint(crate, "CrateBody", Mats.Lit(crateCols[(ci * 5 + k) % crateCols.Length], 0.35f));
+                }
+            Mats.Prim(PrimitiveType.Sphere, "TrashBag", t, new Vector3(-4.62f, 0.27f, 4.4f), new Vector3(0.46f, 0.5f, 0.42f), Mats.Lit(new Color(0.55f, 0.28f, 0.14f), 0.55f), false);
+            Mats.Prim(PrimitiveType.Sphere, "TrashBag", t, new Vector3(4.5f, 0.24f, 4.45f), new Vector3(0.42f, 0.44f, 0.4f), Mats.Lit(new Color(0.06f, 0.06f, 0.07f), 0.6f), false);
 
             // 안: 진열대 세 줄(색색 상품), 냉장고 벽, 계산대, 한강라면 조리기
             var shelf = Mats.Lit(new Color(0.85f, 0.85f, 0.86f), 0.3f, 0.3f);
@@ -772,7 +817,7 @@ namespace Fishing.World
                 Mats.Prim(PrimitiveType.Cube, "RamenDisplay", t, new Vector3(x - 0.36f, 1.42f, z), new Vector3(0.02f, 0.12f, 0.3f), Mats.Emissive(new Color(1f, 0.15f, 0.1f), 1.5f), false);
                 Mats.Prim(PrimitiveType.Cylinder, "RamenPlate", t, new Vector3(x - 0.05f, 1.02f, z), new Vector3(0.36f, 0.02f, 0.36f), Mats.Lit(new Color(0.1f, 0.1f, 0.1f)), false);
             }
-            var label = UIFactory.WorldText(t, "한강라면", new Vector3(4.4f, 2.1f, -0.85f), new Color(1f, 0.85f, 0.3f), 2.2f, "RamenLabel");
+            var label = UIFactory.WorldText(t, "한강라면", new Vector3(3.9f, 2.1f, -0.85f), new Color(1f, 0.85f, 0.3f), 2.2f, "RamenLabel");
             label.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
             UIFactory.OneSided(label);
             // 밤 불빛 (가게 안 → 앞마당)
@@ -837,7 +882,7 @@ namespace Fishing.World
             Mats.Prim(PrimitiveType.Cylinder, "BagBin", t, bin + new Vector3(0.1f, 0.42f, 2.3f), new Vector3(0.55f, 0.42f, 0.55f), Mats.Lit(new Color(0.94f, 0.94f, 0.95f), 0.5f));
 
             // 한강라면 세움 배너 (X배너)
-            var xb = new Vector3(-W * 0.5f + 0.4f, 0f, D * 0.5f + 0.9f);
+            var xb = new Vector3(-4.1f, 0f, D * 0.5f + 1.05f);
             Mats.Prim(PrimitiveType.Cube, "XBanner", t, xb + new Vector3(0f, 1.05f, 0f), new Vector3(0.6f, 1.6f, 0.02f), purple, false);
             Mats.Prim(PrimitiveType.Cube, "XBannerFoot", t, xb + new Vector3(0f, 0.12f, -0.12f), new Vector3(0.05f, 0.24f, 0.4f), frame, false, Quaternion.Euler(30f, 0f, 0f));
             var xt = UIFactory.WorldText(t, "한강\n라면", xb + new Vector3(0f, 1.25f, 0.02f), new Color(1f, 0.9f, 0.3f), 2.6f, "XBannerText");
