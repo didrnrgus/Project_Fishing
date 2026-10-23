@@ -22,6 +22,9 @@ namespace Fishing.World
         }
 
         static Texture2D _seabed;
+        static float[] _seabedPx;
+        static Rect _seabedArea;
+        static int _seabedW, _seabedH;
 
         /// <summary>
         /// 물가 거품용 해저 높이 텍스처를 맵에서 굽는다 (1m 간격, 최대 512칸). 물 셰이더가 수심·경사로 물가 거품을 그린다.
@@ -44,12 +47,48 @@ namespace Fishing.World
                 for (int x = 0; x < w; x++)
                     px[z * w + x] = map.SeabedAt(area.xMin + (x + 0.5f) / w * area.width, wz);
             }
+            _seabedPx = px;
+            _seabedArea = area;
+            _seabedW = w;
+            _seabedH = h;
             _seabed.SetPixelData(px, 0);
             _seabed.Apply(false, false);
             Material.SetTexture("_SeabedTex", _seabed);
             Material.SetVector("_SeabedRect", new Vector4(area.xMin, area.yMin, 1f / area.width, 1f / area.height));
             Material.SetVector("_SeabedStep", new Vector4(1f / w, 1f / h, area.width / w, area.height / h));
             Material.SetFloat("_HasSeabed", 1f);
+        }
+
+        /// <summary>구워 둔 해저 높이 (물 셰이더가 읽는 것과 같은 값, 겹선형). 구운 범위 밖이면 false.</summary>
+        public static bool SeabedHeight(float x, float z, out float height)
+        {
+            height = 0f;
+            if (_seabedPx == null) return false;
+            float u = (x - _seabedArea.xMin) / _seabedArea.width * _seabedW - 0.5f;
+            float v = (z - _seabedArea.yMin) / _seabedArea.height * _seabedH - 0.5f;
+            if (u < 0f || v < 0f || u > _seabedW - 1 || v > _seabedH - 1) return false;
+            int x0 = Mathf.Min((int)u, _seabedW - 2), z0 = Mathf.Min((int)v, _seabedH - 2);
+            float fx = u - x0, fz = v - z0;
+            int i = z0 * _seabedW + x0;
+            height = Mathf.Lerp(Mathf.Lerp(_seabedPx[i], _seabedPx[i + 1], fx), Mathf.Lerp(_seabedPx[i + _seabedW], _seabedPx[i + _seabedW + 1], fx), fz);
+            return true;
+        }
+
+        /// <summary>
+        /// 물 셰이더의 물가 거품과 같은 셈: 수심(음수면 물 밖)과, 해저 경사로 어림한 물가까지 수평 거리(m).
+        /// 구운 범위 밖이면 false.
+        /// </summary>
+        public static bool ShoreDistance(float x, float z, out float depth, out float dist)
+        {
+            depth = dist = 0f;
+            if (!SeabedHeight(x, z, out float bed)) return false;
+            float sx = _seabedArea.width / _seabedW, sz = _seabedArea.height / _seabedH;
+            SeabedHeight(x + sx, z, out float e); SeabedHeight(x - sx, z, out float w);
+            SeabedHeight(x, z + sz, out float n); SeabedHeight(x, z - sz, out float s);
+            float slope = Mathf.Max(new Vector2((e - w) / (2f * sx), (n - s) / (2f * sz)).magnitude, 0.03f);
+            depth = FieldMap.WaterY - bed;
+            dist = Mathf.Max(depth, 0f) / slope;
+            return true;
         }
 
         public static GameObject Create(Transform parent, Vector3 center, Vector2 size, float cell)

@@ -7,8 +7,9 @@
 //  - 물가 거품: 맵이 구워 둔 해저 높이 텍스처(_SeabedTex, WaterSurface.SetSeabed)로 수심과 해저 경사를 구해
 //    물가까지의 수평 거리를 어림하고, 그 안쪽 몇 m에 파도 따라 밀려오는 흰 거품 띠와 바닥이 비치는 밝은 얕은 물을 그린다.
 //    수면 높이는 버텍스 파도를 포함하므로 거품 경계가 파도에 맞춰 들락날락한다 (물때가 오르내리면 거품도 따라간다)
-//  - 야광충(_BioGlow, 서천 밤바다): 밤이면 부서지는 파도 끝·거품이 청록 형광으로 빛난다. 새로 부서지는 쪽(파도 앞)이 가장 밝고
-//    노이즈로 끊겨 반짝이며, 물가에서 조금 떨어진 바다에도 드문드문 빛 점이 일렁인다
+//  - 야광충(_BioGlow, 서천·삼척 밤바다): 밤이면 부서지는 파도 앞이 전기 파랑으로 확 켜지고(가운데는 흰빛) 바다 쪽으로 꼬리를 끌며 꺼진다.
+//    거품·물가 모래 선에는 빛 알갱이가 저마다 깜빡이고, 물가에서 조금 떨어진 바다에도 드문 빛 점이 있다.
+//    찌·물보라·발걸음·배가 건드린 물(_BioTouch, BioluminescenceFx.cs)은 고리로 퍼지며 잠깐 빛난다
 Shader "Fishing/Water"
 {
     Properties
@@ -39,6 +40,7 @@ Shader "Fishing/Water"
         CGPROGRAM
         #pragma surface surf Standard vertex:vert fullforwardshadows
         #pragma target 3.0
+        #include "FishingNoise.cginc"
 
         sampler2D _NormalTex;
         fixed4 _DeepColor, _ShallowColor;
@@ -47,6 +49,8 @@ Shader "Fishing/Water"
         float4 _GlintPos[48];
         float4 _GlintCol[48];
         float _GlintCount, _GlintNight, _BioGlow;
+        float4 _BioTouch[8];
+        float _BioTouchCount;
         sampler2D _SeabedTex;
         float4 _SeabedRect, _SeabedStep, _FoamColor;
         float _HasSeabed, _FoamWidth;
@@ -60,6 +64,66 @@ Shader "Fishing/Water"
         float Wave(float2 p, float2 dir, float len, float speed)
         {
             return sin(dot(p, dir) * 6.2831 / len + _Time.y * speed);
+        }
+
+        // ---- 야광충 ----
+        // 파도 앞 위상: 물가까지 거리 dist와 시간으로 물가 쪽으로 밀려오고, 사인 두 개로 앞줄이 굽는다.
+        // BioluminescenceFx.cs의 FrontGlow와 같은 식이어야 파티클이 빛나는 파도 앞에서 튄다
+        float BioSaw(float2 p, float dist, float t)
+        {
+            float wob = 2.2 * sin(p.x * 0.31 + p.y * 0.13 + t * 0.21) + 1.4 * sin(p.y * 0.41 - p.x * 0.53 - t * 0.33);
+            return frac((dist * 1.4 + t * 1.1 + wob) / 6.2831);
+        }
+
+        // 파도 앞이 군데군데만 부서진다 (10m쯤 되는 덩어리가 천천히 옮겨 간다). 0~1
+        float BioPatch(float2 p, float t)
+        {
+            return smoothstep(0.3, 0.72, FishNoise(p * 0.11 + float2(t * 0.04, -t * 0.025)));
+        }
+
+        // 막 지나간 파도 앞(saw 0)이 가장 밝고 바다 쪽(saw 1)으로 꼬리를 끌며 꺼진다. 앞쪽 끝은 몇 cm 부드럽게.
+        // 꼬리는 부서진 물처럼 얼룩진다 (churn). C#도 같은 식 (churn 빼고)
+        float BioFront(float2 p, float dist, float t, float churn)
+        {
+            float s = BioSaw(p, dist, t);
+            float k = 1 - s;
+            float tail = k * k * k;
+            return smoothstep(0.0, 0.03, s) * (pow(k, 18) * 0.9 + tail * (0.25 + churn));
+        }
+
+        // 칸마다 하나씩 흩어진 빛 알갱이가 저마다의 박자로 깜빡인다 (density = 1m에 몇 칸)
+        float BioGrains(float2 p, float density, float t)
+        {
+            float2 q = p * density;
+            float2 cell = floor(q);
+            float h = FishHash(cell);
+            float2 c = float2(FishHash(cell + 31.7), FishHash(cell + 71.3)) * 0.7 + 0.15;
+            float d = length(frac(q) - c);
+            float blink = pow(saturate(sin(t * (1.3 + h * 2.4) + h * 40.0)), 6);
+            return saturate(1 - d * 6.5) * blink * step(0.45, h);
+        }
+
+        // 파도 앞 한가운데는 흰빛이 도는 하늘색, 꼬리는 짙은 전기 파랑 (실제 야광충 사진)
+        float3 BioColor(float w)
+        {
+            return lerp(float3(0.02, 0.32, 1.0), float3(0.55, 0.95, 1.0), saturate(w * w * 1.2));
+        }
+
+        // 건드린 물(찌·물보라·발걸음·배)이 잠깐 퍼지며 빛난다. BioluminescenceFx.cs가 위치·반경·세기를 넘긴다
+        float BioTouch(float2 p, float t)
+        {
+            float g = 0;
+            int count = (int)_BioTouchCount;
+            for (int i = 0; i < 8; i++)
+            {
+                if (i >= count) break;
+                float4 b = _BioTouch[i];   // x, z, 반경, 세기
+                float r = length(p - b.xy) / max(b.z, 0.05);
+                float e = (r - 0.75) * 3.2;
+                float ring = exp(-e * e) * 0.7 + exp(-r * r * 2.2) * 0.5;   // 퍼지는 고리 + 가운데 남은 빛
+                g += ring * b.w;
+            }
+            return g;
         }
 
         void vert(inout appdata_full v)
@@ -118,19 +182,34 @@ Shader "Fishing/Water"
                     o.Smoothness = lerp(o.Smoothness, 0.35, foam);
                     o.Normal = normalize(lerp(n, float3(0, 0, 1), foam * 0.8));
 
-                    // 야광충: 부서지는 파도 앞(lap가 막 차오르는 곳)이 가장 밝고, 노이즈 알갱이로 반짝인다
+                    // 야광충: 부서지는 파도 앞이 날카롭게 켜지고 바다 쪽으로 꼬리를 끌며 꺼진다. 거품에도 옅게 남고, 물가 모래 선은 반짝인다
                     float bio = _BioGlow * _GlintNight;
                     if (bio > 0.01)
                     {
-                        float crest = smoothstep(0.55, 0.95, lap) * edge;
-                        float spark = tex2D(_NormalTex, p * 1.9 + t * float2(0.05, -0.04)).b;
-                        float glowFoam = saturate(foam * 0.55 + crest * 1.3) * (0.45 + 0.9 * smoothstep(0.45, 0.8, spark));
+                        // 부서진 물 얼룩: 물결 노멀(fbm 기울기)이라 값 노이즈처럼 네모 칸이 보이지 않는다
+                        float c1 = tex2D(_NormalTex, p * 0.33 + t * float2(0.045, -0.03)).r;
+                        float c2 = tex2D(_NormalTex, p * 0.71 - t * float2(0.03, 0.05)).g;
+                        float churn = smoothstep(0.42, 0.68, c1 * 0.6 + c2 * 0.4) * 0.9;
+                        float front = BioFront(p, dist, t, churn);
+                        float zone = smoothstep(_FoamWidth * 3.0, _FoamWidth * 0.6, dist);
+                        float wave = front * zone * BioPatch(p, t);
+                        float grains = BioGrains(p, 3.2, t) * saturate(foam * 0.5 + zone * 0.6) + BioGrains(p * 0.61 + 17.3, 2.4, t) * step(depth, 0.35) * 0.8;
                         // 물가에서 조금 떨어진 곳의 드문 빛 점
-                        float dots = smoothstep(0.86, 0.97, spark) * saturate(1 - dist / (_FoamWidth * 4)) * (0.6 + 0.4 * sin(t * 3 + n1 * 20));
-                        o.Albedo = lerp(o.Albedo, o.Albedo * 0.25, bio);   // 밤엔 흰 거품이 아니라 빛만 보이게
-                        o.Emission += float3(0.1, 0.78, 1.0) * (glowFoam * 2.2 + dots * 0.9) * bio;
+                        float dots = BioGrains(p * 0.37 + 5.1, 1.6, t * 0.6) * saturate(1 - dist / (_FoamWidth * 5));
+                        o.Albedo = lerp(o.Albedo, o.Albedo * 0.2, bio);   // 밤엔 흰 거품이 아니라 빛만 보이게
+                        float3 c = BioColor(wave);
+                        o.Emission += (c * wave * 3.2 + float3(0.05, 0.42, 1.0) * (foam * 0.08 + grains * 2.6 + dots * 1.4)) * bio;
                     }
                 }
+            }
+
+            // 건드린 물이 퍼지며 빛난다 (야광충 맵의 밤, 물가에서 멀어도)
+            float bioTouch = _BioGlow * _GlintNight;
+            if (bioTouch > 0.01 && _BioTouchCount > 0.5)
+            {
+                float touch = BioTouch(p, _Time.y);
+                float tg = BioGrains(p, 4.5, _Time.y * 1.7) + BioGrains(p * 1.37 + 9.1, 4.5, _Time.y * 2.1);
+                o.Emission += float3(0.04, 0.45, 1.0) * touch * (0.45 + tg * 3.0) * bioTouch;
             }
 
             // 밤 불빛 기둥

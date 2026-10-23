@@ -39,7 +39,7 @@ namespace Fishing.World
         public Color WaterDeep, WaterShallow;
         /// <summary>안개를 더 짙게 (흐림·비·새벽에 크게). 영흥도처럼 해무가 잦은 곳.</summary>
         public float FogBoost;
-        /// <summary>밤바다 파도 끝 야광충 세기 (0 = 없음, 서천 1).</summary>
+        /// <summary>밤바다 파도 끝 야광충 세기 (0 = 없음, 서천·삼척 1). 물 셰이더 _BioGlow + 캐릭터 둘레 빛 알갱이(BioluminescenceFx).</summary>
         public float Bioluminescence;
         /// <summary>땅이 늘 눈으로 덮여 있다 (발소리 = 눈).</summary>
         public bool SnowGround;

@@ -2,6 +2,16 @@
 
 세션이 끊겨도 이 파일만 보고 이어서 작업할 수 있게 남기는 메모. 끝난 일은 로드맵·각 문서에 합쳤다.
 
+## 2026-10-23 (3): 야광충 밤바다 다시 — 서천·삼척 → [09 문서 8-5장](09-art-plan.md), [tech 07 셰이더](tech/07-shaders.md)
+
+- 사용자 참고 사진(삼척해수욕장 밤 파도): 밀려오는 파도 앞줄이 하얗게 → 전기 파랑으로 빛나고 뒤로 꼬리, 군데군데만 빛남. 예전 서천 것은 파도 앞이 고르게 청록으로 번졌다
+- `Water.shader`: 물가 거리 + 톱니 위상(`BioSaw`)으로 물가 쪽으로 밀려오는 앞줄, 사인 두 개로 굽고 10m 덩어리 노이즈(`BioPatch`)로 끊김, 해시 칸 빛 알갱이(`BioGrains`)
+- 건드린 물이 빛난다: `_BioTouch` 8개(찌·물보라·파문·발걸음) 고리로 퍼짐. `Effects.Splash`·`Ripple`·`FightSpray`·`BigSplash`가 `BioluminescenceFx`를 부른다 (물방울도 파랗게)
+- 새 `BioluminescenceFx`(GameBootstrap에 붙음): 셰이더와 같은 식으로 캐릭터 둘레 16m 파도 앞을 찾아 빛 알갱이 파티클, 젖은 모래·얕은 물 발걸음. 물가 거리는 `FieldMap.ShoreDistance`(구운 해저 높이 재사용)
+- 새 셰이더 `Fishing/BioGlow`(더하기·HDR 파티클) → Always Included·`ProjectTools.RuntimeShaders` 등록 (`Fishing/FishShadow`도 빠져 있던 걸 같이)
+- 삼척에 켬(`CoastSpec.Bioluminescence = 1`). 촬영: `DevAutomation` 물체이름 `"#x,z[@splash]"` = 플레이어를 그 자리로 옮겨 찍기
+- 남은 것: 실제 밤 플레이로 밝기·파티클 양 체감, 낮은 사양에서 프레임
+
 ## 2026-10-23 (1): 마을 교환 — 나팔고동·황금거거 → [02 문서 13-11](02-game-design.md), [18 장비 표](18-gear-table.md)
 
 - 사용자: 낚싯대·릴·줄은 골드 상점 장비와 따로 마을 NPC에게서 구하는 장비가 있다 — 한국은 나팔고동, 해외는 황금거거로. NPC 장비는 레벨 대비 능력치가 더 좋다

@@ -19,6 +19,7 @@ namespace Fishing.Dev
         /// <summary>
         /// -autoshotInspect "맵:물체이름:방위각:고도각:거리배수[:시각];…" — 맵을 열고 그 이름의 물체(여럿이면 첫째)를 HUD 없이 자유 카메라로 찍는다.
         /// 거리배수는 물체 경계 반지름의 배수. 시각은 분(기본 10시). 모델 디테일을 가까이 확인할 때 쓴다 (tools/inspect.sh).
+        /// 물체이름이 "#x,z"면 플레이어를 그 자리로 옮겨 플레이어를 찍는다 ("#x,z@splash" = 바다 쪽에 물보라).
         /// </summary>
         public string Inspect;
     }
@@ -1336,7 +1337,19 @@ namespace Fishing.Dev
                 Game.Clock.Set(5, minute);
                 Game.Weather.Force(Weather.Clear);
                 Transform target = null;
-                if (Game.World != null)
+                if (name.StartsWith("#"))
+                {
+                    // "#x,z[@splash]": 플레이어를 그 자리로 옮겨 찍는다 (캐릭터 둘레 효과: 야광충 발걸음·빛 알갱이). splash = 바다 쪽 7m에 물보라
+                    var xz = name.Substring(1).Split(',');
+                    var ic = System.Globalization.CultureInfo.InvariantCulture;
+                    var at = new Vector3(float.Parse(xz[0], ic), Fishing.World.FieldMap.LandY + 0.1f, float.Parse(xz[1], ic));
+                    Game.Player.Teleport(at, 0f);
+                    yield return new WaitForSeconds(1.5f);
+                    if (act == "splash") Fishing.World.Effects.BigSplash(new Vector3(at.x, Fishing.World.FieldMap.WaterY, at.z + 7f), 0.8f);
+                    act = null;
+                    target = Game.Player.transform;
+                }
+                else if (Game.World != null)
                     foreach (var t in Game.World.GetComponentsInChildren<Transform>(true))
                         if (t.name == name) { target = t; break; }
                 if (target == null)
