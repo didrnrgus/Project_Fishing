@@ -324,6 +324,18 @@ namespace Fishing.World
             }
         }
 
+        /// <summary>소품에서 이름이 prefix로 시작하는 재질(Blender 재질 이름)을 m으로 바꾼다 — 텐트 겉감처럼 한 모델을 여러 색으로 쓸 때.</summary>
+        public static void Tint(GameObject go, string prefix, Material m)
+        {
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+            {
+                var mats = r.sharedMaterials;
+                for (int i = 0; i < mats.Length; i++)
+                    if (mats[i] != null && mats[i].name.StartsWith(prefix)) mats[i] = m;
+                r.sharedMaterials = mats;
+            }
+        }
+
         static bool Bright(Color c) => c.grayscale > 0.78f;
         static bool Vivid(Color c)
         {

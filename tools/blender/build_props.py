@@ -8,6 +8,7 @@
   palm_a, palm_b   야자수 (하롱베이 · 나일강). 줄기가 휘고 잎 9~11장, 코코넛 송이
   felucca          나일강 펠루카: 흰 나무배 + 비스듬한 긴 활대에 큰 삼각돛
   junk             하롱베이 정크선: 갈색 나무배, 높은 고물, 대나무 살을 댄 주황 돛 세 장
+  (한강 둔치 텐트·그늘막은 props_camp.py)
   (새 해외 맵 소품 — 대불·머라이언·독수리·롱테일 보트·열기구·파라솔·망루·사자상·난파선은 props_sea.py)
 """
 import math
@@ -167,6 +168,8 @@ import sculpt  # noqa: E402  (석상·난파선을 한 덩어리 조각으로 �
 PROPS.update(sculpt.PROPS)
 import boats  # noqa: E402  (배: 한국 연안 어선·모터보트·고무보트·나무배·카이크·요트·딩기)
 PROPS.update(boats.PROPS)
+import props_camp  # noqa: E402  (한강 둔치: 원터치 돔 텐트·그늘막)
+PROPS.update(props_camp.PROPS)
 
 
 def export(pid, objs):
