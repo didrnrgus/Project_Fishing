@@ -45,6 +45,7 @@ namespace Fishing.World
                 p.startLifetime = Random.Range(0.5f, 1f);
                 ps.Emit(p, 1);
             }
+            BioluminescenceFx.Splash(pos, count, strength);   // 야광충 밤바다: 물방울이 파랗게, 물이 빛난다
         }
 
         static ParticleSystem _spray;
@@ -91,7 +92,7 @@ namespace Fishing.World
         public static void FightSpray(Vector3 pos, float intensity)
         {
             var ps = SpraySystem;
-            var p = new ParticleSystem.EmitParams();
+            var p = new ParticleSystem.EmitParams { startColor = BioluminescenceFx.SprayTint };
             int count = Mathf.RoundToInt(7 + 12 * intensity);
             for (int i = 0; i < count; i++)
             {
@@ -122,7 +123,7 @@ namespace Fishing.World
         public static void BigSplash(Vector3 pos, float scale = 1f)
         {
             var ps = SpraySystem;
-            var p = new ParticleSystem.EmitParams();
+            var p = new ParticleSystem.EmitParams { startColor = BioluminescenceFx.SprayTint };
             for (int i = 0; i < 70; i++)
             {
                 var dir = Random.insideUnitCircle;
@@ -182,6 +183,7 @@ namespace Fishing.World
 
         public static void Ripple(Vector3 pos, float size = 1.5f, float duration = 1.4f)
         {
+            BioluminescenceFx.Disturb(pos, size * 0.8f, 0.55f, duration * 1.3f);
             var go = Mats.Prim(PrimitiveType.Cylinder, "Ripple", null,
                 new Vector3(pos.x, FieldMap.WaterY + 0.02f, pos.z), new Vector3(0.2f, 0.002f, 0.2f),
                 Mats.NewRipple(), collider: false);

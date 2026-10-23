@@ -137,6 +137,8 @@ namespace Fishing.World
         public float FogBoost;
         /// <summary>땅이 눈으로 덮여 있다 (청진포구).</summary>
         public bool Snow;
+        /// <summary>밤바다 파도 끝 야광충 세기 (삼척 1).</summary>
+        public float Bioluminescence;
         /// <summary>검은 현무암 갯바위 (제주).</summary>
         public bool DarkRock;
         /// <summary>
@@ -236,6 +238,7 @@ namespace Fishing.World
             WaterShallow = spec.WaterShallow;
             FogBoost = spec.FogBoost;
             SnowGround = spec.Snow;
+            Bioluminescence = spec.Bioluminescence;
             GridMinX = -160f;
             GridMinZ = spec.ShoreZ;
             CellW = 40f;

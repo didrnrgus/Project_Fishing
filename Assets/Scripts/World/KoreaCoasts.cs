@@ -170,6 +170,7 @@ namespace Fishing.World
                 new StackSpec { Pos = new Vector3(161f, 0f, -4f), Radius = 3.6f, Height = 9f, Name = "형제바위" },
             },
             Features = CoastFeature.SquidBoats | CoastFeature.Mountains | CoastFeature.SeaRocks,
+            Bioluminescence = 1f, // 삼척해수욕장 밤 파도가 야광충으로 파랗게 (사용자 참고 사진)
             Grid = new[,]
             {
                 { R, R, S, S, D, D, R, R },
