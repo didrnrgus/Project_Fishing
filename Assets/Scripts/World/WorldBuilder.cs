@@ -339,12 +339,19 @@ namespace Fishing.World
             for (int i = 0; i < 50; i++)
                 PlaceTree(trees, new Vector3(R(-155f, 155f), HanRiverMap.LandY, R(62f, 68f)), trunk, leaves[i % leaves.Length]);
 
-            // 사용자 참고 사진(한강 둔치): 나무 그늘 아래 알록달록한 원터치 텐트와 돗자리, 그늘막
-            var tentColors = new[] { new Color(0.2f, 0.5f, 0.85f), new Color(0.95f, 0.6f, 0.15f), new Color(0.3f, 0.7f, 0.4f), new Color(0.85f, 0.25f, 0.3f), new Color(0.95f, 0.9f, 0.85f) };
+            // 사용자 참고 사진(한강 둔치): 나무 그늘 아래 알록달록한 원터치 돔 텐트·그늘막과 돗자리
+            // 겉감 색: 둔치에 많은 파랑·카키·회색·남색·주황·민트·베이지 (Props/tent_dome·tent_shade의 TentFabric을 바꿔 칠한다)
+            var tentColors = new[]
+            {
+                new Color(0.2f, 0.45f, 0.8f), new Color(0.52f, 0.5f, 0.36f), new Color(0.55f, 0.57f, 0.6f), new Color(0.16f, 0.2f, 0.34f),
+                new Color(0.92f, 0.5f, 0.16f), new Color(0.45f, 0.75f, 0.7f), new Color(0.84f, 0.78f, 0.66f)
+            };
             var matColors = new[] { new Color(0.95f, 0.85f, 0.3f), new Color(0.55f, 0.75f, 0.95f), new Color(0.95f, 0.55f, 0.6f), new Color(0.6f, 0.85f, 0.55f) };
+            var pitched = new List<Vector2>();
             for (int i = 0; i < 26; i++)
             {
                 float x = R(-150f, 150f), z = R(-100f, -84f);
+                z = -101f + (z + 100f) / 16f * 9f; // 자전거도로(z -87~-81) 남쪽 풀밭에만: 스트링·앞 돗자리까지 길에 안 걸치게 (R 횟수는 그대로)
                 if (Mathf.Abs(x - HanRiverMap.StorePos.x) < 14f) continue;
                 if (Vector2.Distance(new Vector2(x, z), new Vector2(HanRiverMap.IdolStage.x, HanRiverMap.IdolStage.z)) < 9f) continue;
                 var at = new Vector3(x, HanRiverMap.LandY, z);
@@ -352,10 +359,28 @@ namespace Fishing.World
                 var rot = Quaternion.Euler(0f, yaw, 0f);
                 if (_rng.NextDouble() < 0.6)
                 {
-                    // 원터치 텐트: 납작한 반구 + 앞 입구 그늘
-                    var tent = Mats.Lit(tentColors[_rng.Next(tentColors.Length)], 0.25f);
-                    Mats.Prim(PrimitiveType.Sphere, "Tent", trees, at + Vector3.up * 0.05f, new Vector3(2.4f, 2.2f, 2.0f), tent, false, rot);
-                    Mats.Prim(PrimitiveType.Cube, "TentDoor", trees, at + rot * new Vector3(0f, 0.55f, 0.98f), new Vector3(0.9f, 0.9f, 0.05f), Mats.Lit(new Color(0.12f, 0.12f, 0.14f)), false, rot);
+                    var fabric = Mats.Lit(tentColors[_rng.Next(tentColors.Length)], 0.3f);
+                    bool shade = Mathf.Abs(Mathf.RoundToInt(x * 3.7f + z * 1.3f)) % 3 == 0; // 셋에 하나는 그늘막 (R을 더 부르면 뒤 배치가 바뀐다)
+                    var spot = new Vector2(x, z);
+                    bool crowded = false;
+                    foreach (var q in pitched) crowded |= Vector2.Distance(q, spot) < 4.5f; // 텐트끼리 겹치지 않게
+                    if (!crowded) pitched.Add(spot);
+                    var tent = crowded ? null : KenneyProps.Spawn(shade ? "Props/tent_shade" : "Props/tent_dome", trees, at, yaw, 0f, 0f, false);
+                    if (tent != null)
+                    {
+                        KenneyProps.Tint(tent, "TentFabric", fabric);
+                        // 몸체만 막는다 (스트링·깔개까지 감싸면 앞 돗자리에 못 선다)
+                        var block = new GameObject("TentBlock").AddComponent<BoxCollider>();
+                        block.transform.SetParent(trees, false);
+                        block.transform.localPosition = at + rot * new Vector3(0f, 0.6f, shade ? -0.7f : 0f);
+                        block.transform.localRotation = rot;
+                        block.size = shade ? new Vector3(1.9f, 1.2f, 1.3f) : new Vector3(2f, 1.2f, 1.4f);
+                    }
+                    else if (!crowded)
+                    {
+                        Mats.Prim(PrimitiveType.Sphere, "Tent", trees, at + Vector3.up * 0.05f, new Vector3(2.4f, 2.2f, 2.0f), fabric, false, rot);
+                        Mats.Prim(PrimitiveType.Cube, "TentDoor", trees, at + rot * new Vector3(0f, 0.55f, 0.98f), new Vector3(0.9f, 0.9f, 0.05f), Mats.Lit(new Color(0.12f, 0.12f, 0.14f)), false, rot);
+                    }
                 }
                 // 돗자리 (텐트 앞이나 따로)
                 var mat = Mats.Lit(matColors[_rng.Next(matColors.Length)], 0.2f);
