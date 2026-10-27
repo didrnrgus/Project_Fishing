@@ -192,11 +192,11 @@ namespace Fishing.UI
                     if (equipped) { e.Border = new Color(0.4f, 0.95f, 0.45f, 0.95f); e.Corner = "장착"; }
                     e.Tip = head + (equipped ? "<color=#70e070>(장착중)</color>\n" : "") +
                             $"<color=#8fa3b5>최소요구레벨</color>  Lv.{b?.Level ?? 1}\n<color=#8fa3b5>개수</color>  {it.count}\n\n{ItemDatabase.Desc(id)}\n\n" +
-                            (equipped ? "" : b != null && b.Level > p.Data.level ? "<color=#f05048>레벨이 모자랍니다</color>" : "<color=#9fd8ff>누르면 장착</color>");
+                            (equipped ? "" : b != null && !TestMode.LevelOk(b.Level) ? "<color=#f05048>레벨이 모자랍니다</color>" : "<color=#9fd8ff>누르면 장착</color>");
                     e.Click = () =>
                     {
                         if (!idle) { Game.Toast("낚시 중에는 미끼를 바꿀 수 없습니다.", ToastKind.Warn); return; }
-                        if (b != null && b.Level > p.Data.level) { Game.Toast($"Lv.{b.Level}부터 쓸 수 있습니다.", ToastKind.Warn); return; }
+                        if (b != null && !TestMode.LevelOk(b.Level)) { Game.Toast($"Lv.{b.Level}부터 쓸 수 있습니다.", ToastKind.Warn); return; }
                         p.SelectBait(id);
                     };
                 }

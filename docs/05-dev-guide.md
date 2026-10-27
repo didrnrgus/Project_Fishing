@@ -145,6 +145,15 @@ UI나 연출을 바꾼 뒤 `build.sh` → `autoshot.sh`로 실제 화면을 확�
 - 형식: `SaveData`를 `JsonUtility`로 저장한 JSON. 필드를 추가할 때는 기본값을 두면 이전 세이브와 호환된다.
 - 에디터에서 Play해도 같은 파일을 쓴다. 초기화하려면 `Fishing > Delete Save`.
 
+## 시험 모드 (`Core/TestMode.cs`)
+
+직접 해 보며 맵·물고기를 확인할 때 쓰는 스위치. `TestMode.UnlockAll = true`면
+- 낚시터·거점의 입장 레벨, 미끼 사용 레벨을 건너뛴다 (`TestMode.LevelOk`).
+- 켤 때마다 장비를 모두 주고 칸마다 가장 좋은 것(낚싯대 힘·릴 감기·원줄 강도 최고, 배는 낚시 크루저)을 장착, 낚싯대·릴은 +15, 미끼는 종류마다 99개까지 채운다 — **세이브에 남는다**.
+- 자동 촬영(`-autoshot`)에서는 꺼진다 (스크린샷은 보통 게임 그대로).
+
+2026-10-27부터 켜 둔 상태. 끝나면 `UnlockAll = false`로 돌린다 (받은 장비는 세이브에 남으니 처음부터 하려면 세이브 삭제).
+
 ## 에디터를 닫지 않고 컴파일만 확인하기
 
 에디터가 열려 있으면 배치모드 빌드가 막힌다. 그럴 때는 Unity가 만든 `Library/Bee/artifacts/*/Assembly-CSharp.rsp`를 Unity에 들어 있는 Roslyn(`Editor/Data/DotNetSdkRoslyn/csc.dll`, `Editor/Data/NetCoreRuntime/dotnet.exe`)으로 돌려 오류만 볼 수 있다 (rsp의 소스 목록과 `-out`만 바꿔서).

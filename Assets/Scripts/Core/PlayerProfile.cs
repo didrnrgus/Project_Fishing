@@ -418,7 +418,7 @@ namespace Fishing.Core
         public void SelectBait(string baitId)
         {
             var b = GearDatabase.GetBait(baitId);
-            if (b != null && b.Level > Data.level)
+            if (b != null && !TestMode.LevelOk(b.Level))
             {
                 Game.Toast($"{b.Name}은(는) Lv.{b.Level}부터 쓸 수 있습니다.", ToastKind.Warn);
                 return;

@@ -37,6 +37,9 @@ namespace Fishing.Core
             var data = devArgs.Enabled ? new SaveData() : SaveSystem.Load();
             Game.Profile = new PlayerProfile(data);
             Game.Quests = new QuestSystem(Game.Profile);
+            // 시험 모드: 레벨 제한 없이 모든 맵 + 가장 좋은 장비 (자동 촬영은 보통 게임 그대로)
+            if (devArgs.Enabled) TestMode.UnlockAll = false;
+            else if (TestMode.UnlockAll) TestMode.GrantBestGear(Game.Profile);
             // 예전 저장 파일: Lv.5 이상인데 고무보트가 없으면 지급 (원작: 배는 레벨 5에서 얻는다)
             if (data.level >= 5 && !data.ownedGear.Contains("boat_rubber"))
             {
@@ -60,7 +63,7 @@ namespace Fishing.Core
             SeasonFx.Ensure();
             // 마지막으로 있던 낚시터 (입장 레벨이 안 되면 한강)
             var startMap = Maps.Get(data.mapId);
-            if (data.level < FishingAreas.EntryLevel(startMap.Id)) startMap = Maps.HanRiver;
+            if (!TestMode.LevelOk(FishingAreas.EntryLevel(startMap.Id))) startMap = Maps.HanRiver;
             MapLoader.Load(startMap, false);
 
             var playerGo = new GameObject("Player");
