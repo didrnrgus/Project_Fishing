@@ -162,6 +162,7 @@ namespace Fishing.PlayerSystems
             foreach (var h in Physics.SphereCastAll(target, 0.3f, toCam.normalized, toCam.magnitude, ~0, QueryTriggerInteraction.Ignore))
             {
                 if (h.collider.gameObject == Game.Player.gameObject || (boat != null && h.transform.IsChildOf(boat))) continue;
+                if (Fishing.World.HarborKit.IsLowWall(h.collider)) continue; // 방파제 파라펫은 넘겨 본다
                 block = Mathf.Min(block, h.distance);
             }
             if (block < float.MaxValue)

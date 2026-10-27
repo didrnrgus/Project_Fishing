@@ -82,45 +82,48 @@ namespace Fishing.World
             h.SetParent(_root, false);
             h.localPosition = at;
             h.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            // 사진(이아 마을): 흰 회벽(가끔 황토·분홍 파스텔), 위가 둥근 아치 문·창에 파란 칠, 둥근 처마 턱, 원통 지붕(카마라), 바깥 계단, 부겐빌레아
+            // 사진(이아 마을): 흰 회벽(가끔 황토·분홍 파스텔), 두꺼운 벽에 깊이 들어간 아치 문·창(파란 칠), 둥글게 덧바른 모서리와 처마 턱,
+            // 원통 지붕(카마라), 바깥 계단, 부겐빌레아 (HouseKit: 벽을 비운 아치 + 귀퉁이 채움)
             var wallCol = _rng.NextDouble() < 0.15 ? (_rng.NextDouble() < 0.5 ? new Color(0.93f, 0.8f, 0.55f) : new Color(0.93f, 0.72f, 0.68f)) : new Color(0.97f, 0.97f, 0.95f);
             var white = Mats.Wall(wallCol, 0.1f);
             var trim = Mats.Wall(new Color(0.98f, 0.98f, 0.97f), 0.1f);
             var blue = Mats.Wood(CycladicBlue, 0.35f);
             var dark = Mats.Lit(new Color(0.18f, 0.2f, 0.24f), 0.6f);
             float w = R(5f, 8f), d = R(5f, 7f), hgt = R(3f, 3.6f);   // below = 땅속으로 내린 벽 (비탈에 박힌 동굴집이면 깊게)
-            Mats.Prim(PrimitiveType.Cube, "Wall", h, new Vector3(0f, (hgt - below) * 0.5f, 0f), new Vector3(w, hgt + below, d), white, false);
-            // 둥근 처마 턱: 가로 원통을 둘레에 (모서리가 각지지 않게 회벽을 덧바른 모양)
-            foreach (var (pos, len, rot) in new[] { (new Vector3(0f, hgt + 0.05f, d * 0.5f), w + 0.1f, 90f), (new Vector3(0f, hgt + 0.05f, -d * 0.5f), w + 0.1f, 90f),
-                         (new Vector3(w * 0.5f, hgt + 0.05f, 0f), d + 0.1f, 0f), (new Vector3(-w * 0.5f, hgt + 0.05f, 0f), d + 0.1f, 0f) })
-                Mats.Prim(PrimitiveType.Capsule, "Lip", h, pos, new Vector3(0.28f, len * 0.5f, 0.28f), trim, false, Quaternion.Euler(90f, rot, 0f));
-            Mats.Prim(PrimitiveType.Cube, "RoofSlab", h, new Vector3(0f, hgt + 0.05f, 0f), new Vector3(w, 0.2f, d), trim, false);
-            // 아치 문 (파란 판 + 흰 테) · 아치 창 둘 (파란 덧창 + 어두운 유리)
+            var local = new System.Random(Mathf.RoundToInt(at.x * 131f + at.z * 71f));
+            var p = new HouseKit.Parts { WallMat = white, TrimMat = trim, FrameMat = blue, GlassMat = dark, DoorMat = blue, MetalMat = dark };
             float dx = R(-w * 0.2f, w * 0.2f);
-            MapKit.Place(h, "DoorFrame", ArchPanel(1.25f, 2.35f), trim, new Vector3(dx, 0f, d * 0.5f + 0.02f));
-            MapKit.Place(h, "Door", ArchPanel(0.95f, 2.15f), blue, new Vector3(dx, 0f, d * 0.5f + 0.05f));
-            Mats.Prim(PrimitiveType.Cube, "DoorStep", h, new Vector3(dx, 0.08f, d * 0.5f + 0.35f), new Vector3(1.5f, 0.16f, 0.6f), trim, false);
+            var front = new List<HouseKit.Opening> { new HouseKit.Opening(dx, 0f, 0.95f, 2.15f, HouseKit.Hole.Arch) };
+            var winX = new List<float>();
             for (int i = 0; i < 2; i++)
             {
                 float x = (i == 0 ? -1f : 1f) * w * 0.32f;
                 if (Mathf.Abs(x - dx) < 1.3f) continue;
-                MapKit.Place(h, "WinFrame", ArchPanel(1.0f, 1.3f), trim, new Vector3(x, 1.1f, d * 0.5f + 0.02f));
-                MapKit.Place(h, "Window", ArchPanel(0.76f, 1.12f), dark, new Vector3(x, 1.2f, d * 0.5f + 0.04f));
-                Mats.Prim(PrimitiveType.Cube, "Shutter", h, new Vector3(x - 0.58f, 1.72f, d * 0.5f + 0.06f), new Vector3(0.36f, 1.05f, 0.04f), blue, false);
-                Mats.Prim(PrimitiveType.Cube, "Shutter", h, new Vector3(x + 0.58f, 1.72f, d * 0.5f + 0.06f), new Vector3(0.36f, 1.05f, 0.04f), blue, false);
-                Mats.Prim(PrimitiveType.Cube, "Sill", h, new Vector3(x, 1.12f, d * 0.5f + 0.1f), new Vector3(1.05f, 0.08f, 0.2f), trim, false);
+                winX.Add(x);
+                front.Add(new HouseKit.Opening(x, 1.2f, 0.76f, 1.12f, HouseKit.Hole.ArchWindow));
             }
+            HouseKit.Box(p, w, d, -below, hgt, 0.32f, front, null, null, null, HouseKit.WallShade(0f, hgt), local, 0.4f, 0.18f);
+            // 둥근 처마 턱: 가로 원통을 둘레에 (모서리가 각지지 않게 회벽을 덧바른 모양)
+            foreach (var (pos, len, rot) in new[] { (new Vector3(0f, hgt + 0.05f, d * 0.5f), w + 0.1f, 90f), (new Vector3(0f, hgt + 0.05f, -d * 0.5f), w + 0.1f, 90f),
+                         (new Vector3(w * 0.5f, hgt + 0.05f, 0f), d + 0.1f, 0f), (new Vector3(-w * 0.5f, hgt + 0.05f, 0f), d + 0.1f, 0f) })
+                Mats.Prim(PrimitiveType.Capsule, "Lip", h, pos, new Vector3(0.28f, len * 0.5f, 0.28f), trim, false, Quaternion.Euler(90f, rot, 0f));
+            p.Trim.Block(new Vector3(0f, hgt + 0.05f, 0f), new Vector3(w, 0.2f, d), 0.05f, Quaternion.identity, Color.white, Color.white * 0.85f);
+            p.Trim.Block(new Vector3(dx, 0.08f, d * 0.5f + 0.35f), new Vector3(1.5f, 0.16f, 0.6f), 0.05f, Quaternion.identity, Color.white, Color.white * 0.8f); // 문 앞 디딤
+            // 아치 창 양옆 파란 덧창
+            foreach (float x in winX)
+                foreach (float sx in new[] { -0.58f, 0.58f })
+                    p.Door.Block(new Vector3(x + sx, 1.72f, d * 0.5f + 0.03f), new Vector3(0.36f, 1.05f, 0.04f), 0.01f, Quaternion.identity, Color.white, Color.white);
             // 원통 지붕 (동굴집 카마라): 앞뒤 방향 반원통
             if (!church && _rng.NextDouble() < 0.3)
                 Mats.Prim(PrimitiveType.Cylinder, "Vault", h, new Vector3(0f, hgt + 0.1f, 0f), new Vector3(w * 0.9f, d * 0.5f, w * 0.55f), trim, false, Quaternion.Euler(90f, 0f, 0f));
-            // 옆벽 바깥 계단 (옥상 테라스로)
+            // 옆벽 바깥 계단 (옥상 테라스로): 디딤판마다 모따기, 바깥 난간벽
             if (_rng.NextDouble() < 0.35)
             {
                 float sx = _rng.NextDouble() < 0.5 ? -1f : 1f;
                 for (int k = 0; k < 9; k++)
-                    Mats.Prim(PrimitiveType.Cube, "Stair", h, new Vector3(sx * (w * 0.5f + 0.45f), k * hgt / 9f + 0.15f, d * 0.4f - k * d * 0.8f / 9f),
-                        new Vector3(0.9f, 0.3f + k * hgt / 9f * 0f, d * 0.8f / 9f + 0.02f), trim, false);
-                Mats.Prim(PrimitiveType.Cube, "StairWall", h, new Vector3(sx * (w * 0.5f + 0.88f), hgt * 0.5f, 0f), new Vector3(0.12f, hgt, d * 0.85f), trim, false);
+                    p.Trim.Block(new Vector3(sx * (w * 0.5f + 0.45f), k * hgt / 9f + 0.15f, d * 0.4f - k * d * 0.8f / 9f), new Vector3(0.9f, 0.3f, d * 0.8f / 9f + 0.02f), 0.04f,
+                        Quaternion.identity, Color.white, Color.white * 0.85f);
+                p.Wall.Block(new Vector3(sx * (w * 0.5f + 0.88f), hgt * 0.5f, 0f), new Vector3(0.14f, hgt, d * 0.85f), 0.06f, Quaternion.identity, HouseKit.WallShade(0f, hgt));
             }
             // 부겐빌레아: 문 옆 벽을 타고 오른 분홍·자주 꽃 덩굴
             if (_rng.NextDouble() < 0.2)
@@ -140,12 +143,17 @@ namespace Fishing.World
             float top = hgt;
             if (!church && _rng.NextDouble() < 0.35)
             {
-                // 2단: 뒤쪽에 작은 상자 하나 더 (테라스가 앞에 남는다)
+                // 2단: 뒤쪽에 작은 상자 하나 더 (테라스가 앞에 남는다), 아치 창 하나
                 float w2 = w * R(0.5f, 0.7f), d2 = d * 0.5f;
-                Mats.Prim(PrimitiveType.Cube, "Upper", h, new Vector3(R(-0.5f, 0.5f), hgt + 1.5f, -d * 0.25f), new Vector3(w2, 3f, d2), white, false);
-                MapKit.Place(h, "UpperWindow", ArchPanel(0.8f, 1.2f), blue, new Vector3(0f, hgt + 1.0f, -d * 0.25f + d2 * 0.5f + 0.03f));
+                var rig = HouseKit.Rig(h, new Vector3(R(-0.5f, 0.5f), hgt, -d * 0.25f), 0f, "Upper");
+                var up = new HouseKit.Parts { WallMat = white, TrimMat = trim, FrameMat = blue, GlassMat = blue, DoorMat = blue };
+                HouseKit.Box(up, w2, d2, 0f, 3f, 0.3f, new List<HouseKit.Opening> { new HouseKit.Opening(0f, 1.0f, 0.8f, 1.2f, HouseKit.Hole.ArchWindow) }, null, null, null,
+                    HouseKit.WallShade(0f, 3f), local, 0.35f, 0.16f);
+                up.Trim.Block(new Vector3(0f, 3.05f, 0f), new Vector3(w2 + 0.1f, 0.18f, d2 + 0.1f), 0.06f, Quaternion.identity, Color.white, Color.white * 0.85f);
+                up.Emit(rig);
                 top = hgt + 3f;
             }
+            p.Emit(h);
             if (church)
             {
                 // 둥근 드럼 + 파란 돔 + 꼭대기 십자가, 앞쪽에 종탑
@@ -154,8 +162,11 @@ namespace Fishing.World
                 var gold = Mats.Lit(new Color(0.9f, 0.75f, 0.35f), 0.6f, 0.6f);
                 Mats.Prim(PrimitiveType.Cube, "Cross", h, new Vector3(0f, hgt + 1.4f + w * 0.25f + 0.5f, 0f), new Vector3(0.08f, 0.9f, 0.08f), gold, false);
                 Mats.Prim(PrimitiveType.Cube, "CrossBar", h, new Vector3(0f, hgt + 1.4f + w * 0.25f + 0.65f, 0f), new Vector3(0.45f, 0.08f, 0.08f), gold, false);
-                Mats.Prim(PrimitiveType.Cube, "BellWall", h, new Vector3(w * 0.3f, hgt + 1.1f, d * 0.5f - 0.2f), new Vector3(1.6f, 2.2f, 0.4f), white, false);
-                Mats.Prim(PrimitiveType.Cube, "BellArch", h, new Vector3(w * 0.3f, hgt + 1.3f, d * 0.5f), new Vector3(0.6f, 0.8f, 0.42f), dark, false);
+                // 종탑: 흰 벽에 아치 구멍 (뒤가 비친다)
+                var bell = new HouseKit.Parts { WallMat = white, DoorMat = dark };
+                HouseKit.Wall(bell.Wall, new Vector3(w * 0.3f, hgt, d * 0.5f), Quaternion.identity, 1.6f, 0f, 2.2f, 0.4f,
+                    new List<HouseKit.Opening> { new HouseKit.Opening(0f, 0.5f, 0.6f, 1.1f, HouseKit.Hole.Arch) }, HouseKit.WallShade(hgt, hgt + 2.2f));
+                bell.Emit(h);
                 top = hgt + 1.4f + w * 0.25f;
             }
             var col = h.gameObject.AddComponent<BoxCollider>();
@@ -163,7 +174,7 @@ namespace Fishing.World
             col.size = new Vector3(w, top + 0.5f, d);
         }
 
-        /// <summary>이집트 시골집: 흙벽돌 평지붕, 낮은 난간, 작은 창. 가끔 비둘기탑(위가 둥근 흙탑).</summary>
+        /// <summary>이집트 시골집: 두꺼운 흙벽돌 평지붕 (모서리가 둥글게 닳음), 낮은 난간, 깊이 들어간 작은 창과 문. 가끔 비둘기탑(위가 둥근 흙탑).</summary>
         void MudHouse(Vector3 at, float yaw)
         {
             var h = new GameObject("MudHouse").transform;
@@ -175,15 +186,21 @@ namespace Fishing.World
             var dark = Mats.Lit(new Color(0.15f, 0.12f, 0.1f), 0.2f);
             var door = Mats.Lit(_rng.NextDouble() < 0.5 ? new Color(0.2f, 0.45f, 0.55f) : new Color(0.45f, 0.3f, 0.18f), 0.2f);
             float w = R(6f, 9f), d = R(5f, 7f), hgt = R(3f, 4.2f);
-            Mats.Prim(PrimitiveType.Cube, "Wall", h, new Vector3(0f, (hgt - 1.5f) * 0.5f, 0f), new Vector3(w, hgt + 1.5f, d), mud, false);
-            Mats.Prim(PrimitiveType.Cube, "Parapet", h, new Vector3(0f, hgt + 0.3f, d * 0.5f - 0.15f), new Vector3(w, 0.6f, 0.3f), mud, false);
-            Mats.Prim(PrimitiveType.Cube, "ParapetBack", h, new Vector3(0f, hgt + 0.3f, -d * 0.5f + 0.15f), new Vector3(w, 0.6f, 0.3f), mud, false);
-            Mats.Prim(PrimitiveType.Cube, "Door", h, new Vector3(0f, 1f, d * 0.5f + 0.03f), new Vector3(1f, 2f, 0.06f), door, false);
-            for (int i = -1; i <= 1; i += 2)
-                Mats.Prim(PrimitiveType.Cube, "Window", h, new Vector3(i * w * 0.3f, 2.1f, d * 0.5f + 0.03f), new Vector3(0.55f, 0.55f, 0.05f), dark, false);
+            var local = new System.Random(Mathf.RoundToInt(at.x * 131f + at.z * 71f));
+            var p = new HouseKit.Parts { WallMat = mud, TrimMat = mud, FrameMat = door, GlassMat = dark, DoorMat = door };
+            var shade = HouseKit.WallShade(0f, hgt);
+            var front = new List<HouseKit.Opening> { new HouseKit.Opening(0f, 0f, 1f, 2f, HouseKit.Hole.Door) };
+            for (int i = -1; i <= 1; i += 2) front.Add(new HouseKit.Opening(i * w * 0.3f, 1.8f, 0.55f, 0.55f));
+            var side = new List<HouseKit.Opening> { new HouseKit.Opening(0f, 1.9f, 0.45f, 0.45f) };
+            HouseKit.Box(p, w, d, -1.5f, hgt, 0.4f, front, null, side, side, shade, local, 0.5f, 0.22f);
+            // 낮은 난간 (앞뒤), 둥글게 닳은 흙
+            foreach (float sz in new[] { 1f, -1f })
+                p.Wall.Block(new Vector3(0f, hgt + 0.28f, sz * (d * 0.5f - 0.16f)), new Vector3(w + 0.02f, 0.6f, 0.34f), 0.12f, Quaternion.identity, shade);
+            p.Trim.Block(new Vector3(0f, hgt - 0.05f, 0f), new Vector3(w - 0.1f, 0.12f, d - 0.1f), 0.04f, Quaternion.identity, Color.white, Color.white);
             // 지붕 위 짚단·장작
             Mats.Prim(PrimitiveType.Cube, "Straw", h, new Vector3(R(-w * 0.2f, w * 0.2f), hgt + 0.35f, R(-1f, 0.5f)), new Vector3(R(1.5f, 2.5f), 0.5f, R(1f, 1.8f)),
                 Mats.Lit(new Color(0.8f, 0.7f, 0.4f), 0.05f), false);
+            p.Emit(h);
             float top = hgt;
             if (_rng.NextDouble() < 0.25)
             {
@@ -208,7 +225,10 @@ namespace Fishing.World
         };
         static readonly string[] TubeSigns = { "PHO", "CAFE", "HAI SAN", "NHA NGHI", "BIA" };
 
-        /// <summary>베트남 좁고 높은 집 (낮 하롱 시내의 nhà ống): 폭 4~5m, 3~4층, 파스텔 벽, 층마다 발코니, 꼭대기 빨간 기와.</summary>
+        /// <summary>
+        /// 베트남 좁고 높은 집 (낮 하롱 시내의 nhà ống): 폭 4~5m, 3~4층, 파스텔 벽, 1층 셔터 가게, 층마다 발코니와 들어간 큰 창,
+        /// 꼭대기 앞은 옥상 테라스, 뒤는 박공을 앞으로 보인 빨간 기와 지붕.
+        /// </summary>
         void TubeHouse(Vector3 at, float yaw, bool sign)
         {
             var h = new GameObject("TubeHouse").transform;
@@ -223,25 +243,40 @@ namespace Fishing.World
             int floors = _rng.Next(3, 5);
             const float fh = 3.2f;
             float hgt = floors * fh;
-            Mats.Prim(PrimitiveType.Cube, "Wall", h, new Vector3(0f, hgt * 0.5f - 0.4f, 0f), new Vector3(w, hgt + 0.8f, d), wall, false);
-            for (int f = 0; f < floors; f++)
+            var local = new System.Random(Mathf.RoundToInt(at.x * 131f + at.z * 71f));
+            var trim = Mats.Weathered("concrete", new Color(0.8f, 0.79f, 0.76f), 2f, 0.12f, 0f, 0.5f, 0.15f, null, 0.7f, 0f, "wallconcrete");
+            var p = new HouseKit.Parts
             {
-                float y = f * fh;
-                Mats.Prim(PrimitiveType.Cube, f == 0 ? "Shutter" : "Window", h, new Vector3(0f, y + (f == 0 ? 1.3f : 1.6f), d * 0.5f + 0.03f),
-                    f == 0 ? new Vector3(w * 0.8f, 2.6f, 0.05f) : new Vector3(w * 0.6f, 1.6f, 0.05f), f == 0 ? rail : glass, false);
-                if (f > 0)
-                {
-                    Mats.Prim(PrimitiveType.Cube, "Balcony", h, new Vector3(0f, y + 0.05f, d * 0.5f + 0.5f), new Vector3(w, 0.15f, 1f), wall, false);
-                    Mats.Prim(PrimitiveType.Cube, "Rail", h, new Vector3(0f, y + 0.6f, d * 0.5f + 0.98f), new Vector3(w, 0.9f, 0.05f), rail, false);
-                }
+                WallMat = wall, TrimMat = trim, FrameMat = Mats.Lit(new Color(0.75f, 0.76f, 0.78f), 0.55f, 0.5f), GlassMat = glass,
+                Glass2Mat = Mats.Lit(new Color(0.42f, 0.36f, 0.3f), 0.8f), DoorMat = rail, MetalMat = Mats.Lit(new Color(0.62f, 0.64f, 0.66f), 0.45f, 0.5f), RoofMat = tile, UnderMat = trim,
+            };
+            var shade = HouseKit.WallShade(0f, hgt);
+            var front = new List<HouseKit.Opening> { new HouseKit.Opening(0f, 0.05f, w * 0.78f, 2.6f, HouseKit.Hole.Shop) };
+            var back = new List<HouseKit.Opening>();
+            for (int f = 1; f < floors; f++)
+            {
+                front.Add(new HouseKit.Opening(0f, f * fh + 0.25f, w * 0.55f, 2.1f));
+                back.Add(new HouseKit.Opening(0f, f * fh + 1f, 1.1f, 1.1f));
             }
-            var roof = new GameObject("Roof");
-            roof.transform.SetParent(h, false);
-            roof.transform.localPosition = new Vector3(0f, hgt + 0.4f, -d * 0.15f);
-            roof.transform.localScale = new Vector3(w + 0.5f, 1.4f, d * 0.6f);
-            roof.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
-            roof.AddComponent<MeshFilter>().sharedMesh = GableMesh();
-            roof.AddComponent<MeshRenderer>().sharedMaterial = tile;
+            HouseKit.Box(p, w, d, -0.8f, hgt, 0.22f, front, back, null, null, shade, local);
+            for (int f = 1; f < floors; f++)
+            {
+                // 발코니: 모따기 슬래브 + 쇠 난간 (위 손잡이·세로 살)
+                float y = f * fh;
+                p.Trim.Block(new Vector3(0f, y + 0.05f, d * 0.5f + 0.5f), new Vector3(w, 0.15f, 1f), 0.03f, Quaternion.identity, Color.white, Color.white * 0.75f);
+                p.Door.Block(new Vector3(0f, y + 1.05f, d * 0.5f + 0.98f), new Vector3(w, 0.04f, 0.05f), 0f, Quaternion.identity, Color.white, Color.white);
+                for (float x = -w * 0.5f + 0.1f; x < w * 0.5f; x += 0.14f)
+                    p.Door.Block(new Vector3(x, y + 0.6f, d * 0.5f + 0.98f), new Vector3(0.02f, 0.9f, 0.02f), 0f, Quaternion.identity, Color.white, Color.white);
+            }
+            // 꼭대기: 슬래브 + 앞 옥상 테라스 난간, 뒤 60%는 기와 박공 (박공을 앞으로)
+            HouseKit.FlatRoof(p, hgt, w, d, 0f, false, shade);
+            p.Wall.Block(new Vector3(0f, hgt + 0.65f, d * 0.5f - 0.09f), new Vector3(w, 0.9f, 0.18f), 0f, Quaternion.identity, shade);
+            p.Trim.Block(new Vector3(0f, hgt + 1.13f, d * 0.5f - 0.09f), new Vector3(w + 0.06f, 0.06f, 0.24f), 0.015f, Quaternion.identity, Color.white, Color.white * 0.8f);
+            p.Emit(h);
+            var rig = HouseKit.Rig(h, new Vector3(0f, hgt + 0.2f, -d * 0.18f), 90f);
+            var rp = new HouseKit.Parts { WallMat = wall, TrimMat = trim, RoofMat = tile, UnderMat = trim, PipeMat = rail };
+            HouseKit.GableRoof(rp, 0f, d * 0.6f, w - 0.36f, 1.4f, 0.25f, 0.35f, HouseKit.Skin.Barrel, rp.Wall, 0.18f, 0.1f, false, shade);
+            rp.Emit(rig);
             if (sign)
             {
                 var board = Mats.Lit(new Color(0.85f, 0.15f, 0.12f), 0.3f);

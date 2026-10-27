@@ -72,6 +72,8 @@ Assets/
       Maps/<이름>.cs             새 해외 맵 14곳 — 파일 하나에 사양(OverseasCoasts.<이름>()) · 랜드마크(<이름>Extra) · 이야기(QuestDatabase.<이름>Chapter())
       Maps/MapKit.cs             랜드마크 공용 도구: 회전체 Lathe(톱니 단면 프랑), 관 묶음 Tubes, 원판 묶음 Discs, 눈 덮인 산 Mountain, 폭포 FallSheet·WaterfallMat·물보라 Splash·FallDrift, 들보 Beam, Blender 소품 Prop
       CoastWorldOverseas.cs      CoastWorldBuilder의 해외 부분(partial): 지역 양식 집(키클라데스·이집트·베트남)·나무(야자수·열대·지중해), 강 맞은편 둑·사막 판, 석회암 봉우리·정크선·수상 마을·칼데라·풍차·펠루카·피라미드
+      BlockMesh.cs               절차 메쉬 버퍼: 모따기 블록(꼭짓점 24개, weighted normal)·단면 돌출·매개변수 곡면(골강판·기와), 꼭짓점 AO 색
+      HouseKit.cs                집 부품: 창·문을 비운 벽(아치 귀퉁이·창 밑 얼룩), 새시·유리·문·셔터 채우기, 박공지붕(골강판·반원 기와·평기와·초가 + 처마·박공 마감·용마루·홈통), 외쪽지붕, 평지붕 방수칠, 블록 담장 (한국 집·해외 7양식)
       HarborKit.cs               포구 콘크리트 구조물 (방파제·호안): 모따기 블록·돌출 단면 메쉬 버퍼(꼭짓점 AO), 10m 타설 블록·파라펫·연석·계선주·타이어·사다리 (해안 맵 틀·서천·홍현)
       CoastProps.cs              바닷가 공용 소품 (등대·큰 등대·테트라포드·정자·가로등·낚시점·바위·한국 바닷가 집)
       Hanok.cs                   한옥 부재: 팔작 기와지붕 메쉬(기와골·수막새·서까래·용마루·취두), 정자(기단·주춧돌·공포·단청 창방·계자 난간), 단청 텍스처
