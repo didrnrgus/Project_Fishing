@@ -372,6 +372,10 @@ namespace Fishing.World
                     Mats.Weatherize(go, "planks", 1.6f, 0.3f, 1f, 0.2f, 0.05f, null, c => Bright(c) || Vivid(c), 0.75f); return true;
                 case "parasol_thatch":
                     Mats.Weatherize(go, "thatch", 1.2f, 0.05f, 0f, 0f, 0f, null, null, 0.7f); return true;
+                case "harbor_bollard": case "harbor_bitt": // 주철 계선주: 칠 위로 녹 번진 결, 밑동은 젖는다
+                    Mats.Weatherize(go, "rust", 0.6f, 0.35f, 1f, 0.3f, 0f, null, null, 0.55f, 0.7f); return true;
+                case "harbor_tire": case "harbor_fender": // 고무: 거친 결, 물에 닿는 아래는 물때
+                    Mats.Weatherize(go, "asphalt", 0.8f, 0.12f, 1f, 0.1f, 0.05f, null, null, 0.8f, 0.6f); return true;
             }
             return false;
         }

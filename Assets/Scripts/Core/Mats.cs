@@ -177,9 +177,28 @@ namespace Fishing.Core
         /// <summary>석상·조각 돌 (사암·화강암 느낌): 결이 고운 사암 텍스처, 빗물 줄과 이끼.</summary>
         public static Material Carved(Color c, float smoothness = 0.15f, float moss = 0.3f) => Weathered("sandstone", c, 2.5f, smoothness, 1f, 0.55f, moss, new Color(0.25f, 0.3f, 0.2f), 0.85f);
 
-        /// <summary>호안·방파제·부두 콘크리트: 윗면은 바닥 콘크리트, 옆면은 거푸집 자국 난 벽 콘크리트, 물 자국·빗물 줄·이끼.</summary>
-        public static Material Quay(Color tint, float smoothness = 0.2f) =>
-            Weathered("concrete", tint * 0.66f, 3.5f, smoothness, 1f, 0.6f, 0.25f, null, 0.6f, 0f, "wallconcrete");
+        /// <summary>호안·방파제·부두 콘크리트: 윗면은 바닥 콘크리트(금·기름 얼룩·물웅덩이), 옆면은 거푸집 자국 난 벽 콘크리트, 물 자국·빗물 줄·이끼.</summary>
+        public static Material Quay(Color tint, float smoothness = 0.2f)
+        {
+            var m = Weathered("concrete", tint * 0.66f, 3.5f, smoothness, 1f, 0.6f, 0.25f, null, 0.6f, 0f, "wallconcrete");
+            if (m.HasProperty("_Grime")) m.SetFloat("_Grime", 1f); // 윗면에 금·기름 얼룩·물웅덩이
+            return m;
+        }
+
+        /// <summary>
+        /// 풍화 재질에 꼭짓점 색(틈·밑동 그늘, 블록마다 다른 타설 색)을 곱하는 복사본 (HarborKit 절차 메쉬용).
+        /// 꼭짓점 색이 없는 메쉬에 쓰면 안 된다. 풍화 셰이더가 아니면 그대로 돌려준다.
+        /// </summary>
+        public static Material VertexAO(Material src)
+        {
+            if (src == null || !src.HasProperty("_VertexAO")) return src;
+            string key = "vao" + src.GetInstanceID();
+            if (Cache.TryGetValue(key, out var m)) return m;
+            m = new Material(src) { name = src.name + "_VAO" };
+            m.SetFloat("_VertexAO", 1f);
+            Cache[key] = m;
+            return m;
+        }
 
         /// <summary>테트라포드·소파 블록: 자갈 박힌 거친 콘크리트, 아래쪽 물때·따개비.</summary>
         public static Material Tetrapod(Color tint) =>

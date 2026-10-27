@@ -1105,6 +1105,11 @@ namespace Fishing.Dev
             var shots = new (string map, string shot, Vector3 pos, float yaw, float camYaw, float pitch, float dist, int minute, Weather weather)[]
             {
                 ("yeongheung", "43_yeongheung_harbor", new Vector3(62f, 1.1f, -47f), 0f, 20f, 14f, 14f, 10 * 60, Weather.Clear),
+                // 방파제·호안 가까이 (HarborKit: 타설 블록 이음매·파라펫·연석·계선주·타이어 방충재·사다리)
+                ("yeongheung", "43c_yeongheung_breakwater", new Vector3(99.6f, 1.1f, -4f), 0f, 345f, 12f, 7f, 10 * 60 + 30, Weather.Clear),
+                ("yeongheung", "43d_yeongheung_quay", new Vector3(70f, 1.1f, -44f), 90f, 70f, 10f, 9f, 11 * 60, Weather.Clear),
+                ("honghyeon", "22h_honghyeon_breakwater", new Vector3(31.5f, 1.1f, -14f), 0f, 340f, 12f, 8f, 14 * 60, Weather.Clear),
+                ("seocheon", "34b_seocheon_quay", new Vector3(8f, 1.1f, -44.5f), 90f, 55f, 12f, 9f, 11 * 60, Weather.Clear),
                 ("yeongheung", "43b_yeongheung_fog", new Vector3(-22f, 1.1f, -44f), 0f, -10f, 10f, 12f, 6 * 60 + 20, Weather.Cloudy),
                 ("taean", "44_taean_beach", new Vector3(-75f, 1.1f, -48f), 0f, -15f, 10f, 12f, 17 * 60 + 20, Weather.Clear),
                 ("taean", "44b_taean_noon", new Vector3(-110f, 1.1f, -60f), 0f, 20f, 18f, 18f, 12 * 60, Weather.Clear),
@@ -1117,6 +1122,7 @@ namespace Fishing.Dev
                 ("jeju", "54_jeju_harbor", new Vector3(14f, 1.1f, -45f), 180f, 160f, 10f, 13f, 11 * 60, Weather.Clear),
                 ("jeju", "54b_jeju_oedolgae", new Vector3(-60f, 1.1f, -44f), 330f, 320f, 12f, 22f, 16 * 60 + 30, Weather.Clear),
                 ("cheongjin", "49_cheongjin_port", new Vector3(28f, 1.1f, -47f), 0f, 30f, 16f, 20f, 10 * 60, Weather.Clear),
+                ("cheongjin", "49c_cheongjin_breakwater", new Vector3(151.2f, 1.1f, 30f), 0f, 320f, 14f, 9f, 15 * 60, Weather.Clear),
                 ("cheongjin", "49b_cheongjin_racks", new Vector3(-60f, 1.1f, -68f), 0f, 200f, 12f, 14f, 14 * 60, Weather.Cloudy),
                 ("geomun", "50_geomun_lighthouse", new Vector3(-90f, 1.1f, -45f), 300f, 300f, 12f, 24f, 17 * 60 + 30, Weather.Clear),
                 // 해외 거점

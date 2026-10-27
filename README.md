@@ -51,6 +51,8 @@
 | ![park](docs/images/00g_park_trees.png) | ![samcheok](docs/images/45_samcheok_chuam.png) |
 | **거문도 등대** | **홍현 갯바위 섬 (반복 없는 지형 텍스처·실사 바위)** |
 | ![geomun](docs/images/50_geomun_lighthouse.png) | ![islet](docs/images/22c_honghyeon_island.png) |
+| **방파제 (10m 타설 블록·1.3m 파라펫·계선주·사다리·물웅덩이)** | **홍현 방파제 (고래 벽화·타이어 방충재)** |
+| ![breakwater](docs/images/43c_yeongheung_breakwater.png) | ![honghyeon_bw](docs/images/22h_honghyeon_breakwater.png) |
 
 | 캐스팅 (당겼다 밀기) | 챔질 (찌 게이지) |
 |---|---|

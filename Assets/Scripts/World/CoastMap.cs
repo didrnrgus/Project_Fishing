@@ -724,6 +724,20 @@ namespace Fishing.World
             }
         }
 
+        /// <summary>호안 앞마당 잡동사니 (그물·생선 상자·부표·아이스박스): 벽 뒤 2.6~5.5m, 12~22m마다. 낚시점·명소·NPC 곁은 비운다.</summary>
+        void QuayClutter(float x0, float x1)
+        {
+            for (float x = x0 + 8f; x < x1 - 6f; x += R(12f, 22f))
+            {
+                float z = _map.ShoreAt(x) - R(2.6f, 5.5f);
+                if (InFeature(x, z) || Mathf.Abs(H(x, z) - _map.LandY) > 0.3f) continue;
+                bool nearNpc = false;
+                foreach (var n in S.Npcs) if (new Vector2(n.Pos.x - x, n.Pos.z - z).magnitude < 3f) nearNpc = true;
+                if (nearNpc) continue;
+                HarborKit.QuayClutter(_root, new Vector3(x, _map.LandY + 0.11f, z), R(0f, 360f), _rng);
+            }
+        }
+
         void BuildShoreline()
         {
             float halfW = S.LandHalfWidth > 0f ? S.LandHalfWidth - 10f : 205f;
@@ -745,14 +759,17 @@ namespace Fishing.World
                 float x0 = Mathf.Max(seg.X0, -halfW), x1 = Mathf.Min(seg.X1, halfW);
                 // 돌 부두: 바위 텍스처는 이끼 낀 갈라진 바위 덩어리처럼 보여서, 포장석 결이 있는 콘크리트 텍스처에 돌 색을 입힌다
                 var quay = S.StoneQuay ? Mats.Weathered("stonewall", S.StoneTint * 0.45f, 3f, 0.12f, 1f, 0.5f, 0.35f, null, 0.4f, 0f, "stonewall") : _concrete;
-                AlongShore("QuayWall", x0, x1, -0.4f, _map.LandY - 2.6f, new Vector3(1f, 7.2f, 1f), quay, true);
+                // 호안 벽 (해안선 0.4m 뭍 쪽, 윗면 = 땅 + 1m): 몸통 + 갓돌, 바다 쪽 타이어·사다리
+                HarborKit.QuayWall(_root, x0, x1, x => _map.ShoreAt(x) - 0.4f, _map.LandY + 1f, _map.LandY - 6.2f, _map.BaseWaterY, quay, _rng, !S.StoneQuay);
                 // 해안도로가 바로 뒤에 붙어 있으면 앞마당은 깔지 않는다 (겹쳐서 깜빡인다)
                 if (S.RoadOffset <= 0f || S.RoadOffset >= 16f)
                     AlongShore("QuayApron", x0, x1, -5.5f, _map.LandY + 0.04f, new Vector3(10f, 0.14f, 1f), quay, false);
                 if (S.StoneQuay) continue;
+                QuayClutter(x0, x1);
                 for (float x = x0 + 6f; x < x1 - 4f; x += R(7f, 11f))
-                    Mats.Prim(PrimitiveType.Cylinder, "Bollard", _root, new Vector3(x, _map.LandY + 0.3f, _map.ShoreAt(x) - 1.2f), new Vector3(0.45f, 0.3f, 0.45f),
-                        Mats.Lit(new Color(0.2f, 0.22f, 0.24f), 0.4f), false);
+                    if (KenneyProps.Spawn("Props/harbor_bollard", _root, new Vector3(x, _map.LandY, _map.ShoreAt(x) - 1.2f), R(0f, 360f)) == null)
+                        Mats.Prim(PrimitiveType.Cylinder, "Bollard", _root, new Vector3(x, _map.LandY + 0.3f, _map.ShoreAt(x) - 1.2f), new Vector3(0.45f, 0.3f, 0.45f),
+                            Mats.Lit(new Color(0.2f, 0.22f, 0.24f), 0.4f), false);
             }
             // 갯바위 해안: 물가에 바위 덩어리
             for (float x = -195f; x < 195f; x += R(5f, 9f))
@@ -768,28 +785,60 @@ namespace Fishing.World
 
         // ---------------- 방파제 ----------------
 
+        /// <summary>방파제 파라펫 (실제 한국 방파제처럼 1.3m, 두께 0.9m, 안쪽 디딤단).</summary>
+        const float ParapetH = 1.3f, ParapetW = 0.9f;
+
+        /// <summary>파라펫·디딤단 자리에 선 사람을 방파제 안쪽으로 비켜 세운다 (맵 사양의 NPC 자리는 예전 0.6m 파라펫 기준).</summary>
+        Vector3 OffParapet(Vector3 p)
+        {
+            float fp = HarborKit.ParapetFootprint(ParapetH, ParapetW) + 0.4f;
+            foreach (var b in S.Breakwaters)
+            {
+                var st = b.Stem;
+                if (st.Contains(new Vector2(p.x, p.z)))
+                {
+                    if (b.ParapetWest && p.x < st.xMin + fp) p.x = st.xMin + fp;
+                    if (!b.ParapetWest && p.x > st.xMax - fp) p.x = st.xMax - fp;
+                }
+                if (b.Arm.width > 0f && b.Arm.Contains(new Vector2(p.x, p.z)) && p.z > b.Arm.yMax - fp) p.z = b.Arm.yMax - fp;
+            }
+            return p;
+        }
+
         void BuildBreakwaters()
         {
-            var parapet = Mats.Quay(new Color(0.78f, 0.78f, 0.76f));
             var tetra = Mats.Tetrapod(new Color(0.92f, 0.9f, 0.86f));
             float bottom = _map.BaseWaterY - 6f;
             foreach (var b in S.Breakwaters)
             {
-                var concrete = Mats.Quay(new Color(0.94f, 0.94f, 0.92f));
-                void Body(Rect r, bool along)
+                // 몸통 + 꺾인 팔 (HarborKit: 10m 타설 블록·파라펫·연석·계선주·타이어·사다리). 몸통 상판은 팔 앞에서 끊고 모서리는 팔이 덮는다
+                bool arm = b.Arm.width > 0f;
+                var stem = b.Stem;
+                const float pw = ParapetW;
+                var spec = new HarborKit.BreakwaterSpec
                 {
-                    float h = _map.LandY - bottom;
-                    Mats.Prim(PrimitiveType.Cube, "Breakwater", _root, new Vector3(r.center.x, bottom + h * 0.5f, r.center.y), new Vector3(r.width, h, r.height), concrete);
-                    if (along)
-                        Mats.Prim(PrimitiveType.Cube, "BreakwaterParapet", _root, new Vector3(b.ParapetWest ? r.xMin + 0.3f : r.xMax - 0.3f, _map.LandY + 0.4f, r.center.y),
-                            new Vector3(0.6f, 0.8f, r.height), parapet, false);
-                    else
-                        Mats.Prim(PrimitiveType.Cube, "BreakwaterParapet", _root, new Vector3(r.center.x, _map.LandY + 0.4f, r.yMax - 0.3f),
-                            new Vector3(r.width, 0.8f, 0.6f), parapet, false);
+                    AlongZ = true, ParapetSide = b.ParapetWest ? -1 : 1, TopY = _map.LandY, BottomY = bottom, WaterY = _map.BaseWaterY,
+                    ParapetH = ParapetH, ParapetW = pw, Fittings = true, LifeRing = true,
+                    Tint = new Color(0.94f, 0.94f, 0.92f), ParapetTint = new Color(0.8f, 0.8f, 0.78f),
+                };
+                if (arm && b.Arm.yMin > stem.yMin && b.Arm.yMin < stem.yMax)
+                {
+                    spec.ParapetExtEnd = b.Arm.yMax - pw - b.Arm.yMin;
+                    stem = new Rect(stem.x, stem.y, stem.width, b.Arm.yMin - stem.y);
                 }
-                Body(b.Stem, true);
-                if (b.Arm.width > 0f) Body(b.Arm, false);
-                BreakwaterDetails(b);
+                spec.Rect = stem;
+                HarborKit.Breakwater(_root, "Breakwater", spec, _rng);
+                if (arm)
+                {
+                    var s0 = b.Stem;
+                    spec.Rect = b.Arm;
+                    spec.AlongZ = false;
+                    spec.ParapetSide = 1;
+                    spec.ParapetExtStart = spec.ParapetExtEnd = 0f;
+                    spec.LifeRing = false;
+                    spec.NoInnerEdge = p => p.x > s0.xMin - 0.5f && p.x < s0.xMax + 0.5f;
+                    HarborKit.Breakwater(_root, "BreakwaterArm", spec, _rng);
+                }
                 // 테트라포드: 파도막이 벽 반대쪽(바깥)과 팔의 북쪽
                 float side = b.ParapetWest ? b.Stem.xMin - 1f : b.Stem.xMax + 1f;
                 float sgn = b.ParapetWest ? -1f : 1f;
@@ -803,59 +852,13 @@ namespace Fishing.World
                     bool white = b.Light.r > 0.9f && b.Light.g > 0.9f;
                     _props.Lighthouse(new Vector3(lp.x, _map.LandY, lp.y), b.Light, white ? new Color(0.6f, 1f, 0.6f) : new Color(1f, 0.45f, 0.4f));
                 }
-                // 방파제 위 가로등
+                // 방파제 가로등: 파라펫 위
                 for (float z = b.Stem.yMin + 8f; z < b.Stem.yMax - 8f; z += 22f)
-                    _props.Streetlight(new Vector3(b.ParapetWest ? b.Stem.xMin + 1.2f : b.Stem.xMax - 1.2f, _map.LandY, z), b.ParapetWest ? 90f : 270f);
+                    _props.Streetlight(new Vector3(b.ParapetWest ? b.Stem.xMin + ParapetW * 0.5f : b.Stem.xMax - ParapetW * 0.5f, _map.LandY + ParapetH, z), b.ParapetWest ? 90f : 270f);
             }
         }
 
         // ---------------- 곶 · 섬 · 바위기둥 ----------------
-
-        /// <summary>
-        /// 방파제 윗면 디테일: 10m마다 이음매(짙은 줄), 안쪽 가장자리 노란 안전선, 계류 말뚝(비트)과 쇠고리, 안쪽 벽의 철제 사다리,
-        /// 수면 근처 젖은 짙은 띠와 따개비 낀 아랫단.
-        /// </summary>
-        void BreakwaterDetails(BreakwaterSpec b)
-        {
-            var seam = Mats.Lit(new Color(0.55f, 0.55f, 0.53f), 0.1f);
-            var yellow = Mats.Lit(new Color(0.95f, 0.78f, 0.15f), 0.3f);
-            var bitt = Mats.Lit(new Color(0.15f, 0.16f, 0.18f), 0.45f, 0.3f);
-            var ladder = Mats.Lit(new Color(0.55f, 0.35f, 0.18f), 0.4f, 0.6f);
-            float top = _map.LandY + 0.012f;
-            void Along(Rect r, bool stem)
-            {
-                // 이음매 (5mm 위로 띄워 z-fighting 방지)
-                if (stem) for (float z = r.yMin + 10f; z < r.yMax - 1f; z += 10f)
-                        Mats.Prim(PrimitiveType.Cube, "BreakwaterSeam", _root, new Vector3(r.center.x, top, z), new Vector3(r.width - 0.1f, 0.02f, 0.08f), seam, false);
-                else for (float x = r.xMin + 10f; x < r.xMax - 1f; x += 10f)
-                        Mats.Prim(PrimitiveType.Cube, "BreakwaterSeam", _root, new Vector3(x, top, r.center.y), new Vector3(0.08f, 0.02f, r.height - 0.1f), seam, false);
-                // 안쪽(배가 대는 쪽) 가장자리 노란 선과 계류 말뚝
-                bool westInner = !b.ParapetWest;
-                if (stem)
-                {
-                    float ex = westInner ? r.xMin + 0.35f : r.xMax - 0.35f;
-                    Mats.Prim(PrimitiveType.Cube, "SafetyLine", _root, new Vector3(ex, top + 0.004f, r.center.y), new Vector3(0.25f, 0.02f, r.height - 0.4f), yellow, false);
-                    for (float z = r.yMin + 7f; z < r.yMax - 4f; z += 14f)
-                    {
-                        var p = new Vector3(westInner ? r.xMin + 0.9f : r.xMax - 0.9f, _map.LandY, z);
-                        Mats.Prim(PrimitiveType.Cylinder, "Bitt", _root, p + Vector3.up * 0.3f, new Vector3(0.38f, 0.3f, 0.38f), bitt);
-                        Mats.Prim(PrimitiveType.Cylinder, "BittCap", _root, p + Vector3.up * 0.62f, new Vector3(0.5f, 0.05f, 0.5f), bitt, false);
-                    }
-                    // 안쪽 벽 철제 사다리 (수면에서 윗면까지)
-                    for (float z = r.yMin + 18f; z < r.yMax - 6f; z += 26f)
-                    {
-                        float wx = westInner ? r.xMin - 0.08f : r.xMax + 0.08f;
-                        foreach (float s in new[] { -0.25f, 0.25f })
-                            Mats.Prim(PrimitiveType.Cube, "LadderRail", _root, new Vector3(wx, (_map.LandY + _map.BaseWaterY - 1.2f) * 0.5f, z + s), new Vector3(0.05f, _map.LandY - _map.BaseWaterY + 1.2f, 0.05f), ladder, false);
-                        for (float yy = _map.BaseWaterY - 1f; yy < _map.LandY; yy += 0.3f)
-                            Mats.Prim(PrimitiveType.Cube, "LadderRung", _root, new Vector3(wx, yy, z), new Vector3(0.04f, 0.04f, 0.5f), ladder, false);
-                    }
-                }
-                // 수면 근처 젖은 띠·물때는 Fishing/Weathered 셰이더가 그린다 (_FishingWetY)
-            }
-            Along(b.Stem, true);
-            if (b.Arm.width > 0f) Along(b.Arm, false);
-        }
 
         void PlaceLandmark(Landmark lm, Vector3 at, float yaw)
         {
@@ -1387,7 +1390,7 @@ namespace Fishing.World
             parent.SetParent(_root, false);
             foreach (var n in S.Npcs)
             {
-                var pos = n.Pos;
+                var pos = OffParapet(n.Pos);
                 if (float.IsNaN(pos.y)) pos.y = Mathf.Max(_map.LandY, H(pos.x, pos.z));
                 // 잔교·데크 위 사람은 상판 윗면(LandY + 0.25 + 두께 절반)에 세운다 (y: 1f로 두면 무릎까지 상판에 묻혔다)
                 foreach (var pf in S.Platforms)

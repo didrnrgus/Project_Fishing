@@ -72,6 +72,7 @@ Assets/
       Maps/<이름>.cs             새 해외 맵 14곳 — 파일 하나에 사양(OverseasCoasts.<이름>()) · 랜드마크(<이름>Extra) · 이야기(QuestDatabase.<이름>Chapter())
       Maps/MapKit.cs             랜드마크 공용 도구: 회전체 Lathe(톱니 단면 프랑), 관 묶음 Tubes, 원판 묶음 Discs, 눈 덮인 산 Mountain, 폭포 FallSheet·WaterfallMat·물보라 Splash·FallDrift, 들보 Beam, Blender 소품 Prop
       CoastWorldOverseas.cs      CoastWorldBuilder의 해외 부분(partial): 지역 양식 집(키클라데스·이집트·베트남)·나무(야자수·열대·지중해), 강 맞은편 둑·사막 판, 석회암 봉우리·정크선·수상 마을·칼데라·풍차·펠루카·피라미드
+      HarborKit.cs               포구 콘크리트 구조물 (방파제·호안): 모따기 블록·돌출 단면 메쉬 버퍼(꼭짓점 AO), 10m 타설 블록·파라펫·연석·계선주·타이어·사다리 (해안 맵 틀·서천·홍현)
       CoastProps.cs              바닷가 공용 소품 (등대·큰 등대·테트라포드·정자·가로등·낚시점·바위·한국 바닷가 집)
       Hanok.cs                   한옥 부재: 팔작 기와지붕 메쉬(기와골·수막새·서까래·용마루·취두), 정자(기단·주춧돌·공포·단청 창방·계자 난간), 단청 텍스처
       TextureScroll.cs           재질 텍스처를 흐르게 (폭포 물줄기)
@@ -86,7 +87,7 @@ Assets/
       Aquarium.cs                대기실 수족관 (헤엄치는 물고기, 장식, 배고픔)
       WaterSurface.cs            격자 수면 메쉬 + Fishing/Water 머티리얼 (맵마다 색), 해저 높이 텍스처 굽기(SetSeabed → 물가 거품)
       WaterGlints.cs             밤 물 위에 길게 비치는 불빛 (가로등·다리·도시)
-      WorldBatcher.cs            맵을 지은 뒤 움직이지 않는 Standard 소품을 정적 배칭으로 묶기 (아래 "정적 배칭")
+      WorldBatcher.cs            맵을 지은 뒤 움직이지 않는 Standard·월드 좌표 셰이더 소품을 정적 배칭으로 묶기 (아래 "정적 배칭")
       SkyDecor.cs                해 원판(번지는 빛)·달·별(번지는 사각형 2,200개, 은하수 띠, 반짝임)·구름 돔 (카메라를 따라다님). 해·달 길은 DayNightCycle(고도 최대 30°, 물 쪽)
       KenneyProps.cs             Kenney CC0 모델 배치 헬퍼
       ProceduralTextures.cs      물 노멀맵, 구름 노이즈, 달 텍스처, 어군 소용돌이, 위에서 본 물고기 그림자
@@ -222,7 +223,7 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 
 | 묶는 것 | 안 묶는 것 (이유) |
 |---|---|
-| Standard 셰이더 MeshRenderer, 읽을 수 있는 메쉬(프리미티브·절차적 메쉬), 켜져 있는 것 | 스크립트(MonoBehaviour)·Animator·Rigidbody가 자기나 조상에 있는 것 — NPC 낚시꾼, 어군, 수족관, 잔물결, 배처럼 런타임에 움직인다. 묶인 메쉬는 월드 좌표로 굳는다 |
+| Standard·`Fishing/Ground`·`Karst`·`Landmark`·`Weathered`(2026-10-27부터, 월드 트라이플래너라 굳혀도 같다) MeshRenderer, 읽을 수 있는 메쉬(프리미티브·절차적 메쉬), 켜져 있는 것 | 스크립트(MonoBehaviour)·Animator·Rigidbody가 자기나 조상에 있는 것 — NPC 낚시꾼, 어군, 수족관, 잔물결, 배처럼 런타임에 움직인다. 묶인 메쉬는 월드 좌표로 굳는다 |
 | | Standard가 아닌 셰이더 — 물(`Fishing/Water`), 하늘, 물고기, 파티클은 오브젝트 좌표·버텍스 애니메이션을 써서 묶으면 깨진다 |
 | | 읽을 수 없는 메쉬 (Read/Write를 끈 FBX) — Combine이 못 읽는다 |
 
@@ -316,7 +317,7 @@ IntroSequence 끝 → Welcome (환영·퀘스트·레벨 보상·출석 알림)
 
 | 파일 | 하는 일 |
 |---|---|
-| `Shaders/Weathered.shader` (`Fishing/Weathered`) | 풍화 표면: 월드 트라이플래너(`_Tile` m) + 윗면/옆면 텍스처 따로 + 만조선(전역 `_FishingWetY`) 아래 물 자국·물때 + 빗물 줄 + 이끼 + 팔레트 모드(Kenney). 텍스처를 평균 색으로 나눠 결만 남긴다. `Mats.Weathered`·`Wall`·`Wood`·`Tile`·`Thatch`·`Stone`·`Carved`·`Quay`·`Tetrapod`, Blender 소품은 `Mats.Weatherize` ([09 8장](09-art-plan.md)) |
+| `Shaders/Weathered.shader` (`Fishing/Weathered`) | 풍화 표면: 월드 트라이플래너(`_Tile` m) + 윗면/옆면 텍스처 따로 + 만조선(전역 `_FishingWetY`) 아래 물 자국·물때 + 빗물 줄 + 이끼 + 팔레트 모드(Kenney) + 꼭짓점 색 AO(`_VertexAO`, `Mats.VertexAO`, HarborKit) + 바닥 때(`_Grime`: 윗면 금·얼룩·물웅덩이, `Mats.Quay`). 보간기 10개 한도라 메쉬 UV와 꼭짓점 색(밝기·r−b)을 `float4 meshAO` 한 칸에 묶는다 (Input 필드 이름이 `uv`로 시작하면 서피스 셰이더가 텍스처 좌표로 여긴다). 텍스처를 평균 색으로 나눠 결만 남긴다. `Mats.Weathered`·`Wall`·`Wood`·`Tile`·`Thatch`·`Stone`·`Carved`·`Quay`·`Tetrapod`, Blender 소품은 `Mats.Weatherize` ([09 8장](09-art-plan.md)) |
 | `Shaders/Ground.shader` (`Fishing/Ground`) | `Mats.Textured`가 쓰는 바닥·바위·콘크리트·데크 셰이더. 같은 텍스처를 회전·0.73배로 한 번 더 읽어 노이즈로 섞고, 월드 좌표 큰 얼룩으로 밝기·채도·광택을 흔들어 반복 무늬를 없앤다. 월드 좌표라 정적 배칭해도 같다 (`WorldBatcher`가 Standard와 함께 묶는다) |
 | `Shaders/Terrain.shader` + `Terrain-AddPass.shader` (`FishingTerrain.cginc`, `FishingNoise.cginc`) | Unity Terrain(홍현·서천·해안 맵 틀) 셰이더. 내장 지형과 같은 엔진 속성을 받아 층마다 같은 방법으로 반복을 깬다. 5번째 층부터는 추가 패스. `TerrainBuilder`가 `materialTemplate`로 쓰고 인스턴싱은 끈다 |
 | `Shaders/FishFin.shader` (`Fishing/FishFin`) | 물고기 지느러미 반투명 막 (09 문서 3-16) |

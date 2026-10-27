@@ -300,8 +300,11 @@ namespace Fishing.World
             Mats.Prim(PrimitiveType.Cube, "CoastRoad", _root, new Vector3(0f, _map.LandY + 0.03f, -62f), new Vector3(420f, 0.14f, 7f),
                 Mats.TexturedBox("asphalt", Color.white, new Vector2(420f, 7f), 6f, 0.15f), false);
             // 홍원항 호안: 포구 앞 콘크리트 벽 (갯벌 쪽은 모래 해변)
-            Mats.Prim(PrimitiveType.Cube, "Quay", _root, new Vector3(45f, _map.LandY - 2.2f, SeocheonDef.ShoreZ - 0.4f), new Vector3(150f, 6.4f, 1f),
-                Mats.Quay(new Color(0.85f, 0.85f, 0.82f)));
+            HarborKit.QuayWall(_root, -30f, 120f, _ => SeocheonDef.ShoreZ - 0.4f, _map.LandY + 1f, _map.LandY - 5.4f, _map.BaseWaterY,
+                Mats.Quay(new Color(0.85f, 0.85f, 0.82f)), _rng, true);
+            // 앞마당 잡동사니 (조합 사무실 앞·낚시점 앞은 비운다)
+            foreach (float x in new[] { -24f, 2f, 18f, 34f, 70f, 92f, 112f })
+                HarborKit.QuayClutter(_root, new Vector3(x + R(-2f, 2f), _map.LandY + 0.1f, SeocheonDef.ShoreZ - R(2.8f, 5f)), R(0f, 360f), _rng);
             Mats.Prim(PrimitiveType.Cube, "QuayApron", _root, new Vector3(45f, _map.LandY + 0.03f, -46f), new Vector3(150f, 0.14f, 12f),
                 Mats.TexturedBox("concrete", new Color(0.8f, 0.8f, 0.78f), new Vector2(150f, 12f), 4f, 0.2f), false);
             // 춘장대 해변의 작은 소나무 숲 (해송)
@@ -326,24 +329,31 @@ namespace Fishing.World
 
         void BuildBreakwaters()
         {
-            var concrete = Mats.Quay(new Color(0.92f, 0.92f, 0.9f));
-            var parapet = Mats.Quay(new Color(0.78f, 0.78f, 0.76f));
             var tetra = Mats.Tetrapod(new Color(0.92f, 0.9f, 0.86f));
-            float bottom = _map.BaseWaterY - 5f;
-            void Body(Rect r, string name, bool parapetWest)
+            // HarborKit: 10m 타설 블록·파라펫·연석·계선주·타이어·사다리. 큰 방파제 몸통 상판은 꺾인 팔 앞에서 끊고 모서리는 팔이 덮는다
+            var spec = new HarborKit.BreakwaterSpec
             {
-                float h = _map.LandY - bottom;
-                Mats.Prim(PrimitiveType.Cube, name, _root, new Vector3(r.center.x, bottom + h * 0.5f, r.center.y), new Vector3(r.width, h, r.height), concrete);
-                if (r.height > r.width)
-                    Mats.Prim(PrimitiveType.Cube, name + "Parapet", _root, new Vector3(parapetWest ? r.xMin + 0.3f : r.xMax - 0.3f, _map.LandY + 0.4f, r.center.y),
-                        new Vector3(0.6f, 0.8f, r.height), parapet, false);
-                else
-                    Mats.Prim(PrimitiveType.Cube, name + "Parapet", _root, new Vector3(r.center.x, _map.LandY + 0.4f, r.yMax - 0.3f),
-                        new Vector3(r.width, 0.8f, 0.6f), parapet, false);
-            }
-            Body(SeocheonDef.RedStem, "RedBreakwater", false);
-            Body(SeocheonDef.RedArm, "RedBreakwaterArm", false);
-            Body(SeocheonDef.WhiteBw, "WhiteBreakwater", true);
+                AlongZ = true, ParapetSide = 1, TopY = _map.LandY, BottomY = _map.BaseWaterY - 5f, WaterY = _map.BaseWaterY,
+                ParapetH = 1.3f, ParapetW = 0.9f, Fittings = true, LifeRing = true,
+                Tint = new Color(0.92f, 0.92f, 0.9f), ParapetTint = new Color(0.78f, 0.78f, 0.76f),
+            };
+            var redStem = SeocheonDef.RedStem;
+            var redArm = SeocheonDef.RedArm;
+            spec.Rect = new Rect(redStem.x, redStem.y, redStem.width, redArm.yMin - redStem.y);
+            spec.ParapetExtEnd = redArm.height - spec.ParapetW;
+            HarborKit.Breakwater(_root, "RedBreakwater", spec, _rng);
+            spec.Rect = redArm;
+            spec.AlongZ = false;
+            spec.ParapetExtEnd = 0f;
+            spec.LifeRing = false;
+            spec.NoInnerEdge = p => p.x > redStem.xMin - 0.5f && p.x < redStem.xMax + 0.5f;
+            HarborKit.Breakwater(_root, "RedBreakwaterArm", spec, _rng);
+            spec.Rect = SeocheonDef.WhiteBw;
+            spec.AlongZ = true;
+            spec.ParapetSide = -1;
+            spec.LifeRing = true;
+            spec.NoInnerEdge = null;
+            HarborKit.Breakwater(_root, "WhiteBreakwater", spec, _rng);
 
             // 테트라포드: 큰 방파제 바깥(동쪽)과 꺾인 팔 바깥(북쪽)
             var st = SeocheonDef.RedStem;
@@ -508,7 +518,7 @@ namespace Fishing.World
             }
             // 포구 가로등 (호안을 따라, 방파제 위)
             for (float x = -30f; x <= 100f; x += 26f) _props.Streetlight(new Vector3(x, _map.LandY, -45.5f));
-            for (float z = -28f; z <= 18f; z += 22f) _props.Streetlight(new Vector3(SeocheonDef.RedStem.xMax - 0.8f, _map.LandY, z));
+            for (float z = -28f; z <= 18f; z += 22f) _props.Streetlight(new Vector3(SeocheonDef.RedStem.xMax - 0.45f, _map.LandY + 1.3f, z)); // 파라펫 위
             for (float x = -170f; x <= -70f; x += 33f) _props.Streetlight(new Vector3(x, _map.LandY, -58.5f));
             WorldBuilder.AddSign(_root, "홍원항", new Vector3(30f, _map.LandY + 5.5f, -49f), new Color(0.6f, 0.85f, 1f));
         }
@@ -561,8 +571,8 @@ namespace Fishing.World
             var union = NpcAngler.Spawn(parent, new Vector3(SeocheonDef.RedStem.xMin - 4f, _map.LandY, SeocheonDef.ShoreZ - 5f), 200f, new CharacterLook { Name = "어촌계 이계장", Title = "한국 낚시 조합 서천 지부", Female = true }, NpcAngler.Role.Talker);
             union.NpcId = "union";
 
-            NpcAngler.Spawn(parent, new Vector3(SeocheonDef.RedArm.center.x + 6f, _map.LandY, SeocheonDef.RedArm.yMax - 1.2f), 0f, new CharacterLook { Name = "주꾸미 아줌마", Title = "에기 30년", Female = true }, NpcAngler.Role.Angler);
-            NpcAngler.Spawn(parent, new Vector3(SeocheonDef.WhiteBw.xMin + 1.2f, _map.LandY, SeocheonDef.WhiteBw.yMax - 8f), -60f, new CharacterLook { Name = "갑오징어 헌터", Title = "먹물 세례 100회" }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(parent, new Vector3(SeocheonDef.RedArm.center.x + 6f, _map.LandY, SeocheonDef.RedArm.yMax - 1.8f), 0f, new CharacterLook { Name = "주꾸미 아줌마", Title = "에기 30년", Female = true }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(parent, new Vector3(SeocheonDef.WhiteBw.xMin + 1.8f, _map.LandY, SeocheonDef.WhiteBw.yMax - 8f), -60f, new CharacterLook { Name = "갑오징어 헌터", Title = "먹물 세례 100회" }, NpcAngler.Role.Angler);
             var top = new Vector2(SeocheonDef.CapeBase.x, -8f);
             NpcAngler.Spawn(parent, new Vector3(top.x + 5f, SeocheonTerrain.HeightAt(top.x + 5f, top.y + 9f), top.y + 9f), 0f, new CharacterLook { Name = "동백정 할아버지", Title = "서해 노을 지킴이" }, NpcAngler.Role.Talker);
         }

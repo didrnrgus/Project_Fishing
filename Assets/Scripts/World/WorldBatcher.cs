@@ -30,13 +30,16 @@ namespace Fishing.World
             LastBatched = gos.Count;
         }
 
+        static bool WorldSpaceShader(string n) =>
+            n == "Standard" || n == "Fishing/Ground" || n == "Fishing/Karst" || n == "Fishing/Landmark" || n == "Fishing/Weathered";
+
         static bool CanBatch(MeshRenderer mr, Transform root)
         {
             if (!mr.enabled) return false;
             var mf = mr.GetComponent<MeshFilter>();
             if (mf == null || mf.sharedMesh == null || !mf.sharedMesh.isReadable) return false;
             foreach (var m in mr.sharedMaterials)
-                if (m == null || m.shader == null || (m.shader.name != "Standard" && m.shader.name != "Fishing/Ground" && m.shader.name != "Fishing/Karst" && m.shader.name != "Fishing/Landmark")) return false;
+                if (m == null || m.shader == null || !WorldSpaceShader(m.shader.name)) return false;
             // 자기와 조상(월드 루트는 빼고) 중 스크립트·Animator가 있으면 런타임에 움직일 수 있다
             for (var t = mr.transform; t != null && t != root; t = t.parent)
             {
