@@ -16,7 +16,7 @@ namespace Fishing.World
     {
         const float MinX = -210f, MinZ = -200f, SizeX = 420f, SizeZ = 470f;
         const float BaseY = -12f, Height = 44f;
-        const int Res = 513;      // 높이맵 (420m / 512 ≈ 0.8m 간격)
+        const int Res = 1025;     // 높이맵 (420m / 1024 ≈ 0.4m 간격 — 갯바위 둔덕의 턱·틈이 보이게)
         const int SplatRes = 512;
 
         static float _landY, _waterY;
@@ -80,13 +80,42 @@ namespace Fishing.World
                     float t = Smooth(r - 2.5f, r + 8f, d + rough * 3f);
                     island = Mathf.Lerp(top, _waterY - 6f, t);
                 }
-                // 봉우리
+                // 봉우리: 길쭉한 바위 둔덕 + 어깨 둔덕 하나 (예전 가우스 언덕은 매끈한 원뿔로 보였다, 2026-10-27 사용자)
                 var peak = new Vector2(c.x + r * 0.35f, c.z - r * 0.3f);
-                float pd = new Vector2(x - peak.x, z - peak.y).magnitude;
-                island += Mathf.Exp(-pd * pd / (r * r * 0.09f)) * 7f * (0.8f + rough * 0.4f);
+                float ang = 0.6f + i * 1.1f;
+                var ax = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang));
+                island += Outcrop(x, z, peak, ax, r * 0.5f, r * 0.33f, 7.5f * (0.85f + rough * 0.3f), i * 13.7f);
+                island += Outcrop(x, z, peak - ax * (r * 0.42f) + new Vector2(-ax.y, ax.x) * (r * 0.12f), ax, r * 0.28f, r * 0.2f, 3.2f, i * 13.7f + 5.3f);
                 y = Mathf.Max(y, island);
             }
             return y;
+        }
+
+        /// <summary>
+        /// 갯바위 둔덕 하나의 높이: 타원 바닥(ax 방향 반지름 lenR, 옆 widR), 옆이 가파른 돔에
+        /// 기울어진 퇴적층 턱(1.1m마다 계단, 한쪽으로 기움), 갈라진 틈(ridged 노이즈), 잔 울퉁불퉁을 얹는다.
+        /// </summary>
+        static float Outcrop(float x, float z, Vector2 center, Vector2 ax, float lenR, float widR, float height, float seed)
+        {
+            var q = new Vector2(x - center.x, z - center.y);
+            float u = Vector2.Dot(q, ax) / lenR, v = (q.y * ax.x - q.x * ax.y) / widR;
+            float e = Mathf.Sqrt(u * u + v * v) + (Mathf.PerlinNoise(x * 0.12f + seed, z * 0.12f) - 0.5f) * 0.4f;
+            if (e >= 1f) return 0f;
+            float body = Mathf.Pow(1f - e, 0.6f);
+            float raw = body * height;
+            float inside = Smooth(0f, 0.2f, body);
+            // 퇴적층 턱: 층이 ax 쪽으로 기울어 있어 한쪽은 계단, 반대쪽은 비스듬한 판
+            float tilt = Vector2.Dot(q, ax) * 0.14f;
+            float lc = (raw + tilt) / 1.1f;
+            float fl = Mathf.Floor(lc);
+            float stepped = (fl + Smooth(0.55f, 0.95f, lc - fl)) * 1.1f - tilt;
+            raw = Mathf.Lerp(raw, stepped, 0.7f * inside);
+            // 갈라진 틈
+            float cr = 1f - Mathf.Abs(Mathf.PerlinNoise(x * 0.21f + 3.1f + seed, z * 0.21f) * 2f - 1f);
+            raw -= Mathf.Pow(cr, 10f) * 0.9f * inside;
+            // 잔 울퉁불퉁
+            raw += (Mathf.PerlinNoise(x * 0.75f + seed, z * 0.75f) - 0.5f) * 0.4f * inside;
+            return Mathf.Max(0f, raw);
         }
 
         public static Terrain Build(Transform parent, float landY, float waterY)

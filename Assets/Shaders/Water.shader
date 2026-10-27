@@ -190,7 +190,9 @@ Shader "Fishing/Water"
                         float c1 = tex2D(_NormalTex, p * 0.33 + t * float2(0.045, -0.03)).r;
                         float c2 = tex2D(_NormalTex, p * 0.71 - t * float2(0.03, 0.05)).g;
                         float churn = smoothstep(0.42, 0.68, c1 * 0.6 + c2 * 0.4) * 0.9;
-                        float front = BioFront(p, dist, t, churn);
+                        // 벽(호안·방파제) 앞 깊은 물은 몇십 cm 사이에 dist가 0→십몇 m로 뛰어 파도 앞이 겹줄로 보인다 → 거리 대신 시간으로만 (벽에 부딪혀 띠 전체가 번쩍)
+                        float wallK = smoothstep(0.8, 2.0, depth);
+                        float front = BioFront(p, dist * (1 - wallK), t, churn);
                         float zone = smoothstep(_FoamWidth * 3.0, _FoamWidth * 0.6, dist);
                         float wave = front * zone * BioPatch(p, t);
                         float grains = BioGrains(p, 3.2, t) * saturate(foam * 0.5 + zone * 0.6) + BioGrains(p * 0.61 + 17.3, 2.4, t) * step(depth, 0.35) * 0.8;

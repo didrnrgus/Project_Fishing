@@ -5,6 +5,7 @@
 // (3) 2.5m 잔무늬는 밝기로만 얹고, (4) 빗물이 흘러내린 검은 세로 얼룩과 주황빛 녹물 얼룩,
 // (5) 턱·위를 보는 면에 몰리는 덤불 덩어리, (6) 수십 m 크기 명암으로 반복을 지운다.
 // 노이즈는 모두 월드 좌표라 정적 배칭해도 같고, 메쉬 UV 이음매(둘레 한 바퀴)에 걸리지 않는다.
+// _WorldUV = 1: 텍스처도 메쉬 UV 대신 월드 삼면 투영 (봉우리를 이어 붙인 듀덴 절벽에서 UV 이음매·봉우리 경계가 세로 줄로 보이던 것).
 Shader "Fishing/Karst"
 {
     Properties
@@ -23,6 +24,7 @@ Shader "Fishing/Karst"
         _Moss ("Moss Amount", Range(0,1)) = 0.6
         _Jungle ("Jungle Cover", Range(0,1)) = 0
         _Lift ("Bounce Light (white cliffs)", Range(0,1)) = 0
+        _WorldUV ("World Triplanar UV", Range(0,1)) = 0
     }
     SubShader
     {
@@ -40,7 +42,7 @@ Shader "Fishing/Karst"
         sampler2D _BumpMap;
         sampler2D _LayerTex, _LayerBump;
         fixed4 _Color, _StreakColor, _MossColor;
-        half _BumpScale, _Glossiness, _Saturation, _Streaks, _Moss, _Jungle, _Lift;
+        half _BumpScale, _Glossiness, _Saturation, _Streaks, _Moss, _Jungle, _Lift, _WorldUV;
         float _FishingNight;
 
         struct Input
@@ -62,24 +64,51 @@ Shader "Fishing/Karst"
             return 0.5 * (FishNoise(float2(p.x * k.x, p.y * k.y)) + FishNoise(float2(p.z * k.x + 17.3, p.y * k.y + 5.1)));
         }
 
-        void surf(Input IN, inout SurfaceOutputStandard o)
+        // 바위 결 한 벌: 큰 배율 두 벌(m으로 섞음) + 회색 층 바위(layerMask) + 2.5m 잔무늬 밝기, 노멀
+        void RockTex(float2 uv, float m, float layerMask, out fixed3 c, out float detail, out half3 nrm)
         {
-            float3 wp = IN.worldPos;
-            float2 uv = IN.uv_MainTex; // 메쉬 UV는 1 = 4m
             const float2x2 rot = float2x2(0.7986, -0.6018, 0.6018, 0.7986);
             float2 uvA = uv * 0.45;                                  // 약 9m 한 장
             float2 uvB = mul(rot, uv) * 0.29 + float2(0.37, 0.61);   // 약 14m, 회전
             float2 uvL = uv * float2(0.38, 0.55) + float2(0.53, 0.11); // 층 바위: 가로로 조금 길게 (퇴적층 방향)
             float2 uvD = uv * 1.6 + float2(0.21, 0.83);              // 2.5m 잔무늬
+            c = lerp(tex2D(_MainTex, uvA).rgb, tex2D(_MainTex, uvB).rgb, m);
+            c = lerp(c, tex2D(_LayerTex, uvL).rgb * 1.05, layerMask);
+            detail = dot(tex2D(_LayerTex, uvD).rgb, fixed3(0.299, 0.587, 0.114));
+            nrm = half3(0, 0, 1);
+        #if defined(_NORMALMAP)
+            half3 na = UnpackScaleNormal(tex2D(_BumpMap, uvA), _BumpScale);
+            half3 nb = UnpackScaleNormal(tex2D(_BumpMap, uvB), _BumpScale);
+            nb.xy = mul(nb.xy, rot);
+            half3 nl = UnpackScaleNormal(tex2D(_LayerBump, uvL), _BumpScale);
+            nrm = normalize(lerp(lerp(na, nb, m), nl, layerMask));
+        #endif
+        }
 
+        void surf(Input IN, inout SurfaceOutputStandard o)
+        {
+            float3 wp = IN.worldPos;
             float n = WallNoise(wp, float2(0.045, 0.035)) * 0.65 + WallNoise(wp + 31.0, float2(0.16, 0.12)) * 0.35;
             float m = smoothstep(0.38, 0.62, n);
-            fixed3 c = lerp(tex2D(_MainTex, uvA).rgb, tex2D(_MainTex, uvB).rgb, m);
             // 회색 층 바위 덩어리 (봉우리 면의 30~40%)
             float ln = WallNoise(wp + 13.0, float2(0.03, 0.05)) * 0.7 + WallNoise(wp + 41.0, float2(0.12, 0.1)) * 0.3;
             float layerMask = smoothstep(0.5, 0.62, ln);
-            c = lerp(c, tex2D(_LayerTex, uvL).rgb * 1.05, layerMask);
-            float detail = dot(tex2D(_LayerTex, uvD).rgb, fixed3(0.299, 0.587, 0.114));
+
+            fixed3 c; float detail; half3 rn;
+            if (_WorldUV > 0.5)
+            {
+                // 월드 삼면 투영 (1 = 4m, 메쉬 UV와 같은 배율). 면 방향 가중치를 4제곱해 섞이는 띠를 좁힌다
+                float3 w = pow(abs(normalize(IN.wn)), 4);
+                w /= w.x + w.y + w.z;
+                fixed3 c1, c2, c3; float d1, d2, d3; half3 n1, n2, n3;
+                RockTex(wp.zy * 0.25, m, layerMask, c1, d1, n1);
+                RockTex(wp.xz * 0.25 + 0.31, m, layerMask, c2, d2, n2);
+                RockTex(wp.xy * 0.25 + 0.67, m, layerMask, c3, d3, n3);
+                c = c1 * w.x + c2 * w.y + c3 * w.z;
+                detail = d1 * w.x + d2 * w.y + d3 * w.z;
+                rn = normalize(n1 * w.x + n2 * w.y + n3 * w.z);
+            }
+            else RockTex(IN.uv_MainTex, m, layerMask, c, detail, rn);   // 메쉬 UV는 1 = 4m
             c *= lerp(0.82, 1.18, saturate(detail * 1.7));
 
             float lum = dot(c, fixed3(0.299, 0.587, 0.114));
@@ -109,11 +138,7 @@ Shader "Fishing/Karst"
             o.Albedo = col * _Color.rgb;
 
         #if defined(_NORMALMAP)
-            half3 na = UnpackScaleNormal(tex2D(_BumpMap, uvA), _BumpScale);
-            half3 nb = UnpackScaleNormal(tex2D(_BumpMap, uvB), _BumpScale);
-            nb.xy = mul(nb.xy, rot);
-            half3 nl = UnpackScaleNormal(tex2D(_LayerBump, uvL), _BumpScale);
-            o.Normal = normalize(lerp(lerp(na, nb, m), nl, layerMask));
+            o.Normal = rn;
         #endif
             o.Smoothness = saturate(_Glossiness * lerp(1.2, 0.5, max(moss, streak * 0.5)));
             o.Metallic = 0;

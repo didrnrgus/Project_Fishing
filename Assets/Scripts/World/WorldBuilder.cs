@@ -89,9 +89,17 @@ namespace Fishing.World
         {
             var deckMat = Mats.TexturedBox("concrete", new Color(0.9f, 0.9f, 0.88f), new Vector2(18f, 240f), 6f, 0.2f);
             var girder = Mats.Lit(new Color(0.7f, 0.7f, 0.68f), 0.15f);
-            var pierMat = Mats.TexturedBox("concrete", new Color(0.82f, 0.82f, 0.8f), new Vector2(4f, 14f), 4f, 0.15f);
             var wet = Mats.Lit(new Color(0.3f, 0.32f, 0.3f), 0.5f);
-            var steel = Mats.Lit(new Color(0.18f, 0.42f, 0.68f), 0.45f, 0.35f);
+            // 야경 (사용자 실사 사진: 방화대교·성수대교·올림픽대교): 물가에서 올려 비추는 투광등으로 강철 아치와 거더가 주황·황금빛으로 물들고,
+            // 교각은 아래가 밝고 위로 갈수록 어두워지는 따뜻한 흰빛, 상판 위 가로등 불빛이 점점이 이어진다. 원색 네온은 쓰지 않는다.
+            // Landmark 셰이더가 전역 밤 정도(_FishingNight)로 켠다 (낮에는 꺼짐). UplightTex = 아래 밝고 위로 어두운 세로 그라데이션
+            var up = UplightTex();
+            var concrete = Resources.Load<Texture2D>("Terrain/concrete_diff");
+            var gold = new Color(1f, 0.6f, 0.22f);
+            var steel = HanRiverLandmarks.Mat(new Color(0.18f, 0.42f, 0.68f), null, Texture2D.whiteTexture, gold * 1.9f, 0.45f, 0.35f, Vector2.one);
+            var girderNight = HanRiverLandmarks.Mat(new Color(0.7f, 0.7f, 0.68f), concrete, up, gold * 1.3f, 0.15f, 0f, new Vector2(20f, 1f));
+            var pierLit = HanRiverLandmarks.Mat(new Color(0.82f, 0.82f, 0.8f), concrete, up, new Color(1f, 0.82f, 0.6f) * 1.5f, 0.15f, 0f, Vector2.one);
+            var led = HanRiverLandmarks.Mat(new Color(0.5f, 0.45f, 0.4f), null, Texture2D.whiteTexture, gold * 2.2f, 0.3f, 0f, Vector2.one);
             var rail = Mats.Lit(new Color(0.75f, 0.78f, 0.8f), 0.4f, 0.4f);
             float x = HanRiverMap.BridgeX;
             float deckY = 12f;
@@ -101,7 +109,10 @@ namespace Fishing.World
             bridge.SetParent(_root, false);
             Mats.Prim(PrimitiveType.Cube, "Deck", bridge, new Vector3(x, deckY, 0f), new Vector3(width, 0.9f, len), deckMat);
             // 박스 거더: 상판보다 좁고 깊다 (아래에서 올려다보면 그림자 단이 진다)
-            Mats.Prim(PrimitiveType.Cube, "Girder", bridge, new Vector3(x, deckY - 1.2f, 0f), new Vector3(width - 5f, 1.6f, len), girder, false);
+            Mats.Prim(PrimitiveType.Cube, "Girder", bridge, new Vector3(x, deckY - 1.2f, 0f), new Vector3(width - 5f, 1.6f, len), girderNight, false);
+            // 상판 가장자리 LED 띠 (밤에 다리 윤곽이 한 줄로 빛난다)
+            foreach (float s in new[] { -1f, 1f })
+                Mats.Prim(PrimitiveType.Cube, "DeckLed", bridge, new Vector3(x + s * (width * 0.5f + 0.06f), deckY - 0.2f, 0f), new Vector3(0.1f, 0.22f, len), led, false);
             // 상판 가장자리 턱 (보도와 차도 경계)
             foreach (float s in new[] { -1f, 1f })
                 Mats.Prim(PrimitiveType.Cube, "Curb", bridge, new Vector3(x + s * (width * 0.5f - 2.2f), deckY + 0.55f, 0f), new Vector3(0.35f, 0.25f, len), girder, false);
@@ -117,12 +128,13 @@ namespace Fishing.World
             }
 
             // 교각: 쌍기둥 + 머리 보 + 물가르기 받침 (물에 젖은 짙은 띠)
-            foreach (var z in HanRiverMap.BridgePierZ)
+            for (int pi = 0; pi < HanRiverMap.BridgePierZ.Length; pi++)
             {
-                Mats.Prim(PrimitiveType.Cube, "PierCap", bridge, new Vector3(x, deckY - 2.6f, z), new Vector3(width - 1f, 1.4f, 3.2f), pierMat);
+                float z = HanRiverMap.BridgePierZ[pi];
+                Mats.Prim(PrimitiveType.Cube, "PierCap", bridge, new Vector3(x, deckY - 2.6f, z), new Vector3(width - 1f, 1.4f, 3.2f), pierLit);
                 foreach (float s in new[] { -1f, 1f })
                     Mats.Prim(PrimitiveType.Cylinder, "PierColumn", bridge, new Vector3(x + s * 4.2f, (deckY - 3.3f + HanRiverMap.WaterY - 1.5f) * 0.5f, z),
-                        new Vector3(2.6f, (deckY - 3.3f - HanRiverMap.WaterY + 1.5f) * 0.5f, 2.6f), pierMat);
+                        new Vector3(2.6f, (deckY - 3.3f - HanRiverMap.WaterY + 1.5f) * 0.5f, 2.6f), pierLit);
                 Mats.Prim(PrimitiveType.Cube, "PierFooting", bridge, new Vector3(x, HanRiverMap.WaterY - 0.4f, z), new Vector3(12.5f, 2.2f, 4.2f), wet, false);
                 // 물가르기: 앞뒤 끝을 뾰족하게 (상류·하류 쪽 = ±x)
                 foreach (float s in new[] { -1f, 1f })
@@ -149,8 +161,24 @@ namespace Fishing.World
             }
         }
 
-        /// <summary>a→b 사이 포물선 아치 (마디 16개) + 4m마다 상판으로 내리는 행어.</summary>
-        void Arch(Transform parent, Vector3 a, Vector3 b, float rise, Material steel)
+        static Texture2D _uplight;
+
+        /// <summary>올려 비추는 투광등 빛 (밤 빛 맵): 아래(v 0)가 가장 밝고 위로 갈수록 어두워진다.</summary>
+        static Texture2D UplightTex()
+        {
+            if (_uplight != null) return _uplight;
+            _uplight = new Texture2D(4, 64, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+            for (int y = 0; y < 64; y++)
+            {
+                float k = Mathf.Lerp(1f, 0.12f, Mathf.Pow(y / 63f, 0.7f));
+                for (int x = 0; x < 4; x++) _uplight.SetPixel(x, y, new Color(k, k, k, 1f));
+            }
+            _uplight.Apply();
+            return _uplight;
+        }
+
+        /// <summary>a→b 사이 포물선 아치 (마디 16개) + 4m마다 상판으로 내리는 행어. ribs = 마디마다 재질 (없으면 steel).</summary>
+        void Arch(Transform parent, Vector3 a, Vector3 b, float rise, Material steel, Material[] ribs = null)
         {
             const int seg = 16;
             Vector3 P(float t) => Vector3.Lerp(a, b, t) + Vector3.up * rise * 4f * t * (1f - t);
@@ -159,7 +187,7 @@ namespace Fishing.World
                 var p0 = P(i / (float)seg);
                 var p1 = P((i + 1) / (float)seg);
                 var d = p1 - p0;
-                Mats.Prim(PrimitiveType.Cube, "ArchRib", parent, (p0 + p1) * 0.5f, new Vector3(0.6f, 0.8f, d.magnitude + 0.08f), steel, false, Quaternion.LookRotation(d.normalized));
+                Mats.Prim(PrimitiveType.Cube, "ArchRib", parent, (p0 + p1) * 0.5f, new Vector3(0.6f, 0.8f, d.magnitude + 0.08f), ribs != null ? ribs[i * ribs.Length / seg] : steel, false, Quaternion.LookRotation(d.normalized));
             }
             float span = Vector3.Distance(a, b);
             for (float u = 4f; u < span - 2f; u += 4f)
@@ -554,16 +582,25 @@ namespace Fishing.World
                 Mats.Prim(PrimitiveType.Cube, "Sail", boat, new Vector3(0f, 5.5f, -1.4f), new Vector3(0.05f, 9f, 3.6f), sail, false, Quaternion.Euler(-12f, 0f, 0f));
             }
 
-            // 다리 조명 (밤에 강물에 비친다)
-            var bridgeLight = Mats.Emissive(new Color(1f, 0.85f, 0.55f), 2.5f);
-            for (float z = -110f; z <= 110f; z += 10f)
+            // 다리 위 가로등 (사진: 상판 위로 점점이 이어지는 주황 나트륨등, 블룸으로 별처럼 번진다). 기둥 + 팔 + 등, 25m마다 양쪽 엇갈려
+            var pole = Mats.Lit(new Color(0.35f, 0.37f, 0.4f), 0.4f, 0.5f);
+            var lamp = HanRiverLandmarks.Mat(new Color(1f, 0.85f, 0.6f), null, Texture2D.whiteTexture, new Color(1f, 0.7f, 0.35f) * 6f, 0.3f, 0f, Vector2.one);
+            const float bridgeDeck = 12.45f, poleH = 7f;
+            for (float z = -112f; z <= 112f; z += 12.5f)
             {
-                Mats.Prim(PrimitiveType.Sphere, "BridgeLight", props, new Vector3(HanRiverMap.BridgeX - 8.8f, 13.9f, z), Vector3.one * 0.5f, bridgeLight, false);
-                Mats.Prim(PrimitiveType.Sphere, "BridgeLight", props, new Vector3(HanRiverMap.BridgeX + 8.8f, 13.9f, z), Vector3.one * 0.5f, bridgeLight, false);
-                // 강 위에 있는 다리 조명만 물에 비친다 (데크 쪽 = 플레이어가 보는 쪽 난간)
-                if (z > HanRiverMap.RiverMinZ && z < HanRiverMap.RiverMaxZ)
-                    WaterGlints.Add(new Vector3(HanRiverMap.BridgeX + 8.8f, 13.9f, z), new Color(1f, 0.85f, 0.55f), 0.7f);
+                float side = Mathf.RoundToInt(z / 12.5f) % 2 == 0 ? 1f : -1f;
+                float px = HanRiverMap.BridgeX + side * 8.3f;
+                Mats.Prim(PrimitiveType.Cylinder, "BridgeLampPole", props, new Vector3(px, bridgeDeck + poleH * 0.5f, z), new Vector3(0.18f, poleH * 0.5f, 0.18f), pole, false);
+                Mats.Prim(PrimitiveType.Cube, "BridgeLampArm", props, new Vector3(px - side * 1f, bridgeDeck + poleH, z), new Vector3(2f, 0.12f, 0.12f), pole, false);
+                Mats.Prim(PrimitiveType.Cube, "BridgeLamp", props, new Vector3(px - side * 1.9f, bridgeDeck + poleH - 0.12f, z), new Vector3(0.7f, 0.18f, 0.35f), lamp, false);
+                // 강 위 데크 쪽(+x) 가로등만 물에 비친다
+                if (side > 0f && z > HanRiverMap.RiverMinZ && z < HanRiverMap.RiverMaxZ)
+                    WaterGlints.Add(new Vector3(px - 1.9f, bridgeDeck + poleH, z), new Color(1f, 0.7f, 0.35f), 0.75f);
             }
+            // 교각 투광등과 황금빛 아치가 강물에 길게 비친다
+            foreach (var pz in HanRiverMap.BridgePierZ)
+                WaterGlints.Add(new Vector3(HanRiverMap.BridgeX + 6f, 6f, pz), new Color(1f, 0.78f, 0.5f), 0.85f);
+            WaterGlints.Add(new Vector3(HanRiverMap.BridgeX + 9.4f, 20f, 0f), new Color(1f, 0.6f, 0.22f), 0.9f);
             // 건너편(북쪽) 도시 불빛: 아파트 창문 불빛이 강물에 길게 비친다
             for (int i = 0; i < 9; i++)
             {

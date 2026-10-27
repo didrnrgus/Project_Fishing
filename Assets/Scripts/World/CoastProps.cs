@@ -44,23 +44,32 @@ namespace Fishing.World
         }
 
         /// <summary>
-        /// 방파제 바깥 테트라포드 더미: from→to 선을 따라 바깥(outward) 쪽으로 rows줄, 줄마다 엇갈리고 바깥 줄일수록 낮게 잠긴다
-        /// (실제 방파제처럼 벽에 기댄 안쪽 줄이 가장 높다).
+        /// 방파제 바깥 테트라포드 더미: from→to 선을 따라 바깥(outward) 쪽으로 rows줄. 실제 방파제처럼 빽빽하고 가지런하게 —
+        /// 1.45m 간격, 줄마다 반 칸 엇갈림, 한 다리 위(바로 선 것)와 한 다리 아래(뒤집힌 것)를 번갈아 놓고 경사면을 따라 바깥으로 살짝 기운다.
+        /// 벽에 기댄 안쪽 줄이 가장 높고 바깥 줄일수록 물에 잠긴다 (2026-10-27 사용자 참고 사진).
         /// </summary>
-        public void TetrapodBank(Vector3 from, Vector3 to, Vector3 outward, float waterY, Material mat, int rows = 3)
+        public void TetrapodBank(Vector3 from, Vector3 to, Vector3 outward, float waterY, Material mat, int rows = 4)
         {
+            const float step = 1.45f, rowGap = 1.25f;
             var along = to - from;
             float len = along.magnitude;
             if (len < 0.1f) return;
             along /= len;
             outward = Vector3.ProjectOnPlane(outward, Vector3.up).normalized;
+            var lean = Quaternion.FromToRotation(Vector3.up, Vector3.Slerp(Vector3.up, outward, 0.2f));
+            var line = Quaternion.LookRotation(along, Vector3.up);
             for (int k = 0; k < rows; k++)
-                for (float s = (k % 2) * 1f; s < len; s += R(1.8f, 2.3f))
+            {
+                int i = 0;
+                for (float s = (k % 2) * step * 0.5f; s < len; s += step, i++)
                 {
-                    var p = from + along * s + outward * (0.6f + k * 1.7f + R(-0.3f, 0.3f));
-                    p.y = waterY + 0.35f - k * 0.55f + R(-0.25f, 0.25f);
-                    Tetrapod(p, mat);
+                    var p = from + along * (s + R(-0.08f, 0.08f)) + outward * (0.8f + k * rowGap + R(-0.08f, 0.08f));
+                    p.y = waterY + 0.8f - k * 0.42f + R(-0.06f, 0.06f);
+                    bool flip = (i + k) % 2 == 1;
+                    var rot = lean * line * Quaternion.Euler(flip ? 180f : 0f, (flip ? 0f : 60f) + R(-7f, 7f), 0f);
+                    Tetrapod(_root, p, rot, R(0.96f, 1.02f), mat, true);
                 }
+            }
         }
 
         static Mesh _tetrapod;

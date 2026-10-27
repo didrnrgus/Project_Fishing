@@ -420,7 +420,7 @@ namespace Fishing.World
 
         /// <summary>
         /// 제주 서귀포 (Lv.21, 원작 이벤트 지역): 서귀포항 두 방파제, 검은 현무암 갯바위, 바다에 선 외돌개, 앞바다의 범섬,
-        /// 주상절리 곶, 뒤로 한라산과 오름, 돌담 두른 귤밭, 돌하르방, 해녀 할망. 맑은 쪽빛 물, 자리돔·옥돔·무늬오징어, 밤 먼바다엔 다금바리 어군.
+        /// 주상절리 곶(기둥 벽·너럭 단·전망 데크), 동쪽 바다 너머 성산일출봉, 서쪽 갯바위 앞 용두암, 뒤로 한라산과 오름, 돌담 두른 귤밭, 돌하르방, 해녀 할망. 맑은 쪽빛 물, 자리돔·옥돔·무늬오징어, 밤 먼바다엔 다금바리 어군.
         /// </summary>
         public static CoastSpec Jeju() => new CoastSpec
         {
@@ -435,10 +435,10 @@ namespace Fishing.World
                 new BreakwaterSpec { Name = "서귀포항 방파제", Stem = new Rect(74f, -40f, 7f, 58f), Arm = new Rect(42f, 12f, 39f, 6f), Light = new Color(0.85f, 0.15f, 0.12f) },
                 new BreakwaterSpec { Name = "서귀포항 흰 등대", Stem = new Rect(-4f, -40f, 6f, 36f), Light = new Color(0.95f, 0.95f, 0.93f), ParapetWest = true },
             },
-            Capes = new[] { new CapeSpec { Base = new Vector2(-70f, -72f), Tip = new Vector2(-82f, -6f), WidthBase = 30f, WidthTip = 16f, Height = 14f, Forest = true, Name = "주상절리" } },
+            Capes = new[] { new CapeSpec { Base = new Vector2(-70f, -72f), Tip = new Vector2(-82f, -6f), WidthBase = 30f, WidthTip = 16f, Height = 19f, Forest = true, Name = "주상절리" } },   // 주상절리대 절벽 높이 (사진: 20m 안팎)
             Stacks = new[] { new StackSpec { Pos = new Vector3(-40f, 0f, 16f), Radius = 3.6f, Height = 20f, Pines = true, Name = "외돌개" } },
             Islets = new[] { new IsletSpec { Center = new Vector3(118f, 0f, 160f), Radius = 30f, Height = 26f, Walkable = true, Trees = true, Name = "범섬" } },
-            Features = CoastFeature.Hallasan | CoastFeature.DolHareubang | CoastFeature.Tangerines | CoastFeature.Columnar,
+            Features = CoastFeature.Hallasan | CoastFeature.DolHareubang | CoastFeature.Tangerines | CoastFeature.Columnar | CoastFeature.Seongsan | CoastFeature.Yongduam,
             Grid = new[,]
             {
                 { R, R, R, W, S, S, R, R },
@@ -460,7 +460,7 @@ namespace Fishing.World
                 Npc(60f, 16.8f, 0f, Angler("벵에돔 꾼", "크릴 밑밥 장인"), NpcAngler.Role.Angler, y: 1f),
                 Npc(-82f, -4f, 0f, Angler("무늬오징어 에깅러", "가을엔 서귀포", true), NpcAngler.Role.Angler),
             },
-            Signs = new[] { ("서귀포항", new Vector3(26f, 6.5f, -60f), SignBlue), ("외돌개", new Vector3(-40f, 5.5f, -60f), SignGold), ("주상절리대", new Vector3(-70f, 9f, -78f), SignGold) },
+            Signs = new[] { ("서귀포항", new Vector3(26f, 6.5f, -60f), SignBlue), ("외돌개", new Vector3(-40f, 5.5f, -60f), SignGold), ("주상절리대", new Vector3(-70f, 9f, -78f), SignGold), ("용두암", new Vector3(-160f, 5.5f, -60f), SignGold) },
             FarIslands = new[] { new Vector4(-200f, 330f, 60f, 26f), new Vector4(-90f, 380f, 40f, 18f), new Vector4(260f, 520f, 120f, 30f) },
             Schools = () => new List<FishSchool>
             {

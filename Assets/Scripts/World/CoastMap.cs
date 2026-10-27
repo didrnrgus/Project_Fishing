@@ -43,6 +43,8 @@ namespace Fishing.World
         Pyramids = 524288,    // 사막 너머 피라미드 (나일강 하류)
         Feluccas = 1048576,   // 큰 삼각돛 펠루카 (나일강)
         SeaRocks = 2097152,   // 바위 해안 앞 얕은 물에 솟은 날카로운 갯바위 무리 (헌화로 사진: 청록 물 위 검은 바위들)
+        Seongsan = 4194304,   // 동쪽 바다 너머 성산일출봉 (분화구 응회구)
+        Yongduam = 8388608,   // 서쪽 갯바위 앞 용두암 (용머리 현무암)
     }
 
     /// <summary>
@@ -389,6 +391,16 @@ namespace Fishing.World
             return (Vector2.Distance(new Vector2(x, z), p), Mathf.Lerp(c.WidthBase, c.WidthTip, t), t);
         }
 
+        /// <summary>주상절리 곶 = Columnar 기능이 켜진 맵의 첫 곶.</summary>
+        public bool IsColumnarCape(CapeSpec c) => (S.Features & CoastFeature.Columnar) != 0 && S.Capes.Length > 0 && c.Base == S.Capes[0].Base && c.Tip == S.Capes[0].Tip;
+        /// <summary>주상절리 곶 윗면이 가장자리에서 낮아지는 높이 (m), 땅 절벽 끝이 곶 폭보다 안쪽으로 들어간 거리 (m).</summary>
+        public const float ColumnarRimDrop = 1.5f, ColumnarInset = 3f;
+        /// <summary>주상절리 곶에서 바다 쪽(절벽)인 정도 0~1: 물가 2m 안쪽부터 5m 바깥까지. 육지 쪽은 원래 둥근 비탈.</summary>
+        public static float ColumnarSea(float shore, float z) => Smooth(shore - 2f, shore + 5f, z);
+        /// <summary>곶 윗면 높이 (HeightAt과 같은 식, 가장자리 낮아짐 전).</summary>
+        public static float CapeTop(CapeSpec c, float x, float z, float t) =>
+            Mathf.Lerp(c.Height, c.Height * 0.55f, t) + (Mathf.PerlinNoise(x * 0.05f, z * 0.05f) - 0.5f) * 2f;
+
         public float HeightAt(float x, float z)
         {
             float shore = ShoreAt(x);
@@ -414,12 +426,23 @@ namespace Fishing.World
             {
                 var (cd, w, t) = CapeDist(c, x, z);
                 if (cd > w + 14f) continue;
-                float top = Mathf.Lerp(c.Height, c.Height * 0.55f, t) + (Mathf.PerlinNoise(x * 0.05f, z * 0.05f) - 0.5f) * 2f;
+                float top = CapeTop(c, x, z, t);
                 float distEdge = cd;
                 if (t >= 0.999f) distEdge = Vector2.Distance(new Vector2(x, z), c.Tip);
                 float cape = distEdge < w
                     ? Mathf.Lerp(top, LandY + 1.2f, Mathf.Pow(distEdge / w, 2.2f))
                     : Mathf.Lerp(LandY + 1.2f, -6f, Smooth(w, w + 10f, distEdge + (Mathf.PerlinNoise(x * 0.2f, z * 0.2f) - 0.5f) * 4f));
+                // 주상절리 곶: 바다 쪽은 둥근 언덕이 아니라 평평한 윗면 + 수직 절벽 (절벽 면은 ColumnarJoints의 기둥 벽이 덮는다)
+                // 땅 절벽 끝은 곶 폭보다 ColumnarInset 안쪽 — 그 바깥 띠는 기둥 서너 줄이 겹쳐 벽을 이룬다 (흙 절벽이 기둥 틈으로 안 보이게)
+                float sea = IsColumnarCape(c) ? ColumnarSea(shore, z) : 0f;
+                if (sea > 0f)
+                {
+                    float wc = w - ColumnarInset;
+                    float cliff = distEdge < wc
+                        ? Mathf.Lerp(top, top - ColumnarRimDrop, Mathf.Pow(distEdge / wc, 6f))
+                        : Mathf.Lerp(top - ColumnarRimDrop, -6f, Smooth(wc, wc + 2.5f, distEdge));
+                    cape = Mathf.Lerp(cape, cliff, sea);
+                }
                 y = Mathf.Max(y, cape);
             }
 
@@ -937,10 +960,10 @@ namespace Fishing.World
                         (x, z) =>
                         {
                             var (cd, w, _) = CoastMapDef.CapeDist(c, x, z);
-                            return cd < w - 3f && new Vector2(x - top2.x, z - top2.y).magnitude > 10f;
+                            return cd < w - (_map.IsColumnarCape(c) ? 6.5f : 3f) && new Vector2(x - top2.x, z - top2.y).magnitude > 10f;
                         }, !S.Snow);
-                // 절벽 아래 바위
-                for (int i = 0; i < 18; i++)
+                // 절벽 아래 바위 (주상절리 곶은 기둥 너럭 단이 대신한다)
+                for (int i = 0; i < (_map.IsColumnarCape(c) ? 0 : 18); i++)
                 {
                     float t = R(0.15f, 1f);
                     var p = Vector2.Lerp(c.Base, c.Tip, t);
@@ -1413,6 +1436,8 @@ namespace Fishing.World
             if ((S.Features & CoastFeature.DolHareubang) != 0) DolHareubangs();
             if ((S.Features & CoastFeature.Tangerines) != 0) Tangerines();
             if ((S.Features & CoastFeature.Columnar) != 0) ColumnarJoints();
+            if ((S.Features & CoastFeature.Seongsan) != 0) Seongsan();
+            if ((S.Features & CoastFeature.Yongduam) != 0) Yongduam();
             BuildOverseasFeatures();
             S.Extra?.Invoke(this);
         }
@@ -1512,76 +1537,362 @@ namespace Fishing.World
             }
         }
 
-        /// <summary>주상절리: 첫 곶 바다 쪽 둘레에 육각 기둥이 다발로 서 있다 (높이가 들쭉날쭉).</summary>
+        /// <summary>
+        /// 주상절리 (중문·대포 주상절리대 사진): 첫 곶의 바다 쪽 가장자리를 빈틈없이 붙은 5~7각 현무암 기둥 벽이 덮고(높이 = 곶 윗면, 바깥 줄은 가끔 부러져 낮다),
+        /// 절벽 앞바다로 기둥 윗면이 계단처럼 낮아지는 너럭 단이 들쭉날쭉 뻗는다. 기둥마다 가로 금(얕은 V홈), 모따기한 윗면이 살짝 기운다.
+        /// 회색 현무암 세 가지 색 + 풍화 셰이더(만조선 아래 젖은 자국, 빗물 줄). 한 메쉬(재질 셋)로 합친다.
+        /// (예전: 풀 덮인 둥근 곶 둘레에 가는 육각 기둥 260개를 띄엄띄엄 꽂았다 — 2026-10-27 사용자 "어색하다")
+        /// </summary>
         void ColumnarJoints()
         {
             if (S.Capes.Length == 0) return;
             var c = S.Capes[0];
-            var mesh = HexPrism();
-            var mat = Mats.Textured("rock", new Color(0.3f, 0.29f, 0.29f), 0.5f, 0.3f);
-            var dir = (c.Tip - c.Base).normalized;
-            var n = new Vector2(dir.y, -dir.x);
-            for (int i = 0; i < 260; i++)
+            float water = _map.BaseWaterY;
+            var moss = new Color(0.3f, 0.34f, 0.2f);
+            var mats = new[]
             {
-                float t = R(0.35f, 1.05f);
-                float side = i % 3 == 0 ? 1f : i % 3 == 1 ? -1f : 0f;
-                var along = Vector2.Lerp(c.Base, c.Tip, Mathf.Min(1f, t));
-                float w = Mathf.Lerp(c.WidthBase, c.WidthTip, Mathf.Min(1f, t));
-                Vector2 p = side == 0f ? c.Tip + dir * (c.WidthTip * R(0.6f, 1.05f)) + n * R(-w, w) : along + n * side * w * R(0.75f, 1.05f);
-                float top = Mathf.Max(H(p.x, p.y) + R(-0.5f, 1.5f), _map.BaseWaterY + R(0.3f, 2.5f));
-                float bottom = _map.BaseWaterY - 4f;
-                float h = top - bottom;
-                if (h < 1f) continue;
-                var go = new GameObject("BasaltColumn");
-                go.transform.SetParent(_root, false);
-                go.transform.localPosition = new Vector3(p.x, bottom, p.y);
-                go.transform.localRotation = Quaternion.Euler(0f, R(0f, 60f), 0f);
-                float r = R(0.55f, 0.85f);
-                go.transform.localScale = new Vector3(r, h, r);
-                go.AddComponent<MeshFilter>().sharedMesh = mesh;
-                go.AddComponent<MeshRenderer>().sharedMaterial = mat;
-            }
+                Mats.Weathered("seacliff", new Color(0.4f, 0.4f, 0.41f), 2.4f, 0.18f, 1f, 0.55f, 0.12f, moss, 0.55f),
+                Mats.Weathered("seacliff", new Color(0.3f, 0.3f, 0.31f), 2.4f, 0.18f, 1f, 0.55f, 0.1f, moss, 0.55f),
+                Mats.Weathered("seacliff", new Color(0.5f, 0.49f, 0.47f), 2.4f, 0.18f, 1f, 0.6f, 0.15f, moss, 0.5f),
+            };
+            var v = new List<Vector3>();
+            var tris = new[] { new List<int>(), new List<int>(), new List<int>() };
+            const float step = 1.35f;            // 이웃 기둥 사이 (지름 약 1.3m)
+            float rowH = step * 0.866f;
+            var lo = Vector2.Min(c.Base, c.Tip) - Vector2.one * (c.WidthBase + 16f);
+            var hi = Vector2.Max(c.Base, c.Tip) + Vector2.one * (c.WidthBase + 16f);
+            int row = 0;
+            for (float z = lo.y; z < hi.y; z += rowH, row++)
+                for (float x = lo.x + (row % 2) * step * 0.5f; x < hi.x; x += step)
+                {
+                    var p = new Vector2(x + R(-0.12f, 0.12f) * step, z + R(-0.12f, 0.12f) * step);
+                    float shore = _map.ShoreAt(p.x);
+                    if (CoastMapDef.ColumnarSea(shore, p.y) < 0.35f) continue;   // 육지 쪽 둥근 비탈은 그대로
+                    var (cd, w, t) = CoastMapDef.CapeDist(c, p.x, p.y);
+                    var spine = t >= 0.999f ? c.Tip : Vector2.Lerp(c.Base, c.Tip, t);
+                    var outward = (p - spine).normalized;
+                    float rim = (p - spine).magnitude - w;   // 0 = 기둥 벽 바깥 끝, 음수 = 곶 안쪽
+                    float top, crackGap;
+                    if (rim > -CoastMapDef.ColumnarInset - 0.4f && rim <= 1.3f)
+                    {
+                        // 절벽 벽: 윗면은 바로 안쪽 땅 절벽 끝 높이. 바깥 줄일수록 가끔 부러져 낮다 (뒤 줄 기둥이 계단처럼 보인다)
+                        var edge = spine + outward * (w - CoastMapDef.ColumnarInset - 0.4f);
+                        top = H(edge.x, edge.y) + R(-0.9f, 0.45f);
+                        if (rim > -2f && R(0f, 1f) < 0.1f + 0.1f * Mathf.Clamp01(rim + 2f)) top -= R(1.2f, 4.5f);
+                        crackGap = R(2.2f, 4.5f);
+                    }
+                    else if (rim > 1.3f)
+                    {
+                        // 너럭 단: 절벽에서 멀어질수록 계단처럼 낮아지고, 폭은 노이즈로 들쭉날쭉 (4~14m)
+                        float width = 4f + 10f * Smooth(0.25f, 0.7f, Mathf.PerlinNoise(p.x * 0.045f + 7.1f, p.y * 0.045f));
+                        float k = (rim - 1.3f) / Mathf.Max(width, 0.01f);
+                        if (k > 1f) continue;
+                        float h = Mathf.Lerp(3.2f, -0.5f, k) * (0.6f + 0.4f * Mathf.PerlinNoise(p.x * 0.2f, p.y * 0.2f));
+                        top = water + Mathf.Round(h / 0.45f) * 0.45f + R(-0.18f, 0.18f);
+                        if (top < water - 0.35f) continue;
+                        crackGap = R(1.2f, 2.5f);
+                    }
+                    else continue;
+                    float bottom = water - 5f;
+                    if (top - bottom < 1f) continue;
+                    Column(v, tris[_rng.Next(3)], p, step * 0.56f, bottom, top, crackGap, water);
+                }
+            var mesh = new Mesh { name = "ColumnarJoints", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            mesh.SetVertices(v);
+            mesh.subMeshCount = 3;
+            for (int i = 0; i < 3; i++) mesh.SetTriangles(tris[i], i);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            var go = new GameObject("ColumnarJoints");
+            go.transform.SetParent(_root, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            go.AddComponent<MeshRenderer>().sharedMaterials = mats;
+            ColumnarDeck(c);
         }
 
-        static Mesh _hexPrism;
-
-        /// <summary>반지름 1, 높이 1(바닥 0 → 위 1)인 육각 기둥 (옆면 6장 + 윗면).</summary>
-        static Mesh HexPrism()
+        /// <summary>현무암 기둥 하나: 5~7각(대부분 6각) 비뚤어진 다각형, crackGap마다 가로 금(위아래 7cm에서 6% 들어간 V홈), 모따기한 윗면이 살짝 기운다.</summary>
+        void Column(List<Vector3> v, List<int> tri, Vector2 p, float radius, float bottom, float top, float crackGap, float water)
         {
-            if (_hexPrism != null) return _hexPrism;
+            float roll = R(0f, 1f);
+            int k = roll < 0.18f ? 5 : roll < 0.9f ? 6 : 7;
+            float rot = R(0f, Mathf.PI * 2f);
+            var pts = new Vector2[k];
+            for (int i = 0; i < k; i++)
+            {
+                float a = rot + (i + R(-0.12f, 0.12f)) * Mathf.PI * 2f / k;
+                pts[i] = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius * R(0.88f, 1.04f);
+            }
+            const float bevel = 0.09f;
+            var rings = new List<(float y, float s)> { (bottom, 1f) };
+            if (crackGap > 0f)
+                for (float y = Mathf.Max(bottom + 1f, water - 1f) + R(0.3f, crackGap); y < top - 0.8f; y += crackGap * R(0.7f, 1.3f))
+                {
+                    rings.Add((y - 0.07f, 1f));
+                    rings.Add((y, 0.94f));
+                    rings.Add((y + 0.07f, 1f));
+                }
+            rings.Add((top - bevel, 1f));
+            var tilt = new Vector2(R(-1f, 1f), R(-1f, 1f)) * 0.07f;   // 윗면 기울기 (m/m)
+            int last = rings.Count - 1;
+            var c3 = new Vector3(p.x, 0f, p.y);
+            Vector3 At(Vector2 q, int ring) => c3 + new Vector3(q.x * rings[ring].s, rings[ring].y + (ring == last ? Vector2.Dot(q, tilt) : 0f), q.y * rings[ring].s);
+            Vector3 Cap(Vector2 q) => c3 + new Vector3(q.x * 0.9f, top + Vector2.Dot(q * 0.9f, tilt), q.y * 0.9f);
+            for (int i = 0; i < k; i++)
+            {
+                var a = pts[i];
+                var b = pts[(i + 1) % k];
+                for (int r = 0; r < last; r++)
+                    ColQuad(v, tri, At(a, r), At(b, r), At(b, r + 1), At(a, r + 1));
+                ColQuad(v, tri, At(a, last), At(b, last), Cap(b), Cap(a));   // 모따기
+            }
+            int ci = v.Count;
+            v.Add(c3 + new Vector3(0f, top, 0f));
+            for (int i = 0; i < k; i++) v.Add(Cap(pts[i]));
+            for (int i = 0; i < k; i++) tri.AddRange(new[] { ci, ci + 1 + (i + 1) % k, ci + 1 + i });
+        }
+
+        static void ColQuad(List<Vector3> v, List<int> tri, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)
+        {
+            int i = v.Count;
+            v.Add(p0); v.Add(p1); v.Add(p2); v.Add(p3);
+            tri.AddRange(new[] { i, i + 2, i + 1, i, i + 3, i + 2 });
+        }
+
+        /// <summary>주상절리대 전망 데크 (사진: 절벽 끝에 걸쳐 바다 쪽으로 1m 내민 나무 데크와 난간). 곶 끝 가까운 항구 쪽 가장자리.</summary>
+        void ColumnarDeck(CapeSpec c)
+        {
+            var dir = (c.Tip - c.Base).normalized;
+            var n = new Vector2(dir.y, -dir.x);
+            const float t = 0.78f;
+            var spine = Vector2.Lerp(c.Base, c.Tip, t);
+            float w = Mathf.Lerp(c.WidthBase, c.WidthTip, t);
+            var rim = spine + n * w;
+            var inner = spine + n * (w - 6f);
+            var deck = new GameObject("ColumnarDeck").transform;
+            deck.SetParent(_root, false);
+            deck.localPosition = new Vector3(rim.x - n.x * 2f, H(inner.x, inner.y) + 0.6f, rim.y - n.y * 2f);
+            deck.localRotation = Quaternion.LookRotation(new Vector3(n.x, 0f, n.y));   // 로컬 +z = 바다 쪽
+            var wood = Mats.Wood(new Color(0.55f, 0.34f, 0.2f));
+            const float len = 9f, z0 = -4f, z1 = 1f;
+            Mats.Prim(PrimitiveType.Cube, "DeckFloor", deck, new Vector3(0f, -0.15f, (z0 + z1) * 0.5f), new Vector3(len, 0.3f, z1 - z0), wood);
+            Mats.Prim(PrimitiveType.Cube, "DeckBeam", deck, new Vector3(0f, -0.55f, z1 - 0.3f), new Vector3(len, 0.5f, 0.3f), wood, false);
+            // 난간: 바다 쪽 한 줄 + 양 끝
+            WoodRail(deck, new Vector3(-len * 0.5f, 0f, z1 - 0.1f), new Vector3(len * 0.5f, 0f, z1 - 0.1f), wood);
+            WoodRail(deck, new Vector3(-len * 0.5f + 0.05f, 0f, z0 + 1.5f), new Vector3(-len * 0.5f + 0.05f, 0f, z1 - 0.1f), wood);
+            WoodRail(deck, new Vector3(len * 0.5f - 0.05f, 0f, z0 + 1.5f), new Vector3(len * 0.5f - 0.05f, 0f, z1 - 0.1f), wood);
+        }
+
+        /// <summary>
+        /// 성산일출봉 (사용자 요청 2026-10-27, 실제로는 제주 동쪽 끝): 동쪽 바다 너머 큰 응회구. 둥근 사발 분화구(안은 풀밭),
+        /// 테두리를 따라 톱니처럼 솟은 바위 봉우리(99봉), 바깥 비탈은 아래가 완만한 풀밭이고 위로 갈수록 가파른 바위 절벽 + 세로 골.
+        /// 육지와는 낮은 모래톱으로 이어진다. 숲 셰이더(가파른 면 = 바위)를 풀빛·갈색 응회암으로.
+        /// </summary>
+        void Seongsan()
+        {
+            var center = new Vector3(470f, _map.BaseWaterY - 4f, 150f);
+            const float rimR = 80f, outR = 150f, h = 62f;   // 사진: 위가 평평하고 넓은 왕관 (폭:높이 ≈ 4:1)
+            const int rings = 110, segs = 320;   // 약 3.5만 정점 (사용자: 폴리곤을 더 써서 디테일하게)
             var v = new List<Vector3>();
             var tri = new List<int>();
-            var uv = new List<Vector2>();
-            for (int k = 0; k < 6; k++)
+            // 잔 굴곡: 수십 m 덩어리 + 몇 m 바위 결 + 절벽 면의 세로 줄기(풍화된 층). 분화구 바닥은 약하게
+            float Detail(float r, float a, float y)
             {
-                float a0 = k * Mathf.PI / 3f, a1 = (k + 1) * Mathf.PI / 3f;
-                var p0 = new Vector3(Mathf.Cos(a0), 0f, Mathf.Sin(a0));
-                var p1 = new Vector3(Mathf.Cos(a1), 0f, Mathf.Sin(a1));
-                int b = v.Count;
-                v.AddRange(new[] { p0, p1, p1 + Vector3.up, p0 + Vector3.up });
-                uv.AddRange(new[] { new Vector2(0f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 2f), new Vector2(0f, 2f) });
-                tri.AddRange(new[] { b, b + 2, b + 1, b, b + 3, b + 2 });
+                float px = Mathf.Cos(a) * r, pz = Mathf.Sin(a) * r;
+                float d = (Mathf.PerlinNoise(px * 0.045f + 3.1f, pz * 0.045f) - 0.5f) * 4f
+                        + (Mathf.PerlinNoise(px * 0.16f, pz * 0.16f + 7.7f) - 0.5f) * 1.6f
+                        + (Mathf.PerlinNoise(px * 0.5f + 1.3f, pz * 0.5f) - 0.5f) * 0.5f;
+                float cliff = r > rimR * 0.95f ? 1f : 0.35f;
+                float streak = (Mathf.PerlinNoise(a * 70f, y * 0.04f) - 0.5f) * 3f * Smooth(rimR * 0.98f, rimR * 1.05f, r) * Smooth(rimR * 1.45f, rimR * 1.15f, r);
+                return (d + streak) * cliff;
             }
-            int c = v.Count;
-            v.Add(Vector3.up);
-            uv.Add(new Vector2(0.5f, 0.5f));
-            for (int k = 0; k < 6; k++)
+            float Height(float r, float a) { float y = Height0(r, a); return y > -3.9f ? y + Detail(r, a, y) : y; }
+            float Height0(float r, float a)
             {
-                float a0 = k * Mathf.PI / 3f, a1 = (k + 1) * Mathf.PI / 3f;
-                int b = v.Count;
-                v.Add(new Vector3(Mathf.Cos(a0), 1f, Mathf.Sin(a0)));
-                v.Add(new Vector3(Mathf.Cos(a1), 1f, Mathf.Sin(a1)));
-                uv.Add(new Vector2(0.5f + Mathf.Cos(a0) * 0.5f, 0.5f + Mathf.Sin(a0) * 0.5f));
-                uv.Add(new Vector2(0.5f + Mathf.Cos(a1) * 0.5f, 0.5f + Mathf.Sin(a1) * 0.5f));
-                tri.AddRange(new[] { c, b + 1, b });
+                float rr = rimR * (1f + 0.05f * Mathf.Sin(a * 3f + 0.7f) + 0.03f * Mathf.Sin(a * 7f));
+                float ridge = Mathf.PerlinNoise(a * 6f, 3.3f);
+                if (r < rr)
+                {
+                    float k = r / rr;   // 분화구: 가운데가 평평한 사발
+                    return h * (0.72f + 0.28f * Mathf.Pow(k, 4f)) + Mathf.Pow(Mathf.Max(0f, ridge - 0.45f), 2f) * h * 0.5f * Smooth(0.82f, 1f, k);
+                }
+                float o = Mathf.Clamp01((r - rr) / (outR - rr));
+                // 바깥: 바다 쪽은 이끼 낀 세로 절벽이 바로 물로 떨어지고(o 0~0.15), 육지 쪽(남서) 한 면만 절벽 아래 완만한 풀밭 비탈. 세로 골이 절벽을 가른다
+                float land = Smooth(-0.1f, 0.6f, Mathf.Cos(a - 3.75f));
+                float seaSide = o < 0.15f ? h * (1f - Mathf.Pow(o / 0.15f, 1.6f)) : -4f * Smooth(0.15f, 0.3f, o);
+                float landSide = o < 0.3f ? h * (1f - 0.55f * Mathf.Pow(o / 0.3f, 1.3f)) : h * 0.45f * Mathf.Pow(1f - (o - 0.3f) / 0.7f, 1.6f);
+                float y = Mathf.Lerp(seaSide, landSide, land);
+                float gully = Mathf.Abs(Mathf.Sin(a * 26f + Mathf.PerlinNoise(a * 3f, 1f) * 4f));
+                y -= h * 0.05f * (1f - gully) * Smooth(0f, 0.08f, o) * Smooth(0.34f, 0.2f, o);
+                // 테두리 톱니 봉우리
+                y += Mathf.Pow(Mathf.Max(0f, ridge - 0.45f), 2f) * h * 0.5f * Smooth(0.12f, 0f, o);
+                return Mathf.Max(-4f, y);
             }
-            _hexPrism = new Mesh { name = "HexPrism" };
-            _hexPrism.SetVertices(v);
-            _hexPrism.SetUVs(0, uv);
-            _hexPrism.SetTriangles(tri, 0);
-            _hexPrism.RecalculateNormals();
-            _hexPrism.RecalculateBounds();
-            return _hexPrism;
+            for (int i = 0; i <= rings; i++)
+            {
+                float r = outR * Mathf.Pow(i / (float)rings, 0.85f);
+                for (int j = 0; j <= segs; j++)
+                {
+                    float a = j / (float)segs * Mathf.PI * 2f;
+                    v.Add(new Vector3(Mathf.Cos(a) * r, Height(r, a), Mathf.Sin(a) * r));
+                }
+            }
+            for (int i = 0; i < rings; i++)
+                for (int j = 0; j < segs; j++)
+                {
+                    int a = i * (segs + 1) + j, b = a + 1, c = a + segs + 1, d = c + 1;
+                    tri.AddRange(new[] { a, b, c, b, d, c });
+                }
+            var mesh = new Mesh { name = "Seongsan", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            mesh.SetVertices(v);
+            mesh.SetTriangles(tri, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            var go = new GameObject("Seongsan");
+            go.transform.SetParent(_root, false);
+            go.transform.localPosition = center;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>();
+            // 숲이 아니라 풀밭 비탈(sparse = 맨땅을 풀빛으로) + 가파른 위쪽은 갈색 응회암 절벽
+            mr.sharedMaterial = FarLand.Forest(new Color(0.16f, 0.26f, 0.1f), new Color(0.36f, 0.46f, 0.18f), "seacliff", new Color(0.33f, 0.33f, 0.28f), 0.55f,
+                0.8f, new Color(0.4f, 0.5f, 0.22f), 0f, 0.38f);
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            // 육지와 잇는 낮은 모래톱 + 마을 쪽 작은 땅
+            FarLand.Place(_root, "SeongsanNeck", new Vector3(400f, _map.BaseWaterY - 1f, 60f), 34f, 80f, 5f, 2011, FarLand.KoreaForest(0.55f), 25f);
+        }
+
+        /// <summary>
+        /// 용두암 (사용자 요청·참고 사진 2026-10-27, 실제로는 제주시 앞바다): 서쪽 갯바위 끝 붉은 갈색 용암 둔덕 위에 선 높이 10m 남짓 검은 현무암 용머리.
+        /// 둔덕에서 굵게 솟아 허리가 잘록한 목 → 앞으로 길게 튀어나온 납작한 위턱(주둥이)과 짧은 아래턱 사이로 벌린 입, 머리 위 들쭉날쭉한 뿔 바위.
+        /// 등뼈를 따라 타원 단면을 이어 붙이고(로프트) 구멍 숭숭 울퉁불퉁하게. 뒤 언덕엔 나무 난간 산책로.
+        /// </summary>
+        void Yongduam()
+        {
+            float x = -168f;
+            float shore = _map.ShoreAt(x);
+            var t = new GameObject("Yongduam").transform;
+            t.SetParent(_root, false);
+            t.localPosition = new Vector3(x, _map.BaseWaterY, shore + 11f);
+            t.localRotation = Quaternion.Euler(0f, -90f, 0f);   // 머리(+x)가 바다(북쪽)를 본다 → 포구에서 옆모습
+            var basalt = Mats.Weathered("darkrock", new Color(0.23f, 0.22f, 0.21f), 1.6f, 0.25f, 1f, 0.45f, 0.06f, new Color(0.25f, 0.3f, 0.18f), 0.35f);
+            var lava = Mats.Weathered("darkrock", new Color(0.33f, 0.22f, 0.17f), 1.8f, 0.22f, 1f, 0.3f, 0.18f, new Color(0.38f, 0.42f, 0.2f), 0.2f);
+            // 붉은 갈색 용암 둔덕: 물가에서 머리 밑까지 이어진 낮고 거친 바위 더미
+            for (int i = 0; i < 16; i++)
+            {
+                float u = i / 15f;
+                var pos = new Vector3(Mathf.Lerp(-12f, 4f, u) + R(-1.5f, 1.5f), R(-0.5f, 1.2f), R(-3.5f, 3.5f));
+                float sz = Mathf.Lerp(3.5f, 6.5f, Mathf.Sin(u * Mathf.PI)) * R(0.8f, 1.2f);
+                RockPiece(t, "YongduBase", pos, new Vector3(sz * 1.3f, sz * R(0.5f, 0.75f), sz), lava, i);
+            }
+            // 용머리: 목(세로) + 위턱(가로, 앞으로 길게) + 아래턱(짧게)
+            var neck = new[] { new Vector3(0f, 1.5f, 0f), new Vector3(0.2f, 4f, 0f), new Vector3(0.1f, 6f, 0f), new Vector3(0.4f, 7.6f, 0f), new Vector3(0.6f, 9f, 0f) };
+            var neckR = new[] { new Vector2(2.6f, 3f), new Vector2(1.9f, 2.1f), new Vector2(1.25f, 1.35f), new Vector2(1.7f, 1.9f), new Vector2(1.6f, 1.7f) };
+            var upper = new[] { new Vector3(-1.6f, 9f, 0f), new Vector3(0.4f, 9.3f, 0f), new Vector3(2.4f, 9.1f, 0f), new Vector3(4.2f, 8.7f, 0f), new Vector3(5f, 8.5f, 0f) };
+            var upperR = new[] { new Vector2(1.5f, 1.2f), new Vector2(1.7f, 1.3f), new Vector2(1.3f, 0.95f), new Vector2(0.9f, 0.7f), new Vector2(0.2f, 0.2f) };
+            var lower = new[] { new Vector3(0.6f, 7.3f, 0f), new Vector3(1.9f, 7.1f, 0f), new Vector3(2.9f, 7.3f, 0f) };
+            var lowerR = new[] { new Vector2(1.1f, 0.65f), new Vector2(0.75f, 0.45f), new Vector2(0.15f, 0.12f) };
+            foreach (var (pts, rad, name, seed) in new[] { (neck, neckR, "YongduNeck", 0f), (upper, upperR, "YongduJaw", 11f), (lower, lowerR, "YongduJawLow", 23f) })
+            {
+                var go = new GameObject(name);
+                go.transform.SetParent(t, false);
+                go.AddComponent<MeshFilter>().sharedMesh = RockLoft(pts, rad, seed);
+                go.AddComponent<MeshRenderer>().sharedMaterial = basalt;
+            }
+            // 머리 위·뒤통수의 들쭉날쭉한 뿔 바위
+            for (int i = 0; i < 6; i++)
+                RockPiece(t, "YongduHorn", new Vector3(R(-1.6f, 2.2f), R(9.8f, 10.4f), R(-0.8f, 0.8f)), new Vector3(R(0.6f, 1.1f), R(0.9f, 1.8f), R(0.6f, 1f)), basalt, 20 + i);
+            // 물속 둘레의 검은 갯바위
+            for (int i = 0; i < 10; i++)
+            {
+                float a = i / 10f * Mathf.PI * 2f;
+                float sz = R(1.2f, 3f);
+                RockPiece(t, "YongduRock", new Vector3(Mathf.Cos(a) * R(8f, 13f) - 2f, R(-0.6f, 0.2f), Mathf.Sin(a) * R(6f, 10f)), new Vector3(sz * 1.3f, sz * 0.6f, sz), basalt, 40 + i);
+            }
+            // 뒤 언덕 산책로 나무 난간 (사진: 관광객이 내려다보는 붉은 갈색 난간)
+            var wood = Mats.Wood(new Color(0.55f, 0.3f, 0.2f));
+            float y = _map.LandY + 0.05f;
+            var rail = new GameObject("YongduRail").transform;
+            rail.SetParent(_root, false);
+            WoodRail(rail, new Vector3(x - 12f, y, shore - 1.5f), new Vector3(x + 12f, y, shore - 1.5f), wood);
+        }
+
+        /// <summary>절차 바위 한 덩어리 (Rocks.Mesh 변형, 지정한 재질).</summary>
+        void RockPiece(Transform parent, string name, Vector3 pos, Vector3 size, Material mat, int variant)
+        {
+            var rock = new GameObject(name);
+            rock.transform.SetParent(parent, false);
+            rock.transform.localPosition = pos;
+            rock.transform.localRotation = Quaternion.Euler(R(-15f, 15f), R(0f, 360f), R(-15f, 15f));
+            rock.transform.localScale = size;
+            rock.AddComponent<MeshFilter>().sharedMesh = Rocks.Mesh(variant);
+            rock.AddComponent<MeshRenderer>().sharedMaterial = mat;
+        }
+
+        /// <summary>나무 난간 한 줄: a→b, 기둥 1.2m마다, 손잡이 + 가운데 가로대 (높이 1.05m).</summary>
+        static void WoodRail(Transform parent, Vector3 a, Vector3 b, Material wood)
+        {
+            float l = Vector3.Distance(a, b);
+            var mid = (a + b) * 0.5f;
+            var rot = Quaternion.LookRotation(b - a);
+            Mats.Prim(PrimitiveType.Cube, "Rail", parent, mid + Vector3.up * 1.05f, new Vector3(0.12f, 0.08f, l), wood, false, rot);
+            Mats.Prim(PrimitiveType.Cube, "Rail", parent, mid + Vector3.up * 0.55f, new Vector3(0.06f, 0.06f, l), wood, false, rot);
+            int posts = Mathf.Max(1, Mathf.RoundToInt(l / 1.2f));
+            for (int i = 0; i <= posts; i++)
+                Mats.Prim(PrimitiveType.Cube, "RailPost", parent, Vector3.Lerp(a, b, i / (float)posts) + Vector3.up * 0.52f, new Vector3(0.1f, 1.05f, 0.1f), wood, false);
+        }
+
+        /// <summary>곡선 등뼈를 따라 타원 단면(가로·세로 반지름)을 이어 붙인 바위 덩어리. 3D 노이즈로 울퉁불퉁, 끝은 뾰족하게 닫힌다.</summary>
+        static Mesh RockLoft(Vector3[] ctrl, Vector2[] rad, float seed)
+        {
+            const int steps = 72, seg = 44;   // 사용자: 폴리곤을 더 써서 디테일하게
+            var v = new List<Vector3>();
+            var tri = new List<int>();
+            Vector3 Spine(float u)
+            {
+                float f = u * (ctrl.Length - 1);
+                int i = Mathf.Min(Mathf.FloorToInt(f), ctrl.Length - 2);
+                float k = f - i;
+                var p0 = ctrl[Mathf.Max(i - 1, 0)]; var p1 = ctrl[i]; var p2 = ctrl[i + 1]; var p3 = ctrl[Mathf.Min(i + 2, ctrl.Length - 1)];
+                return 0.5f * (2f * p1 + (p2 - p0) * k + (2f * p0 - 5f * p1 + 4f * p2 - p3) * k * k + (3f * p1 - p0 - 3f * p2 + p3) * k * k * k);
+            }
+            Vector2 Rad(float u)
+            {
+                float f = u * (rad.Length - 1);
+                int i = Mathf.Min(Mathf.FloorToInt(f), rad.Length - 2);
+                return Vector2.Lerp(rad[i], rad[i + 1], f - i);
+            }
+            for (int s = 0; s <= steps; s++)
+            {
+                float u = s / (float)steps;
+                var p = Spine(u);
+                var tan = (Spine(Mathf.Min(1f, u + 0.01f)) - Spine(Mathf.Max(0f, u - 0.01f))).normalized;
+                var side = Vector3.forward;   // 등뼈는 x-y 평면 → 옆은 z
+                var up = Vector3.Cross(tan, side).normalized;
+                var r = Rad(u);
+                for (int j = 0; j <= seg; j++)
+                {
+                    float a = j / (float)seg * Mathf.PI * 2f;
+                    var dir = Mathf.Cos(a) * side * r.x + Mathf.Sin(a) * -up * r.y;
+                    var q = p + dir;
+                    // 큰 덩어리 + 바위 결 + 구멍 숭숭(움푹 팬 자리) — 현무암 용암 표면
+                    float n = Mathf.PerlinNoise(q.x * 0.9f + seed, q.y * 0.9f + q.z * 0.7f) * 0.55f
+                            + Mathf.PerlinNoise(q.x * 2.6f + q.z * 1.9f, q.y * 2.6f + seed) * 0.28f
+                            + Mathf.PerlinNoise(q.x * 7f + seed, q.y * 7f + q.z * 5f) * 0.17f;
+                    float pit = Mathf.Pow(Mathf.Max(0f, Mathf.PerlinNoise(q.x * 4.3f + q.z * 3.1f, q.y * 4.3f + seed + 5f) - 0.62f), 1f) * 1.4f;
+                    v.Add(p + dir * (0.7f + n * 0.62f - pit));
+                }
+            }
+            for (int s = 0; s < steps; s++)
+                for (int j = 0; j < seg; j++)
+                {
+                    int a = s * (seg + 1) + j, b = a + 1, c = a + seg + 1, d = c + 1;
+                    tri.AddRange(new[] { a, b, c, b, d, c });
+                }
+            var m = new Mesh { name = "RockLoft" };
+            m.SetVertices(v);
+            m.SetTriangles(tri, 0);
+            m.RecalculateNormals();
+            m.RecalculateBounds();
+            return m;
         }
 
         /// <summary>절벽 비탈에 핀 분홍 진달래 덤불 (헌화가: 노인이 절벽의 꽃을 꺾어 수로부인에게 바쳤다).</summary>

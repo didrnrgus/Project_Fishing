@@ -53,7 +53,7 @@ namespace Fishing.Data
             new FishingArea { Id = "yokji", Name = "욕지도", Lon = 128.25f, Lat = 34.63f, Open = true, Level = 19, MapId = "yokji",
                 Desc = "참돔과 감성돔의 섬. 바다 위 가두리 낚시터, 펠리컨바위 출렁다리, 가을엔 방어·삼치·갈치." },
             new FishingArea { Id = "jeju", Name = "제주 서귀포", Lon = 126.56f, Lat = 33.24f, Open = true, Level = 21, MapId = "jeju",
-                Desc = "원작 이벤트 지역. 검은 현무암 갯바위와 외돌개, 범섬, 주상절리, 뒤로 한라산. 자리돔·옥돔·무늬오징어, 밤 먼바다엔 다금바리 어군." },
+                Desc = "원작 이벤트 지역. 검은 현무암 갯바위와 외돌개, 범섬, 주상절리대, 용두암, 동쪽 바다 너머 성산일출봉, 뒤로 한라산. 자리돔·옥돔·무늬오징어, 밤 먼바다엔 다금바리 어군." },
             new FishingArea { Id = "geomun", Name = "거문도", Lon = 127.3f, Lat = 34.03f, Open = true, Level = 24, MapId = "geomun",
                 Desc = "대물을 꿈꾸는 조사들의 성지. 거문도 등대와 백도, 부시리·돌돔·갈치, 먼바다엔 다금바리·돗돔." },
         };
