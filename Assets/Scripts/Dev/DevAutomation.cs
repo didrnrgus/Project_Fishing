@@ -1110,6 +1110,8 @@ namespace Fishing.Dev
                 ("yeongheung", "43d_yeongheung_quay", new Vector3(70f, 1.1f, -44f), 90f, 70f, 10f, 9f, 11 * 60, Weather.Clear),
                 ("honghyeon", "22h_honghyeon_breakwater", new Vector3(31.5f, 1.1f, -14f), 0f, 340f, 12f, 8f, 14 * 60, Weather.Clear),
                 ("seocheon", "34b_seocheon_quay", new Vector3(8f, 1.1f, -44.5f), 90f, 55f, 12f, 9f, 11 * 60, Weather.Clear),
+                // 마을 집 가까이 (HouseKit: 벽에 들어간 창·골강판 지붕·블록 담장·실외기)
+                ("yeongheung", "43e_yeongheung_village", new Vector3(-10f, 1.1f, -61f), 180f, 200f, 8f, 13f, 15 * 60, Weather.Clear),
                 ("yeongheung", "43b_yeongheung_fog", new Vector3(-22f, 1.1f, -44f), 0f, -10f, 10f, 12f, 6 * 60 + 20, Weather.Cloudy),
                 ("taean", "44_taean_beach", new Vector3(-75f, 1.1f, -48f), 0f, -15f, 10f, 12f, 17 * 60 + 20, Weather.Clear),
                 ("taean", "44b_taean_noon", new Vector3(-110f, 1.1f, -60f), 0f, 20f, 18f, 18f, 12 * 60, Weather.Clear),
@@ -1183,6 +1185,43 @@ namespace Fishing.Dev
                 Game.CameraRig.Distance = s.dist;
                 yield return new WaitForSeconds(2.5f);
                 yield return Shot(s.shot);
+            }
+            // 집 양식마다 한 채 가까이 (HouseKit): 맵에 들어가 출발점에서 가장 가까운 길가 집 앞에 서서 정면을 찍는다
+            var houseShots = new[]
+            {
+                ("yeongheung", "43f_house_korea"), ("santorini", "56f_house_cyclades"), ("nile", "57c_house_egypt"), ("halong", "55e_house_tube"),
+                ("donkhone", "60c_house_stilt"), ("vinpearl", "59c_house_resort"), ("bangkok", "62c_house_thai"), ("crete", "69d_house_venetian"),
+            };
+            var houseNames = new[] { "KoreanHouse", "CycladicHouse", "MudHouse", "TubeHouse", "StiltHouse", "ResortVilla", "ThaiHouse", "VenetianHouse" };
+            foreach (var (map, shot) in houseShots)
+            {
+                if (_tourOnly != null && Array.IndexOf(_tourOnly, map) < 0) continue;
+                if (loaded != map)
+                {
+                    Game.UI.EnterField(System.Linq.Enumerable.First(Fishing.Data.FishingAreas.All, a => a.Id == map), 1);
+                    Game.UI.Help.Close();
+                    loaded = map;
+                    yield return new WaitForSeconds(1f);
+                }
+                Transform best = null;
+                var from = Game.Player.transform.position;
+                foreach (var t in Game.World.GetComponentsInChildren<Transform>())
+                    if (Array.IndexOf(houseNames, t.name) >= 0 && (best == null || (t.position - from).sqrMagnitude < (best.position - from).sqrMagnitude)
+                        && t.GetComponent<BoxCollider>() != null && t.GetComponent<BoxCollider>().size.x > 4f)
+                        best = t;
+                if (best == null) continue;
+                Game.Clock.Set(5, 10 * 60 + 30);
+                Game.Weather.Force(Weather.Clear);
+                var size = best.GetComponent<BoxCollider>().size;
+                var front = best.position + best.forward * (size.z * 0.5f + 5.5f) + best.right * 2.5f;
+                float yaw = Quaternion.LookRotation(-best.forward).eulerAngles.y;
+                front.y = Mathf.Max(best.position.y, Fishing.World.FieldMap.Current is Fishing.World.CoastMapDef c2 ? c2.HeightAt(front.x, front.z) : best.position.y) + 0.1f;
+                Game.Player.Teleport(front, yaw);
+                Game.CameraRig.Yaw = yaw - 15f;
+                Game.CameraRig.Pitch = 12f;
+                Game.CameraRig.Distance = 6f;
+                yield return new WaitForSeconds(2.5f);
+                yield return Shot(shot);
             }
             if (_tourOnly != null) yield break;
             // 덕장 명태 가까이 (코를 엮어 장대에 건 명태 쌍)

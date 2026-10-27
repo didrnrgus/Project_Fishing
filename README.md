@@ -53,6 +53,8 @@
 | ![geomun](docs/images/50_geomun_lighthouse.png) | ![islet](docs/images/22c_honghyeon_island.png) |
 | **방파제 (10m 타설 블록·1.3m 파라펫·계선주·사다리·물웅덩이)** | **홍현 방파제 (고래 벽화·타이어 방충재)** |
 | ![breakwater](docs/images/43c_yeongheung_breakwater.png) | ![honghyeon_bw](docs/images/22h_honghyeon_breakwater.png) |
+| **바닷가 마을 (칼라강판·기와 지붕, 벽에 들어간 창, 블록 담장, 전봇대)** | **베네치아풍 집 (깊은 아치 문, 비늘살 덧창, 반원 기와)** |
+| ![village](docs/images/43e_yeongheung_village.png) | ![venetian](docs/images/69d_house_venetian.png) |
 
 | 캐스팅 (당겼다 밀기) | 챔질 (찌 게이지) |
 |---|---|

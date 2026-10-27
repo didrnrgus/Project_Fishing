@@ -751,6 +751,19 @@ namespace Fishing.World
                     float z = _map.ShoreAt(x) - S.RoadOffset + 4.2f, gy = H(x, z);
                     if (Mathf.Abs(gy - _map.LandY) < 0.5f && !InFeature(x, z)) _props.Streetlight(new Vector3(x, gy, z));
                 }
+                // 한국 바닷가 마을: 길 뭍 쪽 전봇대와 처진 전선
+                if (S.Houses == HouseStyle.Korean)
+                {
+                    var poles = new List<(Vector3, float)>();
+                    for (float x = -halfW + 27f; x < halfW - 5f; x += 32f)
+                    {
+                        float z = _map.ShoreAt(x) - S.RoadOffset - 4.4f, gy = H(x, z);
+                        if (Mathf.Abs(gy - _map.LandY) > 0.6f || InFeature(x, z)) continue;
+                        float tan = (_map.ShoreAt(x + 1f) - _map.ShoreAt(x - 1f)) * 0.5f;
+                        poles.Add((new Vector3(x, gy - 0.05f, z), -Mathf.Atan(tan) * Mathf.Rad2Deg));
+                    }
+                    _props.PowerLine(poles);
+                }
             }
             // 포구 호안 (콘크리트 벽 + 앞마당)
             foreach (var seg in S.Shores)

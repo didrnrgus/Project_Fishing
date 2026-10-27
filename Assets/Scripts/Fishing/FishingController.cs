@@ -587,7 +587,7 @@ namespace Fishing.Angling
             var t = c.transform;
             if (Game.Player != null && t.IsChildOf(Game.Player.transform)) return true;
             if (Game.Boat != null && Game.Boat.Hull != null && t.IsChildOf(Game.Boat.Hull)) return true;
-            return c.name == "Water" || c.name.StartsWith("Bobber");
+            return c.name == "Water" || c.name.StartsWith("Bobber") || World.HarborKit.IsLowWall(c); // 파라펫 너머로 던진다
         }
 
         /// <summary>막은 물체의 이름 (안내 문구용, 받침 조사가 맞게 '…에 걸려서').</summary>
