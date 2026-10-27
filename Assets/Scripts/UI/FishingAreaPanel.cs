@@ -224,7 +224,7 @@ namespace Fishing.UI
                 _status.text = $"{_selected.Name}은(는) 아직 준비 중입니다.";
                 return;
             }
-            if (Game.Profile.Data.level < _selected.Level)
+            if (!TestMode.LevelOk(_selected.Level))
             {
                 _status.text = $"{_selected.Name}은(는) Lv.{_selected.Level}부터 입장할 수 있습니다.";
                 return;
@@ -242,7 +242,7 @@ namespace Fishing.UI
             foreach (var (text, area) in _listItems)
             {
                 bool sel = area == _selected;
-                bool locked = p.Data.level < area.Level;
+                bool locked = !TestMode.LevelOk(area.Level);
                 text.color = sel ? new Color(0.45f, 0.95f, 0.6f) : area.Open && !locked ? UIFactory.TextMain : UIFactory.TextDim;
                 text.text = !area.Open ? $"{area.Name} <size=12><color=#607080>준비 중</color></size>"
                     : locked ? $"{area.Name} <size=12><color=#c08060>Lv.{area.Level}</color></size>" : area.Name;
@@ -252,7 +252,7 @@ namespace Fishing.UI
             foreach (var (bg, text, hub) in _hubTabs)
             {
                 bg.color = hub.Id == _hub ? UIFactory.TabOn : UIFactory.TabOff;
-                text.text = p.Data.level < hub.Level ? $"{hub.Name} <size=11><color=#c08060>Lv.{hub.Level}</color></size>" : hub.Name;
+                text.text = !TestMode.LevelOk(hub.Level) ? $"{hub.Name} <size=11><color=#c08060>Lv.{hub.Level}</color></size>" : hub.Name;
             }
 
             var uv = RegionMap.ToUV(_hub, _selected.Lon, _selected.Lat);

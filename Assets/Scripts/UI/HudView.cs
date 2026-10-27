@@ -475,7 +475,7 @@ namespace Fishing.UI
             // 쓸 수 있는 해체 미끼 중 가장 좋은 것 하나를 마지막 칸에
             BaitDef cut = null;
             foreach (var b in GearDatabase.Baits)
-                if (b.NotSold && Game.Profile.Count(b.Id) > 0 && b.Level <= Game.Profile.Data.level && (cut == null || b.Potency > cut.Potency)) cut = b;
+                if (b.NotSold && Game.Profile.Count(b.Id) > 0 && TestMode.LevelOk(b.Level) && (cut == null || b.Potency > cut.Potency)) cut = b;
             var list = new List<BaitDef>();
             int sold = cut != null ? MaxBaitSlots - 1 : MaxBaitSlots;
             foreach (var b in GearDatabase.Baits)
