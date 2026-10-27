@@ -9,7 +9,7 @@ namespace Fishing.World
     /// 한강(반포)에서 바라보는 서울 랜드마크와 먼 도시. 모두 코드로 만든 메쉬 + 코드로 그린 텍스처.
     ///  - 롯데월드타워(동쪽 잠실, 123층): 위로 갈수록 붓끝처럼 좁아지는 곡선 탑. 은빛 유리에 흰 층선, 네 면 가운데를 타고 오르는 이음매(seam),
     ///    꼭대기 107~123층과 첨탑은 'ㅅ'자 강관을 이은 다이아그리드 격자(구멍 뚫린 양면 재질)로 네 갈래가 벌어지며 모인다. 밤엔 창과 왕관이 하얗게
-    ///  - 63빌딩(서쪽 여의도, 60층): 금빛 유리. 강 쪽으로 살짝 꺾인 평면을 여섯 조각으로 나눠, 조각마다 높이가 계단처럼 낮아지는 사선 지붕 + 안테나
+    ///  - 63빌딩(서쪽 여의도, 60층): 금빛 유리. 위로 갈수록 좁아지는 사다리꼴 판, 짙은 세로 홈 두 줄·가로 띠(기계층), 평평한 지붕 + 기계실·안테나
     ///  - 남산서울타워(북쪽 남산 위): 숲 덮인 산(노이즈 돔) 위 흰 콘크리트 기둥, 두 겹 전망대 원통(창), 빨강·흰 줄무늬 송신탑. 밤엔 기둥이 푸르게
     ///  - 먼 도시: 강 건너 수백 m에 아파트·빌딩 상자 수백 채 (밤엔 창 불빛), 동서로 이어지는 강과 땅
     /// 실제 거리(롯데 약 9km)라면 점처럼 작아서, 거리를 줄이고 높이도 줄여 화면에서 실제처럼 크게 보이게 했다.
@@ -22,7 +22,7 @@ namespace Fishing.World
         public static readonly Vector3 SixtyThreePos = new Vector3(-520f, HanRiverMap.LandY, 300f);
         public static readonly Vector3 NamsanPos = new Vector3(60f, HanRiverMap.LandY, 470f);
         const float LotteHeight = 300f;      // 실제 555m
-        const float SixtyThreeHeight = 150f; // 실제 249m
+        const float SixtyThreeHeight = 190f; // 실제 249m (사용자: 더 얄쌍하고 높게)
         const float NamsanHill = 112f, NamsanTower = 150f; // 실제 산 262m + 탑 236m
 
         static System.Random _rng;
@@ -354,34 +354,59 @@ namespace Fishing.World
             t.localRotation = Quaternion.Euler(0f, -59f, 0f); // 앞면이 강 건너 반포(남동쪽)를 본다
             float H = SixtyThreeHeight;
             // 금빛 유리: 60층 → 150m, 한 층 2.5m. 한 장 = 4층 × 6칸
-            var gold = Facade(4, 6, new Color(1f, 0.86f, 0.5f), new Color(0.62f, 0.44f, 0.18f), new Color(0.78f, 0.6f, 0.3f), 0.12f, 0.1f, 63, out var night, 0.3f);
+            var gold = Facade(4, 6, new Color(0.96f, 0.8f, 0.46f), new Color(0.8f, 0.6f, 0.3f), new Color(0.68f, 0.5f, 0.24f), 0.06f, 0.05f, 63, out var night, 0.3f);   // 사진: 매끈한 금빛 반사 유리 — 층·칸 대비를 낮춘다
             var mat = Mat(new Color(1f, 0.92f, 0.75f), gold, night, new Color(1f, 0.85f, 0.55f) * 1.5f, 0.9f, 0.75f, Vector2.one);
-            const float halfW = 26f, depth = 9f, bow = 0.12f; // 앞뒤 면이 가운데에서 바깥으로 살짝 꺾인다 (사람 인(人)자 평면)
-            int slices = 7;
+            // 사진(63빌딩 넷): 위로 갈수록 좁아지는 사다리꼴 판 모양 탑(양옆·앞뒤가 안으로 기운다), 평평한 지붕 + 옥상 기계실·안테나.
+            // 넓은 앞뒤 면 왼쪽 1/4쯤을 위아래로 가르는 짙은 세로 홈 두 줄, 높이 20%·45%·72%에 짙은 가로 띠 두 줄씩(기계층), 꼭대기 짙은 띠.
+            // (예전: 일곱 조각 계단 사선 지붕 — 실제와 달랐다, 2026-10-27 사용자)
+            const float baseHalfW = 20f, topHalfW = 15.5f, baseDepth = 8f, topDepth = 6.5f;   // 높이:폭 ≈ 4.75 (사진처럼 얄쌍하게)
+            var b0 = new[] { new Vector3(-baseHalfW, 0f, -baseDepth), new Vector3(baseHalfW, 0f, -baseDepth), new Vector3(baseHalfW, 0f, baseDepth), new Vector3(-baseHalfW, 0f, baseDepth) };
+            var t0 = new[] { new Vector3(-topHalfW, H, -topDepth), new Vector3(topHalfW, H, -topDepth), new Vector3(topHalfW, H, topDepth), new Vector3(-topHalfW, H, topDepth) };
             var verts = new List<Vector3>();
             var uvs = new List<Vector2>();
             var tris = new List<int>();
-            for (int s = 0; s < slices; s++)
+            var dv = new List<Vector3>();
+            var duv = new List<Vector2>();
+            var dtris = new List<int>();
+            // 위에서 볼 때 앞(-z, 강 쪽) → 오른쪽 → 뒤 → 왼쪽
+            for (int f = 0; f < 4; f++)
             {
-                float x0 = Mathf.Lerp(-halfW, halfW, s / (float)slices), x1 = Mathf.Lerp(-halfW, halfW, (s + 1) / (float)slices);
-                // 서쪽 끝이 가장 높고 동쪽으로 갈수록 계단처럼 낮아지는 사선 지붕
-                float h = H * Mathf.Lerp(1f, 0.83f, Mathf.Pow(s / (float)(slices - 1), 1.2f));
-                float zf0 = -depth + Mathf.Abs(x0) * bow, zf1 = -depth + Mathf.Abs(x1) * bow;  // 앞(강 쪽, -z)
-                float zb0 = depth - Mathf.Abs(x0) * bow, zb1 = depth - Mathf.Abs(x1) * bow;    // 뒤
-                // 위에서 볼 때 앞(-z) → 오른쪽 → 뒤 → 왼쪽 순서로 네 면
-                Quad(verts, uvs, tris, new Vector3(x0, 0, zf0), new Vector3(x1, 0, zf1), h, x0, x1);
-                Quad(verts, uvs, tris, new Vector3(x1, 0, zb1), new Vector3(x0, 0, zb0), h, -x1, -x0);
-                if (s == slices - 1) Quad(verts, uvs, tris, new Vector3(x1, 0, zf1), new Vector3(x1, 0, zb1), h, 0f, zb1 - zf1);
-                else
-                {
-                    // 다음 조각보다 높으면 그 차이만큼 옆 벽
-                    float hn = H * Mathf.Lerp(1f, 0.83f, Mathf.Pow((s + 1) / (float)(slices - 1), 1.2f));
-                    QuadBand(verts, uvs, tris, new Vector3(x1, 0, zf1), new Vector3(x1, 0, zb1), hn, h);
-                }
-                if (s == 0) Quad(verts, uvs, tris, new Vector3(x0, 0, zb0), new Vector3(x0, 0, zf0), h, 0f, zb0 - zf0);
-                // 지붕
+                Vector3 a = b0[f], b = b0[(f + 1) % 4], at = t0[f], bt = t0[(f + 1) % 4];
+                float wb = (b - a).magnitude, wt = (bt - at).magnitude;
+                const float tileU = 13f, tileV = 10f; // 한 장 = 6칸 × 4층 (13m × 10m). 위로 갈수록 칸이 좁아져 기운 면처럼 모인다
                 int i = verts.Count;
-                verts.Add(new Vector3(x0, h, zf0)); verts.Add(new Vector3(x0, h, zb0)); verts.Add(new Vector3(x1, h, zb1)); verts.Add(new Vector3(x1, h, zf1));
+                verts.AddRange(new[] { a, b, bt, at });
+                float off = (wb - wt) * 0.5f;
+                uvs.AddRange(new[] { new Vector2(0f, 0f), new Vector2(wb / tileU, 0f), new Vector2((off + wt) / tileU, H / tileV), new Vector2(off / tileU, H / tileV) });
+                tris.AddRange(new[] { i, i + 3, i + 2, i, i + 2, i + 1 });
+
+                // 짙은 띠: 면 위 (u, v) 사각형을 바깥으로 조금 띄운다
+                var n = Vector3.Cross(at - a, b - a).normalized * 0.08f;
+                void Band(float u0, float u1, float v0, float v1)
+                {
+                    Vector3 P(float u, float v) => Vector3.Lerp(Vector3.Lerp(a, b, u), Vector3.Lerp(at, bt, u), v) + n;
+                    int k = dv.Count;
+                    dv.AddRange(new[] { P(u0, v0), P(u1, v0), P(u1, v1), P(u0, v1) });
+                    for (int q = 0; q < 4; q++) duv.Add(Vector2.zero);
+                    dtris.AddRange(new[] { k, k + 3, k + 2, k, k + 2, k + 1 });
+                }
+                foreach (float c in new[] { 0.2f, 0.45f, 0.72f })
+                {
+                    Band(0f, 1f, c - 0.016f, c - 0.008f);
+                    Band(0f, 1f, c + 0.004f, c + 0.012f);
+                }
+                Band(0f, 1f, 0.975f, 0.995f);
+                if (f == 0 || f == 2)
+                    foreach (float g in new[] { 0.17f, 0.27f })
+                    {
+                        float u = f == 0 ? g : 1f - g;   // 뒷면은 u가 반대로 돈다 → 같은 서쪽 끝 쪽
+                        Band(u - 0.011f, u + 0.011f, 0f, 0.975f);
+                    }
+            }
+            // 지붕
+            {
+                int i = verts.Count;
+                verts.AddRange(new[] { t0[0], t0[3], t0[2], t0[1] });
                 for (int k = 0; k < 4; k++) uvs.Add(new Vector2(0.02f, 0.05f));
                 tris.AddRange(new[] { i, i + 1, i + 2, i, i + 2, i + 3 });
             }
@@ -389,42 +414,22 @@ namespace Fishing.World
             mesh.SetVertices(verts); mesh.SetUVs(0, uvs); mesh.SetTriangles(tris, 0);
             mesh.RecalculateNormals(); mesh.RecalculateBounds();
             Place(t, "63Body", mesh, mat, Vector3.zero);
-            // 사진(63빌딩): 넓은 앞뒤 면 가운데를 위아래로 가르는 짙은 세로 홈 두 줄 (강 쪽에서 보면 탑이 둘로 나뉜 듯)
-            var groove = Mat(new Color(0.18f, 0.13f, 0.08f), null, null, Color.black, 0.85f, 0.6f, Vector2.one);
-            float hCenter = H * Mathf.Lerp(1f, 0.83f, Mathf.Pow(3 / (float)(slices - 1), 1.2f));
-            float bend = Mathf.Atan(bow) * Mathf.Rad2Deg;
-            foreach (float fz in new[] { -1f, 1f })
-            foreach (float gx in new[] { -1.6f, 1.6f })
-            {
-                float z = fz * (depth - Mathf.Abs(gx) * bow) + fz * 0.06f;
-                float yaw = -Mathf.Sign(gx) * fz * bend;
-                Mats.Prim(PrimitiveType.Cube, "63Groove", t, new Vector3(gx, hCenter * 0.5f, z), new Vector3(1.1f, hCenter, 0.14f), groove, false, Quaternion.Euler(0f, yaw, 0f));
-            }
-            // 옥상 안테나 + 항공 장애등
+            var groove = Mat(new Color(0.16f, 0.12f, 0.08f), null, null, Color.black, 0.85f, 0.6f, Vector2.one);
+            var bands = new Mesh { name = "63Bands" };
+            bands.SetVertices(dv); bands.SetUVs(0, duv); bands.SetTriangles(dtris, 0);
+            bands.RecalculateNormals(); bands.RecalculateBounds();
+            Place(t, "63Bands", bands, groove, Vector3.zero);
+            // 옥상 기계실 + 안테나 + 항공 장애등
             var steel = Mat(new Color(0.75f, 0.75f, 0.76f), null, null, Color.black, 0.5f, 0.6f, Vector2.one);
-            Mats.Prim(PrimitiveType.Cylinder, "63Antenna", t, new Vector3(-halfW + 6f, H + 9f, 0f), new Vector3(0.7f, 9f, 0.7f), steel, false);
+            Mats.Prim(PrimitiveType.Cube, "63Penthouse", t, new Vector3(-4f, H + 2.5f, 0f), new Vector3(14f, 5f, 8f), steel, false);
+            Mats.Prim(PrimitiveType.Cube, "63Penthouse2", t, new Vector3(6f, H + 1.5f, 1f), new Vector3(5f, 3f, 5f), steel, false);
+            Mats.Prim(PrimitiveType.Cylinder, "63Antenna", t, new Vector3(-8f, H + 5f + 8f, 0f), new Vector3(0.6f, 8f, 0.6f), steel, false);
             var beacon = Mat(new Color(1f, 0.3f, 0.3f), null, Texture2D.whiteTexture, new Color(1f, 0.15f, 0.1f) * 3f, 0.3f, 0f, Vector2.one);
             beacon.SetFloat("_DayEmission", 0.4f);
-            Mats.Prim(PrimitiveType.Sphere, "63Beacon", t, new Vector3(-halfW + 6f, H + 18.3f, 0f), Vector3.one * 0.9f, beacon, false);
+            Mats.Prim(PrimitiveType.Sphere, "63Beacon", t, new Vector3(-8f, H + 21.3f, 0f), Vector3.one * 0.9f, beacon, false);
             // 저층부 (수족관·전시관)
             var podium = Mat(new Color(0.85f, 0.78f, 0.62f), null, null, Color.black, 0.5f, 0.3f, Vector2.one);
-            Mats.Prim(PrimitiveType.Cube, "63Podium", t, new Vector3(0f, 6f, 0f), new Vector3(70f, 12f, 32f), podium, false);
-
-            static void Quad(List<Vector3> v, List<Vector2> uv, List<int> tr, Vector3 a, Vector3 b, float h, float u0, float u1)
-            {
-                int i = v.Count;
-                v.Add(a); v.Add(b); v.Add(b + Vector3.up * h); v.Add(a + Vector3.up * h);
-                const float tileU = 13f, tileV = 10f; // 한 장 = 6칸 × 4층 (13m × 10m)
-                uv.Add(new Vector2(u0 / tileU, 0f)); uv.Add(new Vector2(u1 / tileU, 0f)); uv.Add(new Vector2(u1 / tileU, h / tileV)); uv.Add(new Vector2(u0 / tileU, h / tileV));
-                tr.AddRange(new[] { i, i + 3, i + 2, i, i + 2, i + 1 });
-            }
-            static void QuadBand(List<Vector3> v, List<Vector2> uv, List<int> tr, Vector3 a, Vector3 b, float y0, float y1)
-            {
-                int i = v.Count;
-                v.Add(a + Vector3.up * y0); v.Add(b + Vector3.up * y0); v.Add(b + Vector3.up * y1); v.Add(a + Vector3.up * y1);
-                for (int k = 0; k < 4; k++) uv.Add(new Vector2(0f, (k < 2 ? y0 : y1) / 10f));
-                tr.AddRange(new[] { i, i + 3, i + 2, i, i + 2, i + 1 });
-            }
+            Mats.Prim(PrimitiveType.Cube, "63Podium", t, new Vector3(0f, 6f, 0f), new Vector3(56f, 12f, 26f), podium, false);
         }
 
         // ---------- 남산서울타워 ----------

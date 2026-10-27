@@ -70,6 +70,8 @@ namespace Fishing.World
             var trav = Mats.Karst(new Color(0.95f, 0.78f, 0.58f), 0.55f, 0f, 0.15f, "canyon", "cliff");
             var travWet = Mats.Karst(new Color(0.45f, 0.4f, 0.32f), 0.35f, 0f, 0f, "canyon", "cliff");
             var travTop = Mats.Karst(new Color(0.9f, 0.76f, 0.56f), 1f, 0.6f, 0f, "canyon", "cliff");
+            // 봉우리 여섯 개를 이어 붙인 벽이라 메쉬 UV(둘레 한 바퀴)로는 이음매·봉우리 경계가 세로 줄로 보였다 → 월드 삼면 투영 (2026-10-27)
+            foreach (var m in new[] { trav, travWet, travTop }) m.SetFloat("_WorldUV", 1f);
             for (int i = 0; i < 6; i++)
             {
                 float t = i / 5f;

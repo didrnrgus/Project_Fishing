@@ -193,7 +193,7 @@ namespace Fishing.World
                 if (!WaterSurface.ShoreDistance(x, z, out float depth, out float dist)) continue;
                 if (depth < -0.1f) continue;   // 물 밖 (젖은 모래 선은 조금 포함)
                 float zone = Smooth(FoamWidth * 3f, FoamWidth * 0.6f, dist);
-                float front = FrontGlow(x, z, dist, time) * zone;
+                float front = FrontGlow(x, z, dist * (1f - Smooth(0.8f, 2f, depth)), time) * zone;   // 벽 앞 깊은 물은 시간으로만 (Water.shader wallK)
                 float chance = front * 1.1f + zone * 0.12f + 0.015f;
                 if (Random.value > chance) continue;
                 // 파도 앞에서는 물방울처럼 살짝 튀어 오른다
