@@ -28,7 +28,8 @@ namespace Fishing.UI
         // 3D 미리보기
         RectTransform _detail;
         UnityEngine.UI.RawImage _detailImg;
-        TMP_Text _detailText;
+        TMP_Text _detailText, _nameBar;
+        UnityEngine.UI.RawImage _habitat;
         ResultFishStage _stage;
         FishSpecies _selected;
         float _openedAt;
@@ -57,8 +58,23 @@ namespace Fishing.UI
         {
             _detail = UIFactory.Shape(Body, UIFactory.Surface, UIFactory.RadiusCard, "Detail", 0f).rectTransform;
             _detail.Fill(0, SideW + 20, 0, 0);
-            var well = UIFactory.Shape(_detail, new Color(0.04f, 0.09f, 0.13f, 0.75f), UIFactory.RadiusCard, "Stage", 0f).rectTransform;
-            well.At(new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(820, 520), new Vector2(0, 0.5f));
+            // 원작 도감 상세: 청동빛 테두리 액자 안에 물고기가 물속 풍경을 배경으로 떠 있고, 위에 초록 이름 띠
+            var frame = UIFactory.Shape(_detail, new Color(0.55f, 0.4f, 0.22f), 6f, "StageFrame", 0f).rectTransform;
+            frame.At(new Vector2(0, 0.5f), new Vector2(8, -6), new Vector2(836, 600), new Vector2(0, 0.5f));
+            UIFactory.Shape(frame, new Color(0.82f, 0.64f, 0.36f), 5f, "FrameHighlight", 0f).rectTransform.Fill(3, 3, 3, 3);
+            UIFactory.Shape(frame, new Color(0.3f, 0.2f, 0.1f), 4f, "FrameInner", 0f).rectTransform.Fill(7, 7, 7, 7);
+            foreach (var (ax, ay) in new[] { (0f, 0f), (1f, 0f), (0f, 1f), (1f, 1f) })   // 모서리 징
+                UIFactory.Shape(frame, new Color(0.9f, 0.74f, 0.42f), UIFactory.Pill, "Rivet", 0f).rectTransform
+                    .At(new Vector2(ax, ay), new Vector2(ax == 0f ? 14f : -14f, ay == 0f ? 14f : -14f), new Vector2(12, 12));
+            var bar = UIFactory.Shape(frame, new Color(0.22f, 0.42f, 0.16f), 3f, "NameBar", 0f).rectTransform;
+            bar.At(new Vector2(0.5f, 1), new Vector2(0, -10), new Vector2(812, 46), new Vector2(0.5f, 1));
+            _nameBar = UIFactory.Text(bar, "", 24, new Color(0.96f, 0.98f, 0.9f), TextAnchor.MiddleCenter);
+            _nameBar.rectTransform.Fill();
+            UIFactory.Outline(_nameBar, new Color(0.05f, 0.12f, 0.04f, 0.9f), 2f);
+            var well = UIFactory.Node("Stage", frame);
+            well.Fill(10, 10, 58, 10);   // 위 58px는 이름 띠
+            _habitat = well.gameObject.AddComponent<UnityEngine.UI.RawImage>();
+            _habitat.raycastTarget = false;
             _detailImg = UIFactory.Node("Fish3D", well).Fill().gameObject.AddComponent<UnityEngine.UI.RawImage>();
             _detailImg.raycastTarget = false;
             _detailText = UIFactory.Text(_detail, "", 18, UIFactory.TextMain, TextAnchor.UpperLeft);
@@ -87,6 +103,11 @@ namespace Fishing.UI
             }
             if (_stage == null) _stage = ResultFishStage.Create(StagePos, "DexFishStage");
             _detailImg.texture = _stage.Target;
+            // 물속 배경: 민물에 사는 고기는 초록빛 탁한 물, 바다 고기는 푸른 물
+            bool fresh = s.Maps != null && s.Maps.Length > 0 && s.Maps.All(m => FishSpecies.FreshMaps.Contains(m));
+            _habitat.texture = Resources.Load<Texture2D>(fresh ? "Intro/dex_fresh" : "Intro/dex_sea");
+            _habitat.color = _habitat.texture != null ? Color.white : new Color(0.04f, 0.09f, 0.13f, 0.75f);
+            _nameBar.text = $"<b>{s.Name}</b>  <size=70%>({s.Latin})</size>";
             var e = Game.Profile.Dex(s.Id);
             float len = e != null ? e.maxLength : (s.MinLen + s.MaxLen) / 2f;
             if (_stage.Show(s, len)) Fishing.Angling.FishModels.Play(_stage.Fish, Fishing.Angling.FishModels.SwimSlow, 0.8f, 0f);
