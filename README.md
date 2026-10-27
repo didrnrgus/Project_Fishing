@@ -93,8 +93,8 @@
 | ![columnar_sea](docs/images/54d_jeju_columnar_sea.png) | ![outcrop](docs/images/22g_honghyeon_outcrop.png) |
 | **산토리니 비탈 마을과 파란 돔 정자** | **산토리니 포석 산책로·파란 아치문** |
 | ![santorini_pavilion](docs/images/56c_santorini_pavilion.png) | ![santorini_promenade](docs/images/56d_santorini_promenade.png) |
-| **삼척 밤바다 야광충 (방파제 앞)** | **삼척 야광충 빛 알갱이** |
-| ![bio_wall](docs/images/45c_samcheok_bio_wall.png) | ![bio_quay](docs/images/45d_samcheok_bio_quay.png) |
+| **삼척 방파제 (실물 크기 테트라포드·끝 둥근 더미)** | **삼척 밤 항구 안 야광충** |
+| ![samcheok_bw](docs/images/45c_samcheok_corner.png) | ![bio_harbor](docs/images/45b_samcheok_night.png) |
 | **크레타 방파제 테트라포드** | **듀덴 폭포 트래버틴 절벽** |
 | ![tetrapods](docs/images/69c_crete_tetrapods.png) | ![duden_cliff](docs/images/71b_duden_cliff.png) |
 | **하롱베이 석회암 봉우리 (실사 석회암·빗물 얼룩·덤불)** | **청진포구 덕장 (코를 엮어 건 명태)** |
