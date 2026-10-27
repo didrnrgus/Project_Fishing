@@ -725,6 +725,107 @@ namespace Fishing.World
             }
         }
 
+        /// <summary>
+        /// 해안도로 (2026-10-27 사용자: "모델링을 대충 한 것 같다" — 예전엔 8m 상자를 이어 붙여 가장자리가 잔디 위에 칼같이 떴다):
+        /// 해안선을 따라 2m마다 점을 찍어 이어진 리본 하나로. 아스팔트 판(옆면은 땅속 35cm까지), 양쪽 1m 연석(모따기, 이음매 틈),
+        /// 흰 가장자리 선·노란 겹 중앙선. 언덕(곶)·물 위·높이가 튀는 자리에서 끊는다. 높이는 가운데 지형 높이로 평평하게(예전 상자와 같다).
+        /// </summary>
+        void BuildCoastRoad(float halfW)
+        {
+            const float W = 7f, step = 2f;
+            var road = new BlockMesh();
+            var white = new BlockMesh();
+            var yellow = new BlockMesh();
+            var curb = new BlockMesh();
+            var run = new List<Vector3>();
+            void Flush()
+            {
+                if (run.Count >= 2) RoadRibbon(run, W, road, white, yellow, curb);
+                run.Clear();
+            }
+            for (float x = -halfW; x <= halfW + 0.01f; x += step)
+            {
+                float z = _map.ShoreAt(x) - S.RoadOffset, h = H(x, z);
+                bool ok = h <= _map.LandY + 1.4f && h >= _map.LandY - 0.4f && Mathf.Abs(H(x, z - W * 0.45f) - h) < 1.2f && Mathf.Abs(H(x, z + W * 0.45f) - h) < 1.2f;
+                if (ok && run.Count > 0 && Mathf.Abs(h + 0.12f - run[run.Count - 1].y) > 0.8f) { Flush(); }
+                if (!ok) { Flush(); continue; }
+                run.Add(new Vector3(x, h + 0.12f, z));
+            }
+            Flush();
+            road.Emit(_root, "CoastRoad", Mats.VertexAO(Mats.Weathered("asphalt", new Color(0.36f, 0.37f, 0.38f), 5f, 0.12f, 0.6f, 0f, 0f, null, 0.7f)));
+            white.Emit(_root, "RoadLineWhite", Mats.Lit(new Color(0.86f, 0.86f, 0.83f), 0.3f));
+            yellow.Emit(_root, "RoadLineYellow", Mats.Lit(new Color(0.9f, 0.68f, 0.12f), 0.3f));
+            curb.Emit(_root, "RoadCurb", Mats.VertexAO(Mats.Weathered("concrete", new Color(0.72f, 0.72f, 0.7f), 2f, 0.1f, 0.3f, 0.3f, 0.15f, null, 0.7f)));
+        }
+
+        /// <summary>길 리본 한 구간: 가운데 점들(윗면 높이) → 판·옆면·선·연석.</summary>
+        static void RoadRibbon(List<Vector3> pts, float w, BlockMesh road, BlockMesh white, BlockMesh yellow, BlockMesh curb)
+        {
+            int n = pts.Count;
+            var side = new Vector3[n];
+            for (int i = 0; i < n; i++)
+            {
+                var t = pts[Mathf.Min(i + 1, n - 1)] - pts[Mathf.Max(i - 1, 0)];
+                t.y = 0f;
+                side[i] = Vector3.Cross(Vector3.up, t.normalized);   // 왼쪽(+)
+            }
+            Vector3 P(int i, float off, float dy = 0f) => pts[i] + side[i] * off + Vector3.up * dy;
+            var full = Color.white;
+            var edgeAO = new Color(0.8f, 0.8f, 0.8f);
+            const float curbW = 0.2f, curbH = 0.15f, lineW = 0.15f;
+            float hw = w * 0.5f;
+            for (int i = 0; i + 1 < n; i++)
+            {
+                // 윗면: 가장자리 띠(연석 밑 그늘)와 가운데
+                road.Face(P(i, -hw), P(i + 1, -hw), P(i + 1, -hw + 0.6f), P(i, -hw + 0.6f), Vector3.up, edgeAO);
+                road.Face(P(i, -hw + 0.6f), P(i + 1, -hw + 0.6f), P(i + 1, hw - 0.6f), P(i, hw - 0.6f), Vector3.up, full);
+                road.Face(P(i, hw - 0.6f), P(i + 1, hw - 0.6f), P(i + 1, hw), P(i, hw), Vector3.up, edgeAO);
+                // 옆면 (땅속까지)
+                foreach (float sg in new[] { -1f, 1f })
+                {
+                    var nrm = (side[i] + side[i + 1]).normalized * sg;
+                    road.Face(P(i, sg * hw), P(i + 1, sg * hw), P(i + 1, sg * hw, -0.5f), P(i, sg * hw, -0.5f), nrm, edgeAO * 0.8f);
+                }
+                // 선: 흰 가장자리 (연석 안쪽 0.35m), 노란 겹 중앙선
+                foreach (float sg in new[] { -1f, 1f })
+                {
+                    float o = sg * (hw - 0.35f);
+                    white.Face(P(i, o - lineW * 0.5f, 0.004f), P(i + 1, o - lineW * 0.5f, 0.004f), P(i + 1, o + lineW * 0.5f, 0.004f), P(i, o + lineW * 0.5f, 0.004f), Vector3.up, full);
+                    float yo = sg * 0.11f;
+                    yellow.Face(P(i, yo - 0.06f, 0.004f), P(i + 1, yo - 0.06f, 0.004f), P(i + 1, yo + 0.06f, 0.004f), P(i, yo + 0.06f, 0.004f), Vector3.up, full);
+                }
+                // 연석: 1m 블록 둘 (모따기, 블록 사이 1cm 틈)
+                foreach (float sg in new[] { -1f, 1f })
+                    for (int k = 0; k < 2; k++)
+                    {
+                        float f0 = k * 0.5f, f1 = f0 + 0.5f;
+                        var a = Vector3.Lerp(P(i, sg * (hw + curbW * 0.5f)), P(i + 1, sg * (hw + curbW * 0.5f)), f0);
+                        var b = Vector3.Lerp(P(i, sg * (hw + curbW * 0.5f)), P(i + 1, sg * (hw + curbW * 0.5f)), f1);
+                        var d = b - a;
+                        if (d.sqrMagnitude < 0.01f) continue;
+                        var c = (a + b) * 0.5f + Vector3.up * (curbH * 0.5f - 0.1f);
+                        curb.Block(c, new Vector3(curbW, curbH + 0.2f, d.magnitude - 0.012f), 0.02f, Quaternion.LookRotation(d.normalized), full, edgeAO * 0.7f);
+                    }
+            }
+        }
+
+        /// <summary>해안선을 따라 offset 자리에 연석 한 줄 (높이 y = 연석 밑 가운데 근처, 땅속까지 내린다). 언덕·물 위는 건너뛴다.</summary>
+        void CurbLine(float x0, float x1, float offset, float y)
+        {
+            var curb = new BlockMesh();
+            var full = Color.white;
+            for (float x = x0; x < x1 - 0.5f; x += 1f)
+            {
+                var a = new Vector3(x, y, _map.ShoreAt(x) + offset);
+                var b = new Vector3(Mathf.Min(x + 1f, x1), y, _map.ShoreAt(Mathf.Min(x + 1f, x1)) + offset);
+                float h = H((a.x + b.x) * 0.5f, (a.z + b.z) * 0.5f);
+                if (h > _map.LandY + 0.6f || h < _map.LandY - 0.6f) continue;
+                var d = b - a;
+                curb.Block((a + b) * 0.5f, new Vector3(0.22f, 0.36f, d.magnitude - 0.012f), 0.02f, Quaternion.LookRotation(d.normalized), full, full * 0.6f);
+            }
+            curb.Emit(_root, "ApronCurb", Mats.VertexAO(Mats.Weathered("concrete", new Color(0.72f, 0.72f, 0.7f), 2f, 0.1f, 0.3f, 0.3f, 0.15f, null, 0.7f)));
+        }
+
         /// <summary>호안 앞마당 잡동사니 (그물·생선 상자·부표·아이스박스): 벽 뒤 2.6~5.5m, 12~22m마다. 낚시점·명소·NPC 곁은 비운다.</summary>
         void QuayClutter(float x0, float x1)
         {
@@ -745,8 +846,7 @@ namespace Fishing.World
             // 해안도로
             if (S.RoadOffset > 0f)
             {
-                var asphalt = Mats.TexturedBox("asphalt", Color.white, new Vector2(7f, 8f), 6f, 0.15f);
-                AlongShore("CoastRoad", -halfW, halfW, -S.RoadOffset, _map.LandY + 0.03f, new Vector3(7f, 0.16f, 1f), asphalt, false, true);
+                BuildCoastRoad(halfW);
                 for (float x = -halfW + 10f; x < halfW - 5f; x += 34f)
                 {
                     float z = _map.ShoreAt(x) - S.RoadOffset + 4.2f, gy = H(x, z);
@@ -777,7 +877,11 @@ namespace Fishing.World
                 HarborKit.QuayWall(_root, x0, x1, x => _map.ShoreAt(x) - 0.4f, _map.LandY + 1f, _map.LandY - 6.2f, _map.BaseWaterY, quay, _rng, !S.StoneQuay);
                 // 해안도로가 바로 뒤에 붙어 있으면 앞마당은 깔지 않는다 (겹쳐서 깜빡인다)
                 if (S.RoadOffset <= 0f || S.RoadOffset >= 16f)
+                {
                     AlongShore("QuayApron", x0, x1, -5.5f, _map.LandY + 0.04f, new Vector3(10f, 0.14f, 1f), quay, false);
+                    // 앞마당 뭍 쪽 끝 연석 (예전엔 콘크리트 판이 잔디 위에서 칼같이 끝났다)
+                    CurbLine(x0, x1, -10.5f, _map.LandY + 0.11f);
+                }
                 if (S.StoneQuay) continue;
                 QuayClutter(x0, x1);
                 for (float x = x0 + 6f; x < x1 - 4f; x += R(7f, 11f))
@@ -1098,9 +1202,11 @@ namespace Fishing.World
             {
                 float f = r / (float)rings;
                 // 석회암 봉우리(사진: 하롱베이): 곧게 선 절벽 위로 위쪽 1/3이 밀림 덮인 둥근 지붕·뾰족한 봉우리
-                float capStart = karst ? 0.66f : 0.85f;
+                // 석회암은 2026-10-27 다시: 꼭대기를 한 점으로 모으고 위아래로 뾰족뾰족 흔들어 원뿔처럼 보였다(사용자 지적) →
+                // 둥글게 닫히는 돔(지수 0.35) + 숲 덮인 낮은 둔덕 여러 개(아래 knoll)
+                float capStart = karst ? 0.74f : 0.85f;
                 float cf = f > capStart ? (f - capStart) / (1f - capStart) : 0f;
-                float cap = f > capStart ? Mathf.Pow(Mathf.Max(0f, 1f - cf * cf), karst ? 0.75f : 0.5f) : 1f;
+                float cap = f > capStart ? Mathf.Pow(Mathf.Max(0f, 1f - cf * cf), karst ? 0.35f : 0.5f) : 1f;
                 float taper = karst ? Mathf.Lerp(1.05f, 0.9f, Mathf.Pow(f, 1.6f)) : Mathf.Lerp(1.12f, 0.62f, Mathf.Pow(f, 1.3f));
                 taper *= Mathf.Max(0.04f, cap);
                 // 물가 파식 홈 (노치): 수면 위 0~1.5m가 파도에 깎여 안으로 들어간다
@@ -1118,10 +1224,21 @@ namespace Fishing.World
                     float fine = Mathf.PerlinNoise(sd * 2.1f + ca * 4f + 11f, f * 14f + sa * 4f) - 0.5f;
                     float layer = f * layers + (Mathf.PerlinNoise(sd + ca * 0.8f, sa * 0.8f + 3f) - 0.5f) * 0.8f;
                     float ledge = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.72f, 0.98f, layer - Mathf.Floor(layer)));
-                    float crack = Mathf.Pow(Mathf.Abs(Mathf.Sin(a * (7f + seed % 4) + big * 3f)), 10f);
-                    float rr = radius * taper * (1f + big * (karst ? 0.32f : 0.45f) + fine * 0.1f + ledge * 0.07f - crack * 0.07f);
+                    // 세로 균열 홈 (석회암은 빗물에 녹은 카렌 홈이 더 많고 깊다)
+                    float crack = Mathf.Pow(Mathf.Abs(Mathf.Sin(a * (karst ? 11f + seed % 5 : 7f + seed % 4) + big * 3f)), 10f);
+                    float rr = radius * taper * (1f + big * (karst ? 0.32f : 0.45f) + fine * 0.1f + ledge * 0.07f - crack * (karst ? 0.1f : 0.07f));
                     float y = f * height;
-                    if (f > capStart) y += height * (karst ? 0.14f * cf : 0.035f) * (Mathf.PerlinNoise(sd + ca * 2f + 20f, sa * 2f) - 0.5f) * 2f; // 울퉁불퉁한(석회암은 뾰족뾰족한) 꼭대기
+                    if (f > capStart)
+                    {
+                        if (karst)
+                        {
+                            // 둥근 둔덕 여러 개: 꼭대기 원판 위치(x, z)의 두 겹 노이즈로 들어 올린다 (가운데로 갈수록 크게)
+                            float kx = ca * rr / radius, kz = sa * rr / radius;
+                            float knoll = (Mathf.PerlinNoise(sd + kx * 1.4f + 30f, kz * 1.4f + 7f) - 0.35f) + 0.5f * (Mathf.PerlinNoise(sd + kx * 3.1f + 41f, kz * 3.1f) - 0.5f);
+                            y += radius * 0.55f * cf * knoll;
+                        }
+                        else y += height * 0.035f * (Mathf.PerlinNoise(sd + ca * 2f + 20f, sa * 2f) - 0.5f) * 2f; // 울퉁불퉁한 꼭대기
+                    }
                     verts.Add(new Vector3(ca * rr, y, sa * rr));
                     uvs.Add(new Vector2(i / (float)seg * circ / 4f, y / 4f));
                 }
@@ -1133,7 +1250,7 @@ namespace Fishing.World
                 quads.AddRange(new[] { a, c, b, b, c, d });
             }
             int top = verts.Count;
-            verts.Add(new Vector3(0f, height + radius * (karst ? 0.02f : 0.05f), 0f));
+            verts.Add(new Vector3(0f, height + radius * (karst ? 0.55f * (Mathf.PerlinNoise(sd + 30f, 7f) - 0.35f + 0.5f * (Mathf.PerlinNoise(sd + 41f, 0f) - 0.5f)) : 0.05f), 0f));
             uvs.Add(new Vector2(0.5f, height / 4f));
             int last = rings * (seg + 1);
             for (int i = 0; i < seg; i++) quads.AddRange(new[] { last + i, top, last + i + 1 });
@@ -1814,7 +1931,27 @@ namespace Fishing.World
                 float sz = Mathf.Lerp(3.5f, 6.5f, Mathf.Sin(u * Mathf.PI)) * R(0.8f, 1.2f);
                 RockPiece(t, "YongduBase", pos, new Vector3(sz * 1.3f, sz * R(0.5f, 0.75f), sz), lava, i);
             }
-            // 용머리: 목(세로) + 위턱(가로, 앞으로 길게) + 아래턱(짧게)
+            // 용머리: Blender 조각 (tools/blender/sculpt.py yongduam — 비스듬히 솟은 목, 하늘로 든 주둥이와 벌린 입, 갈기 바위, 절리 홈). 머리 = 모델 앞(+Z) → 리그 안에서 90° 돌려 바다를 본다
+            if (KenneyProps.Spawn("Props/yongduam", t, new Vector3(0f, 0.2f, 0f), 90f, 11.5f) == null)
+                YongduamOld(t, basalt);
+            // 물속 둘레의 검은 갯바위
+            for (int i = 0; i < 10; i++)
+            {
+                float a = i / 10f * Mathf.PI * 2f;
+                float sz = R(1.2f, 3f);
+                RockPiece(t, "YongduRock", new Vector3(Mathf.Cos(a) * R(8f, 13f) - 2f, R(-0.6f, 0.2f), Mathf.Sin(a) * R(6f, 10f)), new Vector3(sz * 1.3f, sz * 0.6f, sz), basalt, 40 + i);
+            }
+            // 뒤 언덕 산책로 나무 난간 (사진: 관광객이 내려다보는 붉은 갈색 난간)
+            var wood = Mats.Wood(new Color(0.55f, 0.3f, 0.2f));
+            float y = _map.LandY + 0.05f;
+            var rail = new GameObject("YongduRail").transform;
+            rail.SetParent(_root, false);
+            WoodRail(rail, new Vector3(x - 12f, y, shore - 1.5f), new Vector3(x + 12f, y, shore - 1.5f), wood);
+        }
+
+        /// <summary>예전 용머리 (Blender 모델이 없을 때): 목(세로) + 위턱(가로) + 아래턱을 타원 단면으로 이어 붙인다.</summary>
+        void YongduamOld(Transform t, Material basalt)
+        {
             var neck = new[] { new Vector3(0f, 1.5f, 0f), new Vector3(0.2f, 4f, 0f), new Vector3(0.1f, 6f, 0f), new Vector3(0.4f, 7.6f, 0f), new Vector3(0.6f, 9f, 0f) };
             var neckR = new[] { new Vector2(2.6f, 3f), new Vector2(1.9f, 2.1f), new Vector2(1.25f, 1.35f), new Vector2(1.7f, 1.9f), new Vector2(1.6f, 1.7f) };
             var upper = new[] { new Vector3(-1.6f, 9f, 0f), new Vector3(0.4f, 9.3f, 0f), new Vector3(2.4f, 9.1f, 0f), new Vector3(4.2f, 8.7f, 0f), new Vector3(5f, 8.5f, 0f) };
@@ -1831,19 +1968,6 @@ namespace Fishing.World
             // 머리 위·뒤통수의 들쭉날쭉한 뿔 바위
             for (int i = 0; i < 6; i++)
                 RockPiece(t, "YongduHorn", new Vector3(R(-1.6f, 2.2f), R(9.8f, 10.4f), R(-0.8f, 0.8f)), new Vector3(R(0.6f, 1.1f), R(0.9f, 1.8f), R(0.6f, 1f)), basalt, 20 + i);
-            // 물속 둘레의 검은 갯바위
-            for (int i = 0; i < 10; i++)
-            {
-                float a = i / 10f * Mathf.PI * 2f;
-                float sz = R(1.2f, 3f);
-                RockPiece(t, "YongduRock", new Vector3(Mathf.Cos(a) * R(8f, 13f) - 2f, R(-0.6f, 0.2f), Mathf.Sin(a) * R(6f, 10f)), new Vector3(sz * 1.3f, sz * 0.6f, sz), basalt, 40 + i);
-            }
-            // 뒤 언덕 산책로 나무 난간 (사진: 관광객이 내려다보는 붉은 갈색 난간)
-            var wood = Mats.Wood(new Color(0.55f, 0.3f, 0.2f));
-            float y = _map.LandY + 0.05f;
-            var rail = new GameObject("YongduRail").transform;
-            rail.SetParent(_root, false);
-            WoodRail(rail, new Vector3(x - 12f, y, shore - 1.5f), new Vector3(x + 12f, y, shore - 1.5f), wood);
         }
 
         /// <summary>절차 바위 한 덩어리 (Rocks.Mesh 변형, 지정한 재질).</summary>
@@ -1992,54 +2116,97 @@ namespace Fishing.World
         }
 
         /// <summary>
-        /// 명태 덕장: 통나무 틀(덕목)에 장대 두 단을 걸고, 코를 새끼줄로 엮은 명태 두 마리씩(<see cref="DriedPollock"/>)
-        /// 장대에 걸쳐 바닷바람에 말린다. 마른 정도가 다른 세 빛깔이 섞이고, 군데군데 빈자리, 눈 오는 맵이면 장대 위에 눈.
-        /// 기둥 끝은 X자 버팀목, 맨 위는 긴 들보.
+        /// 명태 덕장 (2026-10-27 다시 — 예전 것은 8m마다 둥근 기둥, 장대 두 단, 끝에 막대 하나 비스듬히라 엉성했다):
+        /// 통나무 기둥(덕목)을 4m마다(조금씩 굽고 기울었다), 장대 세 단(1.6·2.35·3.1m), 맨 위 들보, 끝은 A자 버팀목 둘,
+        /// 칸마다 번갈아 X자 가새, 이음매마다 새끼줄 감기. 통나무는 관(<see cref="MapKit.Tubes"/>) 메쉬로 굽는다.
+        /// 코를 새끼줄로 엮은 명태 두 마리씩(<see cref="DriedPollock"/>) 장대에 걸쳐 바닷바람에 말린다. 마른 정도가 다른 세 빛깔, 군데군데 빈자리, 눈 오는 맵이면 들보 위에 눈.
         /// </summary>
         void DryingRacks()
         {
             var log = Mats.Wood(new Color(0.42f, 0.33f, 0.24f), 0.2f);
-            var oldLog = Mats.Wood(new Color(0.33f, 0.28f, 0.23f), 0.15f);
+            var oldLog = Mats.Wood(new Color(0.34f, 0.29f, 0.23f), 0.15f);
+            var ropeMat = Mats.Lit(new Color(0.55f, 0.46f, 0.3f), 0.1f);
             var snow = Mats.Lit(new Color(0.93f, 0.95f, 0.98f), 0.35f);
             var pair = DriedPollock.Pair;
+            var rng = new System.Random(4021);   // 틀 모양은 따로 난수 (명태 배치 난수 순서는 예전과 같은 방식)
+            float Rr(float a0, float a1) => (float)(a0 + rng.NextDouble() * (a1 - a0));
+            var posts = new List<Vector3[]>();
+            var bars = new List<Vector3[]>();
+            var braces = new List<Vector3[]>();
+            var lashes = new List<Vector3[]>();
+            float[] tiers = { 1.6f, 2.35f, 3.1f };
+            const float len = 32f, bay = 4f, top = 3.6f;
+            int bays = Mathf.RoundToInt(len / bay);
+            // 통나무 한 대: a→b를 살짝 굽힌 점 다섯 (sag = 가운데가 처지는 깊이)
+            Vector3[] Log(Vector3 p0, Vector3 p1, float sag)
+            {
+                var pts = new Vector3[5];
+                var side = Vector3.Cross((p1 - p0).normalized, Vector3.up);
+                if (side.sqrMagnitude < 1e-4f) side = Vector3.right;
+                float bend = Rr(-1f, 1f) * 0.05f;
+                for (int i = 0; i < 5; i++)
+                {
+                    float t = i / 4f, k = Mathf.Sin(t * Mathf.PI);
+                    pts[i] = Vector3.Lerp(p0, p1, t) + side.normalized * bend * k + Vector3.down * sag * k;
+                }
+                return pts;
+            }
             for (int r = 0; r < 3; r++)
             {
-                float x0 = DryingRackX - 16f, z = DryingRackZ - 6f + r * 6f;
+                float x0 = DryingRackX - len * 0.5f, z = DryingRackZ - 6f + r * 6f;
                 float y = Mathf.Max(_map.LandY, H(DryingRackX, z));
-                for (int p = 0; p <= 4; p++)
+                for (int p = 0; p <= bays; p++)
                 {
-                    float px = x0 + p * 8f;
-                    Mats.Prim(PrimitiveType.Cylinder, "RackPost", _root, new Vector3(px, y + 1.75f, z), new Vector3(0.24f, 1.75f, 0.24f), log, false,
-                        Quaternion.Euler(R(-2f, 2f), 0f, R(-2f, 2f)));
-                    // 끝 기둥은 앞뒤로 비스듬한 버팀목
-                    if (p == 0 || p == 4)
+                    float px = x0 + p * bay + (p > 0 && p < bays ? Rr(-0.15f, 0.15f) : 0f);
+                    posts.Add(Log(new Vector3(px, y - 0.3f, z), new Vector3(px + Rr(-0.08f, 0.08f), y + top + 0.12f, z + Rr(-0.08f, 0.08f)), 0f));
+                    // 새끼줄 감기: 장대가 묶인 높이마다 기둥 둘레에 짧은 굵은 토막
+                    foreach (float hy in tiers) lashes.Add(new[] { new Vector3(px, y + hy - 0.06f, z + 0.05f), new Vector3(px, y + hy + 0.06f, z + 0.05f) });
+                    // 끝 기둥: 앞뒤로 A자 버팀목 (땅 1.7m 밖 → 기둥 2.8m)
+                    if (p == 0 || p == bays)
                         foreach (float dz in new[] { -1f, 1f })
-                            Mats.Prim(PrimitiveType.Cylinder, "RackBrace", _root, new Vector3(px, y + 1.2f, z + dz * 0.75f), new Vector3(0.12f, 1.35f, 0.12f), oldLog, false,
-                                Quaternion.Euler(dz * 34f, 0f, 0f));
+                            braces.Add(Log(new Vector3(px, y - 0.2f, z + dz * 1.7f), new Vector3(px, y + 2.8f, z + dz * 0.12f), 0f));
+                    // 칸마다 번갈아 X자 가새 (뒤쪽 면)
+                    if (p < bays && p % 2 == 0)
+                    {
+                        braces.Add(Log(new Vector3(px + 0.1f, y + 0.4f, z - 0.16f), new Vector3(px + bay - 0.1f, y + 1.5f, z - 0.16f), 0f));
+                        braces.Add(Log(new Vector3(px + 0.1f, y + 1.5f, z - 0.2f), new Vector3(px + bay - 0.1f, y + 0.4f, z - 0.2f), 0f));
+                    }
                 }
-                // 맨 위 들보
-                Mats.Prim(PrimitiveType.Cylinder, "RackBeam", _root, new Vector3(x0 + 16f, y + 3.45f, z), new Vector3(0.16f, 16.2f, 0.16f), oldLog, false, Quaternion.Euler(0f, 0f, 90f));
+                // 장대 세 단 (기둥 앞쪽에 묶었다, 칸 사이 살짝 처진다) + 맨 위 들보
+                foreach (float hy in tiers)
+                    for (int p = 0; p < bays; p++)
+                        bars.Add(Log(new Vector3(x0 + p * bay - 0.1f, y + hy, z + 0.14f), new Vector3(x0 + (p + 1) * bay + 0.1f, y + hy, z + 0.14f), 0.04f));
+                bars.Add(Log(new Vector3(x0 - 0.3f, y + top, z), new Vector3(x0 + len + 0.3f, y + top, z), 0.03f));
                 if (S.Snow)
-                    Mats.Prim(PrimitiveType.Cube, "RackSnow", _root, new Vector3(x0 + 16f, y + 3.55f, z), new Vector3(32.2f, 0.06f, 0.2f), snow, false);
-                foreach (float hy in new[] { 2.25f, 3.05f })
-                {
-                    Mats.Prim(PrimitiveType.Cylinder, "RackBar", _root, new Vector3(x0 + 16f, y + hy, z), new Vector3(0.11f, 16f, 0.11f), log, false, Quaternion.Euler(0f, 0f, 90f));
-                    for (float x = x0 + 0.4f; x < x0 + 31.8f; x += R(0.26f, 0.34f))
+                    Mats.Prim(PrimitiveType.Cube, "RackSnow", _root, new Vector3(x0 + len * 0.5f, y + top + 0.1f, z), new Vector3(len + 0.4f, 0.05f, 0.18f), snow, false);
+                foreach (float hy in tiers)
+                    for (float x = x0 + 0.4f; x < x0 + len - 0.2f; x += R(0.26f, 0.34f))
                     {
                         if (_rng.NextDouble() < 0.07) continue; // 걷어 간 빈자리
-                        // 장대 위 줄이 걸치는 점에서 늘어진다. 바람에 조금씩 돌고 기울었다
+                        // 장대 위 줄이 걸치는 점에서 늘어진다 (칸 가운데는 장대가 처진 만큼 낮게). 바람에 조금씩 돌고 기울었다
+                        float u = Mathf.Repeat(x - x0, bay) / bay;
                         var go = new GameObject("PollockPair");
                         go.transform.SetParent(_root, false);
-                        go.transform.localPosition = new Vector3(x, y + hy + 0.055f, z);
+                        go.transform.localPosition = new Vector3(x, y + hy + 0.05f - 0.04f * Mathf.Sin(u * Mathf.PI), z + 0.14f);
                         go.transform.localRotation = Quaternion.Euler(R(-5f, 5f), R(-14f, 14f), R(-4f, 4f));
-                        go.transform.localScale = Vector3.one * R(0.88f, 1.12f);
+                        go.transform.localScale = Vector3.one * R(0.92f, 1.1f);
                         go.AddComponent<MeshFilter>().sharedMesh = pair;
                         var mr = go.AddComponent<MeshRenderer>();
                         double v = _rng.NextDouble();
                         mr.sharedMaterial = DriedPollock.Material(v < 0.25 ? 0 : v < 0.7 ? 1 : 2);
                     }
-                }
             }
+            void Emit(string name, List<Vector3[]> paths, float radius, Material mat)
+            {
+                var go = new GameObject(name);
+                go.transform.SetParent(_root, false);
+                go.AddComponent<MeshFilter>().sharedMesh = MapKit.Tubes(paths, _ => radius, 8);
+                go.AddComponent<MeshRenderer>().sharedMaterial = mat;
+            }
+            Emit("RackPosts", posts, 0.13f, log);
+            Emit("RackBars", bars, 0.065f, log);
+            Emit("RackBraces", braces, 0.07f, oldLog);
+            Emit("RackLashes", lashes, 0.16f, ropeMat);
             WorldBuilder.AddSignBothSides(_root, "명태 덕장", new Vector3(DryingRackX, _map.LandY + 5.5f, DryingRackZ + 9f), new Color(1f, 0.85f, 0.6f));
         }
 

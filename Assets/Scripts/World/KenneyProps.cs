@@ -154,8 +154,23 @@ namespace Fishing.World
         public static GameObject SpawnBush(Transform parent, Vector3 localPos, float yaw, float height, int blossoms = 0, Material blossom = null, float size = 0.2f, bool tree = false)
         {
             if (!PlantsAvailable) return null;
-            if (tree && blossoms == 0 && VegetationLibrary.HasBroadleaf)
-                return SpawnRealTree(VegetationLibrary.Lib.broadleaf, parent, localPos, yaw, height, false);
+            if (tree && VegetationLibrary.HasBroadleaf)
+            {
+                // 꽃 피는 나무(동백·진달래)도 실사 활엽수에 꽃을 박는다 (예전 Plants 나무는 잎이 성기고 흰빛이라 꽃이 허공에 떠 보였다)
+                var real = SpawnRealTree(VegetationLibrary.Lib.broadleaf, parent, localPos, yaw, height, false);
+                if (blossoms > 0 && blossom != null && real != null)
+                {
+                    float rs = real.transform.localScale.x;
+                    var rr = real.transform.localRotation;
+                    real.transform.localScale = Vector3.one;
+                    real.transform.localRotation = Quaternion.identity;
+                    var rb = LocalBounds(real);
+                    real.transform.localScale = Vector3.one * rs;
+                    real.transform.localRotation = rr;
+                    AddBlossoms(real, rb, true, blossoms * 2, blossom, size, rs, localPos);
+                }
+                return real;
+            }
             var list = tree ? PlantTrees : System.Array.ConvertAll(PlantBushes, n => "Plants/" + n);
             int k = Mathf.Abs(Mathf.RoundToInt(localPos.x * 5.13f + localPos.z * 2.71f)) % list.Length;
             var prefab = Resources.Load<GameObject>(list[k]);
@@ -169,26 +184,55 @@ namespace Fishing.World
             go.transform.localScale = Vector3.one * s;
             go.transform.localPosition = localPos;
             go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            if (blossoms > 0 && blossom != null)
-            {
-                // 잎 덩어리(나무면 위쪽)를 타원체로 보고 겉면 조금 안쪽에 꽃을 붙인다
-                var c = b.center;
-                var e = b.extents;
-                if (tree) { c.y = b.min.y + b.size.y * 0.68f; e.y = b.size.y * 0.3f; }
-                var rng = new System.Random(Mathf.RoundToInt(localPos.x * 31f + localPos.z * 17f));
-                for (int i = 0; i < blossoms; i++)
-                {
-                    var d = new Vector3((float)rng.NextDouble() * 2f - 1f, (float)rng.NextDouble() * 1.4f - 0.4f, (float)rng.NextDouble() * 2f - 1f).normalized;
-                    var f = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                    Object.Destroy(f.GetComponent<Collider>());
-                    f.name = "Blossom";
-                    f.transform.SetParent(go.transform, false);
-                    f.transform.localPosition = c + Vector3.Scale(d, e) * 0.88f;
-                    f.transform.localScale = Vector3.one * (size / s) * (0.8f + 0.4f * (float)rng.NextDouble());
-                    f.GetComponent<Renderer>().sharedMaterial = blossom;
-                }
-            }
+            if (blossoms > 0 && blossom != null) AddBlossoms(go, b, tree, blossoms, blossom, size, s, localPos);
             return go;
+        }
+
+        /// <summary>
+        /// 꽃·열매 (진달래·동백·귤): 잎 덩어리 안쪽에 작은 납작 팔면체를 흩어 메쉬 하나로 (그림자 없음).
+        /// 예전엔 지름 20cm 구 프리미티브를 잎 덩어리 타원체 겉면에 붙여서, 잎이 성긴 나무에서는 빨간 공이 허공에 떠 보였다 (2026-10-27 사용자 지적).
+        /// 이제 지름의 0.45배로 작게, 세 배 많이, 겉면이 아니라 타원체 반지름 45~90% 안쪽에 — 잎 사이에 박혀 보인다.
+        /// </summary>
+        static void AddBlossoms(GameObject go, Bounds b, bool tree, int blossoms, Material blossom, float size, float s, Vector3 localPos)
+        {
+            var c = b.center;
+            var e = b.extents;
+            if (tree) { c.y = b.min.y + b.size.y * 0.66f; e.y = b.size.y * 0.28f; e.x *= 0.8f; e.z *= 0.8f; }
+            var rng = new System.Random(Mathf.RoundToInt(localPos.x * 31f + localPos.z * 17f));
+            float Rf() => (float)rng.NextDouble();
+            var v = new List<Vector3>();
+            var n = new List<Vector3>();
+            var t = new List<int>();
+            Vector3[] dirs = { Vector3.right, Vector3.left, Vector3.up, Vector3.down, Vector3.forward, Vector3.back };
+            int count = blossoms * 3;
+            for (int i = 0; i < count; i++)
+            {
+                var d = new Vector3(Rf() * 2f - 1f, Rf() * 1.5f - 0.45f, Rf() * 2f - 1f).normalized;
+                var p = c + Vector3.Scale(d, e) * (0.45f + 0.45f * Mathf.Sqrt(Rf()));
+                float r = size * 0.45f / s * (0.75f + 0.5f * Rf());
+                var rot = Quaternion.Euler(Rf() * 360f, Rf() * 360f, 0f);
+                int b0 = v.Count;
+                foreach (var dir in dirs)
+                {
+                    var o = rot * Vector3.Scale(dir, new Vector3(1f, 0.6f, 1f));
+                    v.Add(p + o * r);
+                    n.Add((rot * dir).normalized);
+                }
+                // 팔면체 여덟 면: (±x, ±y, ±z)
+                int[,] f = { { 0, 2, 4 }, { 4, 2, 1 }, { 1, 2, 5 }, { 5, 2, 0 }, { 4, 3, 0 }, { 1, 3, 4 }, { 5, 3, 1 }, { 0, 3, 5 } };
+                for (int k = 0; k < 8; k++) { t.Add(b0 + f[k, 0]); t.Add(b0 + f[k, 1]); t.Add(b0 + f[k, 2]); }
+            }
+            var mesh = new Mesh { name = "Blossoms" };
+            mesh.SetVertices(v);
+            mesh.SetNormals(n);
+            mesh.SetTriangles(t, 0);
+            mesh.RecalculateBounds();
+            var fl = new GameObject("Blossoms");
+            fl.transform.SetParent(go.transform, false);
+            fl.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = fl.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = blossom;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
         static GameObject SpawnPlantTree(Transform parent, Vector3 localPos, float yaw, float height, bool solid)
@@ -359,6 +403,8 @@ namespace Fishing.World
                     Mats.Weatherize(go, "concrete", 2.5f, 0.25f, 1f, 0.6f, 0.15f, null, null, 0.85f); return true;
                 case "eagle": // 다타란 랑: 적갈색 칠한 조각 + 바위 받침
                     Mats.Weatherize(go, "concrete", 1.8f, 0.3f, 1f, 0.35f, 0.05f, null, c => c.r > 0.85f && c.g > 0.7f, 0.9f); return true;
+                case "yongduam": // 용두암: 검은 현무암, 물에 닿는 아래는 젖고 따개비·물때
+                    Mats.Weatherize(go, "basalt", 1.2f, 0.22f, 1f, 0.45f, 0.08f, new Color(0.25f, 0.3f, 0.18f), null, 0.7f); return true;
                 case "hareubang": // 제주 현무암: 구멍 숭숭한 거친 돌
                     Mats.Weatherize(go, "basalt", 0.6f, 0.15f, 0f, 0.25f, 0.2f, new Color(0.3f, 0.34f, 0.24f), null, 0.95f); return true;
                 case "singha": // 앙코르 사자상: 사암

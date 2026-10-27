@@ -119,14 +119,17 @@ namespace Fishing.World
                 Mats.Prim(PrimitiveType.Cube, "WatStair", root, new Vector3(c.x, y + hh * 0.5f, c.z - w * 0.5f - 1.2f), new Vector3(5f, hh, 2.4f), white, false);
                 y += hh;
             }
-            var tall = new List<Vector2>(PrangProfile(62f, 9f, 16));
-            MapKit.Place(root, "WatArunPrang", MapKit.Lathe(tall, 40, 3f, 0.88f), mosaic, new Vector3(c.x, y, c.z), 45f);
+            // 프랑: Blender wat_arun (모서리를 세 번 깎은 십자형 단면, 감실·수호신상, 옥수수 모양 층층 탑 — 예전 둥근 톱니 원뿔은 도형 같았다, 2026-10-27 사용자 지적)
+            bool real = MapKit.Prop(root, "wat_arun", new Vector3(c.x, y, c.z), 0f, 62f, 0f, false) != null;
+            if (!real)
+                MapKit.Place(root, "WatArunPrang", MapKit.Lathe(new List<Vector2>(PrangProfile(62f, 9f, 16)), 40, 3f, 0.88f), mosaic, new Vector3(c.x, y, c.z), 45f);
             // 꼭대기 삼지창 (금빛 뾰족 끝)
-            MapKit.Place(root, "WatArunSpire", MapKit.Lathe(new[] { new Vector2(0.6f, 0f), new Vector2(0.15f, 6f), new Vector2(0.01f, 9f) }, 8), gold, new Vector3(c.x, y + 61f, c.z));
+            MapKit.Place(root, "WatArunSpire", MapKit.Lathe(new[] { new Vector2(0.45f, 0f), new Vector2(0.12f, 5f), new Vector2(0.01f, 8f) }, 8), gold, new Vector3(c.x, y + 61.6f, c.z));
             foreach (var (dx, dz) in new[] { (-26f, -26f), (26f, -26f), (-26f, 26f), (26f, 26f) })
             {
                 var at = new Vector3(c.x + dx, land + 3f, c.z + dz);
-                MapKit.Place(root, "WatArunSatellite", MapKit.Lathe(PrangProfile(26f, 4.5f, 10), 24, 3f, 0.86f), mosaic, at, 45f);
+                if (!real || MapKit.Prop(root, "wat_arun", at, 0f, 26f, 0f, false) == null)
+                    MapKit.Place(root, "WatArunSatellite", MapKit.Lathe(PrangProfile(26f, 4.5f, 10), 24, 3f, 0.86f), mosaic, at, 45f);
             }
             // 강가 쪽 흰 담과 정자 둘
             Mats.Prim(PrimitiveType.Cube, "WatWall", root, new Vector3(c.x, land + 1.2f, c.z - 42f), new Vector3(110f, 2.4f, 0.8f), white, true);

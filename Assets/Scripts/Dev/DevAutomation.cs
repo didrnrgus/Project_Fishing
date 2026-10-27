@@ -1120,6 +1120,14 @@ namespace Fishing.Dev
                 // 방파제 몸통·꺾인 팔 모퉁이를 위에서 (사용자 화면 구도: 야광충 무늬·벽에서 떨어져 보이는 방파제)
                 ("samcheok", "45c_samcheok_corner", new Vector3(75f, 1.1f, 12f), 300f, 300f, 38f, 22f, 10 * 60, Weather.Clear),
                 ("samcheok", "45d_samcheok_corner_night", new Vector3(75f, 1.1f, 12f), 300f, 300f, 38f, 22f, 21 * 60, Weather.Clear),
+                // 사용자가 빨간 펜으로 표시한 자리 (2026-10-27): 맵에 처음 들어온 자리에서 길·연석·가로등·부두가 보이게
+                ("deungdae", "46d_deungdae_road", new Vector3(48f, 1.1f, -47f), 270f, 255f, 14f, 9f, 11 * 60, Weather.Clear),
+                ("cheongjin", "49f_cheongjin_road", new Vector3(28f, 1.1f, -47f), 180f, 185f, 10f, 8f, 13 * 60, Weather.Clear),
+                ("jeju", "54i_jeju_yongduam_close", new Vector3(-152f, 1.1f, -50f), 323f, 323f, 8f, 9f, 15 * 60, Weather.Clear),
+                ("jeju", "54h_jeju_quay", new Vector3(26f, 1.1f, -47f), 190f, 200f, 12f, 9f, 11 * 60, Weather.Clear),
+                ("halong", "55f_halong_quay", new Vector3(4f, 1.1f, -47f), 0f, 0f, 8f, 9f, 9 * 60, Weather.Clear),
+                ("bangkok", "62d_bangkok_quay", new Vector3(4f, 1.1f, -47f), 0f, 0f, 8f, 9f, 9 * 60, Weather.Clear),
+                ("duden", "71c_duden_quay", new Vector3(6f, 1.1f, -47f), 270f, 285f, 10f, 8f, 10 * 60, Weather.Clear),
                 // 삼척해수욕장 밤 물가 (사용자 참고 사진: 겹겹이 밀려오는 레이스 같은 빛 줄 + 자글자글한 빛 점)
                 ("samcheok", "45e_samcheok_beach_night", new Vector3(-57f, 1.1f, -50f), 20f, 20f, 26f, 11f, 21 * 60 + 20, Weather.Clear),
                 ("deungdae", "46_deungdae_lighthouse", new Vector3(48f, 1.1f, -47f), 300f, 290f, 14f, 22f, 11 * 60, Weather.Clear),

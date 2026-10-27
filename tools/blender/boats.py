@@ -250,8 +250,30 @@ def boat_speed(pid):
         if f.normal.z < 0:
             f.normal_flip()
     o.append(B.obj_from_bm(bm, 'BowDeck', white))
-    # 가운데 콘솔 · 휜 앞유리 · 키 · 계기 · 좌석
-    o.append(box((0.85, 0.75, 0.85), white, loc=(0, 0.1, dz + 0.43), bevel=0.06))
+    # 가운데 콘솔 (2026-10-27 다시 — 예전엔 흰 상자·파란 상자 좌석이라 가까이서 보면 도형 같았다, 사용자 지적):
+    # 앞이 비스듬히 깎인 FRP 콘솔(둥근 모서리, 짙은 계기판 위 계기 둘·스로틀 레버), 휜 앞유리 + 스테인리스 테, 키
+    cb = bmesh.new()
+    cw, cd, ch = 0.82, 0.72, 0.88
+    prof = [(-cd / 2, 0.0), (cd / 2, 0.0), (cd / 2, ch), (-cd / 2 + 0.22, ch), (-cd / 2, ch - 0.3)]   # (y, z) 앞(-y) 위가 깎였다
+    for x in (-cw / 2, cw / 2):
+        pass
+    ring = [[cb.verts.new((x, y, z)) for (y, z) in prof] for x in (-cw / 2, cw / 2)]
+    n = len(prof)
+    for i in range(n):
+        cb.faces.new((ring[0][i], ring[0][(i + 1) % n], ring[1][(i + 1) % n], ring[1][i]))
+    cb.faces.new(ring[0][::-1])
+    cb.faces.new(ring[1])
+    bmesh.ops.recalc_face_normals(cb, faces=list(cb.faces))
+    bmesh.ops.bevel(cb, geom=list(cb.edges), offset=0.05, segments=3, affect='EDGES', profile=0.5)
+    con = B.obj_from_bm(cb, 'Console', white)
+    con.location = (0, 0.1, dz)
+    o.append(con)
+    o.append(box((cw - 0.12, 0.3, 0.02), blk, loc=(0, 0.1 - cd / 2 + 0.17, dz + ch - 0.13), rot=(-0.94, 0, 0)))          # 계기판
+    for x in (-0.16, 0.16):
+        o.append(cyl(0.065, 0.065, 0.02, steel, loc=(x, 0.1 - cd / 2 + 0.15, dz + ch - 0.11), rot=(-0.94 + math.pi / 2, 0, 0), seg=14))
+        o.append(cyl(0.05, 0.05, 0.022, glass, loc=(x, 0.1 - cd / 2 + 0.145, dz + ch - 0.105), rot=(-0.94 + math.pi / 2, 0, 0), seg=14))
+    o.append(box((0.05, 0.05, 0.22), blk, loc=(cw / 2 + 0.03, 0.15, dz + 0.7), rot=(0.3, 0, 0)))                            # 스로틀
+    o.append(B.sphere(0.04, blk, loc=(cw / 2 + 0.03, 0.12, dz + 0.81)))
     bm = bmesh.new()
     rows = []
     for k in range(7):
@@ -262,11 +284,24 @@ def boat_speed(pid):
         bm.faces.new((rows[k][0], rows[k + 1][0], rows[k + 1][1], rows[k][1]))
     bmesh.ops.solidify(bm, geom=list(bm.faces), thickness=0.015)
     o.append(B.obj_from_bm(bm, 'Windshield', glass))
-    o.append(B.torus(0.17, 0.02, blk, loc=(0.0, 0.42, dz + 0.98), rot=(math.radians(60), 0, 0), seg=16, mseg=6))
-    o.append(box((0.5, 0.06, 0.18), blk, loc=(0, -0.24, dz + 0.82), rot=(0.5, 0, 0)))
-    o.append(box((1.1, 0.55, 0.42), navy, loc=(0, 1.05, dz + 0.21), bevel=0.05))
-    o.append(box((1.1, 0.12, 0.5), navy, loc=(0, 1.3, dz + 0.6), bevel=0.04))
-    o.append(box((Bm * 0.85, 0.5, 0.42), navy, loc=(0, 2.0, dz + 0.21), bevel=0.05))   # 고물 벤치
+    o.append(tube([((math.sin((k / 6 - 0.5) * 2.2) * 0.45), -math.cos((k / 6 - 0.5) * 2.2) * 0.45 + 0.15, dz + 1.25) for k in range(7)], 0.012, steel, sides=6))
+    o.append(B.torus(0.17, 0.02, blk, loc=(0.0, 0.0, dz + ch + 0.02), rot=(math.radians(55), 0, 0), seg=16, mseg=6))
+    # 좌석: 흰 FRP 받침 + 짙은 남색 쿠션(둥근 모서리, 가운데 이음 홈) + 등받이 쿠션
+    def seat(cx, cy, w, d, back):
+        o.append(box((w, d, 0.36), white, loc=(cx, cy, dz + 0.18), bevel=0.05))
+        for k in (-1, 1):
+            o.append(box((w / 2 - 0.03, d - 0.06, 0.1), navy, loc=(cx + k * w / 4, cy, dz + 0.41), bevel=0.04))
+        if back:
+            o.append(box((w - 0.06, 0.1, 0.4), navy, loc=(cx, cy + d / 2 - 0.05, dz + 0.68), rot=(-0.18, 0, 0), bevel=0.04))
+            o.append(box((w, 0.08, 0.5), white, loc=(cx, cy + d / 2 + 0.03, dz + 0.6), bevel=0.03))
+    seat(0, 1.05, 1.1, 0.55, True)                                      # 콘솔 뒤 키잡이 의자
+    seat(0, 2.0, Bm * 0.82, 0.5, False)                                  # 고물 벤치
+    o.append(box((Bm * 0.82 - 0.06, 0.1, 0.36), navy, loc=(0, 2.24, dz + 0.62), rot=(-0.15, 0, 0), bevel=0.04))
+    # 클리트 (뱃머리·고물 양쪽)
+    for t in (0.06, 0.9):
+        for side in (-1, 1):
+            p = sheer_at(sp, t, side) + V((-side * 0.1, 0, 0.03))
+            o.append(box((0.04, 0.16, 0.03), steel, loc=tuple(p), bevel=0.01))
     # 스테인리스 앞 난간 (사진: 뱃머리를 감싼 관 난간)
     for s in (-1, 1):
         pts = [sheer_at(sp, t, s) + V((-s * 0.06, 0, 0.32)) for t in (0.02, 0.1, 0.2, 0.3)]
@@ -274,12 +309,19 @@ def boat_speed(pid):
         for t in (0.1, 0.2, 0.3):
             p = sheer_at(sp, t, s) + V((-s * 0.06, 0, 0))
             o.append(cyl(0.015, 0.015, 0.32, steel, loc=tuple(p + V((0, 0, 0.16))), seg=6))
-    # 선외기: 흰 덮개 + 검은 다리 + 프로펠러
+    # 선외기: 둥근 흰 덮개(앞뒤로 긴 달걀꼴, 옆 띠·통풍구) + 검은 허리 + 다리 + 프로펠러
     sy = L / 2
-    o.append(box((0.42, 0.55, 0.55), white, loc=(0, sy + 0.25, D + 0.15), bevel=0.08))
-    o.append(box((0.44, 0.57, 0.12), blk, loc=(0, sy + 0.25, D - 0.12)))
-    o.append(box((0.16, 0.2, 1.0), blk, loc=(0, sy + 0.3, D - 0.65)))
-    o.append(cyl(0.12, 0.12, 0.08, steel, loc=(0, sy + 0.3, 0.05), rot=(math.pi / 2, 0, 0), seg=10))
+    o.append(B.sphere(0.3, white, loc=(0, sy + 0.28, D + 0.2), scale=(0.75, 1.05, 1.0), seg=20, rings=12))
+    o.append(box((0.44, 0.6, 0.06), navy, loc=(0, sy + 0.28, D + 0.12), bevel=0.02))
+    for k in range(3):
+        o.append(box((0.02, 0.18, 0.03), blk, loc=(0.22, sy + 0.22 + k * 0.08, D + 0.32)))
+    o.append(box((0.4, 0.5, 0.18), blk, loc=(0, sy + 0.28, D - 0.1), bevel=0.04))
+    o.append(box((0.14, 0.2, 1.0), blk, loc=(0, sy + 0.3, D - 0.65), bevel=0.03))
+    o.append(box((0.06, 0.34, 0.03), blk, loc=(0, sy + 0.32, 0.3)))                          # 물 가르는 판
+    o.append(cyl(0.05, 0.05, 0.2, blk, loc=(0, sy + 0.3, 0.08), rot=(math.pi / 2, 0, 0), seg=10))
+    for k in range(3):
+        a = k * 2 * math.pi / 3
+        o.append(box((0.03, 0.02, 0.13), steel, loc=(math.cos(a) * 0.08, sy + 0.2, 0.08 + math.sin(a) * 0.08), rot=(0, a, 0.4)))
     return o
 
 
