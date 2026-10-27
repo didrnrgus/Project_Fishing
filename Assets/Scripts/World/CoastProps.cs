@@ -311,9 +311,24 @@ namespace Fishing.World
             _lamps.Add(l);
         }
 
+        /// <summary>
+        /// 해안 가로등 (Blender street_lamp 7m: 아연 도금 팔각 기둥, 휘어 나온 팔, 납작한 LED 등기구 — 예전 Kenney 장난감 가로등은 상자를 꺾은 모양이었다).
+        /// yaw = 팔이 뻗는 방향 + 180 (예전 Kenney 가로등과 같은 규칙). 밤에 켜지는 발광면은 등기구 밑면에 얇은 판.
+        /// </summary>
         public void Streetlight(Vector3 basePos, float yaw = 180f)
         {
             Vector3 head;
+            var q = Quaternion.Euler(0f, yaw - 180f, 0f);
+            if (KenneyProps.Spawn("Props/street_lamp", _root, basePos, yaw - 180f, 7f) is GameObject lamp)
+            {
+                float s = lamp.transform.localScale.x;
+                head = basePos + q * new Vector3(0f, 8.405f * s, 1.87f * s);
+                var lens = Mats.Prim(PrimitiveType.Cube, "Bulb", _root, head, new Vector3(0.24f * s, 0.02f, 0.52f * s), Mats.Lit(new Color(0.75f, 0.72f, 0.65f)), false, q);
+                lens.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                _bulbs.Add(lens.GetComponent<Renderer>());
+                AddLamp(head - Vector3.up * 0.3f, new Color(1f, 0.86f, 0.62f), 16f, 1.6f);
+                return;
+            }
             if (KenneyProps.Available)
             {
                 const float lampH = 5.5f;

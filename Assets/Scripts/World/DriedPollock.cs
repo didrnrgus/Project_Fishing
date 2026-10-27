@@ -44,10 +44,11 @@ namespace Fishing.World
         /// <summary>몸 단면 크기: t = 0(주둥이) ~ 1(꼬리자루). (등배 높이, 좌우 두께) 반지름 m.</summary>
         static Vector2 Profile(float t)
         {
-            float h = t < 0.08f ? Mathf.Lerp(0.018f, 0.045f, t / 0.08f)          // 벌린 입
-                    : t < 0.3f ? Mathf.Lerp(0.045f, 0.058f, (t - 0.08f) / 0.22f) // 머리 → 어깨
-                    : Mathf.Lerp(0.058f, 0.012f, Mathf.Pow((t - 0.3f) / 0.7f, 1.3f));
-            float w = h * (t < 0.25f ? 0.62f : 0.42f); // 마르면서 납작해진 몸통 (머리는 덜 납작)
+            float h = t < 0.08f ? Mathf.Lerp(0.016f, 0.04f, t / 0.08f)           // 벌린 입
+                    : t < 0.3f ? Mathf.Lerp(0.04f, 0.046f, (t - 0.08f) / 0.22f)  // 머리 → 어깨
+                    : Mathf.Lerp(0.046f, 0.01f, Mathf.Pow((t - 0.3f) / 0.7f, 1.15f));
+            // 마르면서 납작해진 몸통 (머리는 덜 납작). 2026-10-27: 더 홀쭉하게 — 예전 것은 통통해서 만화 같았다
+            float w = h * (t < 0.25f ? 0.55f : 0.32f);
             return new Vector2(h, w);
         }
 
@@ -122,11 +123,11 @@ namespace Fishing.World
             var tail = nose + new Vector3(0f, -Length, 0f);
             // 꼬리지느러미: 등배로 갈라진 V자 (양면)
             Fin(verts, uvs, tris, tail + new Vector3(0f, 0.01f, 0f),
-                tail + new Vector3(0.045f * facing, -0.075f, 0f), tail + new Vector3(0f, -0.045f, 0f), tail + new Vector3(-0.045f * facing, -0.075f, 0f));
+                tail + new Vector3(0.03f * facing, -0.055f, 0f), tail + new Vector3(0f, -0.035f, 0f), tail + new Vector3(-0.03f * facing, -0.055f, 0f));
             // 등지느러미 세 개 (명태는 등지느러미가 셋), 뒷지느러미 두 개
-            foreach (var (t0, t1, hgt) in new[] { (0.3f, 0.4f, 0.03f), (0.45f, 0.57f, 0.028f), (0.62f, 0.74f, 0.022f) })
+            foreach (var (t0, t1, hgt) in new[] { (0.3f, 0.4f, 0.016f), (0.45f, 0.57f, 0.015f), (0.62f, 0.74f, 0.012f) })
                 FinOnBody(verts, uvs, tris, nose, t0, t1, hgt, facing, +1f);
-            foreach (var (t0, t1, hgt) in new[] { (0.5f, 0.6f, 0.02f), (0.64f, 0.75f, 0.018f) })
+            foreach (var (t0, t1, hgt) in new[] { (0.5f, 0.6f, 0.011f), (0.64f, 0.75f, 0.01f) })
                 FinOnBody(verts, uvs, tris, nose, t0, t1, hgt, facing, -1f);
         }
 
@@ -140,13 +141,20 @@ namespace Fishing.World
             Fin(verts, uvs, tris, a, tip, b, b);
         }
 
-        /// <summary>얇은 지느러미 (양면 삼각형 두 개). 텍스처 아래쪽 지느러미 칸(v 0~0.15)을 쓴다.</summary>
+        /// <summary>
+        /// 얇은 지느러미 (양면 삼각형 두 개). 텍스처 아래쪽 지느러미 칸(v 0~0.15)을 쓴다.
+        /// 앞면·뒷면 꼭짓점을 따로 둔다 — 같이 쓰면 RecalculateNormals가 두 면 법선을 더해 0이 되어 지느러미가 새까맸다.
+        /// </summary>
         static void Fin(List<Vector3> verts, List<Vector2> uvs, List<int> tris, Vector3 root, Vector3 a, Vector3 mid, Vector3 b)
         {
-            int i = verts.Count;
-            verts.Add(root); verts.Add(a); verts.Add(mid); verts.Add(b);
-            uvs.Add(new Vector2(0.5f, 0.15f)); uvs.Add(new Vector2(0.1f, 0.02f)); uvs.Add(new Vector2(0.5f, 0.05f)); uvs.Add(new Vector2(0.9f, 0.02f));
-            tris.AddRange(new[] { i, i + 1, i + 2, i, i + 2, i + 1, i, i + 2, i + 3, i, i + 3, i + 2 });
+            for (int side = 0; side < 2; side++)
+            {
+                int i = verts.Count;
+                verts.Add(root); verts.Add(a); verts.Add(mid); verts.Add(b);
+                uvs.Add(new Vector2(0.5f, 0.15f)); uvs.Add(new Vector2(0.1f, 0.02f)); uvs.Add(new Vector2(0.5f, 0.05f)); uvs.Add(new Vector2(0.9f, 0.02f));
+                if (side == 0) tris.AddRange(new[] { i, i + 1, i + 2, i, i + 2, i + 3 });
+                else tris.AddRange(new[] { i, i + 2, i + 1, i, i + 3, i + 2 });
+            }
         }
 
         static void AddRope(List<Vector3> verts, List<Vector2> uvs, List<int> tris, Vector3 from, Vector3 to)
@@ -182,7 +190,7 @@ namespace Fishing.World
             var flank = new Color(0.78f, 0.66f, 0.45f);   // 옆구리: 누런 황태 빛
             var belly = new Color(0.86f, 0.8f, 0.66f);    // 배 가장자리: 희끄무레
             var cavity = new Color(0.45f, 0.24f, 0.18f);  // 가른 배 속: 검붉은 살
-            var fin = new Color(0.36f, 0.3f, 0.22f);
+            var fin = new Color(0.58f, 0.48f, 0.34f);
             var rope = new Color(0.62f, 0.52f, 0.34f);
             for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)

@@ -107,9 +107,13 @@ namespace Fishing.World
             Mats.Prim(PrimitiveType.Cube, "SandsSkyPark", root, new Vector3(34f, water + sandsH + 3f, 560f), new Vector3(190f, 6f, 30f), park, false);
             Mats.Prim(PrimitiveType.Cube, "SandsSkyParkBow", root, new Vector3(-72f, water + sandsH + 2.5f, 560f), new Vector3(30f, 4f, 22f), park, false, Quaternion.Euler(0f, 0f, 4f));
 
-            // --- 하늘의 열기구 (해협 위·도시 위) ---
-            foreach (var (x, y, z, id) in new[] { (-60f, 60f, 260f, "balloon_a"), (40f, 85f, 330f, "balloon_b"), (130f, 50f, 200f, "balloon_a"), (-180f, 95f, 380f, "balloon_b"), (220f, 75f, 420f, "balloon_a") })
-                MapKit.Prop(root, id, new Vector3(x, y, z), b.Rand(0f, 360f), 22f, 0f, false);
+            // --- 하늘의 열기구 (해협 위·도시 위): 낮에만 뜬다. 밤엔 불 꺼진 시커먼 풍선이 빌딩 불빛 앞에 떠서 이상했다 (2026-10-27 사용자 지적).
+            //     크기를 둘쭉날쭉하게, 버너 불빛으로 풍선 아래가 은은하게 (해 질 녘에 내려온다)
+            var balloons = new GameObject("Balloons");
+            balloons.transform.SetParent(root, false);
+            foreach (var (x, y, z, id, hgt) in new[] { (-60f, 60f, 260f, "balloon_a", 22f), (40f, 85f, 330f, "balloon_b", 26f), (130f, 50f, 200f, "balloon_a", 18f), (-180f, 95f, 380f, "balloon_b", 28f), (220f, 75f, 420f, "balloon_a", 24f) })
+                MapKit.Prop(balloons.transform, id, new Vector3(x, y, z), b.Rand(0f, 360f), hgt, 0f, false);
+            balloons.AddComponent<Fishing.Core.DayOnly>();
 
             // --- 요트: 폰툰 양옆에 매어 둔 돛배·모터보트, 해협의 배 ---
             foreach (var (x, z, yaw, path) in new[] { (32f, -24f, 0f, "boat-sail-a"), (32f, -8f, 0f, "boat-sail-b"), (44f, -18f, 180f, "boat-speed-a"), (44f, -2f, 180f, "boat-sail-a"), (32f, 8f, 0f, "boat-speed-c") })

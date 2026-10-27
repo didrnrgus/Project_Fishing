@@ -572,4 +572,67 @@ def hareubang(_):
     return [body, base]
 
 
-PROPS = {'buddha_white': buddha, 'buddha_gold': buddha, 'merlion': merlion, 'eagle': eagle, 'singha': singha, 'shipwreck': shipwreck, 'hareubang': hareubang}
+# ---------------------------------------------------------------- 용두암
+
+def yongduam(_):
+    """제주 용두암 (2026-10-27 다시 — 예전엔 C#에서 타원 단면을 이은 목에 가로 판 같은 턱이라 T자 기둥처럼 보였다, 사용자 지적).
+    바다에서 비스듬히(앞 -Y 쪽으로 기울어) 솟은 굵은 목 → 위로 든 머리, 하늘을 향해 길게 뻗은 위턱(주둥이)과 짧은 아래턱 사이 벌린 입,
+    굵은 눈두덩, 뒤통수에서 뒤로 흩날리는 갈기 바위, 목 뒤 등줄기 돌기. 한 덩어리로 녹여 붙인 뒤 세로 절리 홈·구멍 숭숭한 현무암 겉면.
+    높이 약 11m, 원점 = 목 밑동 가운데 (수면 근처), 앞(머리 방향) = -Y."""
+    stone = mat('#3a3735', 0.95)
+    parts = []
+    # 목: 밑동 굵고 허리가 잘록, 앞(-Y)으로 기울며 솟는다
+    neck = bezier((0, 1.2, -0.5), (0, 1.6, 3.5), (0, -0.4, 6.0), (0, -1.6, 8.9), 16)
+    parts.append(B.tube(neck, lambda u: 2.7 - 1.9 * u + 0.55 * math.sin(u * math.pi) * (u - 0.35) * 2.2, None, sides=20))
+    parts.append(ell((0, 1.0, 0.2), (3.0, 3.2, 1.6)))                                   # 밑동이 둔덕으로 퍼진다
+    # 머리
+    parts.append(ell((0, -2.2, 9.3), (1.55, 2.1, 1.45), rot=(math.radians(-25), 0, 0)))
+    # 위턱(주둥이): 앞·위로 길게, 끝이 뭉툭
+    parts.append(ell((0, -3.9, 10.7), (1.15, 2.0, 0.92), rot=(math.radians(-42), 0, 0)))
+    parts.append(ell((0, -5.2, 12.0), (0.8, 0.75, 0.7)))   # 뭉툭한 주둥이 끝
+    # 아래턱: 짧고 아래로 벌어졌다
+    parts.append(ell((0, -3.6, 9.0), (0.9, 1.5, 0.58), rot=(math.radians(-12), 0, 0)))
+    # 눈두덩
+    for sx in (-1, 1):
+        parts.append(ell((sx * 0.95, -2.9, 10.25), (0.5, 0.65, 0.42)))
+    # 뒤통수 갈기 바위: 뒤·위로 뭉툭하게 솟은 바위 덩이 여럿 (가는 타래는 손가락처럼 보였다)
+    for k, (x, y, z, sx, sy, sz) in enumerate(((0.0, -1.2, 10.7, 1.1, 1.1, 1.0), (-0.7, -0.6, 11.0, 0.8, 0.85, 0.9), (0.6, -0.5, 10.8, 0.75, 0.8, 0.8),
+                                               (0.0, -0.2, 11.4, 0.7, 0.7, 0.75), (-0.4, 0.3, 10.9, 0.55, 0.6, 0.6), (0.5, 0.2, 10.5, 0.5, 0.55, 0.55))):
+        parts.append(ell((x, y, z), (sx, sy, sz), rot=(0.3 * k, 0.2 * k, 0)))
+    # 목 뒤 등줄기 돌기
+    for k in range(6):
+        u = 0.25 + k * 0.12
+        q = V(neck[int(u * 16)])
+        parts.append(ell(tuple(q + V((0, 1.3 - u * 0.6, 0.1))), (0.55, 0.5, 0.7)))
+
+    mouth_a, mouth_b = V((0, -2.9, 9.7)), V((0, -5.6, 11.2))
+
+    def carve(co, n):
+        d = 0.0
+        # 벌린 입: 위턱 아래·아래턱 위 사이를 깊게 판다 (입 선을 따라 쐐기)
+        t = max(0.0, min(1.0, (co - mouth_a).dot(mouth_b - mouth_a) / (mouth_b - mouth_a).length_squared))
+        c = mouth_a + (mouth_b - mouth_a) * t
+        dz = co.z - c.z
+        if abs(co.x) < 1.0 and abs(dz) < 0.32 - 0.2 * t:
+            d -= (0.45 - 0.3 * t) * (1 - abs(dz) / 0.32)
+        # 콧구멍
+        for sx in (-1, 1):
+            if (co - V((sx * 0.3, -5.75, 12.3))).length < 0.18:
+                d -= 0.12
+        # 세로 절리 홈 (주상 절리처럼 위아래로 금이 간다): 옆을 보는 면만
+        if abs(n.z) < 0.6:
+            g = math.sin((co.x * 1.7 + co.y * 1.1) * 2.2 + noise.noise(co * 0.35) * 3.0)
+            if g > 0.93:
+                d -= 0.12 * (g - 0.93) / 0.07
+        # 구멍 숭숭 (작은 기공)
+        pv = noise.noise(co * 6.5 + V((7.0, 3.0, 1.0)))
+        if pv > 0.42:
+            d -= 0.05
+        return d
+
+    body = fuse(parts, 'Yongduam', voxel=0.07, smooth=2, carve=carve, erode=(0.28, 0.55), target=36000, mats=(stone,))
+    return [body]
+
+
+PROPS = {'buddha_white': buddha, 'buddha_gold': buddha, 'merlion': merlion, 'eagle': eagle, 'singha': singha, 'shipwreck': shipwreck, 'hareubang': hareubang,
+         'yongduam': yongduam}

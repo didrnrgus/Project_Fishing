@@ -305,6 +305,93 @@ def balloon(pid):
     return o
 
 
+# ---------------------------------------------------------------- 왓 아룬 프랑
+
+def redent(r, steps=3, frac=0.11):
+    """모서리를 계단처럼 세 번 깎은 십자형 단면 (타이·크메르 프랑의 '모서리 깎기'). 반 폭 r, 반시계 방향 점 목록."""
+    s = r * frac
+    q = [(r, 0.0)]
+    for k in range(steps):
+        q += [(r - k * s, r - (steps - k) * s), (r - (k + 1) * s, r - (steps - k) * s)]
+    q.append((r - steps * s, r))
+    pts = []
+    for quad in range(4):
+        a = quad * math.pi / 2
+        ca, sa = math.cos(a), math.sin(a)
+        seg = q + [(y, x) for (x, y) in reversed(q[:-1])]   # 대각선으로 접어 사분면 하나 (x축 → y축)
+        for (x, y) in seg[:-1]:
+            pts.append((x * ca - y * sa, x * sa + y * ca))
+    return pts
+
+
+def wat_arun(_):
+    """방콕 왓 아룬 가운데 프랑 (2026-10-27 다시 — 예전엔 둥근 톱니 회전체 원뿔이라 도형처럼 보였다, 사용자 지적).
+    모서리를 세 번 계단처럼 깎은 십자형 단면을 높이마다 쌓는다: 기단 몰딩 → 감실(아치 문)이 있는 몸체 → 처마 → 수호신상이 둘러선 둘째 단
+    → 위로 갈수록 좁아지는 옥수수 모양 층층 탑(층마다 볼록, 띠마다 색 자기 조각) → 꼭대기 받침. 높이 62m (꼭대기 금빛 삼지창은 Unity에서).
+    면은 평평하게(각진 건축), 원점 = 바닥 가운데."""
+    white = mat('#dedad0', 0.55)
+    grey = mat('#a9a69e', 0.6)
+    dark = mat('#2c2a28', 0.8)
+    # 자기 조각 띠: 흰 바탕에 옅은 색 (사진은 멀리서 보면 희끄무레한 탑에 잔잔한 색 무늬)
+    accents = [mat(c, 0.4) for c in ('#9fb3c4', '#c79a82', '#a9bfa0', '#d9c79a')]
+    # (높이, 반 폭, 재질) — 같은 높이 두 줄이면 턱(몰딩)
+    prof = [(0.0, 10.0, grey), (1.2, 10.0, grey), (1.2, 9.4, white), (2.6, 9.4, white), (2.6, 9.8, grey), (3.2, 9.8, grey), (3.2, 8.8, white),
+            (11.0, 8.4, white), (11.0, 9.2, grey), (12.2, 9.2, grey), (12.2, 7.8, white), (17.0, 7.5, white), (17.0, 8.2, grey), (18.0, 8.2, grey), (18.0, 7.2, white)]
+    # 옥수수 모양 탑: 아래가 불룩하고 위로 둥글게 좁아진다 (반 폭 = 7.4·cos^0.75), 2.3m 층마다 볼록한 띠 + 턱
+    z0, z1, R0 = 18.0, 56.0, 7.4
+    n_t = 16
+    for k in range(n_t):
+        t0, t1 = k / n_t, (k + 1) / n_t
+        def rad(t):
+            return R0 * max(0.08, math.cos(t * math.pi / 2)) ** 0.75
+        za, zb = z0 + (z1 - z0) * t0, z0 + (z1 - z0) * t1
+        ra, rb = rad(t0), rad(t1)
+        prof += [(za + (zb - za) * 0.12, ra * 1.04, grey), (za + (zb - za) * 0.2, ra * 1.04, accents[k % 4]),
+                 (za + (zb - za) * 0.6, (ra * 0.65 + rb * 0.35) * 1.03, white), (zb, rb * 0.97, white)]
+    r = R0 * math.cos(math.pi / 2 * 0.999) ** 0.75
+    prof += [(z1 + 0.6, 0.9, accents[3]), (z1 + 1.6, 0.7, white), (62.0, 0.35, white)]
+    bm = bmesh.new()
+    rings = []
+    for (zz, rr, m) in prof:
+        rings.append(([bm.verts.new((x, y, zz)) for (x, y) in redent(rr)], m))
+    mats = []
+    for (_, m) in rings:
+        if m not in mats:
+            mats.append(m)
+    n = len(rings[0][0])
+    for i in range(len(rings) - 1):
+        a, ma = rings[i]
+        b, _ = rings[i + 1]
+        for j in range(n):
+            f = bm.faces.new((a[j], a[(j + 1) % n], b[(j + 1) % n], b[j]))
+            f.material_index = mats.index(ma)
+    top = bm.verts.new((0, 0, 62.3))
+    for j in range(n):
+        bm.faces.new((rings[-1][0][j], rings[-1][0][(j + 1) % n], top)).material_index = mats.index(white)
+    bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+    ob = B.obj_from_bm(bm, 'Prang', None)
+    for m in mats:
+        ob.data.materials.append(m)
+    for p in ob.data.polygons:
+        p.use_smooth = False
+    o = [ob]
+    # 몸체 네 면의 감실 (짙은 아치 문) + 위 꼭지 장식
+    for quad in range(4):
+        a = quad * math.pi / 2
+        d = V((math.cos(a), math.sin(a), 0))
+        side = V((-math.sin(a), math.cos(a), 0))
+        for zz, rr, w, hh in ((4.0, 8.65, 2.6, 5.8), (12.9, 7.7, 1.8, 3.6)):
+            c = d * (rr + 0.02) + V((0, 0, zz + hh / 2))
+            o.append(box((w if abs(d.y) > 0.5 else 0.3, 0.3 if abs(d.y) > 0.5 else w, hh), dark, loc=tuple(c)))
+            o.append(cyl(w * 0.62, 0.05, hh * 0.45, grey, loc=tuple(c + V((0, 0, hh * 0.72))), seg=4, rot=(0, 0, math.pi / 4)))
+        # 둘째 단 수호신상 (작은 서 있는 상 여럿)
+        for t in range(-3, 4):
+            p = d * 7.7 + side * (t * 1.7) + V((0, 0, 18.0))
+            o.append(box((0.5, 0.5, 1.6), accents[(t + quad) % 4], loc=tuple(p + V((0, 0, 0.8)))))
+            o.append(sphere(0.32, white, loc=tuple(p + V((0, 0, 1.85))), seg=8, rings=5))
+    return o
+
+
 # ---------------------------------------------------------------- 해변 소품
 
 def parasol_thatch(_):
@@ -536,7 +623,7 @@ def shipwreck(_):
 
 PROPS = {
     'buddha_gold': buddha, 'buddha_white': buddha, 'merlion': merlion, 'eagle': eagle,
-    'longtail_a': longtail, 'longtail_b': longtail, 'balloon_a': balloon, 'balloon_b': balloon,
+    'longtail_a': longtail, 'longtail_b': longtail, 'balloon_a': balloon, 'balloon_b': balloon, 'wat_arun': wat_arun,
     'parasol_thatch': parasol_thatch, 'parasol_purple': parasol_purple, 'sunbed': sunbed, 'lifeguard': lifeguard,
     'singha': singha, 'shipwreck': shipwreck,
 }

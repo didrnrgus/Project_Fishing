@@ -200,17 +200,41 @@ def coil(_):
 
 
 def netpile(_):
-    """그물 더미: 초록 그물 덩어리(울퉁불퉁) 위에 주황 뜸 줄과 흰 스티로폼 부표 몇 개."""
-    net = mat('#2f6a3a', 0.85)
-    net2 = mat('#3c7e48', 0.85)
+    """
+    그물 더미 (2026-10-27 다시: 예전 것은 납작한 초록 덩어리라 녹은 덤불처럼 보였다 — 사용자 지적):
+    접어 쌓은 그물 다발 네 켜(길쭉한 울퉁불퉁 다발, 위로 갈수록 짧고 적게) + 위를 덮어 늘어진 주름 그물,
+    더미 위를 구불구불 넘어가는 뜸줄(흰 밧줄)에 주황 뜸, 밑동을 두른 검은 발줄, 옆에 흰 스티로폼 부표 둘. 높이 약 0.8m.
+    """
+    nets = [mat('#2f6a3a', 0.85), mat('#265a31', 0.85), mat('#3c7e48', 0.85)]
+    rope = mat('#d9cfae', 0.8)
+    lead = mat('#262626', 0.8)
     orange = mat('#e8761c', 0.5)
     foam = mat('#ecebe6', 0.7)
-    objs = [B.lumpy(0.6, net, loc=(0, 0, 0.22), scale=(1.5, 1.0, 0.45), amp=0.25, freq=2.5, seed=3),
-            B.lumpy(0.45, net2, loc=(0.55, 0.25, 0.18), scale=(1.1, 0.9, 0.4), amp=0.3, freq=3.0, seed=7)]
-    for i in range(7):
-        a = i * 0.9
-        objs.append(B.sphere(0.07, orange, loc=(0.75 * math.cos(a) * 1.1, 0.5 * math.sin(a), 0.32 + 0.06 * math.sin(i * 2.1)), seg=10, rings=6))
-    for x, y in ((-0.7, -0.45), (0.9, -0.3)):
+    objs = []
+    k = 0
+    for layer in range(4):
+        z = 0.12 + layer * 0.15
+        n = 4 - layer // 2
+        for i in range(n):
+            y = (i - (n - 1) / 2) * 0.32 * (1 - layer * 0.12)
+            length = 1.6 - layer * 0.25
+            objs.append(B.lumpy(0.2, nets[k % 3], loc=(0.05 * math.sin(k * 1.7), y, z), scale=(length / 0.4, 1.0, 0.7),
+                                amp=0.1, freq=2.6, seed=k * 5 + 1, seg=24, rings=12))
+            k += 1
+    objs.append(B.lumpy(0.55, nets[0], loc=(0.1, 0.05, 0.6), scale=(1.45, 1.0, 0.3), amp=0.08, freq=3.5, seed=11, seg=32, rings=16))
+    # 뜸줄: 더미 위를 구불구불 넘어간다
+    pts = []
+    for i in range(25):
+        t = i / 24
+        pts.append((-0.85 + 1.7 * t, 0.35 * math.sin(t * math.pi * 2.2), 0.15 + 0.66 * math.sin(t * math.pi) ** 0.6 + 0.03 * math.sin(t * 17)))
+    objs.append(tube(pts, 0.012, rope, sides=6, name='FloatLine'))
+    for i in range(1, 24, 3):
+        x, y, z = pts[i]
+        objs.append(B.sphere(0.05, orange, loc=(x, y, z + 0.02), scale=(1.5, 1.0, 1.0), seg=10, rings=6))
+    # 발줄: 밑동 둘레
+    ring = [(0.85 * math.cos(a), 0.55 * math.sin(a), 0.05 + 0.02 * math.sin(a * 5)) for a in [i / 20 * math.pi * 2 for i in range(21)]]
+    objs.append(tube(ring, 0.018, lead, sides=6, name='LeadLine'))
+    for x, y in ((-1.05, -0.45), (1.1, -0.3)):
         objs.append(cyl(0.14, 0.14, 0.34, foam, loc=(x, y, 0.17), seg=12))
     return objs
 
