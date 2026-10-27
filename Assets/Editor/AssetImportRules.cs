@@ -49,7 +49,7 @@ namespace Fishing.EditorTools
                 importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
                 importer.addCollider = false;
                 // 방파제 소품(계선주·방충재)·집 살림 장비(실외기·물탱크)는 한 맵에 수십 개라 정적 배칭으로 묶을 수 있게 읽기 가능하게 둔다
-                if (assetPath.Contains("/harbor_") || assetPath.Contains("/house_")) importer.isReadable = true;
+                if (assetPath.Contains("/harbor_") || assetPath.Contains("/house_") || assetPath.Contains("/shop_")) importer.isReadable = true;
             }
             else if (assetPath.StartsWith("Assets/Vegetation/"))
             {

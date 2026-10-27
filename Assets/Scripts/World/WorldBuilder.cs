@@ -223,39 +223,9 @@ namespace Fishing.World
             Mats.Prim(PrimitiveType.Cube, "RailEnd", pier, new Vector3(r.center.x, DeckTop + 0.5f, r.yMax - 0.1f), new Vector3(r.width, 0.08f, 0.08f), rail, false);
         }
 
-        void BuildShop()
-        {
-            var p = HanRiverMap.ShopPos;
-            var shop = new GameObject("TackleShop").transform;
-            shop.SetParent(_root, false);
-            shop.localPosition = p;
-
-            Mats.Prim(PrimitiveType.Cube, "Body", shop, new Vector3(0f, 1.5f, 0f), new Vector3(7f, 3f, 4.5f), Mats.Lit(new Color(0.93f, 0.9f, 0.82f)));
-            Mats.Prim(PrimitiveType.Cube, "Roof", shop, new Vector3(0f, 3.2f, 0f), new Vector3(7.6f, 0.4f, 5.2f), Mats.Lit(new Color(0.2f, 0.42f, 0.62f)));
-            for (int i = 0; i < 6; i++)
-            {
-                var c = i % 2 == 0 ? new Color(0.85f, 0.2f, 0.2f) : new Color(0.97f, 0.97f, 0.95f);
-                Mats.Prim(PrimitiveType.Cube, "Awning", shop, new Vector3(-3f + i * 1.2f, 2.6f, 2.75f), new Vector3(1.2f, 0.12f, 1.4f),
-                    Mats.Lit(c), false, Quaternion.Euler(-18f, 0f, 0f));
-            }
-            Mats.Prim(PrimitiveType.Cube, "Counter", shop, new Vector3(0f, 0.55f, 3.5f), new Vector3(5f, 1.1f, 0.6f), Mats.Lit(Wood));
-
-            // 처마 조명: 밤에도 카운터와 주인이 보이게
-            var shopLight = new GameObject("ShopLight").AddComponent<Light>();
-            shopLight.transform.SetParent(shop, false);
-            shopLight.transform.localPosition = new Vector3(0f, 2.4f, 3.4f);
-            shopLight.type = LightType.Point;
-            shopLight.range = 7f;
-            shopLight.intensity = 1.3f;
-            shopLight.color = new Color(1f, 0.85f, 0.6f);
-            shopLight.shadows = LightShadows.None;
-
-            // 낚시점 주인: 벽과 카운터 사이에 선다 (건물 상자는 z ±2.25)
-            var owner = NpcAngler.Spawn(shop, new Vector3(1.2f, 0f, 2.75f), 0f, new CharacterLook { Name = "낚시점 김사장", Title = "반포 낚시점" }, NpcAngler.Role.Talker);
-            owner.NpcId = "shop";
-
-            AddSign(shop, "낚시점", new Vector3(0f, 3.9f, 2.3f), new Color(1f, 0.9f, 0.4f));
-        }
+        void BuildShop() =>
+            TackleShopKit.Build(_root, HanRiverMap.ShopPos, 0f, "반포 낚시점", new CharacterLook { Name = "낚시점 김사장", Title = "반포 낚시점" },
+                new Color(0.2f, 0.42f, 0.62f), LampBulbs);
 
         /// <summary>
         /// 간판: 짙은 판 + 밝은 테두리 위에 글자 (예전에는 글자만 허공에 떠 있어 가까이서 보면 거대한 글자가 화면을 가렸다).

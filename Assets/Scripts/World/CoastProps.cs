@@ -30,7 +30,7 @@ namespace Fishing.World
 
         public void Tetrapod(Vector3 p, Material mat) => Tetrapod(_root, p, Quaternion.Euler(R(0f, 360f), R(0f, 360f), R(0f, 360f)), R(0.9f, 1.1f), mat, true);
 
-        /// <summary>테트라포드 한 개 (다리 끝까지 약 1.05m × scale). collider면 볼록 메쉬 콜라이더 (찌가 걸린다).</summary>
+        /// <summary>테트라포드 한 개 (다리 끝까지 약 1.05m × scale). collider면 볼록 메쉬 콜라이더 (찌가 걸린다). 위 다리 끝에 녹슨 인양 고리(둘째 재질).</summary>
         public static void Tetrapod(Transform parent, Vector3 p, Quaternion rot, float scale, Material mat, bool collider)
         {
             var go = new GameObject("Tetrapod");
@@ -39,35 +39,91 @@ namespace Fishing.World
             go.transform.localRotation = rot;
             go.transform.localScale = Vector3.one * scale;
             go.AddComponent<MeshFilter>().sharedMesh = TetrapodMesh();
-            go.AddComponent<MeshRenderer>().sharedMaterial = mat;
+            go.AddComponent<MeshRenderer>().sharedMaterials = new[] { mat, HookMat };
             if (collider) go.AddComponent<MeshCollider>().convex = true;
         }
 
+        static Material _hookMat;
+        static Material HookMat => _hookMat ??= Mats.Weathered("rust", new Color(0.5f, 0.3f, 0.18f), 0.5f, 0.3f, 1f, 0.2f, 0f, null, 0.5f);
+
+        /// <summary>실물 테트라포드 크기 (다리 끝까지 약 1.5m, 높이 약 3m): 사진의 방파제 테트라포드는 사람 키를 훌쩍 넘는다.</summary>
+        public const float TetraScale = 1.45f;
+
+        public void TetrapodBank(Vector3 from, Vector3 to, Vector3 outward, float waterY, Material mat, int rows = 6) =>
+            TetrapodBank(_root, from, to, outward, waterY, mat, rows);
+
         /// <summary>
-        /// 방파제 바깥 테트라포드 더미: from→to 선을 따라 바깥(outward) 쪽으로 rows줄. 실제 방파제처럼 빽빽하고 가지런하게 —
-        /// 1.45m 간격, 줄마다 반 칸 엇갈림, 한 다리 위(바로 선 것)와 한 다리 아래(뒤집힌 것)를 번갈아 놓고 경사면을 따라 바깥으로 살짝 기운다.
-        /// 벽에 기댄 안쪽 줄이 가장 높고 바깥 줄일수록 물에 잠긴다 (2026-10-27 사용자 참고 사진).
+        /// 방파제 바깥 테트라포드 더미 (2026-10-27 사용자 참고 사진 두 번째: 실제 방파제는 크고 마구 쌓였다):
+        /// from→to 선을 따라 바깥(outward) 쪽으로 아래 켜 rows줄(2.05m 간격, 줄마다 반 칸 엇갈림, 바로 선 것·뒤집힌 것을 번갈아 경사를 따라 기울고 ±14° 흐트러짐) +
+        /// 벽 쪽 세 줄 위에 한 켜 더(아래 켜 틈에 얹고 아무렇게나 돌아감) → 벽에 기댄 쪽은 파라펫 높이까지 쌓이고 바깥 줄일수록 물에 잠긴다.
+        /// 배치 난수는 선 위치로 따로 (맵 난수 순서를 바꾸지 않는다).
         /// </summary>
-        public void TetrapodBank(Vector3 from, Vector3 to, Vector3 outward, float waterY, Material mat, int rows = 4)
+        public static void TetrapodBank(Transform parent, Vector3 from, Vector3 to, Vector3 outward, float waterY, Material mat, int rows = 6)
         {
-            const float step = 1.45f, rowGap = 1.25f;
+            const float step = 2.05f, rowGap = 1.75f;
+            var rng = new System.Random(Mathf.RoundToInt(from.x * 31f + from.z * 17f + to.x * 7f));
+            float R(float a, float b) => (float)(a + rng.NextDouble() * (b - a));
             var along = to - from;
             float len = along.magnitude;
             if (len < 0.1f) return;
             along /= len;
             outward = Vector3.ProjectOnPlane(outward, Vector3.up).normalized;
-            var lean = Quaternion.FromToRotation(Vector3.up, Vector3.Slerp(Vector3.up, outward, 0.2f));
+            var lean = Quaternion.FromToRotation(Vector3.up, Vector3.Slerp(Vector3.up, outward, 0.22f));
             var line = Quaternion.LookRotation(along, Vector3.up);
             for (int k = 0; k < rows; k++)
             {
                 int i = 0;
                 for (float s = (k % 2) * step * 0.5f; s < len; s += step, i++)
                 {
-                    var p = from + along * (s + R(-0.08f, 0.08f)) + outward * (0.8f + k * rowGap + R(-0.08f, 0.08f));
-                    p.y = waterY + 0.8f - k * 0.42f + R(-0.06f, 0.06f);
+                    var p = from + along * (s + R(-0.2f, 0.2f)) + outward * (1.2f + k * rowGap + R(-0.15f, 0.15f));
+                    p.y = waterY + 0.9f - k * 0.55f + R(-0.12f, 0.12f);
                     bool flip = (i + k) % 2 == 1;
-                    var rot = lean * line * Quaternion.Euler(flip ? 180f : 0f, (flip ? 0f : 60f) + R(-7f, 7f), 0f);
-                    Tetrapod(_root, p, rot, R(0.96f, 1.02f), mat, true);
+                    var rot = lean * line * Quaternion.Euler((flip ? 180f : 0f) + R(-14f, 14f), (flip ? 0f : 60f) + R(-25f, 25f), R(-14f, 14f));
+                    Tetrapod(parent, p, rot, TetraScale * R(0.94f, 1.05f), mat, true);
+                }
+            }
+            // 위 켜: 벽 쪽 세 줄 틈에 얹는다 (마구잡이 방향)
+            for (int k = 0; k < Mathf.Min(3, rows - 1); k++)
+                for (float s = step * 0.25f + (k % 2) * step * 0.5f; s < len; s += step * R(1f, 1.35f))
+                {
+                    var p = from + along * (s + R(-0.3f, 0.3f)) + outward * (1.5f + (k + 0.5f) * rowGap + R(-0.25f, 0.25f));
+                    p.y = waterY + 2.1f - k * 0.6f + R(-0.15f, 0.15f);
+                    Tetrapod(parent, p, Quaternion.Euler(R(0f, 360f), R(0f, 360f), R(0f, 360f)), TetraScale * R(0.92f, 1.04f), mat, true);
+                }
+        }
+
+        public void TetrapodHead(Vector3 tip, Vector3 outward, float halfWidth, float waterY, Material mat, int rings = 5) =>
+            TetrapodHead(_root, tip, outward, halfWidth, waterY, mat, rings);
+
+        /// <summary>
+        /// 방파제 끝 둥근 테트라포드 더미 (사진: 등대 선 끝을 반원으로 감싼다). tip = 끝면 가운데(땅 높이 무시), outward = 방파제가 뻗은 방향, halfWidth = 몸통 반폭.
+        /// 끝면에서 halfWidth 안쪽을 가운데로 링마다 ±115° 부채꼴, 안쪽 링이 높다. 위 켜 한 겹.
+        /// </summary>
+        public static void TetrapodHead(Transform parent, Vector3 tip, Vector3 outward, float halfWidth, float waterY, Material mat, int rings = 5)
+        {
+            var rng = new System.Random(Mathf.RoundToInt(tip.x * 13f + tip.z * 29f));
+            float R(float a, float b) => (float)(a + rng.NextDouble() * (b - a));
+            outward = Vector3.ProjectOnPlane(outward, Vector3.up).normalized;
+            var side = Vector3.Cross(Vector3.up, outward);
+            var c = tip - outward * halfWidth;
+            for (int k = 0; k < rings; k++)
+            {
+                float rr = halfWidth + 1.3f + k * 1.75f;
+                int n = Mathf.Max(3, Mathf.RoundToInt(rr * Mathf.Deg2Rad * 230f / 2.05f));
+                for (int i = 0; i <= n; i++)
+                {
+                    float th = Mathf.Lerp(-115f, 115f, (i + (k % 2) * 0.5f) / (n + 0.5f)) * Mathf.Deg2Rad;
+                    var dir = outward * Mathf.Cos(th) + side * Mathf.Sin(th);
+                    var p = c + dir * (rr + R(-0.2f, 0.2f));
+                    p.y = waterY + 0.9f - k * 0.55f + R(-0.12f, 0.12f);
+                    var lean = Quaternion.FromToRotation(Vector3.up, Vector3.Slerp(Vector3.up, dir, 0.22f));
+                    bool flip = (i + k) % 2 == 1;
+                    Tetrapod(parent, p, lean * Quaternion.Euler((flip ? 180f : 0f) + R(-14f, 14f), R(0f, 360f), R(-14f, 14f)), TetraScale * R(0.94f, 1.05f), mat, true);
+                    if (k < 2 && i % 2 == 0)
+                    {
+                        var q = c + dir * (rr + 0.9f) + Vector3.up * (waterY + 2.0f - k * 0.6f - c.y);
+                        Tetrapod(parent, q, Quaternion.Euler(R(0f, 360f), R(0f, 360f), R(0f, 360f)), TetraScale * R(0.92f, 1.04f), mat, true);
+                    }
                 }
             }
         }
@@ -161,11 +217,37 @@ namespace Fishing.World
                     int p0 = c0 + i * (lr + 1) + j, p1 = p0 + 1, p2 = p0 + lr + 1, p3 = p2 + 1;
                     tri.AddRange(new[] { p0, p1, p2, p1, p3, p2 });
                 }
-            _tetrapod = new Mesh { name = "Tetrapod" };
+            // 인양 고리: 위 다리 끝면에 박힌 반원 쇠고리 (사진: 다리 끝마다 녹슨 고리)
+            var hook = new List<int>();
+            {
+                const int hs = 10, hr = 6;
+                const float R0 = 0.12f, r = 0.022f;
+                int h0 = v.Count;
+                for (int i = 0; i <= hs; i++)
+                {
+                    float ph = i / (float)hs * Mathf.PI;
+                    var c = new Vector3(Mathf.Cos(ph) * R0, len + Mathf.Sin(ph) * R0 - 0.02f, 0f);
+                    var radial = new Vector3(Mathf.Cos(ph), Mathf.Sin(ph), 0f);
+                    for (int j = 0; j <= hr; j++)
+                    {
+                        float th = j / (float)hr * Mathf.PI * 2f;
+                        var dir = radial * Mathf.Cos(th) + Vector3.forward * Mathf.Sin(th);
+                        v.Add(c + dir * r); n.Add(dir); uv.Add(new Vector2(i / (float)hs, j / (float)hr));
+                    }
+                }
+                for (int i = 0; i < hs; i++)
+                    for (int j = 0; j < hr; j++)
+                    {
+                        int p0 = h0 + i * (hr + 1) + j, p1 = p0 + 1, p2 = p0 + hr + 1, p3 = p2 + 1;
+                        hook.AddRange(new[] { p0, p2, p1, p1, p2, p3, p0, p1, p2, p1, p3, p2 });   // 양면 (감는 방향 걱정 없이)
+                    }
+            }
+            _tetrapod = new Mesh { name = "Tetrapod", subMeshCount = 2 };
             _tetrapod.SetVertices(v);
             _tetrapod.SetNormals(n);
             _tetrapod.SetUVs(0, uv);
             _tetrapod.SetTriangles(tri, 0);
+            _tetrapod.SetTriangles(hook, 1);
             _tetrapod.RecalculateTangents();
             _tetrapod.RecalculateBounds();
             return _tetrapod;
@@ -250,71 +332,9 @@ namespace Fishing.World
         /// <summary>팔작지붕 정자 (<see cref="Hanok.Pavilion"/>): 장대석 기단, 주춧돌, 석간주 기둥, 공포, 단청 창방, 계자 난간, 기와지붕.</summary>
         public Transform Pavilion(Vector3 at, float yaw) => Hanok.Pavilion(_root, at, yaw);
 
-        /// <summary>낚시점 건물 (줄무늬 차양·카운터·불빛) + 주인 NPC(NpcId "shop").</summary>
-        public NpcAngler TackleShop(Vector3 p, float yaw, string sign, CharacterLook owner, Color roof)
-        {
-            var shop = new GameObject("TackleShop").transform;
-            shop.SetParent(_root, false);
-            shop.localPosition = p;
-            shop.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            // 몸통: 칠한 시멘트 벽(얼룩 셰이더) + 짙은 기단, 지붕 슬래브 + 처마 테두리
-            Mats.Prim(PrimitiveType.Cube, "Body", shop, new Vector3(0f, 1.5f, 0f), new Vector3(7f, 3f, 4.5f), Plaster(new Color(0.93f, 0.9f, 0.84f), 7f, 3f));
-            Mats.Prim(PrimitiveType.Cube, "Plinth", shop, new Vector3(0f, 0.2f, 0f), new Vector3(7.1f, 0.4f, 4.6f), Mats.Weathered("concrete", new Color(0.45f, 0.45f, 0.43f), 2f, 0.1f, 0f, 0.4f, 0.3f, null, 0.7f, 0f, "wallconcrete"), false);
-            Mats.Prim(PrimitiveType.Cube, "Roof", shop, new Vector3(0f, 3.2f, 0f), new Vector3(7.6f, 0.4f, 5.2f), Mats.Lit(roof));
-            Mats.Prim(PrimitiveType.Cube, "Fascia", shop, new Vector3(0f, 3.05f, 2.62f), new Vector3(7.7f, 0.18f, 0.06f), Mats.Lit(roof * 0.7f), false);
-            // 옆 창: 창틀·유리·창턱, 유리에 낚시 용품 포스터
-            var alu = Mats.Lit(new Color(0.78f, 0.79f, 0.8f), 0.6f, 0.6f);
-            var glass = Mats.Lit(new Color(0.2f, 0.28f, 0.34f), 0.92f);
-            foreach (float sx in new[] { -1f, 1f })
-            {
-                Window(shop, new Vector3(sx * 3.52f, 1.7f, 0.2f), 90f * sx, new Vector2(1.6f, 1.1f), alu, glass);
-                Mats.Prim(PrimitiveType.Cube, "Poster", shop, new Vector3(sx * 3.56f, 1.7f, 0.55f), new Vector3(0.01f, 0.5f, 0.36f),
-                    Mats.Lit(sx < 0 ? new Color(0.9f, 0.75f, 0.2f) : new Color(0.25f, 0.55f, 0.85f), 0.4f), false);
-            }
-            // 가게 앞: 낚싯대 거치대(여러 색 낚싯대가 비스듬히), 아이스박스 더미, 미끼 냉장고, 플라스틱 의자
-            var rack = Mats.Lit(new Color(0.3f, 0.3f, 0.32f), 0.4f, 0.4f);
-            Mats.Prim(PrimitiveType.Cube, "RodRack", shop, new Vector3(-3.1f, 0.35f, 3.1f), new Vector3(0.9f, 0.1f, 0.35f), rack, false);
-            Color[] rodCols = { new Color(0.8f, 0.15f, 0.15f), new Color(0.1f, 0.15f, 0.35f), new Color(0.85f, 0.7f, 0.3f), new Color(0.15f, 0.15f, 0.15f), new Color(0.2f, 0.5f, 0.3f) };
-            for (int i = 0; i < 5; i++)
-                Mats.Prim(PrimitiveType.Cylinder, "RackRod", shop, new Vector3(-3.45f + i * 0.17f, 1.45f, 3.0f), new Vector3(0.025f, 1.25f, 0.025f), Mats.Lit(rodCols[i], 0.7f), false,
-                    Quaternion.Euler(-12f, 0f, (i - 2) * 2.5f));
-            var coolerW = Mats.Lit(new Color(0.93f, 0.94f, 0.92f), 0.4f);
-            var coolerB = Mats.Lit(new Color(0.16f, 0.42f, 0.76f), 0.45f);
-            for (int i = 0; i < 3; i++)
-            {
-                var c = new Vector3(3.05f, 0.24f + i * 0.46f, 3.05f + (i == 2 ? 0.05f : 0f));
-                Mats.Prim(PrimitiveType.Cube, "Cooler", shop, c, new Vector3(0.62f, 0.4f, 0.42f), coolerW, false);
-                Mats.Prim(PrimitiveType.Cube, "CoolerLid", shop, c + Vector3.up * 0.22f, new Vector3(0.64f, 0.06f, 0.44f), coolerB, false);
-            }
-            Mats.Prim(PrimitiveType.Cube, "BaitFridge", shop, new Vector3(2.6f, 0.75f, 2.05f), new Vector3(0.9f, 1.5f, 0.6f), coolerW, false);
-            Mats.Prim(PrimitiveType.Cube, "FridgeGlass", shop, new Vector3(2.6f, 0.85f, 2.36f), new Vector3(0.76f, 1.1f, 0.02f), glass, false);
-            Mats.Prim(PrimitiveType.Cube, "FridgeLabel", shop, new Vector3(2.6f, 1.45f, 2.36f), new Vector3(0.7f, 0.16f, 0.02f), Mats.Lit(new Color(0.85f, 0.2f, 0.15f), 0.4f), false);
-            var stool = Mats.Lit(new Color(0.85f, 0.25f, 0.2f), 0.3f);
-            foreach (float sx in new[] { -1.9f, 1.9f })
-            {
-                Mats.Prim(PrimitiveType.Cylinder, "Stool", shop, new Vector3(sx, 0.22f, 4.4f), new Vector3(0.36f, 0.22f, 0.36f), stool, false);
-                Mats.Prim(PrimitiveType.Cylinder, "StoolTop", shop, new Vector3(sx, 0.45f, 4.4f), new Vector3(0.4f, 0.02f, 0.4f), stool, false);
-            }
-            for (int i = 0; i < 6; i++)
-            {
-                var c = i % 2 == 0 ? new Color(0.85f, 0.25f, 0.2f) : new Color(0.97f, 0.97f, 0.95f);
-                Mats.Prim(PrimitiveType.Cube, "Awning", shop, new Vector3(-3f + i * 1.2f, 2.6f, 2.75f), new Vector3(1.2f, 0.12f, 1.4f),
-                    Mats.Lit(c), false, Quaternion.Euler(-18f, 0f, 0f));
-            }
-            Mats.Prim(PrimitiveType.Cube, "Counter", shop, new Vector3(0f, 0.55f, 3.5f), new Vector3(5f, 1.1f, 0.6f), Mats.Lit(new Color(0.55f, 0.4f, 0.26f)));
-            var light = new GameObject("ShopLight").AddComponent<Light>();
-            light.transform.SetParent(shop, false);
-            light.transform.localPosition = new Vector3(0f, 2.4f, 3.4f);
-            light.type = LightType.Point;
-            light.range = 7f;
-            light.intensity = 1.3f;
-            light.color = new Color(1f, 0.85f, 0.6f);
-            light.shadows = LightShadows.None;
-            var npc = NpcAngler.Spawn(shop, new Vector3(1.2f, 0f, 2.75f), 0f, owner, NpcAngler.Role.Talker);
-            npc.NpcId = "shop";
-            WorldBuilder.AddSign(shop, sign, new Vector3(0f, 3.9f, 2.3f), new Color(0.6f, 0.85f, 1f));
-            return npc;
-        }
+        /// <summary>낚시점 (<see cref="TackleShopKit"/>: 통유리 가게·간판·캐노피·냉동 쇼케이스) + 주인 NPC(NpcId "shop"). roof = 간판·캐노피 색.</summary>
+        public NpcAngler TackleShop(Vector3 p, float yaw, string sign, CharacterLook owner, Color roof) =>
+            TackleShopKit.Build(_root, p, yaw, sign, owner, roof, _bulbs);
 
         static readonly Color[] RoofColors =
         {
@@ -664,15 +684,6 @@ namespace Fishing.World
         /// (그냥 곱하면 흰 벽도 평균 0.45배 회색으로 어두워졌다)
         /// </summary>
         public static Color PaintTint(Color c) => new Color(c.r / 0.47f, c.g / 0.43f, c.b / 0.36f) * 0.93f;
-
-        /// <summary>벽에 붙은 창 (yaw 방향을 바라본다): 새시 + 유리 + 창턱.</summary>
-        static void Window(Transform parent, Vector3 at, float yaw, Vector2 size, Material frame, Material glass)
-        {
-            var q = Quaternion.Euler(0f, yaw, 0f);
-            Mats.Prim(PrimitiveType.Cube, "WinFrame", parent, at, new Vector3(size.x + 0.16f, size.y + 0.16f, 0.05f), frame, false, q);
-            Mats.Prim(PrimitiveType.Cube, "WinGlass", parent, at + q * new Vector3(0f, 0f, 0.025f), new Vector3(size.x, size.y, 0.03f), glass, false, q);
-            Mats.Prim(PrimitiveType.Cube, "WinSill", parent, at + q * new Vector3(0f, -size.y * 0.5f - 0.1f, 0.07f), new Vector3(size.x + 0.3f, 0.07f, 0.18f), frame, false, q);
-        }
 
         public static Mesh GableMesh() => Gable();
 

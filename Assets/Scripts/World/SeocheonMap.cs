@@ -104,6 +104,7 @@ namespace Fishing.World
             p.x > MinX && p.x < MaxX && p.z > ShoreZ && p.z < 260f && !OnBreakwater(p) && SeocheonTerrain.HeightAt(p.x, p.z) < WaterY - 0.12f;
 
         public override float SeabedAt(float x, float z) => OnBreakwater(new Vector3(x, 0f, z)) ? LandY : SeocheonTerrain.HeightAt(x, z);
+        public override bool IsBuiltWall(float x, float z) => OnBreakwater(new Vector3(x, 0f, z));
         public override Rect SeabedArea => new Rect(-205f, -70f, 410f, 330f);
 
         public override bool IsWalkable(Vector3 p)

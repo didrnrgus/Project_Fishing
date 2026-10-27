@@ -1117,6 +1117,11 @@ namespace Fishing.Dev
                 ("taean", "44b_taean_noon", new Vector3(-110f, 1.1f, -60f), 0f, 20f, 18f, 18f, 12 * 60, Weather.Clear),
                 ("samcheok", "45_samcheok_chuam", new Vector3(110f, 1.1f, -44f), 60f, 60f, 8f, 20f, 9 * 60, Weather.Clear),
                 ("samcheok", "45b_samcheok_night", new Vector3(72f, 1.1f, 20f), 0f, 0f, 8f, 10f, 21 * 60, Weather.Clear),
+                // 방파제 몸통·꺾인 팔 모퉁이를 위에서 (사용자 화면 구도: 야광충 무늬·벽에서 떨어져 보이는 방파제)
+                ("samcheok", "45c_samcheok_corner", new Vector3(75f, 1.1f, 12f), 300f, 300f, 38f, 22f, 10 * 60, Weather.Clear),
+                ("samcheok", "45d_samcheok_corner_night", new Vector3(75f, 1.1f, 12f), 300f, 300f, 38f, 22f, 21 * 60, Weather.Clear),
+                // 삼척해수욕장 밤 물가 (사용자 참고 사진: 겹겹이 밀려오는 레이스 같은 빛 줄 + 자글자글한 빛 점)
+                ("samcheok", "45e_samcheok_beach_night", new Vector3(-57f, 1.1f, -50f), 20f, 20f, 26f, 11f, 21 * 60 + 20, Weather.Clear),
                 ("deungdae", "46_deungdae_lighthouse", new Vector3(48f, 1.1f, -47f), 300f, 290f, 14f, 22f, 11 * 60, Weather.Clear),
                 ("heonhwa", "47_heonhwa_road", new Vector3(-40f, 1.1f, -47f), 90f, 140f, 12f, 16f, 13 * 60, Weather.Clear),
                 ("yokji", "48_yokji_farm", new Vector3(-126.5f, 1.4f, 0f), 0f, -20f, 22f, 20f, 15 * 60, Weather.Clear),
@@ -1220,6 +1225,36 @@ namespace Fishing.Dev
                 Game.CameraRig.Yaw = yaw - 15f;
                 Game.CameraRig.Pitch = 12f;
                 Game.CameraRig.Distance = 6f;
+                yield return new WaitForSeconds(2.5f);
+                yield return Shot(shot);
+            }
+            // 낚시점 가까이 (TackleShopKit): 앞마당 대각선에서 간판·캐노피·냉동고가 다 들어오게, 영흥은 밤에도 한 장
+            var shopShots = new[]
+            {
+                ("yeongheung", "43g_shop_yeongheung", 10 * 60 + 30), ("yeongheung", "43h_shop_night", 20 * 60 + 30),
+                ("honghyeon", "22i_shop_honghyeon", 15 * 60), ("hangang", "01g_shop_hangang", 11 * 60), ("santorini", "56g_shop_santorini", 10 * 60),
+            };
+            foreach (var (map, shot, minute) in shopShots)
+            {
+                if (_tourOnly != null && Array.IndexOf(_tourOnly, map) < 0) continue;
+                if (loaded != map)
+                {
+                    Game.UI.EnterField(System.Linq.Enumerable.First(Fishing.Data.FishingAreas.All, a => a.Id == map), 1);
+                    Game.UI.Help.Close();
+                    loaded = map;
+                    yield return new WaitForSeconds(1f);
+                }
+                var shopT = System.Linq.Enumerable.FirstOrDefault(Game.World.GetComponentsInChildren<Transform>(), t => t.name == "TackleShop");
+                if (shopT == null) continue;
+                Game.Clock.Set(5, minute);
+                Game.Weather.Force(Weather.Clear);
+                var front = shopT.position + shopT.forward * 9.5f + shopT.right * 3.5f;
+                front.y = Mathf.Max(shopT.position.y, Fishing.World.FieldMap.Current is Fishing.World.CoastMapDef c3 ? c3.HeightAt(front.x, front.z) : shopT.position.y) + 0.1f;
+                float yaw = Quaternion.LookRotation(shopT.position - front).eulerAngles.y;
+                Game.Player.Teleport(front, yaw);
+                Game.CameraRig.Yaw = yaw + 8f;
+                Game.CameraRig.Pitch = 14f;
+                Game.CameraRig.Distance = 5f;
                 yield return new WaitForSeconds(2.5f);
                 yield return Shot(shot);
             }

@@ -70,6 +70,12 @@ namespace Fishing.World
         /// </summary>
         public virtual float SeabedAt(float x, float z) => IsWater(new Vector3(x, WaterY, z)) ? BaseWaterY - 3f : LandY;
 
+        /// <summary>
+        /// 물속에서 바로 솟은 구조물(방파제) 자리. 해저 텍스처 G 채널로 구워 물 셰이더가 그 둘레의 얕은 물빛·거품을 지운다
+        /// (1m 칸이라 벽 둘레 1~2m가 얕은 비탈처럼 보여 방파제가 물에서 떨어져 떠 보였다).
+        /// </summary>
+        public virtual bool IsBuiltWall(float x, float z) => false;
+
         /// <summary>해저 높이를 구울 범위 (월드 x, z, 너비, 높이).</summary>
         public virtual Rect SeabedArea => new Rect(MinX, GridMinZ - 40f, MaxX - MinX, GridMaxZ - GridMinZ + 80f);
         public abstract bool IsWalkable(Vector3 p);

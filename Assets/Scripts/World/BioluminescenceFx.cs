@@ -193,8 +193,8 @@ namespace Fishing.World
                 if (!WaterSurface.ShoreDistance(x, z, out float depth, out float dist)) continue;
                 if (depth < -0.1f) continue;   // 물 밖 (젖은 모래 선은 조금 포함)
                 // 벽 앞 깊은 물: 셰이더(Water.shader prox)처럼 둘레 땅을 살펴 벽 가까움으로 넓게 (벽에서 10m 남짓까지 옅어진다)
-                float wallK = Smooth(0.8f, 2f, depth);
-                float prox = wallK > 0.01f ? WallProximity(x, z) : 0f;
+                float wallK = Mathf.Max(Mathf.Max(Smooth(0.8f, 2f, depth), WaterSurface.WallNear(x, z)), Smooth(FoamWidth * 2f, FoamWidth * 4f, dist));   // 방파제 둘레·물가에서 먼 곳도 벽 앞으로 (셰이더와 같게)
+                float prox = wallK > 0.01f ? WaterSurface.Proximity(x, z) : 0f;
                 float pseudo = (1f - prox) * FoamWidth * 3f;
                 float zone = Mathf.Lerp(Smooth(FoamWidth * 4f, FoamWidth * 0.3f, dist), prox, wallK);
                 float front = FrontGlow(x, z, Mathf.Lerp(dist, pseudo, wallK), time) * zone;
@@ -221,24 +221,6 @@ namespace Fishing.World
             Disturb(player, 1.1f, 0.55f, 1.4f);
         }
 
-        /// <summary>벽 가까움 0~1: 둘레 8방향 × 2·5·10m에서 물 위로 나온 땅의 몫 (가까운 샘플일수록 무겁게).</summary>
-        static float WallProximity(float x, float z)
-        {
-            float sum = 0f, wsum = 0f;
-            for (int k = 0; k < 8; k++)
-            {
-                float a = k * Mathf.PI / 4f;
-                float cx = Mathf.Cos(a), cz = Mathf.Sin(a);
-                foreach (float r in new[] { 2f, 5f, 10f })
-                {
-                    float w = 1f / (0.6f + r * 0.25f);
-                    wsum += w;
-                    if (WaterSurface.SeabedHeight(x + cx * r, z + cz * r, out float bed) && bed > FieldMap.WaterY - 0.3f) sum += w;
-                }
-            }
-            return Smooth(0f, 0.42f, sum / wsum);
-        }
-
         void Glint(Vector3 pos, float up, float level, float life, bool white = false)
         {
             float y = FieldMap.WaterY + 0.12f;
@@ -257,11 +239,15 @@ namespace Fishing.World
         // Water.shader BioSaw·BioPatch·BioFront와 같은 식 (p = 월드 x, z, 얼룩 churn은 평균값)
         static float FrontGlow(float x, float z, float dist, float t)
         {
-            float wob = 2.2f * Mathf.Sin(x * 0.31f + z * 0.13f + t * 0.21f) + 1.4f * Mathf.Sin(z * 0.41f - x * 0.53f - t * 0.33f);
+            float wob = 2.2f * Mathf.Sin(x * 0.31f + z * 0.13f + t * 0.21f) + 1.4f * Mathf.Sin(z * 0.41f - x * 0.53f - t * 0.33f)
+                      + (Noise(x * 0.45f, z * 0.45f) - 0.5f) * 2.6f + (Noise(x * 1.7f + 7f, z * 1.7f + 7f) - 0.5f) * 0.8f;
             float v = (dist * 1.4f + t * 1.1f + wob) / 6.2831f;
             float s = v - Mathf.Floor(v), k = 1f - s;
-            float front = Smooth(0f, 0.03f, s) * (Mathf.Pow(k, 18f) * 0.9f + k * k * k * 0.6f);
-            return front * Smooth(0.3f, 0.72f, Noise(x * 0.11f + t * 0.04f, z * 0.11f - t * 0.025f));
+            const float speck = 0.38f;
+            float d2 = (s - 0.22f) / 0.03f;
+            float lace = Mathf.Exp(-d2 * d2) * 0.4f * Smooth(0.35f, 0.7f, Noise(x * 0.6f + 11f, z * 0.6f + 11f));
+            float front = Smooth(0f, 0.012f, s) * (Mathf.Pow(k, 45f) * (0.75f + 0.25f * speck) + Mathf.Pow(k, 2.5f) * (0.1f + speck * 0.9f) * 0.6f) + lace * (0.5f + speck * 0.5f);
+            return front * (0.35f + 0.65f * Smooth(0.25f, 0.75f, Noise(x * 0.11f + t * 0.04f, z * 0.11f - t * 0.025f)));
         }
 
         // FishingNoise.cginc FishHash·FishNoise
