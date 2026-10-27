@@ -16,7 +16,7 @@ namespace Fishing.World
     {
         const int MaxTouch = 8;            // Water.shader의 _BioTouch 배열 크기와 같아야 한다
         const float FoamWidth = 4.5f;      // Water.shader _FoamWidth 기본값
-        const float NearRadius = 16f;
+        const float NearRadius = 22f;
 
         struct Touch { public Vector2 Pos; public float Radius, Strength, Age, Life; }
 
@@ -51,7 +51,7 @@ namespace Fishing.World
         void Awake()
         {
             _inst = this;
-            _glints = MakeSystem("BioGlints", 0f, 1500);
+            _glints = MakeSystem("BioGlints", 0f, 4000);
             _drops = MakeSystem("BioDrops", 1.6f, 800);
         }
 
@@ -182,8 +182,8 @@ namespace Fishing.World
         /// <summary>캐릭터 둘레 물가: 빛나는 파도 앞에서 빛 알갱이가 튄다. 셰이더와 같은 식으로 파도 앞을 찾는다.</summary>
         void NearShore(Vector3 center, float level, float dt)
         {
-            _emitDebt += 160f * level * dt;
-            int tries = Mathf.Min(Mathf.FloorToInt(_emitDebt) * 4, 300);
+            _emitDebt += 420f * level * dt;   // 사용자: 파티클 더 (160 → 420)
+            int tries = Mathf.Min(Mathf.FloorToInt(_emitDebt) * 4, 700);
             _emitDebt -= Mathf.Floor(_emitDebt);
             float time = Time.timeSinceLevelLoad;
             for (int i = 0; i < tries; i++)
@@ -192,12 +192,16 @@ namespace Fishing.World
                 float x = center.x + d.x * NearRadius, z = center.z + d.y * NearRadius;
                 if (!WaterSurface.ShoreDistance(x, z, out float depth, out float dist)) continue;
                 if (depth < -0.1f) continue;   // 물 밖 (젖은 모래 선은 조금 포함)
-                float zone = Smooth(FoamWidth * 3f, FoamWidth * 0.6f, dist);
-                float front = FrontGlow(x, z, dist * (1f - Smooth(0.8f, 2f, depth)), time) * zone;   // 벽 앞 깊은 물은 시간으로만 (Water.shader wallK)
-                float chance = front * 1.1f + zone * 0.12f + 0.015f;
+                // 벽 앞 깊은 물: 셰이더(Water.shader prox)처럼 둘레 땅을 살펴 벽 가까움으로 넓게 (벽에서 10m 남짓까지 옅어진다)
+                float wallK = Smooth(0.8f, 2f, depth);
+                float prox = wallK > 0.01f ? WallProximity(x, z) : 0f;
+                float pseudo = (1f - prox) * FoamWidth * 3f;
+                float zone = Mathf.Lerp(Smooth(FoamWidth * 4f, FoamWidth * 0.3f, dist), prox, wallK);
+                float front = FrontGlow(x, z, Mathf.Lerp(dist, pseudo, wallK), time) * zone;
+                float chance = front * 1.2f + zone * 0.22f + 0.02f;
                 if (Random.value > chance) continue;
-                // 파도 앞에서는 물방울처럼 살짝 튀어 오른다
-                Glint(new Vector3(x, 0f, z), front > 0.3f ? Random.Range(0.3f, 1.1f) : Random.Range(0.02f, 0.2f), level, Random.Range(0.5f, 1.5f));
+                // 파도 앞에서는 물방울처럼 살짝 튀어 오르고, 가끔 흰빛 알갱이
+                Glint(new Vector3(x, 0f, z), front > 0.3f ? Random.Range(0.3f, 1.1f) : Random.Range(0.02f, 0.2f), level, Random.Range(0.6f, 1.8f), front > 0.45f && Random.value < 0.35f);
             }
         }
 
@@ -217,7 +221,25 @@ namespace Fishing.World
             Disturb(player, 1.1f, 0.55f, 1.4f);
         }
 
-        void Glint(Vector3 pos, float up, float level, float life)
+        /// <summary>벽 가까움 0~1: 둘레 8방향 × 2·5·10m에서 물 위로 나온 땅의 몫 (가까운 샘플일수록 무겁게).</summary>
+        static float WallProximity(float x, float z)
+        {
+            float sum = 0f, wsum = 0f;
+            for (int k = 0; k < 8; k++)
+            {
+                float a = k * Mathf.PI / 4f;
+                float cx = Mathf.Cos(a), cz = Mathf.Sin(a);
+                foreach (float r in new[] { 2f, 5f, 10f })
+                {
+                    float w = 1f / (0.6f + r * 0.25f);
+                    wsum += w;
+                    if (WaterSurface.SeabedHeight(x + cx * r, z + cz * r, out float bed) && bed > FieldMap.WaterY - 0.3f) sum += w;
+                }
+            }
+            return Smooth(0f, 0.42f, sum / wsum);
+        }
+
+        void Glint(Vector3 pos, float up, float level, float life, bool white = false)
         {
             float y = FieldMap.WaterY + 0.12f;
             if (WaterSurface.SeabedHeight(pos.x, pos.z, out float bed)) y = Mathf.Max(y, bed + 0.06f);
@@ -227,7 +249,7 @@ namespace Fishing.World
                 velocity = new Vector3(Random.Range(-0.15f, 0.15f), up, Random.Range(-0.15f, 0.15f)),
                 startSize = Random.Range(0.12f, 0.32f),
                 startLifetime = life,
-                startColor = Blues[Random.Range(0, Blues.Length)] * new Color(1f, 1f, 1f, level),
+                startColor = (white ? new Color(0.85f, 0.97f, 1f) : Blues[Random.Range(0, Blues.Length)]) * new Color(1f, 1f, 1f, level),
             };
             _glints.Emit(p, 1);
         }

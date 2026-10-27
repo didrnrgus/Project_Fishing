@@ -190,17 +190,49 @@ Shader "Fishing/Water"
                         float c1 = tex2D(_NormalTex, p * 0.33 + t * float2(0.045, -0.03)).r;
                         float c2 = tex2D(_NormalTex, p * 0.71 - t * float2(0.03, 0.05)).g;
                         float churn = smoothstep(0.42, 0.68, c1 * 0.6 + c2 * 0.4) * 0.9;
-                        // 벽(호안·방파제) 앞 깊은 물은 몇십 cm 사이에 dist가 0→십몇 m로 뛰어 파도 앞이 겹줄로 보인다 → 거리 대신 시간으로만 (벽에 부딪혀 띠 전체가 번쩍)
+                        // 벽(호안·방파제) 앞 깊은 물은 몇십 cm 사이에 dist가 0→십몇 m로 뛰어 벽을 따라 날카로운 띠가 생겼다 (2026-10-27 사용자: "인위적").
+                        // 벽 가까움(prox): 둘레 16방향 × 2~12m 해저를 살펴 물 위로 나온 땅의 몫을 거리 가중으로 더한다 → 벽에서 10m 남짓까지 부드럽게 옅어진다.
+                        // 샘플 반지름을 픽셀마다 흔들어 고리 무늬를 지우고, 그 가까움으로 가짜 거리를 만들어 파도 앞이 벽 쪽으로 밀려오게 한다
                         float wallK = smoothstep(0.8, 2.0, depth);
-                        float front = BioFront(p, dist * (1 - wallK), t, churn);
-                        float zone = smoothstep(_FoamWidth * 3.0, _FoamWidth * 0.6, dist);
+                        float prox = 0;
+                        if (wallK > 0.01)
+                        {
+                            float jit = 0.7 + 0.6 * FishNoise(p * 0.9);   // 연속 노이즈 (칸 해시는 네모 무늬가 보였다)
+                            float wsum = 0;
+                            for (int k = 0; k < 16; k++)
+                            {
+                                float a = k * 0.3927 + jit;
+                                float2 dir = float2(cos(a), sin(a));
+                                float r = (2.0 + (float)(k & 3) * 3.2) * jit;      // 2 ~ 12m
+                                float2 uv2 = uv + dir * r * _SeabedRect.zw;
+                                float land = smoothstep(IN.worldPos.y - 1.2, IN.worldPos.y + 0.3, tex2Dlod(_SeabedTex, float4(uv2, 0, 0)).r);
+                                float w = 1.0 / (0.6 + r * 0.25);
+                                prox += land * w;
+                                wsum += w;
+                            }
+                            prox = smoothstep(0.0, 0.42, prox / wsum);
+                            // 큰 덩어리 노이즈로 경계를 들쭉날쭉하게
+                            prox *= 0.55 + 0.45 * FishNoise(p * 0.08 + t * 0.02);
+                        }
+                        float pseudo = (1 - prox) * _FoamWidth * 3.0;
+                        float front = BioFront(p, lerp(dist, pseudo, wallK), t, churn);
+                        // 벽 앞은 날카로운 파도 앞 대신 넓고 완만하게 밀려오는 빛 (덩어리 가장자리가 또렷하지 않게)
+                        float saw = BioSaw(p, pseudo, t);
+                        float soft = pow(saturate(1 - saw), 2.0) * (0.7 + churn * 0.4);
+                        front = lerp(front, soft, wallK * 0.8);
+                        // 흰 하이라이트: 밀려오는 빛의 맨 앞줄만 가늘게, 부서진 물 얼룩(churn)·덩어리 노이즈로 군데군데 끊긴 흰빛 물마루
+                        float crest = smoothstep(0.0, 0.03, saw) * pow(saturate(1 - saw), 22) * smoothstep(0.2, 0.75, churn + FishNoise(p * 0.35 + t * 0.1) * 0.6);
+                        float zone = lerp(smoothstep(_FoamWidth * 4.0, _FoamWidth * 0.3, dist), prox, wallK);
                         float wave = front * zone * BioPatch(p, t);
-                        float grains = BioGrains(p, 3.2, t) * saturate(foam * 0.5 + zone * 0.6) + BioGrains(p * 0.61 + 17.3, 2.4, t) * step(depth, 0.35) * 0.8;
-                        // 물가에서 조금 떨어진 곳의 드문 빛 점
-                        float dots = BioGrains(p * 0.37 + 5.1, 1.6, t * 0.6) * saturate(1 - dist / (_FoamWidth * 5));
+                        float grains = BioGrains(p, 3.2, t) * saturate(foam * 0.4 + zone * 0.5) + BioGrains(p * 0.61 + 17.3, 2.4, t) * step(depth, 0.35) * 0.6;
+                        // 물가에서 조금 떨어진 곳의 드문 빛 점 (벽 앞도 가까움만큼)
+                        float dots = BioGrains(p * 0.37 + 5.1, 1.6, t * 0.6) * max(saturate(1 - dist / (_FoamWidth * 6)) * (1 - wallK), prox);
                         o.Albedo = lerp(o.Albedo, o.Albedo * 0.2, bio);   // 밤엔 흰 거품이 아니라 빛만 보이게
                         float3 c = BioColor(wave);
-                        o.Emission += (c * wave * 3.2 + float3(0.05, 0.42, 1.0) * (foam * 0.08 + grains * 2.6 + dots * 1.4)) * bio;
+                        // 넓게 깔린 푸른 기운 + 밀려오는 빛(경계 없이) + 맨 앞줄 흰 하이라이트
+                        float haze = max(zone, prox) * 0.16;
+                        o.Emission += (c * wave * 2.8 + float3(0.05, 0.42, 1.0) * (haze + foam * 0.06 + grains * 2.2 + dots * 1.3)
+                                       + float3(0.78, 0.94, 1.0) * crest * zone * BioPatch(p, t) * 3.5) * bio;
                     }
                 }
             }
