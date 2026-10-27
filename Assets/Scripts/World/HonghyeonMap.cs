@@ -84,6 +84,7 @@ namespace Fishing.World
             p.x > MinX && p.x < MaxX && p.z > ShoreZ && p.z < 260f && !OnBreakwater(p) && IslandAt(p) < 0;
 
         public override float SeabedAt(float x, float z) => OnBreakwater(new Vector3(x, 0f, z)) ? LandY : SeaTerrain.HeightAt(x, z);
+        public override bool IsBuiltWall(float x, float z) => OnBreakwater(new Vector3(x, 0f, z));
         public override Rect SeabedArea => new Rect(-205f, -70f, 410f, 330f);
 
         public override bool IsWalkable(Vector3 p)
@@ -251,12 +252,9 @@ namespace Fishing.World
 
             // 테트라포드 (바깥쪽): 벽에 기댄 안쪽 줄이 가장 높고 바깥 줄일수록 잠긴다
             var tetra = Mats.Tetrapod(new Color(0.92f, 0.9f, 0.86f));
-            for (int k = 0; k < 3; k++)
-                for (float z = b.yMin + 3f + (k % 2); z < b.yMax + 4f; z += R(1.8f, 2.3f))
-                {
-                    var p = new Vector3(b.xMin - 0.6f - k * 1.7f + R(-0.3f, 0.3f), _map.WaterY + 0.35f - k * 0.55f + R(-0.25f, 0.25f), z);
-                    CoastProps.Tetrapod(bw, p, Quaternion.Euler(R(0f, 360f), R(0f, 360f), R(0f, 360f)), R(0.9f, 1.1f), tetra, false);
-                }
+            // 해안 맵과 같은 실물 크기 더미 + 끝 둥근 더미 (2026-10-27 사용자 참고 사진)
+            CoastProps.TetrapodBank(bw, new Vector3(b.xMin - 0.5f, 0f, b.yMin + 3f), new Vector3(b.xMin - 0.5f, 0f, b.yMax), Vector3.left, _map.WaterY, tetra, 5);
+            CoastProps.TetrapodHead(bw, new Vector3(b.center.x, 0f, b.yMax), Vector3.forward, b.width * 0.5f, _map.WaterY, tetra, 4);
 
             // 빨간 등대
             var lighthouse = new GameObject("Lighthouse").transform;
@@ -385,34 +383,9 @@ namespace Fishing.World
             _lamps.Add(l);
         }
 
-        void BuildShop()
-        {
-            var p = _map.ShopPos;
-            var shop = new GameObject("TackleShop").transform;
-            shop.SetParent(_root, false);
-            shop.localPosition = p;
-            Mats.Prim(PrimitiveType.Cube, "Body", shop, new Vector3(0f, 1.5f, 0f), new Vector3(7f, 3f, 4.5f), Mats.Lit(new Color(0.9f, 0.92f, 0.95f)));
-            Mats.Prim(PrimitiveType.Cube, "Roof", shop, new Vector3(0f, 3.2f, 0f), new Vector3(7.6f, 0.4f, 5.2f), Mats.Lit(new Color(0.75f, 0.3f, 0.2f)));
-            for (int i = 0; i < 6; i++)
-            {
-                var c = i % 2 == 0 ? new Color(0.2f, 0.45f, 0.8f) : new Color(0.97f, 0.97f, 0.95f);
-                Mats.Prim(PrimitiveType.Cube, "Awning", shop, new Vector3(-3f + i * 1.2f, 2.6f, 2.75f), new Vector3(1.2f, 0.12f, 1.4f),
-                    Mats.Lit(c), false, Quaternion.Euler(-18f, 0f, 0f));
-            }
-            Mats.Prim(PrimitiveType.Cube, "Counter", shop, new Vector3(0f, 0.55f, 3.5f), new Vector3(5f, 1.1f, 0.6f), Mats.Lit(Wood));
-            var light = new GameObject("ShopLight").AddComponent<Light>();
-            light.transform.SetParent(shop, false);
-            light.transform.localPosition = new Vector3(0f, 2.4f, 3.4f);
-            light.type = LightType.Point;
-            light.range = 7f;
-            light.intensity = 1.3f;
-            light.color = new Color(1f, 0.85f, 0.6f);
-            light.shadows = LightShadows.None;
-
-            var owner = NpcAngler.Spawn(shop, new Vector3(1.2f, 0f, 2.75f), 0f, new CharacterLook { Name = "홍현 낚시점 최사장", Title = "홍현 낚시점", Female = true }, NpcAngler.Role.Talker);
-            owner.NpcId = "shop";
-            WorldBuilder.AddSign(shop, "홍현 낚시점", new Vector3(0f, 3.9f, 2.3f), new Color(0.6f, 0.85f, 1f));
-        }
+        void BuildShop() =>
+            TackleShopKit.Build(_root, _map.ShopPos, 0f, "홍현 낚시점", new CharacterLook { Name = "홍현 낚시점 최사장", Title = "홍현 낚시점", Female = true },
+                new Color(0.2f, 0.45f, 0.8f), _bulbs);
 
         void BuildFarIslands()
         {

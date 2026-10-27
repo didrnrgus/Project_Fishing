@@ -22,7 +22,7 @@ namespace Fishing.World
         }
 
         static Texture2D _seabed;
-        static float[] _seabedPx;
+        static float[] _seabedPx, _wallPx, _proxPx;
         static Rect _seabedArea;
         static int _seabedW, _seabedH;
 
@@ -38,20 +38,41 @@ namespace Fishing.World
             if (_seabed == null || _seabed.width != w || _seabed.height != h)
             {
                 if (_seabed != null) Object.Destroy(_seabed);
-                _seabed = new Texture2D(w, h, TextureFormat.RFloat, false, true) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, name = "Seabed" };
+                _seabed = new Texture2D(w, h, TextureFormat.RGBAFloat, false, true) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, name = "Seabed" };
             }
+            // R = 해저 높이, G = 방파제 자리 (1), B = 벽·뭍 가까움 (물 위로 나온 땅을 흐린 값 — 야광충이 벽 앞에서 넓게 번진다)
             var px = new float[w * h];
+            var wall = new float[w * h];
+            var land = new float[w * h];
+            var rg = new float[w * h * 4];
             for (int z = 0; z < h; z++)
             {
                 float wz = area.yMin + (z + 0.5f) / h * area.height;
                 for (int x = 0; x < w; x++)
-                    px[z * w + x] = map.SeabedAt(area.xMin + (x + 0.5f) / w * area.width, wz);
+                {
+                    float wx = area.xMin + (x + 0.5f) / w * area.width;
+                    int i = z * w + x;
+                    px[i] = map.SeabedAt(wx, wz);
+                    wall[i] = map.IsBuiltWall(wx, wz) ? 1f : 0f;
+                    land[i] = px[i] > map.BaseWaterY - 0.3f ? 1f : 0f;
+                }
             }
+            // 예전엔 셰이더가 픽셀마다 둘레 16곳 해저를 찍어 구했다 → 1m 칸 경계마다 값이 꺾여 빛이 각진 조각으로 보였다.
+            // 반지름 4칸 상자 흐림 세 번 (가우스 σ ≈ 4.5m에 가깝다)
+            var prox = BoxBlur(BoxBlur(BoxBlur(land, w, h, 4), w, h, 4), w, h, 4);
+            for (int i = 0; i < w * h; i++)
+            {
+                rg[i * 4] = px[i];
+                rg[i * 4 + 1] = wall[i];
+                rg[i * 4 + 2] = prox[i];
+            }
+            _proxPx = prox;
             _seabedPx = px;
+            _wallPx = wall;
             _seabedArea = area;
             _seabedW = w;
             _seabedH = h;
-            _seabed.SetPixelData(px, 0);
+            _seabed.SetPixelData(rg, 0);
             _seabed.Apply(false, false);
             Material.SetTexture("_SeabedTex", _seabed);
             Material.SetVector("_SeabedRect", new Vector4(area.xMin, area.yMin, 1f / area.width, 1f / area.height));
@@ -72,6 +93,71 @@ namespace Fishing.World
             int i = z0 * _seabedW + x0;
             height = Mathf.Lerp(Mathf.Lerp(_seabedPx[i], _seabedPx[i + 1], fx), Mathf.Lerp(_seabedPx[i + _seabedW], _seabedPx[i + _seabedW + 1], fx), fz);
             return true;
+        }
+
+        /// <summary>가로·세로 상자 흐림 (반지름 r칸, 가장자리는 잘라 평균).</summary>
+        static float[] BoxBlur(float[] src, int w, int h, int r)
+        {
+            var tmp = new float[w * h];
+            var dst = new float[w * h];
+            for (int z = 0; z < h; z++)
+            {
+                float sum = 0f;
+                int n = 0;
+                for (int x = -r; x <= r; x++) if (x >= 0 && x < w) { sum += src[z * w + x]; n++; }
+                for (int x = 0; x < w; x++)
+                {
+                    tmp[z * w + x] = sum / n;
+                    int add = x + r + 1, rem = x - r;
+                    if (add < w) { sum += src[z * w + add]; n++; }
+                    if (rem >= 0) { sum -= src[z * w + rem]; n--; }
+                }
+            }
+            for (int x = 0; x < w; x++)
+            {
+                float sum = 0f;
+                int n = 0;
+                for (int z = -r; z <= r; z++) if (z >= 0 && z < h) { sum += tmp[z * w + x]; n++; }
+                for (int z = 0; z < h; z++)
+                {
+                    dst[z * w + x] = sum / n;
+                    int add = z + r + 1, rem = z - r;
+                    if (add < h) { sum += tmp[add * w + x]; n++; }
+                    if (rem >= 0) { sum -= tmp[rem * w + x]; n--; }
+                }
+            }
+            return dst;
+        }
+
+        /// <summary>벽·뭍 가까움 0~1 (셰이더와 같은 값: 구운 B 채널 겹선형 → smoothstep(0, 0.42)).</summary>
+        public static float Proximity(float x, float z)
+        {
+            if (_proxPx == null) return 0f;
+            float u = (x - _seabedArea.xMin) / _seabedArea.width * _seabedW - 0.5f;
+            float v = (z - _seabedArea.yMin) / _seabedArea.height * _seabedH - 0.5f;
+            if (u < 0f || v < 0f || u > _seabedW - 1 || v > _seabedH - 1) return 0f;
+            int x0 = Mathf.Min((int)u, _seabedW - 2), z0 = Mathf.Min((int)v, _seabedH - 2), i = z0 * _seabedW + x0;
+            float fx = u - x0, fz = v - z0;
+            float p = Mathf.Lerp(Mathf.Lerp(_proxPx[i], _proxPx[i + 1], fx), Mathf.Lerp(_proxPx[i + _seabedW], _proxPx[i + _seabedW + 1], fx), fz);
+            float t = Mathf.Clamp01(p / 0.42f);
+            return t * t * (3f - 2f * t);
+        }
+
+        /// <summary>방파제 둘레 0~1: 셰이더처럼 가운데·네 이웃 칸(1m)의 G 채널 최댓값 (벽 둘레 2m 안).</summary>
+        public static float WallNear(float x, float z)
+        {
+            if (_wallPx == null) return 0f;
+            float sx = _seabedArea.width / _seabedW, sz = _seabedArea.height / _seabedH, m = 0f;
+            foreach (var (dx, dz) in new[] { (0f, 0f), (sx, 0f), (-sx, 0f), (0f, sz), (0f, -sz) })
+            {
+                float u = (x + dx - _seabedArea.xMin) / _seabedArea.width * _seabedW - 0.5f;
+                float v = (z + dz - _seabedArea.yMin) / _seabedArea.height * _seabedH - 0.5f;
+                if (u < 0f || v < 0f || u > _seabedW - 1 || v > _seabedH - 1) continue;
+                int x0 = Mathf.Min((int)u, _seabedW - 2), z0 = Mathf.Min((int)v, _seabedH - 2), i = z0 * _seabedW + x0;
+                float fx = u - x0, fz = v - z0;
+                m = Mathf.Max(m, Mathf.Lerp(Mathf.Lerp(_wallPx[i], _wallPx[i + 1], fx), Mathf.Lerp(_wallPx[i + _seabedW], _wallPx[i + _seabedW + 1], fx), fz));
+            }
+            return Mathf.Clamp01((m - 0.02f) / 0.28f);
         }
 
         /// <summary>

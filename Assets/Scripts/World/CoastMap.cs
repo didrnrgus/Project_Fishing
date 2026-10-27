@@ -582,6 +582,7 @@ namespace Fishing.World
         public override List<FishSchool> CreateSchools() => S.Schools();
 
         public override float SeabedAt(float x, float z) => OnBreakwater(new Vector3(x, 0f, z)) ? LandY : HeightAt(x, z);
+        public override bool IsBuiltWall(float x, float z) => OnBreakwater(new Vector3(x, 0f, z));
         // 섬 맵은 남쪽까지 바다가 감싸므로 지형 전체
         public override Rect SeabedArea => S.LandHalfWidth > 0f ? new Rect(-205f, -195f, 410f, 455f) : new Rect(-205f, -70f, 410f, 330f);
 
@@ -859,6 +860,17 @@ namespace Fishing.World
                     _props.TetrapodBank(new Vector3(side, 0f, b.Stem.yMin + 6f), new Vector3(side, 0f, b.Stem.yMax + 2f), new Vector3(sgn, 0f, 0f), _map.BaseWaterY, tetra);
                 if (b.Arm.width > 0f && !b.NoTetrapods)
                     _props.TetrapodBank(new Vector3(b.Arm.xMin, 0f, b.Arm.yMax + 0.5f), new Vector3(b.Arm.xMax, 0f, b.Arm.yMax + 0.5f), Vector3.forward, _map.BaseWaterY, tetra);
+                // 끝 둥근 더미 (사진: 등대 선 끝을 반원으로 감싼다): 팔이 있으면 몸통에서 먼 팔 끝, 없으면 몸통 끝
+                if (!b.NoTetrapods)
+                {
+                    if (b.Arm.width > 0f)
+                    {
+                        bool west = Mathf.Abs(b.Arm.xMin - b.Stem.center.x) > Mathf.Abs(b.Arm.xMax - b.Stem.center.x);
+                        _props.TetrapodHead(new Vector3(west ? b.Arm.xMin : b.Arm.xMax, 0f, b.Arm.center.y), west ? Vector3.left : Vector3.right, b.Arm.height * 0.5f, _map.BaseWaterY, tetra);
+                    }
+                    else
+                        _props.TetrapodHead(new Vector3(b.Stem.center.x, 0f, b.Stem.yMax), Vector3.forward, b.Stem.width * 0.5f, _map.BaseWaterY, tetra);
+                }
                 if (b.Light.a > 0f)
                 {
                     var lp = CoastMapDef.LighthousePos(b);

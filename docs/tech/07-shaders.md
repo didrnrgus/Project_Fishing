@@ -13,8 +13,10 @@ Built-in 렌더 파이프라인의 Surface Shader로 썼다. 비싼 기능(깊�
 ```
 WaterSurface.SetSeabed(map):
   맵 범위를 1m 간격(최대 512×512)으로 훑어
-  texel = map.SeabedAt(x, z)      // 물 밑 땅 높이 (방파제·바위기둥은 그 윗면 높이)
-  → RFloat 텍스처 _SeabedTex + 범위 _SeabedRect + 텍셀 크기 _SeabedStep
+  R = map.SeabedAt(x, z)          // 물 밑 땅 높이 (방파제·바위기둥은 그 윗면 높이)
+  G = map.IsBuiltWall(x, z)       // 방파제 자리 1 → 둘레 2m는 얕은 물빛·거품을 지운다 (1m 칸 비탈이 벽 앞에 밝은 띠를 만들었다)
+  B = 물 위로 나온 땅(0/1)을 반지름 4칸 상자 흐림 세 번 // 벽·뭍 가까움 (야광충이 벽 앞에서 넓게 번진다, C#은 WaterSurface.Proximity)
+  → RGBAFloat 텍스처 _SeabedTex + 범위 _SeabedRect + 텍셀 크기 _SeabedStep
 ```
 
 높이 함수([06](06-procedural-terrain.md))가 있으니 그대로 샘플링하면 된다.

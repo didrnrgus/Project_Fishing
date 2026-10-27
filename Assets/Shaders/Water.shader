@@ -25,7 +25,7 @@ Shader "Fishing/Water"
         _WaveAmp ("Wave Amplitude", Float) = 0.05
         _WaveLen ("Wave Length", Float) = 9
         _Smoothness ("Smoothness", Range(0,1)) = 0.93
-        _SeabedTex ("Seabed Height (R, world y)", 2D) = "black" {}
+        _SeabedTex ("Seabed Height (R, world y) + Breakwater (G) + Shore Proximity (B)", 2D) = "black" {}
         _SeabedRect ("Seabed Rect (xmin, zmin, 1/w, 1/h)", Vector) = (0,0,0,0)
         _SeabedStep ("Seabed texel (u, v, meters x, meters z)", Vector) = (0,0,1,1)
         _HasSeabed ("Has Seabed", Float) = 0
@@ -67,28 +67,45 @@ Shader "Fishing/Water"
         }
 
         // ---- 야광충 ----
-        // 파도 앞 위상: 물가까지 거리 dist와 시간으로 물가 쪽으로 밀려오고, 사인 두 개로 앞줄이 굽는다.
+        // 사용자 참고 사진(2026-10-27): 빛은 물가를 따라 겹겹이 밀려오는 가는 레이스 같은 파도 앞줄에 몰리고(맨 앞이 가장 밝다),
+        // 줄 뒤(바다 쪽)는 모래알처럼 자글자글한 빛 점이 깔렸다가 옅어진다. 바위·벽 앞은 부서진 물이 구름처럼 뿌옇게 번진다.
+        // 파도 앞 위상: 물가까지 거리 dist와 시간으로 물가 쪽으로 밀려오고, 사인 둘 + 값 노이즈 둘(레이스처럼 구불구불)로 앞줄이 굽는다.
         // BioluminescenceFx.cs의 FrontGlow와 같은 식이어야 파티클이 빛나는 파도 앞에서 튄다
         float BioSaw(float2 p, float dist, float t)
         {
-            float wob = 2.2 * sin(p.x * 0.31 + p.y * 0.13 + t * 0.21) + 1.4 * sin(p.y * 0.41 - p.x * 0.53 - t * 0.33);
+            float wob = 2.2 * sin(p.x * 0.31 + p.y * 0.13 + t * 0.21) + 1.4 * sin(p.y * 0.41 - p.x * 0.53 - t * 0.33)
+                      + (FishNoise(p * 0.45) - 0.5) * 2.6 + (FishNoise(p * 1.7 + 7.0) - 0.5) * 0.8;
             return frac((dist * 1.4 + t * 1.1 + wob) / 6.2831);
         }
 
-        // 파도 앞이 군데군데만 부서진다 (10m쯤 되는 덩어리가 천천히 옮겨 간다). 0~1
+        // 파도 앞 밝기가 군데군데 다르다 (10m쯤 되는 덩어리가 천천히 옮겨 간다). 꺼지지는 않는다 (사진은 앞줄이 길게 이어진다). 0.35~1
         float BioPatch(float2 p, float t)
         {
-            return smoothstep(0.3, 0.72, FishNoise(p * 0.11 + float2(t * 0.04, -t * 0.025)));
+            return 0.35 + 0.65 * smoothstep(0.25, 0.75, FishNoise(p * 0.11 + float2(t * 0.04, -t * 0.025)));
         }
 
-        // 막 지나간 파도 앞(saw 0)이 가장 밝고 바다 쪽(saw 1)으로 꼬리를 끌며 꺼진다. 앞쪽 끝은 몇 cm 부드럽게.
-        // 꼬리는 부서진 물처럼 얼룩진다 (churn). C#도 같은 식 (churn 빼고)
-        float BioFront(float2 p, float dist, float t, float churn)
+        // 자글자글한 빛 점 (사진: 모래알처럼 빽빽한 반짝임). 멀어서 한 픽셀에 여러 점이 들면 평균값으로 (반짝이는 계단 무늬 없이). 0~1
+        float BioSpeckle(float2 p, float t, float fw)
+        {
+            float a = FishNoise(p * 7.0 + float2(t * 0.35, 0));
+            float b = FishNoise(p * 15.0 + float2(3.1, -t * 0.5));
+            float sp = saturate((a * 0.5 + b * 0.5 - 0.44) * 3.4);
+
+            return lerp(sp, 0.38, saturate(fw * 9.0 - 0.25));
+        }
+
+        // 한 파도: 맨 앞(saw 0) 가는 밝은 줄 + 바로 뒤 겹줄(앞 파도가 남긴 레이스) + 바다 쪽으로 옅어지는 자글자글한 빛 판.
+        // 앞쪽 끝은 1cm 남짓 부드럽게. C#도 같은 식 (speck = 평균 0.38)
+        float BioFront(float2 p, float dist, float t, float speck)
         {
             float s = BioSaw(p, dist, t);
             float k = 1 - s;
-            float tail = k * k * k;
-            return smoothstep(0.0, 0.03, s) * (pow(k, 18) * 0.9 + tail * (0.25 + churn));
+            float on = smoothstep(0.0, 0.012, s);
+            float edge = pow(k, 45) * (0.75 + 0.25 * speck);
+            float d2 = (s - 0.22) / 0.03;
+            float lace = exp(-d2 * d2) * 0.4 * smoothstep(0.35, 0.7, FishNoise(p * 0.6 + 11.0));
+            float sheet = pow(k, 2.5) * (0.1 + speck * 0.9) * 0.6;
+            return on * (edge + sheet) + lace * (0.5 + speck * 0.5);
         }
 
         // 칸마다 하나씩 흩어진 빛 알갱이가 저마다의 박자로 깜빡인다 (density = 1m에 몇 칸)
@@ -138,6 +155,7 @@ Shader "Fishing/Water"
         void surf(Input IN, inout SurfaceOutputStandard o)
         {
             float2 p = IN.worldPos.xz;
+            float pixFw = length(fwidth(p));   // 한 픽셀이 덮는 물 넓이 (자글자글한 빛 점을 멀면 평균으로) — 분기 밖에서 구한다
             float3 n1 = tex2D(_NormalTex, p * _Tiling1 + _Time.y * _Speed1.xy).rgb * 2 - 1;
             float3 n2 = tex2D(_NormalTex, p * _Tiling2 + _Time.y * _Speed2.xy).rgb * 2 - 1;
             float3 n = normalize(float3((n1.xy + n2.xy) * _NormalScale, 1));
@@ -156,8 +174,14 @@ Shader "Fishing/Water"
                 float2 uv = (p - _SeabedRect.xy) * _SeabedRect.zw;
                 if (uv.x > 0 && uv.x < 1 && uv.y > 0 && uv.y < 1)
                 {
-                    float bed = tex2D(_SeabedTex, uv).r;
+                    float2 sb = tex2D(_SeabedTex, uv).rg;
+                    float bed = sb.r;
                     float depth = IN.worldPos.y - bed;
+                    // 방파제 둘레 (G = 방파제 자리): 1m 칸 해저가 벽 둘레 1~2m를 얕은 비탈처럼 만들어 밝은 물·흰 거품 띠가 벽과 물 사이에 끼었다
+                    // (2026-10-27 사용자: "방파제가 벽에서 떨어져 보인다"). 가운데·네 이웃 칸 중 최댓값으로 2m 안을 벽 앞으로 본다
+                    float built = max(sb.g, max(max(tex2D(_SeabedTex, uv + float2(_SeabedStep.x, 0)).g, tex2D(_SeabedTex, uv - float2(_SeabedStep.x, 0)).g),
+                                                max(tex2D(_SeabedTex, uv + float2(0, _SeabedStep.y)).g, tex2D(_SeabedTex, uv - float2(0, _SeabedStep.y)).g)));
+                    built = smoothstep(0.02, 0.3, built);
                     // 해저 경사 (m/m) → 물가까지 수평 거리 어림. 벽(호안·방파제)은 경사가 커서 띠가 얇다
                     float bx = (tex2D(_SeabedTex, uv + float2(_SeabedStep.x, 0)).r - tex2D(_SeabedTex, uv - float2(_SeabedStep.x, 0)).r) / (2 * _SeabedStep.z);
                     float bz = (tex2D(_SeabedTex, uv + float2(0, _SeabedStep.y)).r - tex2D(_SeabedTex, uv - float2(0, _SeabedStep.y)).r) / (2 * _SeabedStep.w);
@@ -165,7 +189,7 @@ Shader "Fishing/Water"
                     float dist = max(depth, 0) / slope;
 
                     // 바닥이 비치는 얕은 물: 수심 2.5m보다 얕으면 밝고 맑게
-                    float shallow = 1 - saturate(depth / 2.5);
+                    float shallow = (1 - saturate(depth / 2.5)) * (1 - built);
                     o.Albedo = lerp(o.Albedo, o.Albedo * 1.3 + float3(0.07, 0.08, 0.06), shallow * shallow * 0.75);
 
                     // 거품: 물가 쪽으로 밀려오는 띠 + 노이즈로 끊긴 가장자리
@@ -178,6 +202,7 @@ Shader "Fishing/Water"
                     float foam = saturate(edge * edge * 1.5 + edge * lap * 0.75);
                     foam *= smoothstep(0.32, 0.62, noise + edge * 0.45);
                     foam = saturate(foam + step(depth, 0.05) * 0.9);   // 물이 땅에 닿는 선은 늘 하얗게
+                    foam *= 1 - built * 0.92;                            // 방파제 앞은 깊은 물이 벽에 바로 닿는다
                     o.Albedo = lerp(o.Albedo, _FoamColor.rgb, foam);
                     o.Smoothness = lerp(o.Smoothness, 0.35, foam);
                     o.Normal = normalize(lerp(n, float3(0, 0, 1), foam * 0.8));
@@ -186,45 +211,32 @@ Shader "Fishing/Water"
                     float bio = _BioGlow * _GlintNight;
                     if (bio > 0.01)
                     {
-                        // 부서진 물 얼룩: 물결 노멀(fbm 기울기)이라 값 노이즈처럼 네모 칸이 보이지 않는다
-                        float c1 = tex2D(_NormalTex, p * 0.33 + t * float2(0.045, -0.03)).r;
-                        float c2 = tex2D(_NormalTex, p * 0.71 - t * float2(0.03, 0.05)).g;
-                        float churn = smoothstep(0.42, 0.68, c1 * 0.6 + c2 * 0.4) * 0.9;
+                        float speck = BioSpeckle(p, t, pixFw);
                         // 벽(호안·방파제) 앞 깊은 물은 몇십 cm 사이에 dist가 0→십몇 m로 뛰어 벽을 따라 날카로운 띠가 생겼다 (2026-10-27 사용자: "인위적").
-                        // 벽 가까움(prox): 둘레 16방향 × 2~12m 해저를 살펴 물 위로 나온 땅의 몫을 거리 가중으로 더한다 → 벽에서 10m 남짓까지 부드럽게 옅어진다.
-                        // 샘플 반지름을 픽셀마다 흔들어 고리 무늬를 지우고, 그 가까움으로 가짜 거리를 만들어 파도 앞이 벽 쪽으로 밀려오게 한다
-                        float wallK = smoothstep(0.8, 2.0, depth);
-                        float prox = 0;
-                        if (wallK > 0.01)
-                        {
-                            float jit = 0.7 + 0.6 * FishNoise(p * 0.9);   // 연속 노이즈 (칸 해시는 네모 무늬가 보였다)
-                            float wsum = 0;
-                            for (int k = 0; k < 16; k++)
-                            {
-                                float a = k * 0.3927 + jit;
-                                float2 dir = float2(cos(a), sin(a));
-                                float r = (2.0 + (float)(k & 3) * 3.2) * jit;      // 2 ~ 12m
-                                float2 uv2 = uv + dir * r * _SeabedRect.zw;
-                                float land = smoothstep(IN.worldPos.y - 1.2, IN.worldPos.y + 0.3, tex2Dlod(_SeabedTex, float4(uv2, 0, 0)).r);
-                                float w = 1.0 / (0.6 + r * 0.25);
-                                prox += land * w;
-                                wsum += w;
-                            }
-                            prox = smoothstep(0.0, 0.42, prox / wsum);
-                            // 큰 덩어리 노이즈로 경계를 들쭉날쭉하게
-                            prox *= 0.55 + 0.45 * FishNoise(p * 0.08 + t * 0.02);
-                        }
+                        // 그래서 벽 앞은 벽 가까움(prox)으로 가짜 거리를 만들어 파도 앞이 벽 쪽으로 넓게 밀려오게 한다.
+                        // 물가에서 먼 곳(dist가 거품 폭 2~4배 넘게)도 벽 앞 방식으로: 평평한 항구 바닥은 1m 칸 해저 비탈로 구한 dist의 등고선이 칸을 따라 꺾여
+                        // 파도 앞이 네모난 조각으로 끊겼다. 거리 어림이 믿을 만한 곳은 물가 바로 앞뿐
+                        float wallK = max(max(smoothstep(0.8, 2.0, depth), built), smoothstep(_FoamWidth * 2.0, _FoamWidth * 4.0, dist));
+                        // 벽 가까움(prox): 맵을 읽을 때 물 위로 나온 땅을 σ 4.5m쯤 흐려 B 채널에 구워 둔 값 (WaterSurface.SetSeabed) → 벽에서 10m 남짓까지 매끈하게 옅어진다.
+                        // (예전엔 픽셀마다 둘레 16곳 해저를 찍어 구해서 1m 칸 경계마다 꺾인 각진 빛 조각이 보였다)
+                        float prox = smoothstep(0.0, 0.42, tex2D(_SeabedTex, uv).b);
+                        // 파도 위상은 매끈한 가까움으로만 (예전엔 덩어리 노이즈를 곱한 가까움으로 위상을 만들어, 톱니가 끊기는 등고선이
+                        // 구멍 난 얼룩 테두리로 또렷하게 보였다). 들쭉날쭉함은 밝기에만 (proxAmt)
+                        float proxAmt = prox * (0.55 + 0.45 * FishNoise(p * 0.08 + t * 0.02));
                         float pseudo = (1 - prox) * _FoamWidth * 3.0;
-                        float front = BioFront(p, lerp(dist, pseudo, wallK), t, churn);
-                        // 벽 앞은 날카로운 파도 앞 대신 넓고 완만하게 밀려오는 빛 (덩어리 가장자리가 또렷하지 않게)
+                        float front = BioFront(p, lerp(dist, pseudo, wallK), t, speck);
+                        // 벽·바위 앞은 날카로운 파도 앞 대신 넓고 완만하게 밀려와 구름처럼 뿌옇게 번지는 빛 (사진: 갯바위에 부서진 물):
+                        // 앞줄도 12%에 걸쳐 차오르고(톱니가 넘어가는 자리에 경계 없이), 두 겹 흐르는 노이즈로 뭉게뭉게, 위에 자글자글한 점
                         float saw = BioSaw(p, pseudo, t);
-                        float soft = pow(saturate(1 - saw), 2.0) * (0.7 + churn * 0.4);
-                        front = lerp(front, soft, wallK * 0.8);
-                        // 흰 하이라이트: 밀려오는 빛의 맨 앞줄만 가늘게, 부서진 물 얼룩(churn)·덩어리 노이즈로 군데군데 끊긴 흰빛 물마루
-                        float crest = smoothstep(0.0, 0.03, saw) * pow(saturate(1 - saw), 22) * smoothstep(0.2, 0.75, churn + FishNoise(p * 0.35 + t * 0.1) * 0.6);
+                        float cloud = FishNoise(p * 0.5 + float2(t * 0.15, 0)) * 0.6 + FishNoise(p * 0.19 - float2(0, t * 0.06)) * 0.8;
+                        float soft = smoothstep(0.0, 0.12, saw) * pow(saturate(1 - saw), 2.0) * (0.25 + cloud * 0.7) * (0.55 + speck * 0.6);
+                        front = lerp(front, soft, wallK);
+                        // 흰 하이라이트: 밀려오는 빛의 맨 앞줄만 가늘게, 덩어리 노이즈로 군데군데 끊긴 흰빛 물마루 (벽 앞은 앞줄도 부드럽게 차오른다)
+                        float crest = smoothstep(0.0, lerp(0.012, 0.08, wallK), saw) * pow(saturate(1 - saw), lerp(60, 22, wallK)) * smoothstep(0.25, 0.7, FishNoise(p * 0.35 + t * 0.1));
+                        prox = proxAmt;
                         float zone = lerp(smoothstep(_FoamWidth * 4.0, _FoamWidth * 0.3, dist), prox, wallK);
                         float wave = front * zone * BioPatch(p, t);
-                        float grains = BioGrains(p, 3.2, t) * saturate(foam * 0.4 + zone * 0.5) + BioGrains(p * 0.61 + 17.3, 2.4, t) * step(depth, 0.35) * 0.6;
+                        float grains = BioGrains(p, 3.2, t) * saturate(foam * 0.2 + zone * 0.5) + BioGrains(p * 0.61 + 17.3, 2.4, t) * step(depth, 0.35) * 0.6;
                         // 물가에서 조금 떨어진 곳의 드문 빛 점 (벽 앞도 가까움만큼)
                         float dots = BioGrains(p * 0.37 + 5.1, 1.6, t * 0.6) * max(saturate(1 - dist / (_FoamWidth * 6)) * (1 - wallK), prox);
                         o.Albedo = lerp(o.Albedo, o.Albedo * 0.2, bio);   // 밤엔 흰 거품이 아니라 빛만 보이게
