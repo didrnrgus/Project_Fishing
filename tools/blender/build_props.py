@@ -9,6 +9,7 @@
   felucca          나일강 펠루카: 흰 나무배 + 비스듬한 긴 활대에 큰 삼각돛
   junk             하롱베이 정크선: 갈색 나무배, 높은 고물, 대나무 살을 댄 주황 돛 세 장
   (한강 둔치 텐트·그늘막은 props_camp.py)
+  (방파제·호안 계선주·방충재·인명구조함은 props_harbor.py)
   (새 해외 맵 소품 — 대불·머라이언·독수리·롱테일 보트·열기구·파라솔·망루·사자상·난파선은 props_sea.py)
 """
 import math
@@ -170,6 +171,8 @@ import boats  # noqa: E402  (배: 한국 연안 어선·모터보트·고무보�
 PROPS.update(boats.PROPS)
 import props_camp  # noqa: E402  (한강 둔치: 원터치 돔 텐트·그늘막)
 PROPS.update(props_camp.PROPS)
+import props_harbor  # noqa: E402  (한국 포구 방파제·호안: 계선주·쌍계주·타이어/고무 방충재·인명구조함)
+PROPS.update(props_harbor.PROPS)
 
 
 def export(pid, objs):

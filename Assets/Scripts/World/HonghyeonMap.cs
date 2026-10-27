@@ -175,8 +175,11 @@ namespace Fishing.World
             // 해안 땅은 지형(SeaTerrain). 마을 길과 포구 앞 호안(콘크리트 벽)만 따로
             Mats.Prim(PrimitiveType.Cube, "CoastRoad", _root, new Vector3(0f, _map.LandY + 0.03f, -62f), new Vector3(420f, 0.14f, 7f),
                 Mats.TexturedBox("asphalt", Color.white, new Vector2(420f, 7f), 6f, 0.15f), false);
-            Mats.Prim(PrimitiveType.Cube, "Seawall", _root, new Vector3(30f, _map.LandY - 1.2f, HonghyeonDef.ShoreZ - 0.4f),
-                new Vector3(90f, 3.2f, 1f), Mats.Quay(new Color(0.85f, 0.85f, 0.83f)));
+            HarborKit.QuayWall(_root, -15f, 75f, _ => HonghyeonDef.ShoreZ - 0.4f, _map.LandY + 0.4f, _map.LandY - 2.8f, _map.WaterY,
+                Mats.Quay(new Color(0.85f, 0.85f, 0.83f)), _rng, true);
+            // 앞마당 잡동사니 (어촌계 정계장 자리·방파제 뿌리는 비운다)
+            foreach (float x in new[] { -8f, 6f, 44f, 58f })
+                HarborKit.QuayClutter(_root, new Vector3(x + R(-2f, 2f), _map.LandY + 0.1f, HonghyeonDef.ShoreZ - R(2.8f, 5f)), R(0f, 360f), _rng);
             Mats.Prim(PrimitiveType.Cube, "HarborApron", _root, new Vector3(30f, _map.LandY + 0.03f, -47f), new Vector3(70f, 0.14f, 13f),
                 Mats.TexturedBox("concrete", new Color(0.8f, 0.8f, 0.78f), new Vector2(70f, 13f), 4f, 0.2f), false);
 
@@ -220,23 +223,24 @@ namespace Fishing.World
             var b = HonghyeonDef.Breakwater;
             var bw = new GameObject("Breakwater").transform;
             bw.SetParent(_root, false);
-            float bottom = _map.WaterY - 4f;
-            float h = _map.LandY - bottom;
-            Mats.Prim(PrimitiveType.Cube, "Body", bw, new Vector3(b.center.x, bottom + h * 0.5f, b.center.y), new Vector3(b.width, h, b.height),
-                Mats.Quay(new Color(0.92f, 0.92f, 0.9f)));
-            Mats.Prim(PrimitiveType.Cube, "Parapet", bw, new Vector3(b.xMin + 0.3f, _map.LandY + 0.6f, b.center.y), new Vector3(0.6f, 1.2f, b.height),
-                Mats.Quay(new Color(0.78f, 0.78f, 0.76f)), false);
+            // HarborKit: 10m 타설 블록, 서쪽 1.4m 파라펫(디딤단 없이 안쪽 면이 곧아서 벽화가 붙는다), 동쪽 안쪽 시설 (연석·계선주·타이어·사다리)
+            HarborKit.Breakwater(bw, "Body", new HarborKit.BreakwaterSpec
+            {
+                Rect = b, AlongZ = true, ParapetSide = -1, TopY = _map.LandY, BottomY = _map.WaterY - 4f, WaterY = _map.WaterY,
+                ParapetH = 1.4f, ParapetW = 0.9f, Fittings = true, LifeRing = true, NoStep = true,
+                Tint = new Color(0.92f, 0.92f, 0.9f), ParapetTint = new Color(0.78f, 0.78f, 0.76f),
+            }, _rng);
 
             // 사진(홍현 방파제): 난간벽 안쪽에 파란 바다 벽화와 고래 그림
             var muralBlue = Mats.Lit(new Color(0.16f, 0.38f, 0.68f), 0.3f);
             var muralDeep = Mats.Lit(new Color(0.1f, 0.22f, 0.45f), 0.3f);
             var muralWhite = Mats.Lit(new Color(0.92f, 0.94f, 0.96f), 0.3f);
-            float mx = b.xMin + 0.62f;
-            Mats.Prim(PrimitiveType.Cube, "Mural", bw, new Vector3(mx, _map.LandY + 0.6f, b.center.y), new Vector3(0.04f, 1.05f, b.height - 4f), muralBlue, false);
+            float mx = b.xMin + 0.92f;
+            Mats.Prim(PrimitiveType.Cube, "Mural", bw, new Vector3(mx, _map.LandY + 0.68f, b.center.y), new Vector3(0.04f, 1.2f, b.height - 4f), muralBlue, false);
             for (float z = b.yMin + 6f; z < b.yMax - 6f; z += 11f)
             {
                 // 고래: 납작한 몸통 + 꼬리 두 갈래 + 흰 배
-                var whale = new Vector3(mx + 0.03f, _map.LandY + 0.62f + R(-0.08f, 0.1f), z);
+                var whale = new Vector3(mx + 0.03f, _map.LandY + 0.72f + R(-0.08f, 0.1f), z);
                 Mats.Prim(PrimitiveType.Sphere, "Whale", bw, whale, new Vector3(0.05f, 0.42f, 2.1f), muralDeep, false);
                 Mats.Prim(PrimitiveType.Sphere, "WhaleBelly", bw, whale + new Vector3(0.01f, -0.1f, 0.2f), new Vector3(0.05f, 0.17f, 1.3f), muralWhite, false);
                 foreach (float s in new[] { -1f, 1f })
@@ -435,7 +439,7 @@ namespace Fishing.World
 
             // 방파제와 섬의 갯바위 꾼들
             NpcAngler.Spawn(parent, new Vector3(b.xMax - 1f, _map.LandY, b.yMin + 18f), 70f, new CharacterLook { Name = "감생이사냥꾼", Title = "5짜 감성돔 2회" }, NpcAngler.Role.Angler);
-            NpcAngler.Spawn(parent, new Vector3(b.xMin + 1.2f, _map.LandY, b.yMax - 8f), -20f, new CharacterLook { Name = "밤볼락", Title = "볼락 루어 고수", Female = true }, NpcAngler.Role.Angler);
+            NpcAngler.Spawn(parent, new Vector3(b.xMin + 1.5f, _map.LandY, b.yMax - 8f), -20f, new CharacterLook { Name = "밤볼락", Title = "볼락 루어 고수", Female = true }, NpcAngler.Role.Angler);
             var isl = HonghyeonDef.Islands[0];
             NpcAngler.Spawn(parent, new Vector3(isl.x + 4f, _map.LandY, isl.z + 8f), 10f, new CharacterLook { Name = "홍현토박이", Title = "갯바위 40년" }, NpcAngler.Role.Angler);
         }

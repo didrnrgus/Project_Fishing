@@ -5,6 +5,8 @@
 //  - 빗물 자국: 세로 면에 위에서 아래로 흘러내린 거뭇한 줄 (_Streaks)
 //  - 이끼·먼지: 위를 보는 면과 틈에 _MossColor 얼룩 (_Moss)
 //  - 큰 얼룩: Ground 셰이더처럼 수 m 단위 밝기 흔들림으로 반복 무늬를 감춘다
+//  - 바닥 때 (_Grime): 위를 보는 면에 갈라진 금(보로노이 경계를 노이즈로 휘고 군데군데만), 기름·물 얼룩, 얕은 물웅덩이(번들, 법선 평평)
+//  - 버텍스 AO (_VertexAO): 절차 메쉬(HarborKit)가 꼭짓점 색에 구운 틈·밑동 그늘과 블록마다 다른 타설 색을 곱한다 (기본 0 = 안 씀)
 // 텍스처 색 × _Color(FBX 원래 색을 넘겨받는다)라서 Blender 소품의 부위별 색은 그대로 두고 결만 입힌다.
 Shader "Fishing/Weathered"
 {
@@ -28,6 +30,8 @@ Shader "Fishing/Weathered"
         _Moss ("Moss", Range(0,1)) = 0.3
         _MossColor ("Moss Color", Color) = (0.32,0.36,0.2,1)
         _Variation ("Macro Variation", Range(0,1)) = 0.6
+        _VertexAO ("Vertex Color AO", Range(0,1)) = 0
+        _Grime ("Floor Grime (cracks, stains, puddles)", Range(0,1)) = 0
         _PaletteTex ("Palette (mesh UV, Kenney)", 2D) = "white" {}
         _UsePalette ("Use Palette", Float) = 0
         _PaletteDesat ("Palette Desaturate", Range(0,1)) = 0
@@ -54,13 +58,14 @@ Shader "Fishing/Weathered"
         fixed4 _EmissionColor; // 세로 면(X·Z 투영)용. Mats.Weathered가 따로 안 주면 윗면과 같은 텍스처를 넣는다
         fixed4 _Color, _MossColor, _TexAvg, _SideAvg;
         half _Contrast;
-        half _BumpScale, _Glossiness, _Metallic, _Desat, _Wet, _Streaks, _Moss, _Variation;
+        half _BumpScale, _Glossiness, _Metallic, _Desat, _Wet, _Streaks, _Moss, _Variation, _VertexAO, _Grime;
         float _Tile;
         float _FishingWetY; // 전역: 맵마다 만조선 높이 (CoastWorldBuilder 등이 넣는다). 0이면 물가가 y=0 근처
 
         struct Input
         {
-            float2 uv_PaletteTex;
+            // (이름이 uv로 시작하면 서피스 셰이더가 텍스처 좌표로 여긴다) xy = 메쉬 UV (팔레트·발광), z = 꼭짓점 색 밝기, w = 꼭짓점 색 r - b (누런/푸른 기운). 보간기 10개 한도라 한 칸에 묶는다
+            float4 meshAO;
             float3 worldPos;
             float3 wNormal;
         };
@@ -69,6 +74,7 @@ Shader "Fishing/Weathered"
         {
             UNITY_INITIALIZE_OUTPUT(Input, o);
             o.wNormal = UnityObjectToWorldNormal(v.normal);
+            o.meshAO = float4(v.texcoord.xy, v.color.g, v.color.r - v.color.b);
             // UV·탄젠트가 없는 메쉬도 법선맵이 깨지지 않게 탄젠트를 법선에서 만든다 (트라이플래너라 방향은 상관없다)
             // surf에서 같은 식으로 월드 탄젠트를 다시 만들므로, 월드에서 정한 뒤 물체 공간으로 되돌려 넣는다 (회전·크기와 무관하게 맞는다)
             float3 n = normalize(o.wNormal);
@@ -118,13 +124,44 @@ Shader "Fishing/Weathered"
             fixed3 paint = _Color.rgb;
             if (_UsePalette > 0.5)
             {
-                fixed3 pal = tex2D(_PaletteTex, IN.uv_PaletteTex).rgb;
+                fixed3 pal = tex2D(_PaletteTex, IN.meshAO.xy).rgb;
                 paint *= lerp(pal, dot(pal, fixed3(0.299, 0.587, 0.114)).xxx, _PaletteDesat);
             }
             fixed3 colTex = c * paint;
             colTex = lerp(colTex, colTex * 0.55, wet);
             colTex = lerp(colTex, fixed3(0.2, 0.22, 0.15) * (0.6 + lum0), slime * 0.7);
             colTex = lerp(colTex, fixed3(0.62, 0.6, 0.55), barn * 0.6);
+            colTex *= lerp(fixed3(1, 1, 1), IN.meshAO.z + float3(0.5, 0, -0.5) * IN.meshAO.w, _VertexAO);
+
+            // 바닥 때: 위를 보는 면만
+            float floorUp = smoothstep(0.75, 0.95, nW.y) * _Grime;
+            float puddle = 0, stain = 0;
+            if (floorUp > 0.001)
+            {
+                // 갈라진 금: 보로노이 경계(F2 - F1, 칸 ≈ 2m). 좌표를 노이즈로 휘어 곧은 다각형이 안 보이게, 큰 노이즈로 군데군데만,
+                // 선 위에서도 잔노이즈로 끊어 한 줄씩 갈라진 것처럼 (빈틈없는 칸 무늬면 보도블록처럼 보였다)
+                float2 q = p.xz * 0.5 + (float2(FishNoise(p.xz * 2.3), FishNoise(p.xz * 2.3 + 7.1)) - 0.5) * 0.3;
+                float2 ci = floor(q), cf = frac(q);
+                float f1 = 8, f2 = 8;
+                for (int j = -1; j <= 1; j++)
+                for (int i = -1; i <= 1; i++)
+                {
+                    float2 cell = float2(i, j);
+                    float2 r = cell + float2(FishHash(ci + cell), FishHash(ci + cell + 17.3)) - cf;
+                    float d = dot(r, r);
+                    if (d < f1) { f2 = f1; f1 = d; } else if (d < f2) f2 = d;
+                }
+                float crack = (1 - smoothstep(0.0, 0.016, sqrt(f2) - sqrt(f1)))
+                            * smoothstep(0.6, 0.78, FishNoise(p.xz * 0.15 + 11.7))
+                            * smoothstep(0.35, 0.6, FishNoise(p.xz * 3.7 + 2.2)) * floorUp;
+                colTex *= 1 - 0.42 * crack;
+                // 기름·물 얼룩 (짙고 살짝 번들)
+                stain = smoothstep(0.62, 0.8, FishNoise(p.xz * 0.45 + 3.1) * 0.7 + FishNoise(p.xz * 1.7) * 0.3) * floorUp;
+                colTex *= 1 - 0.3 * stain;
+                // 얕은 물웅덩이: 수 m 노이즈의 높은 곳, 가장자리 좁게
+                puddle = smoothstep(0.7, 0.75, FishNoise(p.xz * 0.12 + 5.5) * 0.75 + FishNoise(p.xz * 0.6) * 0.25) * floorUp;
+                colTex = lerp(colTex, colTex * 0.6, puddle);
+            }
             o.Albedo = colTex;
 
         #if defined(_NORMALMAP)
@@ -139,11 +176,11 @@ Shader "Fishing/Weathered"
             // 월드 법선 → 탄젠트 공간 (vert에서 만든 탄젠트와 같은 축)
             float3 T = abs(nW.y) < 0.99 ? normalize(cross(float3(0, 1, 0), nW)) : normalize(cross(float3(1, 0, 0), nW));
             float3 B = cross(nW, T);
-            o.Normal = normalize(float3(dot(nB, T), dot(nB, B), dot(nB, nW)));
+            o.Normal = normalize(lerp(float3(dot(nB, T), dot(nB, B), dot(nB, nW)), float3(0, 0, 1), puddle));
         #endif
-            o.Smoothness = saturate(lerp(_Glossiness * lerp(0.7, 1.2, macro), 0.62, wet * 0.8) * (1 - moss * 0.6));
+            o.Smoothness = max(saturate(lerp(_Glossiness * lerp(0.7, 1.2, macro), 0.62, wet * 0.8) * (1 - moss * 0.6)), max(puddle * 0.88, stain * 0.45));
             o.Metallic = _Metallic;
-            o.Emission = tex2D(_EmissionMap, IN.uv_PaletteTex).rgb * _EmissionColor.rgb;
+            o.Emission = tex2D(_EmissionMap, IN.meshAO.xy).rgb * _EmissionColor.rgb;
         }
         ENDCG
     }
