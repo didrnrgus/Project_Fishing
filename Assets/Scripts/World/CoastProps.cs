@@ -31,7 +31,7 @@ namespace Fishing.World
         public void Tetrapod(Vector3 p, Material mat) => Tetrapod(_root, p, Quaternion.Euler(R(0f, 360f), R(0f, 360f), R(0f, 360f)), R(0.9f, 1.1f), mat, true);
 
         /// <summary>테트라포드 한 개 (다리 끝까지 약 1.05m × scale). collider면 볼록 메쉬 콜라이더 (찌가 걸린다). 위 다리 끝에 녹슨 인양 고리(둘째 재질).</summary>
-        public static void Tetrapod(Transform parent, Vector3 p, Quaternion rot, float scale, Material mat, bool collider)
+        public static void Tetrapod(Transform parent, Vector3 p, Quaternion rot, float scale, Material mat, bool collider, bool shadow = true)
         {
             var go = new GameObject("Tetrapod");
             go.transform.SetParent(parent, false);
@@ -39,7 +39,9 @@ namespace Fishing.World
             go.transform.localRotation = rot;
             go.transform.localScale = Vector3.one * scale;
             go.AddComponent<MeshFilter>().sharedMesh = TetrapodMesh();
-            go.AddComponent<MeshRenderer>().sharedMaterials = new[] { mat, HookMat };
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterials = new[] { mat, HookMat };
+            if (!shadow) mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;   // 반쯤 잠긴 바깥 줄 (그림자가 물에 가려 보이지 않는다)
             if (collider) go.AddComponent<MeshCollider>().convex = true;
         }
 
@@ -55,7 +57,7 @@ namespace Fishing.World
         /// <summary>
         /// 방파제 바깥 테트라포드 더미 (2026-10-27 사용자 참고 사진 두 번째: 실제 방파제는 크고 마구 쌓였다):
         /// from→to 선을 따라 바깥(outward) 쪽으로 아래 켜 rows줄(2.05m 간격, 줄마다 반 칸 엇갈림, 바로 선 것·뒤집힌 것을 번갈아 경사를 따라 기울고 ±14° 흐트러짐) +
-        /// 벽 쪽 세 줄 위에 한 켜 더(아래 켜 틈에 얹고 아무렇게나 돌아감) → 벽에 기댄 쪽은 파라펫 높이까지 쌓이고 바깥 줄일수록 물에 잠긴다.
+        /// 벽 쪽 두 줄 위에 듬성듬성 한 켜 더(아래 켜 틈에 얹고 아무렇게나 돌아감) → 벽에 기댄 쪽은 파라펫 높이까지 쌓이고 바깥 줄일수록 물에 잠긴다.
         /// 배치 난수는 선 위치로 따로 (맵 난수 순서를 바꾸지 않는다).
         /// </summary>
         public static void TetrapodBank(Transform parent, Vector3 from, Vector3 to, Vector3 outward, float waterY, Material mat, int rows = 6)
@@ -79,12 +81,12 @@ namespace Fishing.World
                     p.y = waterY + 0.9f - k * 0.55f + R(-0.12f, 0.12f);
                     bool flip = (i + k) % 2 == 1;
                     var rot = lean * line * Quaternion.Euler((flip ? 180f : 0f) + R(-14f, 14f), (flip ? 0f : 60f) + R(-25f, 25f), R(-14f, 14f));
-                    Tetrapod(parent, p, rot, TetraScale * R(0.94f, 1.05f), mat, true);
+                    Tetrapod(parent, p, rot, TetraScale * R(0.94f, 1.05f), mat, true, k < 3);
                 }
             }
-            // 위 켜: 벽 쪽 세 줄 틈에 얹는다 (마구잡이 방향)
-            for (int k = 0; k < Mathf.Min(3, rows - 1); k++)
-                for (float s = step * 0.25f + (k % 2) * step * 0.5f; s < len; s += step * R(1f, 1.35f))
+            // 위 켜: 벽 쪽 두 줄 틈에 듬성듬성 얹는다 (마구잡이 방향)
+            for (int k = 0; k < Mathf.Min(2, rows - 1); k++)
+                for (float s = step * 0.25f + (k % 2) * step * 0.5f; s < len; s += step * R(1.2f, 1.6f))
                 {
                     var p = from + along * (s + R(-0.3f, 0.3f)) + outward * (1.5f + (k + 0.5f) * rowGap + R(-0.25f, 0.25f));
                     p.y = waterY + 2.1f - k * 0.6f + R(-0.15f, 0.15f);
@@ -118,7 +120,7 @@ namespace Fishing.World
                     p.y = waterY + 0.9f - k * 0.55f + R(-0.12f, 0.12f);
                     var lean = Quaternion.FromToRotation(Vector3.up, Vector3.Slerp(Vector3.up, dir, 0.22f));
                     bool flip = (i + k) % 2 == 1;
-                    Tetrapod(parent, p, lean * Quaternion.Euler((flip ? 180f : 0f) + R(-14f, 14f), R(0f, 360f), R(-14f, 14f)), TetraScale * R(0.94f, 1.05f), mat, true);
+                    Tetrapod(parent, p, lean * Quaternion.Euler((flip ? 180f : 0f) + R(-14f, 14f), R(0f, 360f), R(-14f, 14f)), TetraScale * R(0.94f, 1.05f), mat, true, k < 2);
                     if (k < 2 && i % 2 == 0)
                     {
                         var q = c + dir * (rr + 0.9f) + Vector3.up * (waterY + 2.0f - k * 0.6f - c.y);
@@ -138,7 +140,7 @@ namespace Fishing.World
         public static Mesh TetrapodMesh()
         {
             if (_tetrapod != null) return _tetrapod;
-            const int seg = 20;
+            const int seg = 14;   // 둘레 칸 (20칸은 수백 개 쌓으면 무거웠다 — 거문도·산토리니 60 → 40 FPS)
             const float len = 1.05f, r0 = 0.42f, r1 = 0.24f, back = 0.15f, bevel = 0.07f;
             var v = new List<Vector3>();
             var n = new List<Vector3>();
@@ -198,7 +200,7 @@ namespace Fishing.World
                 for (int i = 0; i < seg; i++) tri.AddRange(new[] { center, center + 2 + i, center + 1 + i });
             }
             // 가운데 공: 네 다리 뿌리 사이 틈을 메운다
-            const int ls = 10, lr = 16;
+            const int ls = 6, lr = 10;
             const float cr = 0.43f;
             int c0 = v.Count;
             for (int i = 0; i <= ls; i++)
