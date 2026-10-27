@@ -74,6 +74,8 @@ namespace Fishing.World
         public string Name;
         /// <summary>파도막이 벽이 서쪽(true)/동쪽에. 테트라포드는 반대쪽(바깥).</summary>
         public bool ParapetWest;
+        /// <summary>테트라포드 없이 돌로 쌓은 부두 (산토리니 정자 부두).</summary>
+        public bool NoTetrapods;
     }
 
     public struct CapeSpec
@@ -791,8 +793,9 @@ namespace Fishing.World
                 // 테트라포드: 파도막이 벽 반대쪽(바깥)과 팔의 북쪽
                 float side = b.ParapetWest ? b.Stem.xMin - 1f : b.Stem.xMax + 1f;
                 float sgn = b.ParapetWest ? -1f : 1f;
-                _props.TetrapodBank(new Vector3(side, 0f, b.Stem.yMin + 6f), new Vector3(side, 0f, b.Stem.yMax + 2f), new Vector3(sgn, 0f, 0f), _map.BaseWaterY, tetra);
-                if (b.Arm.width > 0f)
+                if (!b.NoTetrapods)
+                    _props.TetrapodBank(new Vector3(side, 0f, b.Stem.yMin + 6f), new Vector3(side, 0f, b.Stem.yMax + 2f), new Vector3(sgn, 0f, 0f), _map.BaseWaterY, tetra);
+                if (b.Arm.width > 0f && !b.NoTetrapods)
                     _props.TetrapodBank(new Vector3(b.Arm.xMin, 0f, b.Arm.yMax + 0.5f), new Vector3(b.Arm.xMax, 0f, b.Arm.yMax + 0.5f), Vector3.forward, _map.BaseWaterY, tetra);
                 if (b.Light.a > 0f)
                 {

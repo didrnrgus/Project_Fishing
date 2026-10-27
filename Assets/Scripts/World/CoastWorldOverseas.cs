@@ -76,7 +76,7 @@ namespace Fishing.World
         /// 키클라데스 집: 하얀 회벽 상자(모서리가 둥근 느낌으로 처마 턱), 파란 문·덧창, 가끔 2단.
         /// church면 파란 돔을 얹은 작은 교회 (산토리니 이아 마을). 비탈에 서도 뜨지 않게 벽이 땅속 3m까지 내려간다.
         /// </summary>
-        void CycladicHouse(Vector3 at, float yaw, bool church)
+        void CycladicHouse(Vector3 at, float yaw, bool church, float below = 3f)
         {
             var h = new GameObject(church ? "CycladicChurch" : "CycladicHouse").transform;
             h.SetParent(_root, false);
@@ -88,8 +88,7 @@ namespace Fishing.World
             var trim = Mats.Wall(new Color(0.98f, 0.98f, 0.97f), 0.1f);
             var blue = Mats.Wood(CycladicBlue, 0.35f);
             var dark = Mats.Lit(new Color(0.18f, 0.2f, 0.24f), 0.6f);
-            float w = R(5f, 8f), d = R(5f, 7f), hgt = R(3f, 3.6f);
-            const float below = 3f;
+            float w = R(5f, 8f), d = R(5f, 7f), hgt = R(3f, 3.6f);   // below = 땅속으로 내린 벽 (비탈에 박힌 동굴집이면 깊게)
             Mats.Prim(PrimitiveType.Cube, "Wall", h, new Vector3(0f, (hgt - below) * 0.5f, 0f), new Vector3(w, hgt + below, d), white, false);
             // 둥근 처마 턱: 가로 원통을 둘레에 (모서리가 각지지 않게 회벽을 덧바른 모양)
             foreach (var (pos, len, rot) in new[] { (new Vector3(0f, hgt + 0.05f, d * 0.5f), w + 0.1f, 90f), (new Vector3(0f, hgt + 0.05f, -d * 0.5f), w + 0.1f, 90f),

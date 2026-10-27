@@ -33,6 +33,10 @@ namespace Fishing.World
         public void PlaceHouse(Vector3 at, float yaw, bool sign = false) => House(at, yaw, sign);
         /// <summary>그 맵 양식의 나무 한 그루.</summary>
         public void PlaceTree(Vector3 at) => Tree(at);
+        /// <summary>키클라데스 흰 집 (church = 파란 돔 교회). below = 땅속으로 내린 벽 깊이 (비탈에 박힌 집).</summary>
+        public void PlaceCycladic(Vector3 at, float yaw, bool church, float below = 3f) => CycladicHouse(at, yaw, church, below);
+        /// <summary>위가 둥근 아치 판 메쉬 (바닥 중심, 너비·높이 m).</summary>
+        public static Mesh ArchMesh(float width, float height) => ArchPanel(width, height);
         /// <summary>물 위에 배 띄우기 (Props/junk·Props/felucca 또는 Kenney 배 경로, 길이 m).</summary>
         public void PlaceBoats(string path, int count, float length) => Boats(path, count, length);
         /// <summary>밤에 켜지는 불빛 (가로등 목록에 들어가 낮엔 꺼진다).</summary>
