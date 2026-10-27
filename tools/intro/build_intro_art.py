@@ -1,5 +1,5 @@
 """
-인트로 아트 생성기: 사업자 로고(제쓰로네 게임공방)와 타이틀(청풍명월) 화면의 그림을 만든다.
+인트로 아트 생성기: 사업자 로고(제쓰로네 게임공방)와 타이틀(청풍명월) 화면의 그림, RESULT 로고·도감 물속 배경을 만든다.
 결과는 Assets/Resources/Intro/*.png (IntroSequence.cs가 불러 움직인다).
 
     bpyenv/Scripts/python.exe -I tools/intro/build_intro_art.py [--preview 폴더]
@@ -590,10 +590,38 @@ def pad_img(img, px):
     return out
 
 
+# 타이틀 글자 배치 (원작 로고 느낌의 힘 있는 붓글씨, 2026-10-27 사용자): 글자마다 (크기 배율, 세로 어긋남, 기울기°, 앞 글자와 겹침)
+TITLE_LAYOUT = [("청", 1.14, -0.07, -5.0, 0.0), ("풍", 0.9, 0.12, 4.0, 0.02), ("명", 1.0, -0.03, -3.0, 0.0), ("월", 1.1, 0.07, 5.0, 0.03)]
+
+
+def calligraphy(text_layout, font_name, size, pad=60):
+    """글자를 하나씩 그려 크기·높이·기울기를 달리해 이어 붙인다 (손으로 쓴 붓글씨의 리듬). 회색조 마스크(0~1)."""
+    parts = []
+    for ch, sc, dy, rot, overlap in text_layout:
+        m = render_text(ch, font(font_name, int(size * sc)), pad=pad)
+        im = Image.fromarray((m * 255).astype(np.uint8), "L").rotate(rot, resample=Image.BICUBIC, expand=True)
+        a = np.asarray(im, np.float32) / 255
+        ys, xs = np.nonzero(a > 0.02)
+        a = a[:, xs.min():xs.max() + 1]   # 좌우 여백을 잘라 글자끼리 붙게 (위아래는 그대로 두어 기준선이 맞는다)
+        parts.append((a, dy, overlap))
+    hmax = max(p.shape[0] for p, _, _ in parts)
+    H2 = int(hmax + size * 0.5)
+    W2 = int(sum(p.shape[1] for p, _, _ in parts) + pad * 2)
+    out = np.zeros((H2, W2), np.float32)
+    x = pad
+    for m, dy, overlap in parts:
+        x -= int(overlap * size)
+        y = int((H2 - m.shape[0]) / 2 + dy * size)
+        out[y:y + m.shape[0], x:x + m.shape[1]] = np.maximum(out[y:y + m.shape[0], x:x + m.shape[1]], m)
+        x += m.shape[1]
+    ys, xs = np.nonzero(out > 0.01)
+    return out[max(0, ys.min() - pad):ys.max() + pad, max(0, xs.min() - pad):xs.max() + pad]
+
+
 def title_assets():
-    f = font("EastSeaDokdo-Regular.ttf", 400)
-    m = render_text("청풍명월", f, pad=60, spacing=-6)
-    m = ink_texture(m, 801, rough=0.25)
+    # 제주한라산체(OFL): 굵고 힘 있는 붓글씨. 예전 East Sea Dokdo(가는 마커 느낌)에서 바꿈
+    m = calligraphy(TITLE_LAYOUT, "JejuHallasan-Regular.ttf", 380)
+    m = ink_texture(m, 801, rough=0.32)
     # 위는 상아색, 아래로 달빛 은빛
     title = gradient_text(m, hexc("#fffaf0"), hexc("#d7dfe6"))
     title = pad_img(title, 60)
@@ -606,6 +634,96 @@ def title_assets():
     copy = render_text("© 2026 JETHRO'S GAME COMPANY", font("Cinzel.ttf", 34, "Regular"), pad=12, spacing=5)
     copy_img = gradient_text(copy, hexc("#9aa7b3"), hexc("#7b8894"))
     return {"title": title, "title_glow": glow, "title_seal": sealimg, "title_en": en_img, "title_tag": tag_img, "copyright": copy_img}
+
+
+def result_logo():
+    """RESULT 로고 (원작 결과 화면 왼쪽 위): 비스듬한 굵은 대문자, 닳은 가장자리, 위는 흰빛 아래는 은회색,
+    검은 테두리, 글자 뒤를 가로지르는 먹 붓질. 결과 화면(ResultPanel)이 Resources/Intro/result_logo로 불러 쓴다."""
+    f = font("Cinzel.ttf", 230, "Black")
+    m = render_text("RESULT", f, pad=80, spacing=-8)
+    h, w = m.shape
+    # 오른쪽으로 기울이기 (붓으로 빠르게 쓴 느낌)
+    im = Image.fromarray((m * 255).astype(np.uint8), "L")
+    sh = 0.2
+    im = im.transform((int(w + h * sh), h), Image.AFFINE, (1, sh, -h * sh, 0, 1, 0), resample=Image.BICUBIC)
+    m = np.asarray(im, np.float32) / 255
+    m = ink_texture(m, 1301, rough=0.45)
+    h, w = m.shape
+    # 먹 붓질: 글자 아래쪽 2/3를 가로지르는 굵은 획, 오른쪽 끝은 갈라지며 가늘어진다 (비백)
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    u = xx / w
+    cy = h * (0.62 + 0.06 * (u - 0.5))
+    half = h * 0.2 * (1 - smoothstep(0.7, 1.02, u)) * smoothstep(-0.02, 0.06, u)
+    streak = fbm_2d(h, w, 3, 2, 1311)
+    streak = np.repeat(streak.mean(axis=1, keepdims=True), w, axis=1)   # 가로로 길게 늘인 붓 털 자국
+    brush = (np.abs(yy - cy) < half).astype(np.float32)
+    brush *= np.clip(1.4 - smoothstep(0.45, 1.0, u) * (streak > 0.5) * 1.6, 0, 1)
+    brush = np.asarray(Image.fromarray((brush * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(2)), np.float32) / 255
+    # 검은 테두리 (글자를 7px 부풀림)
+    outline = np.asarray(Image.fromarray((m * 255).astype(np.uint8)).filter(ImageFilter.MaxFilter(15)), np.float32) / 255
+    dark = np.maximum(brush * 0.88, outline)
+    # 글자 색: 위 흰빛 → 아래 은회색, 가운데 살짝 밝은 금속 띠
+    t = (yy / h)
+    body = np.dstack([np.clip(1.0 - 0.24 * t + 0.1 * np.exp(-((t - 0.42) / 0.05) ** 2), 0, 1)] * 3)
+    ink = smoothstep(0.05, 0.5, m)[..., None]   # 글자 속은 흰빛 그대로, 닳은 가장자리만 검은 바탕이 비친다
+    rgb = body * ink
+    alpha = np.maximum(dark, ink[..., 0])
+    return {"result_logo": to_img(rgb, alpha)}
+
+
+def underwater(seed, top, bottom, floor):
+    """도감 상세의 물속 배경 (원작 도감: 물고기 사진 뒤 물속 풍경). 위에서 내리는 빛 줄기, 바닥 자갈·바위, 물풀 그림자, 떠다니는 알갱이."""
+    w, h = 1024, 640
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    t = yy / h
+    rgb = top[None, None, :] * (1 - t[..., None]) + bottom[None, None, :] * t[..., None]
+    # 빛 줄기: 위에서 비스듬히 내려오는 밝은 띠 여러 개 (아래로 갈수록 흐려진다)
+    rays = np.zeros((h, w), np.float32)
+    r = np.random.default_rng(seed)
+    for _ in range(9):
+        x0, ang, wd = r.uniform(0, w), r.uniform(-0.35, 0.05), r.uniform(18, 60)
+        d = np.abs(xx - (x0 + yy * ang))
+        rays += np.exp(-(d / wd) ** 2) * r.uniform(0.25, 0.6)
+    rays *= (1 - t) ** 1.6
+    rgb += rays[..., None] * np.array([0.55, 0.75, 0.7])[None, None, :] * 0.35
+    # 수면 일렁임 (맨 위 얇은 밝은 그물무늬)
+    caus = fbm_2d(h, w, 22, 3, seed + 1)
+    rgb += (smoothstep(0.55, 0.85, caus) * (1 - smoothstep(0.0, 0.25, t)))[..., None] * 0.08
+    # 바닥: 굴곡진 모래·자갈 띠 + 바위 덩어리
+    fl = fbm_2d(1, w, 90, 3, seed + 2)[0]
+    ground = h * (0.87 + (fl - 0.5) * 0.1)
+    rocks = fbm_2d(h, w, 60, 4, seed + 3)
+    under = smoothstep(-6, 6, yy - ground[None, :])
+    peb = fbm_2d(h, w, 5, 2, seed + 4)
+    floor_col = floor[None, None, :] * (0.65 + peb[..., None] * 0.7)
+    rgb = rgb * (1 - under[..., None]) + floor_col * under[..., None]
+    rock = smoothstep(0.6, 0.72, rocks) * under
+    rgb = rgb * (1 - rock[..., None] * 0.45) + (floor * 0.5)[None, None, :] * rock[..., None] * 0.45
+    # 물풀: 바닥에서 위로 흔들리며 자라는 어두운 줄기들
+    weed = np.zeros((h, w), np.float32)
+    for _ in range(26):
+        x0, ht, wd = r.uniform(0, w), r.uniform(0.15, 0.5) * h, r.uniform(3, 8)
+        base = ground[int(np.clip(x0, 0, w - 1))]
+        k = np.clip((base - yy) / ht, 0, 1)
+        cx = x0 + np.sin(k * 3.5 + x0) * 22 * k
+        weed += np.exp(-((xx - cx) / (wd * (1.2 - k))) ** 2) * (yy < base) * (yy > base - ht)
+    rgb = rgb * (1 - np.clip(weed, 0, 1)[..., None] * 0.55) + (bottom * 0.5)[None, None, :] * np.clip(weed, 0, 1)[..., None] * 0.55
+    # 떠다니는 알갱이
+    dots = (r.random((h, w)) > 0.9993).astype(np.float32)
+    dots = np.asarray(Image.fromarray((dots * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.2)), np.float32) / 255 * 3
+    rgb += np.clip(dots, 0, 1)[..., None] * 0.35
+    # 가장자리 어둡게
+    vig = 1 - 0.45 * (((xx / w - 0.5) * 1.6) ** 2 + ((t - 0.45) * 1.4) ** 2)
+    rgb *= np.clip(vig, 0.35, 1)[..., None]
+    # 사진 배경처럼 초점이 물고기에 있어 뒤는 살짝 흐리다
+    return to_img(rgb + dither(h, w)).filter(ImageFilter.GaussianBlur(2.2))
+
+
+def dex_assets():
+    return {
+        "dex_fresh": underwater(41, hexc("#5f8a5a"), hexc("#1f3a26"), hexc("#7a6a4c")),   # 민물: 초록빛 탁한 물
+        "dex_sea": underwater(43, hexc("#3f8fae"), hexc("#0f2f4a"), hexc("#a89878")),     # 바다: 푸른 물, 밝은 모래
+    }
 
 
 def company_assets():
@@ -666,6 +784,8 @@ def main():
     out["company_paper"] = paper()
     out.update(title_assets())
     out.update(company_assets())
+    out.update(result_logo())
+    out.update(dex_assets())
     for k, img in out.items():
         img.save(os.path.join(OUT, k + ".png"), optimize=True)
         print(f"{k}.png {img.size[0]}x{img.size[1]}")

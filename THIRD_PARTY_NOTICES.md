@@ -14,7 +14,7 @@
 | [Poly Haven](https://polyhaven.com) 텍스처·모델·HDRI | 지형·바닥 텍스처, 바위, 풀·들꽃 카드, 하늘 | CC0 | `Resources/Terrain/SOURCES.md`, `Assets/Vegetation/SOURCES.md`, `Resources/Sky/SOURCES.md` |
 | 여기어때 잘난체 2 (㈜여기어때컴퍼니) | UI 글꼴 | 여기어때 잘난체 라이선스 (무료·번들 재배포 가능, 글꼴 단독 판매·개작 재배포 금지) | `Assets/TextMesh Pro/Fonts/Jalnan2-LICENSE.txt` |
 | Liberation Sans | TextMesh Pro 기본 글꼴 | SIL OFL 1.1 | `Assets/TextMesh Pro/Fonts/LiberationSans - OFL.txt` |
-| Cinzel, East Sea Dokdo, Song Myung | 인트로 그림 만들기 (`tools/intro`) | SIL OFL 1.1 | `tools/intro/fonts/OFL-*.txt` |
+| Cinzel, East Sea Dokdo, Song Myung, Jeju Hallasan | 인트로·RESULT·도감 그림 만들기 (`tools/intro`) | SIL OFL 1.1 | `tools/intro/fonts/OFL-*.txt` |
 | [Unity Starter Assets – Third Person](https://assetstore.unity.com/packages/essentials/starter-assets-thirdperson-updates-in-new-charactercontroller-pa-196526) (Unity Technologies) | 대기·걷기·뛰기·점프 동작 (원본 FBX `Assets/ThirdParty/StarterAssets`, 180° 돌려 구운 클립 `Resources/Animations/StarterAssets`) | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) | [Assets/ThirdParty/StarterAssets/SOURCES.md](Assets/ThirdParty/StarterAssets/SOURCES.md) |
 | TextMesh Pro 기본 리소스 (Unity) | `Assets/TextMesh Pro` | Unity Companion License | Unity 패키지 |
 

@@ -45,14 +45,22 @@ namespace Fishing.UI
             // 아래쪽 그늘: 오른쪽 아래 글자가 밝은 장면 위에서도 읽히게
             var shade = UIFactory.Image(root, new Color(0f, 0f, 0f, 0.55f), UIFactory.Vignette, "BottomShade");
             shade.rectTransform.Fill(-200, -200, -200, -200);
-            // 붓글씨처럼 비스듬한 흰 RESULT (원작은 붓으로 쓴 로고)
-            var title = UIFactory.Text(root, "RESULT", 104, new Color(0.97f, 0.97f, 0.97f), TextAnchor.MiddleLeft, FontStyle.BoldAndItalic);
-            title.rectTransform.At(new Vector2(0, 1), new Vector2(40, -40), new Vector2(700, 140));
-            title.rectTransform.localRotation = Quaternion.Euler(0, 0, 3f);
-            title.characterSpacing = -6f;
-            UIFactory.Outline(title, new Color(0.05f, 0.05f, 0.07f, 0.95f), 3.5f);
-            UIFactory.Shape(root, new Color(0.05f, 0.05f, 0.07f, 0.85f), UIFactory.Pill, "TitleBrush", 0f).rectTransform
-                .At(new Vector2(0, 1), new Vector2(46, -150), new Vector2(380, 9));
+            // 원작 RESULT 로고: 비스듬한 흰 대문자 + 검은 테두리 + 뒤를 가로지르는 먹 붓질 (tools/intro/build_intro_art.py result_logo)
+            var logo = Resources.Load<Texture2D>("Intro/result_logo");
+            if (logo != null)
+            {
+                var img = UIFactory.Node("ResultLogo", root).At(new Vector2(0, 1), new Vector2(18, -22), new Vector2(600, 600f * logo.height / logo.width), new Vector2(0, 1))
+                    .gameObject.AddComponent<RawImage>();
+                img.texture = logo;
+                img.raycastTarget = false;
+                img.rectTransform.localRotation = Quaternion.Euler(0, 0, 3f);
+            }
+            else
+            {
+                var title = UIFactory.Text(root, "RESULT", 104, new Color(0.97f, 0.97f, 0.97f), TextAnchor.MiddleLeft, FontStyle.BoldAndItalic);
+                title.rectTransform.At(new Vector2(0, 1), new Vector2(40, -40), new Vector2(700, 140));
+                UIFactory.Outline(title, new Color(0.05f, 0.05f, 0.07f, 0.95f), 3.5f);
+            }
 
             // 튀어 오르는 물고기
             _fishRoot = UIFactory.Node("FishRoot", root).At(new Vector2(0.5f, 0.5f), new Vector2(-80, 40), new Vector2(10, 10));
