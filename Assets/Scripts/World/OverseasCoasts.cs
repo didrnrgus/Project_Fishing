@@ -99,15 +99,18 @@ namespace Fishing.World
         public static CoastSpec Santorini() => new CoastSpec
         {
             Id = "santorini", MapName = "산토리니 · 에게해", ShortName = "산토리니", ShopName = "암모우디 낚시점", UnionContact = "암모우디 항구의 야니스 지부장",
-            LandName = "암모우디 항구", SeaName = "칼데라 바다", Seed = 34, DarkRock = true, CliffTexture = "canyon", CliffTint = new Color(1.05f, 0.82f, 0.78f, 1f),
+            LandName = "암모우디 항구", SeaName = "칼데라 바다", Seed = 34, DarkRock = true, CliffTexture = "canyon", CliffTint = new Color(0.82f, 0.76f, 0.7f, 1f),   // 흙빛을 누그러뜨린 회갈색 비탈 (원작)
+            StoneQuay = true, StoneTint = new Color(0.86f, 0.8f, 0.7f),   // 원작 산토리니: 베이지 포석 산책로
             WaterDeep = new Color(0.01f, 0.1f, 0.3f), WaterShallow = new Color(0.04f, 0.38f, 0.55f),
             Shores = new[] { new ShoreSeg(-999f, -50f, ShoreKind.Rock), new ShoreSeg(-50f, 42f, ShoreKind.Quay), new ShoreSeg(42f, 999f, ShoreKind.Rock) },
-            NearDepth = 7f, DepthSlope = 0.12f, FlatWidth = 13f, CliffHeight = 46f, CliffWidth = 34f, RoadOffset = 0f, VillageDensity = 0.35f,
+            // 비탈을 조금 눕혀(경사 ≈ 0.75) 흰 집이 계단처럼 층층이 쌓이게 (SantoriniTown)
+            NearDepth = 7f, DepthSlope = 0.12f, FlatWidth = 15f, CliffHeight = 42f, CliffWidth = 56f, RoadOffset = 0f, VillageDensity = 0.35f,
             Houses = HouseStyle.Cyclades, TreeKind = TreeStyle.Mediterranean,
-            Breakwaters = new[] { new BreakwaterSpec { Name = "암모우디 방파제", Stem = new Rect(36f, -40f, 6f, 30f), Arm = new Rect(12f, -14f, 28f, 5f), Light = new Color(0.95f, 0.95f, 0.93f) } },
+            Breakwaters = new[] { new BreakwaterSpec { Name = "암모우디 방파제", Stem = new Rect(36f, -40f, 6f, 30f), Arm = new Rect(12f, -14f, 28f, 5f), Light = new Color(0f, 0f, 0f, 0f), NoTetrapods = true } },   // 등대 대신 파란 돔 정자 (SantoriniTown)
             Islets = new[] { new IsletSpec { Center = new Vector3(-84f, 0f, 14f), Radius = 9f, Height = 5f, Walkable = true, Name = "성 니콜라오스 바위섬" } },
             Stacks = new[] { new StackSpec { Pos = new Vector3(104f, 0f, 58f), Radius = 5f, Height = 14f, Name = "검은 바위기둥" } },
             Features = CoastFeature.Caldera | CoastFeature.Windmills,
+            Extra = SantoriniTown.Build,
             Grid = new[,]
             {
                 { R, R, S, S, S, R, R, R },
