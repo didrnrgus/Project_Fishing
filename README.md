@@ -44,7 +44,7 @@
 | **탄천 (보행교·탄천종합운동장·롯데월드타워)** | **탄천 밤 (등 축제·다리 LED)** |
 | ![tancheon](docs/images/72h_tancheon_footbridge.png) | ![tancheon_festival](docs/images/72g_tancheon_festival.png) |
 | **탄천 징검다리** | **탄천 밤하늘 드론쇼 (탄천종합운동장 위)** |
-| ![tancheon_stones](docs/images/72c_tancheon_stones.png) | ![tancheon_drones](docs/images/72l_tancheon_drones.png) |
+| ![tancheon_stones](docs/images/72c_tancheon_stones.png) | ![tancheon_drones](docs/images/72m_drone_0.png) |
 | **코사무이 (바다 위 섬의 황금 대불)** | **자킨토스 (나바지오 난파선 해변)** |
 | ![kohsamui](docs/images/63_kohsamui_buddha.png) | ![zakynthos](docs/images/70_zakynthos_navagio.png) |
 | **플라우 티오만 (곡선 리조트 호텔·보라 파라솔)** | **플라우 탱글 (바다 위 데크 별장)** |

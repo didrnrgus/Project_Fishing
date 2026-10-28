@@ -1215,6 +1215,26 @@ namespace Fishing.Dev
                 yield return new WaitForSeconds(2.5f);
                 yield return Shot(s.shot);
             }
+            // 탄천 드론쇼: 장면마다 한 장 + 다음 장면으로 바뀌는 중간 한 장 (트랜지션 확인)
+            if (Fishing.World.FieldMap.Id == "tancheon" && Fishing.World.DroneShow.Instance != null)
+            {
+                var show = Fishing.World.DroneShow.Instance;
+                Game.Clock.Set(5, 21 * 60 + 30);
+                Game.Player.Teleport(new Vector3(-6f, 1.1f, -45f), 0f);
+                Game.CameraRig.Yaw = 0f;
+                Game.CameraRig.Pitch = -12f;
+                Game.CameraRig.Distance = 7f;
+                yield return new WaitForSeconds(2f);
+                for (int k = 0; k < show.SceneCount; k++)
+                {
+                    show.Jump(k);
+                    yield return new WaitForSeconds(0.6f);
+                    yield return Shot($"72m_drone_{k}");
+                }
+                show.JumpMid(0, 0.45f);
+                yield return null;
+                yield return Shot("72n_drone_transition");
+            }
             // 집 양식마다 한 채 가까이 (HouseKit): 맵에 들어가 출발점에서 가장 가까운 길가 집 앞에 서서 정면을 찍는다
             var houseShots = new[]
             {
