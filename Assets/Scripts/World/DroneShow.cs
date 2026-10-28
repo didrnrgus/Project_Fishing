@@ -264,7 +264,9 @@ namespace Fishing.World
             {
                 if (!System.IO.Directory.Exists(UserFolder)) return list;
                 var files = System.IO.Directory.GetFiles(UserFolder, "*.json");
-                Array.Sort(files, StringComparer.Ordinal);
+                // 이름 속 숫자는 수 크기로 (points_2 → points_10)
+                string Key(string f) => System.Text.RegularExpressions.Regex.Replace(f, @"\d+", m => m.Value.PadLeft(8, '0'));
+                Array.Sort(files, (a, b) => string.CompareOrdinal(Key(a), Key(b)));
                 foreach (var f in files)
                 {
                     var art = FromJson(System.IO.Path.GetFileNameWithoutExtension(f), System.IO.File.ReadAllText(f));
