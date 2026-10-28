@@ -1215,8 +1215,8 @@ namespace Fishing.Dev
                 yield return new WaitForSeconds(2.5f);
                 yield return Shot(s.shot);
             }
-            // 탄천 드론쇼: 장면마다 한 장 + 다음 장면으로 바뀌는 중간 한 장 (트랜지션 확인)
-            if (Fishing.World.FieldMap.Id == "tancheon" && Fishing.World.DroneShow.Instance != null)
+            // 탄천 드론쇼: 장면마다 한 장 + 다음 장면으로 바뀌는 중간 한 장 (트랜지션 확인). 사용자 점 파일 그림이라 docs/images에 옮기지 않는다
+            if (Fishing.World.FieldMap.Id == "tancheon" && Fishing.World.DroneShow.Instance != null && Fishing.World.DroneShow.Instance.SceneCount > 0)
             {
                 var show = Fishing.World.DroneShow.Instance;
                 Game.Clock.Set(5, 21 * 60 + 30);
