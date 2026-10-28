@@ -39,6 +39,8 @@ namespace Fishing.EditorTools
                     importer.importLights = false;
                     importer.isReadable = false;
                     importer.optimizeMeshVertices = true;
+                    // 클립은 몸 물결 곡선에서 계산한 키라 줄이면(키 7~13%만 남았다) 물결이 뭉개지고 숨쉬기(턱·아가미)가 사라진다
+                    importer.animationCompression = ModelImporterAnimationCompression.Off;
                 }
             }
             else if (assetPath.Contains("Resources/Junk/") || assetPath.Contains("Resources/Props/"))

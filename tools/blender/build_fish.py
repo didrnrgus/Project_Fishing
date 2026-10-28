@@ -37,7 +37,7 @@ import cephalopod as CP  # noqa: E402
 import fish_species as FS  # noqa: E402
 import fish_tex  # noqa: E402
 
-NR, NA = 64, 40   # 몸 고리 수, 고리 둘레 버텍스 수 (+ 아가미 뚜껑 근처에 고리 몇 개 더)
+NR, NA = 84, 60   # 몸 고리 수, 고리 둘레 버텍스 수 (+ 머리·아가미 뚜껑 근처에 고리를 더 촘촘히)
 FPS = 30
 
 
@@ -61,16 +61,32 @@ class Body:
         # 주둥이를 둥글고 뭉툭하게 (지수가 클수록 뾰족한 원뿔 끝이 된다).
         # 장어형(G)도 머리가 둥글다 (예전 1.0은 바늘처럼 뾰족한 주둥이였다). 갈치는 어종 값으로 뾰족하게
         self.blunt = d.get('blunt', 0.55 if d['type'] == 'G' else 0.8)
+        # 입 높이 (주둥이 끝 단면이 남는 비율). 장어·두족류는 둥근 머리 그대로
+        self.m0 = d.get('mouth_h', 0.0 if d['type'] == 'G' or d.get('ceph') else 0.17)
+        # 등·배 능선: 몸 단면 위아래가 뾰족해진다 (꼬리 쪽으로 갈수록 더). 둥근 원통처럼 보이지 않게
+        self.keel = d.get('keel', 0.0 if d.get('ceph') else 0.1 if d['type'] == 'G' else 0.3)
+
+    def keel_k(self, s):
+        return self.keel * (0.35 + 0.65 * fish_tex_smooth(0.3, 0.95, s))
 
     def y(self, s):
         return self.y0 + s * self.be
+
+    def snout(self, s, en, m0):
+        """주둥이 쪽 단면 비율 (0~1). 반구처럼 둥근 돔이 아니라 입 높이(m0)만큼 남은 쐐기를 끝(rt)에서 둥글게 닫는다.
+        이마·턱 선이 입으로 곧게 모여 머리가 총알이 아닌 물고기 머리가 된다."""
+        tm = self.d['tmax']
+        base = m0 + (1 - m0) * math.sin(math.pi / 2 * s / tm) ** (en * 1.3)
+        rt = 0.03
+        tip = math.sqrt(max(0.0, 1 - (1 - min(1.0, s / rt)) ** 2))
+        return base * tip
 
     def depth(self, s):
         d, H = self.d, self.H
         tm = d['tmax']
         en = (0.2 + d['snout'] * 0.7) * self.blunt
         if s < tm:
-            return H * math.sin(math.pi / 2 * s / tm) ** en
+            return H * self.snout(s, en, self.m0)
         t = (s - tm) / (1 - tm)
         # hold: 몸통 굵기를 그만큼 유지하다가 꼬리로 가늘어진다 (장어: 몸 대부분이 같은 굵기)
         hold = d.get('hold', 0.0)
@@ -82,13 +98,14 @@ class Body:
         tm = d['tmax'] * 0.8
         en = (0.2 + d['snout'] * 0.7) * 0.85 * self.blunt
         if s < tm:
-            w = self.W * math.sin(math.pi / 2 * s / tm) ** en
+            w = self.W * self.snout(s, en, self.m0 * 0.8)
         else:
             t = (s - tm) / (1 - tm)
             hold = d.get('hold', 0.0)
             t = max(0.0, (t - hold) / (1 - hold))
-            tw = d.get('tail_w', 0.32)   # 꼬리 끝 폭 비율 (장어 꼬리는 옆으로 납작하다)
-            w = self.W * (tw + (1 - tw) * math.cos(math.pi / 2 * t) ** 1.3)
+            # 꼬리 끝 폭 비율: 꼬리자루는 옆으로 얇은 칼날이다 (예전 0.32는 위에서 보면 머리부터 꼬리까지 굵기가 같은 소시지였다)
+            tw = d.get('tail_w', 0.17)
+            w = self.W * (tw + (1 - tw) * math.cos(math.pi / 2 * t) ** 1.1)
         hw = d.get('head_w', 1.0)
         if hw != 1.0 and s < 0.35:
             w *= 1 + (hw - 1) * (1 - s / 0.35) * min(1, s / 0.05)
@@ -120,6 +137,7 @@ class Body:
         xs = self.d['xsec']
         cz, cx = -math.cos(a), math.sin(a)
         x = self.width(s) / 2 * math.copysign(abs(cx) ** (2 / xs), cx)
+        x *= 1 - self.keel_k(s) * abs(cz) ** 3
         h = self.top(s) if cz > 0 else self.bot(s)
         z = self.zc(s) + h * math.copysign(abs(cz) ** (2 / xs), cz)
         return (x, self.y(s), z)
@@ -127,7 +145,8 @@ class Body:
     def surface_x(self, s, zrel):
         """옆면 x (zrel: -1 배 ~ +1 등)."""
         xs = self.d['xsec']
-        return self.width(s) / 2 * max(0.0, 1 - abs(zrel) ** xs) ** (1 / xs)
+        keel = 1 - self.keel_k(s) * abs(zrel) ** (1.5 * xs)
+        return self.width(s) / 2 * max(0.0, 1 - abs(zrel) ** xs) ** (1 / xs) * keel
 
     def z_at(self, s, zrel):
         return self.zc(s) + (self.top(s) if zrel > 0 else self.bot(s)) * zrel
@@ -153,9 +172,14 @@ def build_body_mesh(d, B):
     he = fish_tex.head_end_of(d)
     flat = d.get('flat')
     if not flat:
-        # 아가미 뚜껑 턱이 뭉개지지 않게 그 근처에 고리를 더 넣는다
-        ss = sorted(set(round(x, 5) for x in ss + [he - 0.06 + 0.008 * i for i in range(10)]))
+        # 머리(입술·눈두덩)와 아가미 뚜껑 턱이 뭉개지지 않게 그 근처에 고리를 더 넣는다
+        extra = [0.004 * i for i in range(1, int((he + 0.03) / 0.004))]
+        ss = sorted(set(round(x, 4) for x in ss + extra))
     nr = len(ss)
+    relief = not flat and not d.get('ceph')
+    if relief:
+        es, ev, eru, erv = fish_tex.eye_uv(d)
+        er = d['eye']['r']
     for s in ss:
         for k in range(NA):
             a = 2 * math.pi * k / NA
@@ -170,11 +194,22 @@ def build_body_mesh(d, B):
                 x *= 1 + (0.035 if d['type'] != 'G' else 0.0) * bump * side   # 장어는 아가미 뚜껑이 없다 (작은 구멍뿐)
                 # 입: 입술 사이가 실제로 파인 홈 (텍스처 입 선과 같은 자리: v = mouth_v + 0.6 s, 주둥이 끝에서 mlen까지)
                 if not d.get('ceph'):
-                    mouth_v = 0.5 + 0.35 * d.get('mouth', 0) * 0.3
-                    mlen = 0.035 + 0.03 * max(0, d.get('mouth', 0)) + (0.03 if d['type'] == 'C' else 0.0)
-                    groove = math.exp(-((v - mouth_v - 0.6 * s) ** 2) / (2 * 0.035 ** 2)) * fish_tex_smooth(mlen * 1.1, mlen * 0.5, s)
-                    x *= 1 - 0.32 * groove
+                    mv = fish_tex.mouth_v(d)
+                    mlen = fish_tex.mouth_len(d)
+                    md = v - mv - 0.6 * s
+                    reach = fish_tex_smooth(mlen * 1.1, mlen * 0.5, s)
+                    groove = math.exp(-(md ** 2) / (2 * 0.03 ** 2)) * reach
+                    # 입술: 홈 위아래가 도톰하다 (입 둘레가 그냥 파인 선이 아니라 살이 있게)
+                    lips = math.exp(-((abs(md) - 0.055) ** 2) / (2 * 0.025 ** 2)) * fish_tex_smooth(mlen * 1.3, mlen * 0.6, s)
+                    x *= 1 - 0.34 * groove + 0.07 * lips
                     z = B.zc(s) + (z - B.zc(s)) * (1 - 0.12 * groove)
+            if relief and abs(x) > 1e-7:
+                # 눈두덩: 눈 둘레 뼈 테가 살짝 솟고 바로 붙은 자리는 꺼진다 (눈이 머리에 붙인 단추처럼 보이지 않게)
+                v = body_uv(d, s, a)[1]
+                ed = math.sqrt(((s - es) / eru) ** 2 + ((v - ev) / erv) ** 2)
+                bump = 0.2 * math.exp(-((ed - 1.4) / 0.32) ** 2) - 0.08 * math.exp(-((ed - 1.0) / 0.12) ** 2)
+                if bump:
+                    x += math.copysign(er * bump, x)
             verts.append((x, y, z))
     # 주둥이 끝 점, 꼬리자루 끝 점
     nose = len(verts)
@@ -277,9 +312,10 @@ def make_fins(d, B):
             v, fc, uv = fin_grid(base, tip, nu, 4, grp, curl if kind != 'adipose' and d['type'] != 'G' else None)
             out.append((f'{kind}{idx}', v, fc, uv, kind))
         elif kind == 'caudal':
-            yb = B.y(1.0) - 0.004
+            # 밑동을 꼬리자루 안으로 묻는다: 몸이 뚝 끝나고 지느러미를 꽂은 것처럼 보이지 않게 살이 지느러미로 이어진다
+            yb = B.y(1.0) - 0.022
             zb = B.zc(1.0)
-            ph = B.depth(1.0) * 0.48
+            ph = B.depth(1.0) * 0.46
             C = 0.5 - yb
             hc = f['h'] / 2
             shape = f.get('shape', 'fork')
@@ -360,11 +396,11 @@ def make_eye(d, B, side):
         zr = 0.35 if side > 0 else -0.05
         s = e['s'] if side > 0 else e['s'] + 0.025
         side = eside
-    # 진짜 물고기 눈처럼 머리에 묻힌 납작한 돔: 겉으로는 반지름의 0.4만 나오고, 옆(x)으로 눌러서
+    # 진짜 물고기 눈처럼 머리에 묻힌 납작한 돔: 겉으로는 반지름의 0.3만 나오고, 옆(x)으로 눌러서
     # 머리가 얇은 어종(빙어·갈치·전갱이 …)도 안쪽 끝이 몸 가운데를 넘지 않게 한다 (넘으면 반대편 머리로 뚫고 나온다).
     sx = B.surface_x(s, zr)
     kx = min(r * 0.8, (sx + r * 0.25) / 2)
-    x = sx + r * 0.4 - kx
+    x = sx + r * 0.3 - kx
     c = mathutils.Vector((side * x, B.y(s), B.z_at(s, zr)))
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=20, v_segments=12, radius=r)
@@ -509,6 +545,21 @@ def outward_normals(ob):
 #  뼈와 가중치
 # =====================================================================
 
+def breathing_parts(d, B=None):
+    """숨 쉬는 부위. 'jaw': (경첩 s, 경첩 z) — 입꼬리 뒤에서 아래턱이 내려간다, 'gill': 아가미 뚜껑 앞 경계 s.
+    납작한 고기(몸을 눕혀 축이 다르다)·두족류는 없고, 장어는 아가미 뚜껑 대신 작은 구멍뿐이라 턱만."""
+    if d.get('flat') or d.get('ceph'):
+        return {}
+    B = B or Body(d)
+    out = {}
+    s_h = fish_tex.mouth_len(d) * 2.0
+    vg = fish_tex.mouth_v(d) + 0.6 * fish_tex.mouth_len(d)
+    out['jaw'] = (s_h, B.ring_point(s_h, math.pi * min(0.95, vg))[2])
+    if d['type'] != 'G':
+        out['gill'] = float(fish_tex.gill_edge(d, 0.55)) - 0.075
+    return out
+
+
 def build_rig(d, B, body, fins):
     nb = d['bones']
     be = B.be
@@ -553,6 +604,21 @@ def build_rig(d, B, body, fins):
                 b.tail = (side * (x + 0.03), B.y(s) + 0.06, B.z_at(s, -0.3) - 0.015)
                 b.parent = root
                 pecs[nm] = True
+    # 턱(아래턱)과 아가미 뚜껑: 숨 쉬며 입을 뻐끔·아가미 뚜껑을 들썩, 물 밖에서는 헐떡인다.
+    # 뼈는 모두 +Y(꼬리 쪽)를 보게 해서 회전 축이 월드 축과 같다 (턱 = X축, 아가미 = Z축)
+    breath = breathing_parts(d, B)
+    if 'jaw' in breath:
+        s_h, z_h = breath['jaw']
+        b = eb.new('Jaw')
+        b.head, b.tail = (0, B.y(s_h), z_h), (0, B.y(s_h) + 0.02, z_h)
+        b.parent = head
+    if 'gill' in breath:
+        s_p = breath['gill']
+        for side, nm in ((1, 'Gill_R'), (-1, 'Gill_L')):
+            b = eb.new(nm)
+            x = B.surface_x(s_p, 0.0) * 0.85
+            b.head, b.tail = (side * x, B.y(s_p), B.zc(s_p)), (side * x, B.y(s_p) + 0.02, B.zc(s_p))
+            b.parent = head
     for b in eb:
         b.roll = 0.0
     bpy.ops.object.mode_set(mode='OBJECT')
@@ -587,10 +653,43 @@ def build_rig(d, B, body, fins):
         mod = ob.modifiers.new('Armature', 'ARMATURE')
         mod.object = arm
 
+    jaw, gill = breath.get('jaw'), breath.get('gill')
+    mlen, mv = fish_tex.mouth_len(d), fish_tex.mouth_v(d)
+
+    def vert_v(s, z):
+        """버텍스의 몸 둘레 위치 v (0 배 ~ 1 등). ring_point의 거꾸로."""
+        sc = min(1.0, max(0.004, s))
+        zc = B.zc(sc)
+        h = B.top(sc) if z > zc else B.bot(sc)
+        zn = max(-1.0, min(1.0, (z - zc) / max(h, 1e-5)))
+        cz = math.copysign(abs(zn) ** (d['xsec'] / 2), zn)
+        return math.acos(-cz) / math.pi
+
+    def mix(w, name, t):
+        w = {k: x * (1 - t) for k, x in w.items()}
+        w[name] = w.get(name, 0.0) + t
+        return w
+
     def body_extra(v, w):
         # 눈·수염·부리(주둥이 앞쪽)는 머리에 단단히
         if v.co.y < -0.5 + 0.06:
-            return {'Head': 1.0}
+            w = {'Head': 1.0}
+        s = (v.co.y + 0.5) / be
+        vv = None
+        if jaw and s < jaw[0]:
+            # 아래턱: 입 선 아래, 경첩(입꼬리 뒤) 앞쪽
+            vv = vert_v(s, v.co.z)
+            wj = fish_tex_smooth(0.0, 0.06, mv + 0.6 * min(s, mlen) - vv) * fish_tex_smooth(jaw[0], mlen * 0.9, s) ** 1.5
+            if wj > 0:
+                w = mix(w, 'Jaw', wj)
+        if gill and abs(v.co.x) > 1e-4 and s < 0.45:
+            # 아가미 뚜껑 판: 앞 경계(전새개골)에서 뒤 가장자리로 갈수록 뚜껑을 따라 움직인다 (옆구리 가운데만)
+            vv = vert_v(s, v.co.z) if vv is None else vv
+            ge = fish_tex.gill_edge(d, vv)
+            wg = (fish_tex_smooth(ge - 0.075, ge - 0.012, s) * fish_tex_smooth(ge + 0.003, ge - 0.003, s)
+                  * fish_tex_smooth(0.1, 0.28, vv) * fish_tex_smooth(0.9, 0.74, vv))
+            if wg > 0:
+                w = mix(w, 'Gill_R' if v.co.x > 0 else 'Gill_L', float(wg))
         return w
 
     assign(body, body_extra)
@@ -615,16 +714,32 @@ def build_rig(d, B, body, fins):
 
 
 # =====================================================================
-#  애니메이션 (몸 마디를 사인파로 돌린다)
+#  애니메이션 (몸 가운데 선의 진행파 → 마디 각도)
 # =====================================================================
 
+# 헤엄 방식: 몸 가운데 선이 그리는 물결 h(x, t) = A · a(x) · sin(2π x / λ − φ).
+#   x = 주둥이 0 ~ 꼬리 끝 1, a(x) = 그 자리의 흔들림 비율 (꼬리 끝 1), λ = 파장 (몸길이 배수).
+# 마디마다 사인파를 따로 돌리면(예전) 몸이 몇 토막으로 꺾이고 앞몸까지 통째로 흔들려 둔하게 보였다.
+# 이제 곡선을 먼저 정하고 마디(뼈)는 그 곡선의 현을 따라가게 한다 → 뼈 수와 상관없이 같은 물결.
+SWIM = {
+    # 잉어·농어·도미: 머리는 반동으로 살짝, 앞 1/4은 거의 그대로, 뒤 1/3이 크게 (Videler 1993의 아지형 곡선)
+    'carangi': (lambda x: 0.2 - 0.8 * x + 1.6 * x * x, 1.0),
+    # 다랑어·고등어·삼치: 몸통은 단단하고 가는 꼬리자루와 초승달 꼬리만 친다
+    'thunni': (lambda x: 0.1 + 0.9 * max(0.0, (x - 0.3) / 0.7) ** 2.4, 1.3),
+    # 장어: 머리부터 꼬리까지 몸 전체에 물결이 한 번 반
+    'anguilli': (lambda x: 0.3 + 0.7 * x ** 1.3, 0.65),
+    # 메기·가물치·납작한 고기: 몸 뒤쪽 절반이 길게 물결
+    'silur': (lambda x: 0.25 - 0.5 * x + 1.25 * x * x, 0.85),
+}
+STYLE = {'E': 'thunni', 'G': 'anguilli', 'H': 'silur', 'F': 'silur'}
+
 CLIPS = {
-    # 이름: (프레임 수, 주기 수, 꼬리 폭(rad), 파장 위상, 몸 비틀기, 가슴지느러미 폭, C자 굽힘)
-    'Swim_Slow': (50, 2, 0.16, 0.9, 0.0, 0.35, 0.0),
-    'Swim_Fast': (30, 3, 0.3, 1.0, 0.0, 0.2, 0.0),
-    'Thrash': (36, 3, 0.55, 0.55, 0.22, 0.6, 0.0),
-    'Flop': (40, 2, 0.12, 0.3, 0.0, 0.5, 0.42),
-    'Idle_Hover': (60, 1, 0.035, 0.8, 0.0, 0.5, 0.0),
+    # 이름: (프레임 수, 물결 주기 수, 꼬리 끝 폭(몸길이), 몸 비틀기(rad), 가슴지느러미 폭, C자 굽힘(몸길이), 턱, 아가미 뚜껑, 숨 횟수)
+    'Swim_Slow': (50, 2, 0.05, 0.0, 0.35, 0.0, 0.06, 0.09, 1),
+    'Swim_Fast': (30, 3, 0.085, 0.0, 0.2, 0.0, 0.1, 0.11, 1),
+    'Thrash': (36, 3, 0.15, 0.22, 0.6, 0.05, 0.18, 0.17, 2),
+    'Flop': (40, 2, 0.03, 0.0, 0.5, 0.13, 0.24, 0.22, 2),
+    'Idle_Hover': (60, 1, 0.012, 0.0, 0.5, 0.0, 0.07, 0.1, 1),
 }
 
 
@@ -633,14 +748,32 @@ def animate(d, arm):
     amp_k = d['anim'].get('amp', 1.0)
     freq_k = d['anim'].get('freq', 1.0)
     axis = 0 if d.get('flat') else 2  # 납작한 고기는 위아래로 물결친다
+    # 뼈 회전 → 옆으로 흔들리는 방향: Z축으로 돌면 꼬리 쪽이 -X로, X축으로 돌면 +Z로 간다
+    sgn = -1.0 if axis == 2 else 1.0
     chain = ['Head'] + [f'Spine{i + 1}' for i in range(nb - 1)] + ['Tail']
+    amp_fn, lam = SWIM[STYLE.get(d['type'], 'carangi')]
+    # 마디 경계 x: 주둥이 · Root(= Spine1 시작) · 척추 마디 · 꼬리지느러미 시작 · 꼬리 끝
+    rest = {b.name: b for b in arm.data.bones}
+    xs = [0.0, rest['Spine1'].head_local.y + 0.5]
+    xs += [rest[f'Spine{i + 1}'].tail_local.y + 0.5 for i in range(nb - 1)]
+    xs.append(1.0)
     arm.animation_data_create()
     sc = bpy.context.scene
     sc.render.fps = FPS
-    for clip, (frames, cycles, amp, wave, roll, pec, cbend) in CLIPS.items():
+    for clip, (frames, cycles, amp, roll, pec, cbend, jaw_a, gill_a, breaths) in CLIPS.items():
+        lam_c, amp_c = lam, amp_fn
         if clip == 'Flop' and d['type'] == 'G':
-            # 장어는 물 밖에서 C자로 펄떡이지 않고 S자로 몸을 꼰다 (몸 전체에 물결이 한 번 반)
-            amp, wave, cbend = 0.34, 1.4, 0.1
+            # 장어는 물 밖에서 C자로 펄떡이지 않고 S자로 몸을 꼰다
+            amp, cbend, lam_c = 0.11, 0.03, 0.7
+        if clip == 'Thrash':
+            # 몸부림: 어느 체형이든 몸 전체가 크게 휜다 (파장도 짧게)
+            lam_c, amp_c = min(lam, 0.9), (lambda x, f=amp_fn: 0.5 * f(x) + 0.5 * (0.3 + 0.7 * x))
+        A, Cb = amp * amp_k, cbend * amp_k
+
+        def h(x, ph):
+            return (A * amp_c(x) * math.sin(2 * math.pi * x / lam_c - ph)
+                    + Cb * (4 * (x - 0.45) ** 2 - 0.3) * math.sin(ph))
+
         # 어종 빈도 배율은 클립 길이로 (주기 수는 그대로라 반복이 이어진다)
         frames = max(12, int(round(frames / freq_k)))
         act = bpy.data.actions.new(clip)
@@ -650,46 +783,59 @@ def animate(d, arm):
             pb.rotation_mode = 'XYZ'
         for fr in range(frames + 1):
             ph = 2 * math.pi * cycles * fr / frames
+            # 마디마다 현의 기울기. 꼬리지느러미는 물을 밀며 조금 늦게 따라온다 (끝이 휘는 느낌)
+            th = []
+            for j in range(len(xs) - 1):
+                p = ph - (0.45 if j == len(xs) - 2 else 0.0)
+                th.append(math.atan2(h(xs[j + 1], p) - h(xs[j], p), xs[j + 1] - xs[j]))
             for i, name in enumerate(chain):
                 pb = arm.pose.bones.get(name)
                 if pb is None:
                     continue
                 e = [0.0, 0.0, 0.0]
-                if name == 'Head':
-                    # 머리는 반대로 살짝 (몸이 흔들려도 머리가 덜 흔들리게)
-                    ang = -0.35 * amp * amp_k * math.sin(ph + 0.6) - cbend * 0.6 * math.sin(ph)
-                    e[axis] = -ang
-                else:
-                    k = i / (len(chain) - 1)
-                    env = (0.2 + 0.8 * k ** 1.4) * amp * amp_k / max(1.0, (nb - 1) / 5.0)
-                    ang = env * math.sin(ph - k * 2 * math.pi * wave)
-                    ang += cbend / (nb - 1) * 1.6 * math.sin(ph)
-                    e[axis] = ang
+                if name != 'Head':   # 머리 방향은 Root가 맡는다 (머리 마디의 현)
+                    e[axis] = sgn * (th[i] - th[i - 1])
                 pb.rotation_euler = e
                 pb.keyframe_insert('rotation_euler', frame=fr)
             r = arm.pose.bones['Root']
             re = [0.0, 0.0, 0.0]
+            re[axis] = sgn * th[0]
             if roll:
-                re[1] = roll * math.sin(ph * 0.5 + 0.3)  # 몸을 비튼다 (몸길이 축)
-                re[2 if axis == 2 else 0] = roll * 0.6 * math.sin(ph)
+                re[1] = roll * math.sin(ph / cycles + 0.3)  # 몸을 비튼다 (몸길이 축, 클립에 한 번)
             if clip == 'Flop':
                 re[0 if axis == 2 else 2] = 0.18 * math.sin(ph * 2)  # 펄떡: 위아래로 들썩
             r.rotation_euler = re
             r.keyframe_insert('rotation_euler', frame=fr)
+            # 몸 가운데(Root 자리)도 물결만큼 옆으로 밀린다 (머리 반동)
+            loc = [0.0, 0.0, 0.0]
+            loc[0 if axis == 2 else 2] = h(xs[1], ph)
+            r.location = loc
+            r.keyframe_insert('location', frame=fr)
+            # 숨: 입을 벌렸다 닫고, 조금 늦게 아가미 뚜껑이 열린다 (입 → 아가미로 물을 보내는 순서)
+            br = 2 * math.pi * breaths * fr / frames
+            jb = arm.pose.bones.get('Jaw')
+            if jb is not None:
+                jb.rotation_euler = (jaw_a * ((1 - math.cos(br)) / 2) ** 1.5, 0.0, 0.0)
+                jb.keyframe_insert('rotation_euler', frame=fr)
+            for nm, side in (('Gill_R', -1.0), ('Gill_L', 1.0)):
+                gb = arm.pose.bones.get(nm)
+                if gb is not None:
+                    gb.rotation_euler = (0.0, 0.0, side * gill_a * ((1 - math.cos(br - 1.8)) / 2) ** 1.5)
+                    gb.keyframe_insert('rotation_euler', frame=fr)
             # 두족류 다리: 다리마다 위상을 달리해 꿈틀 (빠르게 헤엄칠 땐 뒤로 모아 쭉)
             arm_amp = {'Swim_Slow': 0.22, 'Swim_Fast': 0.08, 'Thrash': 0.6, 'Flop': 0.45, 'Idle_Hover': 0.15}[clip]
             for pb in arm.pose.bones:
                 if not pb.name.startswith('Arm'):
                     continue
                 ai, aj = (int(x) for x in pb.name[3:].split('_'))
-                w = ph * (1.5 if clip == 'Thrash' else 1.0) + ai * 0.785 + aj * 0.9
+                w = ph * (4 / 3 if clip == 'Thrash' else 1.0) + ai * 0.785 + aj * 0.9
                 pb.rotation_euler = (arm_amp * math.sin(w), 0.0, arm_amp * 0.5 * math.cos(w * 0.7 + ai))
                 pb.keyframe_insert('rotation_euler', frame=fr)
-            for nm, sgn in (('Pec_R', 1), ('Pec_L', -1)):
+            for nm, ps in (('Pec_R', 1), ('Pec_L', -1)):
                 pb = arm.pose.bones.get(nm)
                 if pb is None:
                     continue
-                pb.rotation_euler = (pec * math.sin(ph * (2 if clip == 'Idle_Hover' else 1) + 0.5), 0.0, sgn * pec * 0.4 * math.sin(ph))
+                pb.rotation_euler = (pec * math.sin(ph * (2 if clip == 'Idle_Hover' else 1) + 0.5), 0.0, ps * pec * 0.4 * math.sin(ph))
                 pb.keyframe_insert('rotation_euler', frame=fr)
         for fc in act.fcurves if hasattr(act, 'fcurves') else []:
             for kp in fc.keyframe_points:

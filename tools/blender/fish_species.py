@@ -640,6 +640,10 @@ def resolve(sid):
     d.setdefault('head_w', 1.0)
     d.setdefault('barbels', [])
     d.setdefault('bones', 6)
+    if not d.get('ceph'):
+        # 척추 마디를 촘촘히: 어종 표의 뼈 수(6 = 예전 기본)를 1.7배로, 적어도 12개 (척추 11 + 꼬리).
+        # 마디가 5개뿐이면 몸이 몇 토막으로 꺾여 보였다. 장어형 14 → 24
+        d['bones'] = max(12, round(d['bones'] * 1.7))
     d.setdefault('flat', None)
     d.setdefault('beak', 0.0)
     d.setdefault('bill', 0.0)

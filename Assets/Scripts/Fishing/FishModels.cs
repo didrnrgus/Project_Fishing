@@ -116,6 +116,13 @@ namespace Fishing.Angling
             else anim.Play(clip);
         }
 
+        /// <summary>재생 중인 클립의 속도만 바꾼다 (헤엄치는 속도에 꼬리 박자를 맞출 때, 매 프레임 불러도 된다).</summary>
+        public static void SetSpeed(GameObject fish, string clip, float speed)
+        {
+            var anim = fish != null ? fish.GetComponentInChildren<Animation>() : null;
+            if (anim != null && anim[clip] != null) anim[clip].speed = speed;
+        }
+
         /// <summary>박제처럼 한 자세로 멈춘다 (대기실 트로피).</summary>
         public static void Freeze(GameObject fish, string clip = IdleHover, float time = 0f)
         {

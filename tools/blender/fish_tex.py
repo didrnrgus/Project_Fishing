@@ -59,8 +59,36 @@ def head_end_of(d):
 
 
 def gill_edge(d, v):
-    """v(0 배 ~ 1 등)에서 아가미 뚜껑 뒤 가장자리의 s. 위아래 끝이 앞으로 휘는 곡선."""
-    return head_end_of(d) - 0.08 * (v - 0.5) ** 2 * 4
+    """v(0 배 ~ 1 등)에서 아가미 뚜껑 뒤 가장자리의 s.
+    실제 아가미 뚜껑처럼 위쪽(목덜미)은 거의 곧게 내려오고, 옆구리 위쪽이 뒤로 가장 볼록하며, 아래는 목(협부) 쪽으로
+    길게 쓸려 나간다. 예전에는 위아래 대칭인 타원이라 머리에 둥근 헬멧을 씌운 것 같았다."""
+    he = head_end_of(d)
+    if d['type'] == 'G':
+        return he - 0.08 * (v - 0.5) ** 2 * 4
+    up = np.clip((v - 0.64) / 0.36, 0.0, 1.0)
+    lo = np.clip((0.64 - v) / 0.64, 0.0, 1.0)
+    return he + 0.012 - 0.045 * up ** 2 - 0.1 * lo ** 1.7
+
+
+def mouth_len(d):
+    """입 선(입술 사이 홈)이 주둥이 끝에서 뻗는 길이 (몸 구간 s). 텍스처·모델 홈·턱뼈가 같이 쓴다."""
+    return 0.035 + 0.03 * max(0, d.get('mouth', 0)) + (0.03 if d['type'] == 'C' else 0.0)
+
+
+def mouth_v(d):
+    """입 선의 높이 (v: 0 배 ~ 1 등). 주둥이 끝에서 뒤로 갈수록 0.6 s만큼 올라간다."""
+    return 0.5 + 0.35 * d.get('mouth', 0) * 0.3
+
+
+def eye_uv(d):
+    """눈 가운데 (s, v)와 눈 반지름을 s·v 단위로. 텍스처 눈 둘레와 모델 눈두덩이 같이 쓴다."""
+    e = d['eye']
+    ez = e['z']
+    ecz = math.copysign(abs(ez) ** (d.get('xsec', 2.0) / 2.0), ez)
+    ev = math.acos(max(-1.0, min(1.0, -ecz))) / math.pi
+    eru = e['r'] / d['body_end']
+    erv = e['r'] / (math.pi * (d['depth'] / 2 + d['width'] / 2) / 2)
+    return e['s'], ev, eru, erv
 
 
 def paint(d, seed=0):
@@ -173,9 +201,18 @@ def paint(d, seed=0):
                 strength = p[1]
         # 비늘이 잘수록(수가 많을수록) 테두리가 덜 보인다: 잔 비늘을 굵은 선으로 그리면 그물·자처럼 보인다
         strength *= min(1.0, max(0.5, (40.0 / nsc) ** 0.8))
-        # 머리(아가미 뚜껑까지)에는 비늘이 없다. 경계는 아가미 뚜껑 곡선을 따른다
-        gx0 = head_end - 0.08 * (vside - 0.5) ** 2 * 4
-        fade = smooth(gx0 + 0.004, gx0 + 0.03, u) * smooth(1.02, 0.9, u)
+        # 비늘이 없는 머리: 잉어류(A·B)는 아가미 뚜껑까지 맨살이다. 농어·도미류(C·D)는 실제로 볼과 아가미 뚜껑까지
+        # 비늘이 덮고 주둥이·눈 위·턱만 맨살이다 (머리 전체를 맨살 판으로 칠하면 헬멧을 쓴 것 같았다).
+        # 목덜미(등 쪽)는 경계를 넓게 풀어 머리와 등이 이어지게
+        gx0 = gill_edge(d, vside)
+        if d['type'] in ('C', 'D') or d.get('head_scales'):
+            es_, ev_, eru_, erv_ = eye_uv(d)
+            cheek = es_ + eru_ * 1.5
+            below = smooth(ev_ + erv_ * 0.9, ev_ - erv_ * 0.2, vside)
+            gx0 = gx0 + (np.minimum(gx0, cheek) - gx0) * below
+        fade = smooth(gx0 + 0.004, gx0 + 0.03 + 0.05 * smooth(0.7, 1.0, vside), u) * smooth(1.02, 0.9, u)
+        # 비늘 테가 몸을 평균적으로 어둡게 하므로 맨살 머리도 그만큼 낮춘다 (머리만 밝게 떠서 따로 붙은 판처럼 보였다)
+        body *= (1 - strength * 0.12 * (1 - smooth(gx0 - 0.02, gx0 + 0.03, u)))[..., None]
         # 드러난 쪽(꼬리 쪽 호) 가장자리에 짙은 색소 띠, 덮인 밑동은 살짝 어둡게, 가운데는 은빛으로 볼록
         post = smooth(-0.15, 0.4, best_dx)
         rim = smooth(0.72, 0.96, best_t) * post
@@ -215,9 +252,10 @@ def paint(d, seed=0):
             h_b -= pore * 0.6
 
     # ---- 아가미 뚜껑 ----
-    gx = head_end - 0.08 * (vside - 0.5) ** 2 * 4
+    gx = gill_edge(d, vside)
     not_ceph = 0.0 if d.get('ceph') else 1.0
-    gband = smooth(0.05, 0.25, vside) * smooth(0.98, 0.8, vside) * eyed * not_ceph
+    # 아가미 틈은 목덜미 위로 넘어가지 않는다 (머리 꼭대기까지 둘러진 선이 헬멧 테두리처럼 보였다)
+    gband = smooth(0.05, 0.25, vside) * smooth(0.86, 0.66, vside) * eyed * not_ceph
     if d['type'] == 'G':
         # 장어는 아가미 뚜껑 대신 가슴지느러미 앞의 작은 구멍뿐 (머리 둘레에 선을 두르면 헬멧처럼 보였다)
         gband = smooth(0.2, 0.3, vside) * smooth(0.5, 0.4, vside) * eyed * 0.6
@@ -249,26 +287,31 @@ def paint(d, seed=0):
         groove = np.exp(-((u - pre) ** 2) / (2 * 0.002 ** 2)) * gband * smooth(0.25, 0.45, vside)
         blend(body, back * 0.6, groove * 0.15)
         h_b -= groove * 0.35
-        # 눈 둘레: 살짝 꺼진 짙은 테 (눈이 피부에 묻혀 보이게)
-        e = d['eye']
-        ez = e['z']
-        ecz = math.copysign(abs(ez) ** (d.get('xsec', 2.0) / 2.0), ez)
-        ev = math.acos(max(-1.0, min(1.0, -ecz))) / math.pi
-        eru = e['r'] / d['body_end']                                            # 눈 반지름 → u
-        erv = e['r'] / (math.pi * (d['depth'] / 2 + d['width'] / 2) / 2)      # 눈 반지름 → v (반 둘레)
-        ed = np.sqrt(((u - e['s']) / eru) ** 2 + ((vside - ev) / erv) ** 2)
-        orbit = smooth(1.6, 1.15, ed) * smooth(0.9, 1.1, ed) * eyed * (0 if flat else 1)
-        blend(body, back * 0.45, orbit * 0.5)
-        h_b -= orbit * 0.4
+        # 눈 둘레: 눈에 바로 붙은 가는 그늘만 (넓고 짙은 테는 눈을 왕방울처럼 보이게 했다).
+        # 그 바깥 눈두덩(뼈 테)은 모델이 도드라지게 하고, 텍스처는 위쪽을 살짝 진하게(눈썹처럼 그늘)
+        es, ev, eru, erv = eye_uv(d)
+        ed = np.sqrt(((u - es) / eru) ** 2 + ((vside - ev) / erv) ** 2)
+        noflat = 0 if flat else 1
+        orbit = smooth(1.3, 1.02, ed) * smooth(0.85, 0.98, ed) * eyed * noflat
+        blend(body, back * 0.55, orbit * 0.3)
+        h_b -= orbit * 0.25
+        brow = np.exp(-((ed - 1.35) / 0.3) ** 2) * smooth(ev - erv * 0.2, ev + erv * 0.8, vside) * eyed * noflat
+        blend(body, back * 0.8, brow * 0.25)
+        h_b += np.exp(-((ed - 1.35) / 0.3) ** 2) * 0.35 * eyed * noflat
+        # 콧구멍: 눈과 주둥이 사이, 눈보다 조금 위에 작은 구멍 두 개 (앞·뒤)
+        for k in (0.0, 1.0):
+            nu_, nv_ = es * (0.42 + 0.16 * k), ev + erv * 0.25
+            nd = np.sqrt(((u - nu_) / (eru * 0.15)) ** 2 + ((vside - nv_) / (erv * 0.13)) ** 2)
+            pit = smooth(1.0, 0.4, nd) * eyed * noflat
+            blend(body, back * 0.45, pit * 0.35)    # 진하면 돼지코처럼 보인다
+            h_b -= pit * 0.45
+            h_b += np.exp(-((nd - 1.1) / 0.3) ** 2) * 0.2 * eyed * noflat
         # 주둥이 위는 진하게
         blend(body, back * 0.8, smooth(0.08, 0.0, u) * smooth(0.45, 0.8, vside) * 0.4 * eyed)
     # 입 선
     if not flat and not d.get('ceph'):
-        mouth_v = 0.5 + 0.35 * d.get('mouth', 0) * 0.3
-        mlen = 0.035 + 0.03 * max(0, d.get('mouth', 0))
-        if d['type'] == 'C':
-            mlen += 0.03
-        md = v - mouth_v - (u * 0.6)
+        mlen = mouth_len(d)
+        md = v - mouth_v(d) - (u * 0.6)
         reach = smooth(mlen, mlen * 0.6, u)
         mouth = np.exp(-(md ** 2) / (2 * 0.006 ** 2)) * reach
         # 입술: 갈라진 선 위아래로 도톰하고 밝은 살
@@ -460,15 +503,21 @@ def paint(d, seed=0):
     th = np.arctan2(ey - cxe, ex - cxe)
     fib = noise(ES, ES, 6, rng.integers(1 << 30), 1)
     fibers = 0.5 + 0.5 * np.sin(th * 60 + fib * 6.0)
-    eye = iris[None, None] * (0.75 + 0.25 * fibers[..., None]) * (0.65 + 0.45 * smooth(0.88, 0.5, r))[..., None]
-    fleck = smooth(0.7, 0.85, noise(ES, ES, 30, rng.integers(1 << 30), 1)) * smooth(0.5, 0.6, r) * smooth(0.85, 0.75, r)
-    blend(eye, np.minimum(iris * 1.35, 1.0), fleck * 0.6)
-    blend(eye, iris * 0.35, smooth(0.78, 0.88, r))                        # 홍채 바깥 테
-    blend(eye, hexrgb(col['back']) * 0.45, smooth(0.86, 0.92, r))           # 눈 가장자리 피부
-    blend(eye, np.array([0.02, 0.025, 0.03], np.float32), smooth(0.5, 0.45, r))   # 동공
-    blend(eye, np.array([0.08, 0.12, 0.16], np.float32), smooth(0.3, 0.05, r) * 0.3)
-    hl = np.exp(-(((ex - cxe * 0.8) ** 2 + (ey - cxe * 0.76) ** 2) / (40.0 * S * S)))
-    eye += hl[..., None] * 0.5
+    # 물고기 눈은 동공이 크고(머리 밖으로 보이는 눈의 60%쯤) 홍채는 가는 금속빛 고리다. 예전에는 동공이 작고 홍채 바깥에 짙은 테,
+    # 그 바깥에 또 짙은 피부 테가 있어 만화 속 왕방울 눈처럼 보였다
+    ty = (ey - cxe) / (ES / 2)                                              # -1 위 ~ +1 아래 (이미지 y는 아래로)
+    eye = iris[None, None] * (0.7 + 0.3 * fibers[..., None]) * (0.55 + 0.5 * smooth(0.76, 0.5, r))[..., None]
+    fleck = smooth(0.7, 0.85, noise(ES, ES, 30, rng.integers(1 << 30), 1)) * smooth(0.5, 0.56, r) * smooth(0.76, 0.66, r)
+    blend(eye, np.minimum(iris * 1.35, 1.0), fleck * 0.5)
+    blend(eye, iris * 0.4, smooth(-0.1, -0.75, ty) * 0.55)                  # 홍채 위쪽은 색소로 어둡다 (등 쪽 그늘)
+    blend(eye, np.minimum(iris * 1.5 + 0.1, 1.0), smooth(0.54, 0.5, r) * smooth(0.46, 0.5, r) * 0.6)   # 동공 둘레 밝은 고리
+    blend(eye, iris * 0.6, smooth(0.68, 0.76, r) * 0.6)                     # 홍채 바깥은 살짝 어둡게 (검은 테는 아님)
+    skin = hexrgb(col['side']) * 0.75 + hexrgb(col['back']) * 0.25
+    blend(eye, skin, smooth(0.77, 0.83, r))                                  # 눈 가장자리는 머리 피부색으로 이어진다
+    blend(eye, np.array([0.015, 0.02, 0.025], np.float32), smooth(0.5, 0.46, r))   # 동공
+    blend(eye, np.array([0.06, 0.1, 0.13], np.float32), smooth(0.4, 0.05, r) * 0.25)
+    hl = np.exp(-(((ex - cxe * 0.82) ** 2 + (ey - cxe * 0.74) ** 2) / (30.0 * S * S)))
+    eye += hl[..., None] * 0.35
     ey0 = 256 * S
     alb[ey0:ey0 + ES, BW:BW + ES, :3] = np.clip(eye, 0, 1)
     smooth_map[ey0:ey0 + ES, BW:BW + ES] = 0.96
