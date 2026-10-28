@@ -1182,7 +1182,8 @@ namespace Fishing.Dev
                 // 탄천 (World/Maps/Tancheon.cs): 시작 둔치에서 건너편 운동장, 하류(보·징검다리·사송교·롯데월드타워), 징검다리 위, 제방 위에서 내려다보기, 상류(야탑교), 밤
                 ("tancheon", "72_tancheon_spawn", new Vector3(-6f, 1.1f, -45f), 0f, 10f, 10f, 12f, 10 * 60, Weather.Clear),
                 ("tancheon", "72b_tancheon_downstream", new Vector3(30f, 1.1f, -48f), 80f, 75f, 6f, 10f, 15 * 60, Weather.Clear),
-                ("tancheon", "72c_tancheon_stones", new Vector3(106f, 0.8f, -30f), 10f, 20f, 18f, 10f, 11 * 60, Weather.Clear),
+                ("tancheon", "72c_tancheon_stones", new Vector3(106f, 0.8f, -32f), 10f, 20f, 18f, 10f, 11 * 60, Weather.Clear),
+                ("tancheon", "72j_tancheon_stones_side", new Vector3(98f, 1.1f, -45f), 40f, 40f, 16f, 11f, 15 * 60, Weather.Clear),
                 ("tancheon", "72d_tancheon_levee", new Vector3(-52f, 6.8f, -93f), 0f, 15f, 24f, 14f, 13 * 60, Weather.Clear),
                 ("tancheon", "72f_tancheon_upstream", new Vector3(-30f, 1.1f, -46f), 270f, 280f, 6f, 10f, 17 * 60 + 30, Weather.Clear),
                 ("tancheon", "72e_tancheon_night", new Vector3(-6f, 1.1f, -45f), 40f, 60f, 6f, 12f, 20 * 60 + 30, Weather.Clear),
