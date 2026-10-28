@@ -65,7 +65,7 @@ python tools/drone/scene.py 내그림.png --cutout        # 배경이 복잡한 
 
 - 점 뽑기는 `drone_points.py`: 그림 가장자리 색으로 배경을 알아서 지우고(검정 = 드론 끔), 검은 부분도 끄고, 남은 곳을 3,000점으로 고르게 나눠 그 자리 평균색을 매긴다.
 - 실행하면 꺼지는 곳을 검게 칠한 미리보기(`%TEMP%\drone_preview_<이름>.png`)가 나온다. 배경이 남으면 `--tol 70`, 그림까지 지워지면 `--tol 30`, 선이 많은 그림은 `--edge-boost 3`.
-- `--cutout`은 `pip install "rembg[cpu]"`가 필요하다. 처음 쓸 때 모델(약 170MB)을 받는다.
+- `--cutout`은 `pip install "rembg[cpu]"`가 필요하다. 처음 쓸 때 모델(약 170MB)을 받는다. 모델마다 잘 따는 게 달라서 `--cutout u2net+isnet-anime`처럼 `+`로 이으면 딴 곳을 합친다 (게임 포스터처럼 로고와 캐릭터가 섞인 그림: 로고는 `u2net`, 캐릭터·카트는 `isnet-anime`가 잘 땄다).
 - 단색·검정 배경 그림이 가장 깔끔하다. 피사체가 그림 가장자리에 닿아 있으면 그 부분이 배경으로 지워질 수 있다.
 - 기본 타이틀 장면은 `python tools/drone/title_scene.py`로 인트로 타이틀 그림에서 다시 뽑는다 (붓글씨·영문만, 붉은 낙관 「짭」은 뺐다).
 

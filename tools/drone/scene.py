@@ -87,10 +87,14 @@ def enlarged(src, side):
 
 def cutout(src, model):
     """배경이 복잡한 그림(풍경·게임 화면): AI 배경 제거(rembg)로 피사체만 남기고 나머지를 검정(= 소등)으로 칠한 사본.
-    처음 쓸 때 모델을 내려받는다 (~/.u2net). isnet-general-use 가 만화·3D 렌더 모두 잘 딴다 (isnet-anime 는 이런 그림에서 거의 못 땄다)."""
+    처음 쓸 때 모델을 내려받는다 (~/.u2net). 모델을 "+"로 이으면 각 모델이 딴 곳을 합친다. isnet-general-use 가 만화·3D 렌더 모두 잘 딴다 (isnet-anime 는 이런 그림에서 거의 못 땄다)."""
+    from PIL import ImageChops
     from rembg import new_session, remove
     img = Image.open(src).convert("RGB")
-    alpha = remove(img, session=new_session(model), only_mask=True)
+    alpha = None
+    for m in model.split("+"):   # "u2net+isnet-anime": 모델마다 딴 곳을 합친다 (로고는 u2net, 캐릭터·카트는 isnet-anime가 잘 땄다)
+        a = remove(img, session=new_session(m), only_mask=True)
+        alpha = a if alpha is None else ImageChops.lighter(alpha, a)
     out = Image.new("RGB", img.size)
     out.paste(img, mask=alpha.point(lambda a: 255 if a >= 128 else 0))
     path = os.path.join(tempfile.gettempdir(), "drone_cutout.png")
