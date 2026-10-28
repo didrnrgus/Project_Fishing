@@ -251,7 +251,7 @@ namespace Fishing.World
             foreach (var (x, name) in new[] { (-KoreaCoasts.TcBridgeX, "야 탑 교"), (KoreaCoasts.TcBridgeX, "사 송 교"), (-440f, "서 현 교"), (440f, "탄 천 교") })
                 CarBridge(x, name, Mathf.Abs(x) < 300f);
             Stadium(new Vector3(-48f, CityY, 172f));
-            DroneShow.Create(_root, new Vector3(-48f, CityY + 104f, 172f), 0f).Height = 98f;   // 운동장 위 밤하늘 드론쇼 (사용자 요청)
+            DroneShow.Create(_root, new Vector3(-48f, CityY + 94f, 172f), 0f).Height = 88f;   // 운동장 위 밤하늘 드론쇼 (사용자 요청)
             Ballpark(new Vector3(84f, CityY, 112f));
             Gymnasium(new Vector3(-188f, CityY, 160f));
             City();
