@@ -248,6 +248,7 @@ namespace Fishing.World
             Weir();
             Footbridge();
             Festival();
+            Kayaks();
             foreach (var (x, name) in new[] { (-KoreaCoasts.TcBridgeX, "야 탑 교"), (KoreaCoasts.TcBridgeX, "사 송 교"), (-440f, "서 현 교"), (440f, "탄 천 교") })
                 CarBridge(x, name, Mathf.Abs(x) < 300f);
             Stadium(new Vector3(-48f, CityY, 172f));
@@ -849,14 +850,16 @@ namespace Fishing.World
         /// 굵은 갈색 줄기 → 위·바깥으로 뻗는 큰 가지 넷(커튼 틈으로 보인다) → 수관(납작한 반구) 겉면 곳곳에서 가지 판 280장이 늘어진다:
         /// 가장자리(낮은 곳)는 땅 위 0.4~1.5m까지 길게, 꼭대기 쪽은 짧게 겹을 이룬다. 판은 바깥을 보게 둘레 방향으로 돌린다 (Fishing/Grass, 끝이 흔들린다).
         /// 봄엔 밝은 연두, 여름엔 짙은 초록, 가을엔 누런 초록.
+        /// 가지 판은 6마디로 나누고 Fishing/Willow로 흔든다: 판 하나가 통째로 기울면 막대가 달린 것 같다는 사용자 지적 →
+        /// 끝으로 갈수록 크게, 흔들림이 아래로 늦게 전해져 채찍처럼 휜다 (uv2.x = 가지마다 다른 박자).
         /// </summary>
         void Willows()
         {
-            var shader = Shader.Find("Fishing/Grass");
+            var shader = Shader.Find("Fishing/Willow") ?? Shader.Find("Fishing/Grass");
             if (shader == null) return;
             var mat = new Material(shader) { mainTexture = WillowTexture(), name = "Willow" };
             mat.SetFloat("_Cutoff", 0.3f);
-            mat.SetFloat("_Wind", 0.22f);
+            mat.SetFloat("_Wind", 0.45f);   // 끝이 흔들리는 폭 (m)
             var seasonTint = _season switch
             {
                 Season.Spring => new Color(1.25f, 1.3f, 0.85f),
@@ -879,6 +882,7 @@ namespace Fishing.World
             }
             var v = new List<Vector3>();
             var uv = new List<Vector2>();
+            var uv2 = new List<Vector2>();
             var col = new List<Color>();
             var nrm = new List<Vector3>();
             var tri = new List<int>();
@@ -915,16 +919,27 @@ namespace Fishing.World
                     var top0 = hang + Vector3.up * 0.25f;
                     int b = v.Count;
                     var flare = new Vector3(Mathf.Cos(th), 0f, Mathf.Sin(th)) * drop * R(0.08f, 0.2f);   // 아래로 갈수록 바깥으로 퍼진다 (분수 모양)
-                    v.Add(top0 - dx); v.Add(top0 + dx); v.Add(top0 + dx + Vector3.down * drop + flare); v.Add(top0 - dx + Vector3.down * drop + flare);
-                    uv.Add(new Vector2(0f, 0f)); uv.Add(new Vector2(1f, 0f)); uv.Add(new Vector2(1f, 1f)); uv.Add(new Vector2(0f, 1f));
                     var ct = tint * R(0.9f, 1.05f);
-                    for (int q = 0; q < 4; q++) { col.Add(ct); nrm.Add(Vector3.up); }
-                    tri.AddRange(new[] { b, b + 1, b + 2, b, b + 2, b + 3 });
+                    float phase = R(0f, 6.283f);
+                    const int Seg = 6;
+                    for (int sg = 0; sg <= Seg; sg++)
+                    {
+                        float f = sg / (float)Seg;
+                        var mid = top0 + Vector3.down * drop * f + flare * Mathf.Pow(f, 1.4f);   // 마디마다 조금씩 바깥으로 휘며 퍼진다
+                        v.Add(mid - dx); v.Add(mid + dx);
+                        uv.Add(new Vector2(0f, f)); uv.Add(new Vector2(1f, f));
+                        uv2.Add(new Vector2(phase, 0f)); uv2.Add(new Vector2(phase, 0f));
+                        col.Add(ct); col.Add(ct); nrm.Add(Vector3.up); nrm.Add(Vector3.up);
+                        if (sg == Seg) continue;
+                        int a = b + sg * 2;
+                        tri.AddRange(new[] { a, a + 1, a + 3, a, a + 3, a + 2 });
+                    }
                 }
             }
             var mesh = new Mesh { name = "Willows", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
             mesh.SetVertices(v);
             mesh.SetUVs(0, uv);
+            mesh.SetUVs(1, uv2);
             mesh.SetColors(col);
             mesh.SetNormals(nrm);
             mesh.SetTriangles(tri, 0);
@@ -1546,81 +1561,96 @@ namespace Fishing.World
         // ---------------------------------------------------------------- 보행교
 
         /// <summary>
-        /// 탄천 보행교 (사용자 사진: 조깅하며 건너는 낮은 다리): 콘크리트 상판이 물가에선 수면 위 1.3m, 가운데로 갈수록 살짝 솟아 1m 더 높은 완만한 아치
-        /// (사용자: "살짝 아치 형태면 좋겠다"). 교각 사이 밑면은 아치로 파였다.
-        /// 난간은 빨간 강관 기둥 사이에 초록 와이어 네 가닥, 기둥 하나엔 주황 구명환. 상판 바깥 옆면엔 검은 전선관 두 줄 — 모두 상판 곡선을 따른다.
-        /// 양쪽 끝은 둔치 산책로로 이어지는 짧은 경사. 밤엔 상판 옆 아래 LED가 물빛으로 켜진다.
+        /// 탄천 보행교 (사용자 사진 여러 각도: 실제 탄천의 돌 다리 — 조깅하며 건너는 다리). 막돌을 쌓아 마감한 다리로,
+        /// 네모난 돌기둥 교각이 물 위로 1.4m 올라오고 그 위에서 낮고 넓은 아치가 시작된다: 경간 12~13m, 교각 쪽 모서리만 둥글고(반지름 약 2.6m)
+        /// 가운데는 거의 평평하다. 상판 옆면(돌 마감)은 두툼하게 1m, 상판은 물가에서 수면 위 2.7m · 가운데 0.4m 더 높을 뿐 거의 평평하다 (카약이 밑으로 지나간다).
+        /// 난간은 낮은 돌 난간(갓돌) 위에 회색 철제 난간. 양쪽 끝은 둔치 산책로로 이어지는 경사. 밤엔 갓돌 아래 LED가 물빛으로 켜진다.
+        /// (예전: 아치가 수면 바로 위에서 시작하는 낮은 수로교 같아서 부실해 보인다는 사용자 지적)
         /// </summary>
         void Footbridge()
         {
             float x = KoreaCoasts.TcFootX;
-            const float W = 3f, Thick = 0.45f, Rise = 1.0f;
+            const float W = 3.4f, Rise = 0.4f, Parapet = 0.55f, Fascia = 1.0f, Spring = 1.4f, Haunch = 2.6f, PierW = 1.7f;
             float zA = NearZ(x, 3.5f), zB = FarZ(x, 3.5f);
-            float deckEnd = Water + 1.3f;
-            // 상판 윗면 높이: 양 끝 deckEnd → 가운데 deckEnd + Rise (원호에 가까운 사인 곡선)
+            float deckEnd = Water + 2.7f;
             float Deck(float z) => deckEnd + Rise * Mathf.Sin(Mathf.PI * Mathf.Clamp01((z - zA) / (zB - zA)));
-            var conc = Mats.VertexAO(Mats.Weathered("concrete", new Color(0.72f, 0.72f, 0.68f), 2.5f, 0.12f, 1f, 0.55f, 0.25f, new Color(0.3f, 0.34f, 0.22f), 0.55f));
-            var red = Mats.Weathered("rust", new Color(0.62f, 0.18f, 0.14f), 1.2f, 0.35f, 0f, 0.3f, 0f, null, 0.3f, 0.3f);
-            var wire = Mats.Lit(new Color(0.22f, 0.62f, 0.42f), 0.5f, 0.3f);
-            var pipe = Mats.Lit(new Color(0.08f, 0.08f, 0.09f), 0.4f);
+            var stone = Mats.VertexAO(Mats.Weathered("stonewall", new Color(0.82f, 0.8f, 0.74f), 2.4f, 0.12f, 1f, 0.45f, 0.25f, new Color(0.3f, 0.34f, 0.22f), 0.35f));
+            var cap = Mats.Weathered("concrete", new Color(0.62f, 0.61f, 0.58f), 2f, 0.15f, 1f, 0.3f, 0.1f, null, 0.5f);
+            var paving = Mats.Weathered("greytile", new Color(0.62f, 0.6f, 0.56f), 1.6f, 0.12f, 0.5f, 0.2f, 0f, null, 0.5f);
+            var steel = Mats.Lit(new Color(0.5f, 0.52f, 0.54f), 0.45f, 0.5f);
             var led = HanRiverLandmarks.Mat(new Color(0.4f, 0.42f, 0.44f), null, Texture2D.whiteTexture, new Color(0.3f, 0.8f, 1f) * 2f, 0.3f, 0f, Vector2.one);
             var root = new GameObject("Footbridge").transform;
             root.SetParent(_root, false);
             var bm = new BlockMesh();
+            var bmDeck = new BlockMesh();
             var c = Color.white;
-            var wet = new Color(0.5f, 0.52f, 0.46f);
+            var wet = new Color(0.55f, 0.56f, 0.5f);
             float hw = W * 0.5f;
-            // 경간: 교각 사이 10~11m, 밑면은 교각 머리(수면 위 30cm)에서 경간 가운데 상판 밑까지 솟는 아치
-            int spans = Mathf.Max(3, Mathf.RoundToInt((zB - zA) / 10.5f));
+            int spans = Mathf.Max(3, Mathf.RoundToInt((zB - zA) / 12.5f));
             float sl = (zB - zA) / spans;
-            for (int k = 0; k < spans; k++)
+            float spring = Water + Spring;
+            // 아치 밑선: 교각 면에서 spring 높이로 시작해 반지름 Haunch 만큼 둥글게 올라가 가운데는 상판 밑(옆면 두께 Fascia) 높이로 평평
+            float Soffit(float z)
+            {
+                float zr = Mathf.Repeat(z - zA, sl);
+                float d = Mathf.Min(zr, sl - zr) - PierW * 0.5f;   // 교각(양 끝은 교대) 면에서 잰 거리
+                float crown = Deck(z) - Fascia;
+                if (d <= 0f) return spring;
+                float t = Mathf.Clamp01(d / Haunch);
+                return Mathf.Lerp(spring, crown, Mathf.Sqrt(1f - (1f - t) * (1f - t)));
+            }
+            const int Seg = 64;
+            for (int i = 0; i < Seg * spans; i++)
+            {
+                float za = zA + (zB - zA) * i / (Seg * spans), zb = zA + (zB - zA) * (i + 1) / (Seg * spans);
+                float ta = Deck(za), tb = Deck(zb), ba = Soffit(za), bb = Soffit(zb);
+                foreach (float sg in new[] { -1f, 1f })
+                {
+                    // 옆면 (막돌): 아치 밑선에서 난간 위까지 한 장
+                    bm.Face(new Vector3(x + sg * hw, ta + Parapet, za), new Vector3(x + sg * hw, tb + Parapet, zb), new Vector3(x + sg * hw, bb, zb), new Vector3(x + sg * hw, ba, za),
+                        new Vector3(sg, 0f, 0f), c);
+                    float ix = x + sg * (hw - 0.3f);
+                    bm.Face(new Vector3(ix, tb, zb), new Vector3(ix, tb + Parapet, zb), new Vector3(ix, ta + Parapet, za), new Vector3(ix, ta, za), new Vector3(-sg, 0f, 0f), c);
+                }
+                // 아치 안쪽 (젖은 돌)
+                bm.Face(new Vector3(x - hw, ba, za), new Vector3(x + hw, ba, za), new Vector3(x + hw, bb, zb), new Vector3(x - hw, bb, zb), Vector3.down, wet);
+                bmDeck.Face(new Vector3(x - hw + 0.3f, ta, za), new Vector3(x + hw - 0.3f, ta, za), new Vector3(x + hw - 0.3f, tb, zb), new Vector3(x - hw + 0.3f, tb, zb), Vector3.up, c);
+            }
+            // 교각: 강바닥에서 아치 시작(spring)까지 네모난 돌기둥 (모서리 살짝 둥글게), 머리엔 얇은 받침돌
+            for (int k = 1; k < spans; k++)
             {
                 float z0 = zA + k * sl;
-                const int n = 12;
-                for (int i = 0; i < n; i++)
-                {
-                    float t0 = i / (float)n, t1 = (i + 1) / (float)n;
-                    float za = z0 + t0 * sl, zb = z0 + t1 * sl;
-                    float ta = Deck(za), tb = Deck(zb);
-                    float ba = Mathf.Lerp(Water + 0.3f, ta - Thick, Mathf.Pow(Mathf.Sin(Mathf.PI * t0), 0.45f));
-                    float bb = Mathf.Lerp(Water + 0.3f, tb - Thick, Mathf.Pow(Mathf.Sin(Mathf.PI * t1), 0.45f));
-                    foreach (float sg in new[] { -1f, 1f })
-                        bm.Face(new Vector3(x + sg * hw, ta, za), new Vector3(x + sg * hw, tb, zb), new Vector3(x + sg * hw, bb, zb), new Vector3(x + sg * hw, ba, za),
-                            new Vector3(sg, 0f, 0f), c);
-                    bm.Face(new Vector3(x - hw, ba, za), new Vector3(x + hw, ba, za), new Vector3(x + hw, bb, zb), new Vector3(x - hw, bb, zb), Vector3.down, wet);
-                    // 윗면 (곡선을 따라 마디마다)
-                    bm.Face(new Vector3(x - hw, ta, za), new Vector3(x + hw, ta, za), new Vector3(x + hw, tb, zb), new Vector3(x - hw, tb, zb), Vector3.up, c);
-                }
-                if (k > 0)
-                {
-                    float bed = Mathf.Min(H(x, z0), Water - 0.5f) - 0.5f;
-                    bm.Block(new Vector3(x, (Water + 0.35f + bed) * 0.5f, z0), new Vector3(W + 0.6f, Water + 0.35f - bed, 1.1f), 0.25f, Quaternion.identity, c, wet);
-                }
+                float bed = Mathf.Min(H(x, z0), Water - 0.5f) - 0.5f;
+                float h = spring - bed;
+                bm.Block(new Vector3(x, bed + h * 0.5f, z0), new Vector3(W + 0.1f, h, PierW), 0.1f, Quaternion.identity, c, wet);
             }
-            // 양 끝 경사 (둔치 산책로 높이로)
+            // 양 끝: 둑에 박힌 돌 교대 + 산책로로 이어지는 경사
             foreach (var (zEnd, dir) in new[] { (zA, -1f), (zB, 1f) })
             {
-                float zFar = zEnd + dir * 6.5f;
+                float g0 = H(x, zEnd);
+                bm.Block(new Vector3(x, (deckEnd + Mathf.Min(g0, Water) - 1f) * 0.5f, zEnd + dir * 0.6f), new Vector3(W, deckEnd - Mathf.Min(g0, Water) + 1f, 1.6f), 0.08f, Quaternion.identity, c, wet);
+                float zFar = zEnd + dir * 9f;
                 float g = H(x, zFar) + 0.04f;
                 var a = new Vector3(x, deckEnd, zEnd);
                 var b = new Vector3(x, g, zFar);
                 var d = b - a;
-                bm.Block((a + b) * 0.5f + Vector3.down * 0.35f, new Vector3(W, 0.7f, d.magnitude + 0.1f), 0.03f, Quaternion.LookRotation(d.normalized), c, wet);
+                bm.Block((a + b) * 0.5f + Vector3.down * 0.5f, new Vector3(W, 1f, d.magnitude + 0.1f), 0.03f, Quaternion.LookRotation(d.normalized), c, wet);
+                foreach (float sg in new[] { -1f, 1f })
+                    bm.Block(new Vector3(x + sg * (hw - 0.15f), deckEnd + Parapet * 0.5f + 0.1f, zEnd), new Vector3(0.5f, Parapet + 0.4f, 0.5f), 0.05f, Quaternion.identity, c, wet);
             }
-            var go = bm.Emit(root, "FootBridge", conc);
+            var go = bm.Emit(root, "FootBridge", stone);
             go.AddComponent<MeshCollider>().sharedMesh = go.GetComponent<MeshFilter>().sharedMesh;
-            // 난간·전선관·LED: 1.2m 마디로 곡선을 따라 잇는다
-            var bmRed = new BlockMesh();
-            var bmWire = new BlockMesh();
-            var bmPipe = new BlockMesh();
+            var deckGo = bmDeck.Emit(root, "FootDeck", paving);
+            deckGo.AddComponent<MeshCollider>().sharedMesh = deckGo.GetComponent<MeshFilter>().sharedMesh;
+            // 갓돌 · 철제 난간 · LED: 곡선을 따라 마디로
+            var bmCap = new BlockMesh();
+            var bmSteel = new BlockMesh();
             var bmLed = new BlockMesh();
             var bmWall = new BlockMesh();
             const float step = 1.2f;
             foreach (float sg in new[] { -1f, 1f })
             {
-                float px = x + sg * (hw - 0.12f);
-                for (float z = zA; z <= zB + 0.01f; z += 2.4f)
-                    bmRed.Block(new Vector3(px, Deck(z) + 0.6f, z), new Vector3(0.16f, 1.2f, 0.16f), 0.03f, Quaternion.identity, c, c);
+                float px = x + sg * (hw - 0.15f);
                 for (float z = zA; z < zB - 0.01f; z += step)
                 {
                     float z1 = Mathf.Min(z + step, zB);
@@ -1629,26 +1659,129 @@ namespace Fishing.World
                     var mid = (a + b) * 0.5f;
                     var d = b - a;
                     var q = Quaternion.LookRotation(d.normalized);
-                    float L = d.magnitude + 0.02f;
-                    for (int w = 0; w < 4; w++)
-                        bmWire.Block(new Vector3(px, mid.y + 0.3f + w * 0.25f, mid.z), new Vector3(0.025f, 0.025f, L), 0f, q, c, c);
-                    for (int w = 0; w < 2; w++)
-                        bmPipe.Block(new Vector3(x + sg * (hw + 0.05f), mid.y - 0.15f - w * 0.12f, mid.z), new Vector3(0.08f, 0.08f, L), 0.02f, q, c, c);
-                    bmLed.Block(new Vector3(x + sg * (hw + 0.02f), mid.y - Thick + 0.04f, mid.z), new Vector3(0.03f, 0.05f, L), 0f, q, c, c);
-                    bmWall.Block(new Vector3(x + sg * hw, mid.y + 0.9f, mid.z), new Vector3(0.1f, 1.8f, L), 0f, q, c, c);
+                    float L = d.magnitude + 0.03f;
+                    bmCap.Block(new Vector3(x + sg * (hw - 0.13f), mid.y + Parapet + 0.05f, mid.z), new Vector3(0.44f, 0.1f, L), 0.02f, q, c, c);
+                    foreach (float ry in new[] { 0.5f, 0.95f })
+                        bmSteel.Block(new Vector3(px, mid.y + Parapet + 0.1f + ry, mid.z), new Vector3(0.05f, 0.05f, L), 0.01f, q, c, c);
+                    bmSteel.Block(new Vector3(px, mid.y + Parapet + 0.1f + 0.28f, mid.z), new Vector3(0.025f, 0.025f, L), 0f, q, c, c);
+                    bmLed.Block(new Vector3(x + sg * (hw - 0.32f), mid.y + Parapet - 0.04f, mid.z), new Vector3(0.03f, 0.04f, L), 0f, q, c, c);
+                    bmWall.Block(new Vector3(px, mid.y + 1.1f, mid.z), new Vector3(0.3f, 2.2f, L), 0f, q, c, c);
                 }
+                for (float z = zA; z <= zB + 0.01f; z += 2.4f)
+                    bmSteel.Block(new Vector3(px, Deck(z) + Parapet + 0.1f + 0.5f, z), new Vector3(0.07f, 1f, 0.07f), 0.01f, Quaternion.identity, c, c);
             }
-            bmRed.Emit(root, "FootRailPost", red);
-            bmWire.Emit(root, "FootRailWire", wire).GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            bmPipe.Emit(root, "FootPipe", pipe);
+            bmCap.Emit(root, "FootCap", cap);
+            bmSteel.Emit(root, "FootRail", steel);
             bmLed.Emit(root, "FootLed", led).GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            // 난간 옆으로 떨어지지 않게 (보이지 않는 벽, 곡선을 따라)
-            var wallGo = bmWall.Emit(root, "FootRailCollider", wire);
+            var wallGo = bmWall.Emit(root, "FootRailCollider", cap);
             wallGo.AddComponent<MeshCollider>().sharedMesh = wallGo.GetComponent<MeshFilter>().sharedMesh;
             wallGo.GetComponent<Renderer>().enabled = false;
             float zr = zA + 2.4f * 3f;
-            KenneyProps.Spawn("Props/harbor_lifering", root, new Vector3(x - hw - 0.12f, Deck(zr) + 0.55f, zr), 90f, 0.75f);
+            KenneyProps.Spawn("Props/harbor_lifering", root, new Vector3(x - hw - 0.04f, Deck(zr) + 0.2f, zr), 90f, 0.75f);
             _b.AddLamp(new Vector3(x, deckEnd + Rise + 4f, (zA + zB) * 0.5f), new Color(0.7f, 0.85f, 1f), 16f, 0.9f);
+        }
+
+        // ---------------------------------------------------------------- 카약
+
+        /// <summary>
+        /// 카약 체험 (사용자 사진: 축제 날 탄천 — 축제 천막 옆 둑에 파란 부력 큐브 선착장, 그 위와 물가에 알록달록한 카약이 줄지어 있고,
+        /// 주황 구명조끼를 입은 사람들이 1~2인승 카약을 저어 다닌다). 선착장은 축제 마당 하류 끝 가까운 둑, 물 쪽으로 12 × 4.5m.
+        /// 위엔 빈 카약 여섯(한쪽은 두 척 포개), 바깥 물가엔 다섯 척이 묶여 떠 있고, 바깥 가장자리를 노란 밧줄이 두른다. 둑에서 계단으로 내려간다.
+        /// 저어 다니는 카약 열네 척은 야탑교와 보행교 사이 넓은 물에서 (<see cref="KayakFleet"/>).
+        /// </summary>
+        void Kayaks()
+        {
+            float xc = FestX1 - 12f;
+            float edge = _m.ShoreAt(xc);
+            float top = Water + 0.3f;
+            const float Cell = 0.5f;
+            const int Nx = 24, Nz = 9;
+            float z0 = edge + 0.3f, zOut = z0 + Nz * Cell;
+            var root = new GameObject("KayakDock").transform;
+            root.SetParent(_root, false);
+            var plastic = KayakKit.Mat;
+            var rng = new System.Random(812);
+            // 부력 큐브: 50cm 정사각 판이 한 칸씩, 모서리가 둥글고 칸마다 파란빛이 조금 다르다
+            var bm = new BlockMesh();
+            for (int i = 0; i < Nx; i++)
+            for (int j = 0; j < Nz; j++)
+            {
+                var col = Color.Lerp(new Color(0.12f, 0.34f, 0.82f), new Color(0.2f, 0.45f, 0.92f), (float)rng.NextDouble());
+                bm.Block(new Vector3(xc + (i - Nx * 0.5f + 0.5f) * Cell, top - 0.2f, z0 + (j + 0.5f) * Cell), new Vector3(Cell - 0.015f, 0.4f, Cell - 0.015f), 0.07f,
+                    Quaternion.identity, col, col * 0.6f);
+            }
+            // 둑에서 선착장으로 내려가는 콘크리트 계단 (가운데)
+            float g = H(xc, edge - 3f) + 0.02f;
+            for (int k = 0; k < 4; k++)
+            {
+                float t = (k + 0.5f) / 4f;
+                float y = Mathf.Lerp(g, top, t);
+                bm.Block(new Vector3(xc, y - 0.6f, Mathf.Lerp(edge - 3f, z0, t)), new Vector3(2.4f, 1.2f, 0.9f), 0.03f, Quaternion.identity, new Color(0.75f, 0.74f, 0.7f), new Color(0.5f, 0.5f, 0.46f));
+            }
+            var dock = bm.Emit(root, "Pontoon", plastic);
+            dock.AddComponent<MeshCollider>().sharedMesh = dock.GetComponent<MeshFilter>().sharedMesh;
+            // 선착장 위 빈 카약 (길이 방향 = 물 쪽), 한쪽 끝은 두 척 포개
+            for (int k = 0; k < 6; k++)
+            {
+                int seats = rng.NextDouble() < 0.5 ? 2 : 1;
+                float x = xc + 2.2f + k * 0.92f;
+                var t = KayakKit.Build(root, KayakKit.Colors[rng.Next(KayakKit.Colors.Length)], seats, 0, rng, out _);
+                t.localPosition = new Vector3(x, top + 0.1f, (z0 + zOut) * 0.5f + 0.2f);
+                t.localRotation = Quaternion.Euler(0f, (float)rng.NextDouble() * 6f - 3f, 0f);
+                if (k < 2)
+                {
+                    var t2 = KayakKit.Build(root, KayakKit.Colors[rng.Next(KayakKit.Colors.Length)], seats, 0, rng, out _);
+                    t2.localPosition = t.localPosition + new Vector3(0.05f, 0.33f, 0.1f);
+                    t2.localRotation = Quaternion.Euler(0f, (float)rng.NextDouble() * 8f - 4f, 0f);
+                }
+            }
+            // 바깥 물가에 묶인 카약: 선착장 가장자리에 코를 대고 부채꼴로 조금씩 벌어진다
+            for (int k = 0; k < 5; k++)
+            {
+                int seats = rng.NextDouble() < 0.5 ? 2 : 1;
+                float L = seats == 2 ? 3.8f : 2.9f;
+                float yaw = (k - 2f) * 6f + (float)rng.NextDouble() * 4f - 2f;
+                var t = KayakKit.Build(root, KayakKit.Colors[rng.Next(KayakKit.Colors.Length)], seats, 0, rng, out _);
+                t.localPosition = new Vector3(xc - 4.6f + k * 1.05f, Water, zOut + L * 0.5f + 0.15f);
+                t.localRotation = Quaternion.Euler(0f, yaw, (float)rng.NextDouble() * 3f - 1.5f);
+            }
+            // 노란 밧줄: 바깥 가장자리 기둥 사이 (계단 쪽은 트였다)
+            var rope = Mats.Lit(new Color(0.98f, 0.85f, 0.15f), 0.3f);
+            var post = Mats.Lit(new Color(0.85f, 0.85f, 0.82f), 0.4f);
+            var bmRope = new BlockMesh();
+            var bmPost = new BlockMesh();
+            var c = Color.white;
+            float xa = xc - Nx * Cell * 0.5f + 0.15f, xb = xc + Nx * Cell * 0.5f - 0.15f, zr = zOut - 0.15f;
+            for (int k = 0; k <= 4; k++)
+                bmPost.Block(new Vector3(Mathf.Lerp(xa, xb, k / 4f), top + 0.45f, zr), new Vector3(0.06f, 0.9f, 0.06f), 0.01f, Quaternion.identity, c, c);
+            foreach (float zz in new[] { z0 + 0.15f, zr })
+            foreach (float xx in new[] { xa, xb })
+                bmPost.Block(new Vector3(xx, top + 0.45f, zz), new Vector3(0.06f, 0.9f, 0.06f), 0.01f, Quaternion.identity, c, c);
+            for (int k = 0; k < 4; k++)
+            {
+                float a = Mathf.Lerp(xa, xb, k / 4f), b = Mathf.Lerp(xa, xb, (k + 1) / 4f);
+                const int n = 6;
+                for (int i = 0; i < n; i++)
+                {
+                    // 기둥 사이로 축 처지는 밧줄
+                    float t0 = i / (float)n, t1 = (i + 1) / (float)n;
+                    var p0 = new Vector3(Mathf.Lerp(a, b, t0), top + 0.82f - 0.12f * Mathf.Sin(Mathf.PI * t0), zr);
+                    var p1 = new Vector3(Mathf.Lerp(a, b, t1), top + 0.82f - 0.12f * Mathf.Sin(Mathf.PI * t1), zr);
+                    var d = p1 - p0;
+                    bmRope.Block((p0 + p1) * 0.5f, new Vector3(0.025f, 0.025f, d.magnitude + 0.01f), 0f, Quaternion.LookRotation(d.normalized), c, c);
+                }
+            }
+            foreach (float xx in new[] { xa, xb })
+            {
+                var p0 = new Vector3(xx, top + 0.82f, z0 + 0.15f);
+                var p1 = new Vector3(xx, top + 0.82f, zr);
+                bmRope.Block((p0 + p1) * 0.5f, new Vector3(0.025f, 0.025f, (p1 - p0).magnitude), 0f, Quaternion.identity, c, c);
+            }
+            bmRope.Emit(root, "DockRope", rope).GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            bmPost.Emit(root, "DockPost", post);
+
+            KayakFleet.Create(_root, 14, Water, -150f, -14f, x => _m.ShoreAt(x) + 7f, x => _m.FarShoreAt(x) - 7f, 77);
+            KayakFleet.DockView = new Vector3(xc - 3f, top, (z0 + zOut) * 0.5f);
         }
 
         // ---------------------------------------------------------------- 차도교
@@ -1672,7 +1805,7 @@ namespace Fishing.World
             var led = HanRiverLandmarks.Mat(new Color(0.4f, 0.4f, 0.42f), null, Texture2D.whiteTexture, new Color(1f, 0.78f, 0.5f) * 2.2f, 0.3f, 0f, Vector2.one);
             var ledA = HanRiverLandmarks.Mat(new Color(0.45f, 0.42f, 0.5f), null, Texture2D.whiteTexture, new Color(0.7f, 0.3f, 1f) * 2.6f, 0.3f, 0f, Vector2.one);
             var ledB = HanRiverLandmarks.Mat(new Color(0.42f, 0.48f, 0.44f), null, Texture2D.whiteTexture, new Color(0.25f, 1f, 0.45f) * 2.4f, 0.3f, 0f, Vector2.one);
-            var rail = Mats.Lit(new Color(0.55f, 0.58f, 0.6f), 0.5f, 0.5f);
+            var rail = Mats.Lit(new Color(0.74f, 0.3f, 0.32f), 0.45f, 0.4f);   // 분홍빛 도는 붉은 철제 난간 (사용자 사진)
             float len = zB - zA, zc = (zA + zB) * 0.5f;
             // 상판 + 보도 (양쪽 3m, 15cm 높게)
             Mats.Prim(PrimitiveType.Cube, "BridgeDeck", root, new Vector3(x, top - 0.25f, zc), new Vector3(W - 6f, 0.5f, len), deckMat);
