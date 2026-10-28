@@ -235,6 +235,7 @@ namespace Fishing.World
 
         public void Build()
         {
+            Flow();
             CityGround();
             Corridor();
             Paths();
@@ -250,10 +251,66 @@ namespace Fishing.World
             foreach (var (x, name) in new[] { (-KoreaCoasts.TcBridgeX, "야 탑 교"), (KoreaCoasts.TcBridgeX, "사 송 교"), (-440f, "서 현 교"), (440f, "탄 천 교") })
                 CarBridge(x, name, Mathf.Abs(x) < 300f);
             Stadium(new Vector3(-48f, CityY, 172f));
+            DroneShow.Create(_root, new Vector3(-48f, CityY + 82f, 172f), 0f).Height = 76f;   // 운동장 위 밤하늘 드론쇼 (사용자 요청)
             Ballpark(new Vector3(84f, CityY, 112f));
             Gymnasium(new Vector3(-188f, CityY, 160f));
             City();
             Skyline();
+        }
+
+        // ---------------------------------------------------------------- 흐름
+
+        /// <summary>
+        /// 물이 한강 쪽(하류 +x)으로 흐른다 (사용자: "한강 쪽으로 흐르는 느낌이 있어야"): 수면 물결 무늬 두 겹을 하류로 초속 0.5~0.8m로 밀고,
+        /// 수면에 꽃잎·잎(봄 벚꽃잎, 가을 낙엽, 그 밖엔 버들잎) 몇십 장이 떠서 천천히 떠내려간다 (납작한 점, 물보라 같은 덩어리 파티클이 아니다).
+        /// </summary>
+        void Flow()
+        {
+            // Water.shader: tex(p * tiling + t * speed) → 무늬는 speed 반대쪽으로 움직인다. 하류(+x)로 흐르게 x를 음수로
+            WaterSurface.Material?.SetVector("_Speed1", new Vector4(-0.05f, 0.004f, 0f, 0f));
+            WaterSurface.Material?.SetVector("_Speed2", new Vector4(-0.09f, -0.01f, 0f, 0f));
+
+            var go = new GameObject("FloatingPetals");
+            go.transform.SetParent(_root, false);
+            go.transform.localPosition = new Vector3(0f, Water + 0.03f, -10f);
+            var ps = go.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = ps.main;
+            main.loop = true;
+            main.prewarm = true;
+            main.startLifetime = 70f;
+            main.startSpeed = 0f;
+            main.startSize = new ParticleSystem.MinMaxCurve(0.06f, 0.14f);
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+            main.maxParticles = 260;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            Color a, b;
+            switch (_season)
+            {
+                case Season.Spring: a = new Color(1f, 0.88f, 0.9f); b = new Color(0.98f, 0.76f, 0.82f); break;
+                case Season.Autumn: a = new Color(0.85f, 0.5f, 0.2f); b = new Color(0.75f, 0.62f, 0.25f); break;
+                default: a = new Color(0.55f, 0.65f, 0.3f); b = new Color(0.7f, 0.72f, 0.4f); break;
+            }
+            main.startColor = new ParticleSystem.MinMaxGradient(a, b);
+            var em = ps.emission;
+            em.rateOverTime = 3.6f;
+            var sh = ps.shape;
+            sh.shapeType = ParticleSystemShapeType.Box;
+            sh.scale = new Vector3(420f, 0.01f, 40f);
+            var vel = ps.velocityOverLifetime;
+            vel.enabled = true;
+            vel.space = ParticleSystemSimulationSpace.World;
+            vel.x = new ParticleSystem.MinMaxCurve(0.35f, 0.75f);
+            vel.y = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vel.z = new ParticleSystem.MinMaxCurve(-0.05f, 0.05f);
+            var rot = ps.rotationOverLifetime;
+            rot.enabled = true;
+            rot.z = new ParticleSystem.MinMaxCurve(-0.3f, 0.3f);
+            var r = go.GetComponent<ParticleSystemRenderer>();
+            r.renderMode = ParticleSystemRenderMode.HorizontalBillboard;
+            r.sharedMaterial = Mats.Particle(Color.white);
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            ps.Play();
         }
 
         // ---------------------------------------------------------------- 땅
@@ -748,7 +805,10 @@ namespace Fishing.World
 
         static Texture2D _willowTex;
 
-        /// <summary>버들 가지 그림 (64 × 256, 알파): 아래(v 0)가 매달린 곳, 위(v 1)가 늘어진 끝. 가는 가지에 좁은 잎이 촘촘히.</summary>
+        /// <summary>
+        /// 버들 가지 그림 (128 × 512, 알파): 아래(v 0)가 매달린 곳, 위(v 1)가 늘어진 끝. 가는 가지 22가닥이 길이도 시작 높이도 제각각이라
+        /// 한 장 안에서도 커튼이 여러 겹으로 보인다. 잎은 좁고 짧게 아래로 비스듬히 촘촘히, 끝으로 갈수록 연두빛이 밝다 (사용자 참고 사진).
+        /// </summary>
         static Texture2D WillowTexture()
         {
             if (_willowTex != null) return _willowTex;
@@ -756,23 +816,24 @@ namespace Fishing.World
             var px = new Color[Wd * Ht];
             var rng = new System.Random(31);
             float Rr(float a, float b) => (float)(a + rng.NextDouble() * (b - a));
-            for (int k = 0; k < 16; k++)
+            for (int k = 0; k < 22; k++)
             {
-                float x0 = Rr(6f, Wd - 6f), drift = Rr(-10f, 10f), len = Rr(0.55f, 1f) * Ht;
-                for (int y = 0; y < len; y++)
+                float x0 = Rr(5f, Wd - 5f), drift = Rr(-8f, 8f);
+                int start = rng.Next(0, Ht / 4);
+                float len = Rr(0.45f, 1f) * (Ht - start);
+                for (int i = 0; i < len; i++)
                 {
-                    float f = y / len;
-                    int x = Mathf.RoundToInt(x0 + drift * f * f + Mathf.Sin(y * 0.05f + k) * 1.2f);
-                    // 가지 + 양옆 잎 (잎은 가지 따라 엇갈려 아래로 처진 짧은 선)
-                    if (x >= 0 && x < Wd) px[y * Wd + x] = new Color(0.32f, 0.38f, 0.16f, 1f);
-                    if (y % 5 != 0) continue;
-                    int side = (y / 5) % 2 == 0 ? 1 : -1;
-                    var leaf = Color.Lerp(new Color(0.4f, 0.58f, 0.2f), new Color(0.72f, 0.84f, 0.38f), Rr(0f, 1f));
-                    // 좁고 긴 버들잎: 가지에서 비스듬히 아래(끝 쪽)로 6~8px
-                    int ll = rng.Next(6, 9);
+                    int y = start + i;
+                    float f = i / len;
+                    int x = Mathf.RoundToInt(x0 + drift * f * f + Mathf.Sin(y * 0.04f + k) * 1.5f);
+                    if (x >= 0 && x < Wd) px[y * Wd + x] = new Color(0.38f, 0.42f, 0.2f, 1f);
+                    if (i % 3 != 0) continue;
+                    int side = (i / 3) % 2 == 0 ? 1 : -1;
+                    var leaf = Color.Lerp(new Color(0.36f, 0.5f, 0.16f), new Color(0.78f, 0.88f, 0.4f), Mathf.Clamp01(f * 0.8f + Rr(-0.15f, 0.25f)));
+                    int ll = rng.Next(4, 7);
                     for (int l = 1; l <= ll; l++)
                     {
-                        int lx = x + side * Mathf.RoundToInt(l * 0.45f), ly = y + l;
+                        int lx = x + side * Mathf.RoundToInt(l * 0.4f), ly = y + l;
                         if (lx >= 0 && lx < Wd && ly < Ht) px[ly * Wd + lx] = leaf;
                     }
                 }
@@ -784,8 +845,10 @@ namespace Fishing.World
         }
 
         /// <summary>
-        /// 물가 수양버들 (사용자 사진: 물가에 늘어진 버드나무): 기울어진 굵은 줄기 둘 + 둥근 지붕 둘레에서 땅 가까이까지 늘어진 가지 판 70장
-        /// (Fishing/Grass, 끝이 바람에 흔들린다). 시작 둔치 왼쪽에 하나, 양쪽 물가에 군데군데.
+        /// 물가 수양버들 (사용자 참고 사진 넷: 키 10~13m, 둥근 분수 모양 수관에서 가는 가지 커튼이 여러 겹으로 땅·물 가까이까지 늘어진다).
+        /// 굵은 갈색 줄기 → 위·바깥으로 뻗는 큰 가지 넷(커튼 틈으로 보인다) → 수관(납작한 반구) 겉면 곳곳에서 가지 판 280장이 늘어진다:
+        /// 가장자리(낮은 곳)는 땅 위 0.4~1.5m까지 길게, 꼭대기 쪽은 짧게 겹을 이룬다. 판은 바깥을 보게 둘레 방향으로 돌린다 (Fishing/Grass, 끝이 흔들린다).
+        /// 봄엔 밝은 연두, 여름엔 짙은 초록, 가을엔 누런 초록.
         /// </summary>
         void Willows()
         {
@@ -793,17 +856,26 @@ namespace Fishing.World
             if (shader == null) return;
             var mat = new Material(shader) { mainTexture = WillowTexture(), name = "Willow" };
             mat.SetFloat("_Cutoff", 0.3f);
-            mat.SetFloat("_Wind", 0.25f);
-            var bark = Mats.Weathered("planks", new Color(0.3f, 0.26f, 0.2f), 1.2f, 0.1f, 0f, 0.2f, 0.3f, null, 0.5f);
+            mat.SetFloat("_Wind", 0.22f);
+            var seasonTint = _season switch
+            {
+                Season.Spring => new Color(1.25f, 1.3f, 0.85f),
+                Season.Summer => new Color(0.82f, 0.92f, 0.78f),
+                Season.Autumn => new Color(1.05f, 1f, 0.7f),
+                _ => new Color(0.9f, 0.9f, 0.75f),
+            };
+            var bark = Mats.Weathered("planks", new Color(0.26f, 0.21f, 0.16f), 1.2f, 0.1f, 0f, 0.2f, 0.3f, null, 0.5f);
             var spots = new List<Vector3> { new Vector3(-30f, 0f, NearZ(-30f, 4f)) };
-            for (int i = 0; i < 26 && spots.Count < 16; i++)
+            for (int i = 0; i < 40 && spots.Count < 16; i++)
             {
                 float x = R(-200f, 200f);
                 bool near = _rng.NextDouble() < 0.5;
                 float z = near ? NearZ(x, R(3f, 5.5f)) : FarZ(x, R(3f, 5.5f));
                 if (near && ((x > -25f && x < 20f) || (x > FestX0 - 8f && x < FestX1 + 8f))) continue;   // 시작 둔치 앞·축제 마당 앞은 트이게
-                if (UnderFootRamp(x, z) || Mathf.Abs(x - KoreaCoasts.TcStonesX) < 8f || Mathf.Abs(x - KoreaCoasts.TcWeirX) < 8f || Mathf.Abs(Mathf.Abs(x) - KoreaCoasts.TcBridgeX) < 18f) continue;
-                spots.Add(new Vector3(x, 0f, z));
+                if (UnderFootRamp(x, z) || Mathf.Abs(x - KoreaCoasts.TcStonesX) < 9f || Mathf.Abs(x - KoreaCoasts.TcWeirX) < 9f || Mathf.Abs(Mathf.Abs(x) - KoreaCoasts.TcBridgeX) < 20f) continue;
+                bool crowded = false;
+                foreach (var o in spots) if (new Vector2(o.x - x, o.z - z).magnitude < 13f) crowded = true;
+                if (!crowded) spots.Add(new Vector3(x, 0f, z));
             }
             var v = new List<Vector3>();
             var uv = new List<Vector2>();
@@ -813,23 +885,40 @@ namespace Fishing.World
             foreach (var sp in spots)
             {
                 var g = new Vector3(sp.x, H(sp.x, sp.z) - 0.1f, sp.z);
-                float hgt = R(6.5f, 8.5f), lean = R(-12f, 12f);
-                var top = g + Quaternion.Euler(lean, R(0f, 360f), 0f) * Vector3.up * hgt * 0.62f;
-                MapKit.Beam(_root, g, top, 0.42f, bark, true, "WillowTrunk");
-                MapKit.Beam(_root, g + (top - g) * 0.4f, top + new Vector3(R(-1.5f, 1.5f), 0.8f, R(-1.5f, 1.5f)), 0.26f, bark, false, "WillowLimb");
-                float rad = R(3.6f, 4.6f);
-                var tint = Color.Lerp(new Color(0.85f, 0.9f, 0.8f), Color.white, R(0f, 1f));
-                for (int k = 0; k < 150; k++)
+                float scale = R(0.85f, 1.15f);
+                float trunkH = R(3.6f, 4.6f) * scale;
+                var lean = Quaternion.Euler(R(-8f, 8f), R(0f, 360f), 0f);
+                var top = g + lean * Vector3.up * trunkH;
+                MapKit.Beam(_root, g, top, 0.62f * scale, bark, true, "WillowTrunk");
+                float crR = R(5.2f, 6.4f) * scale, crH = R(4.2f, 5.2f) * scale;
+                var c = top + Vector3.up * (crH * 0.45f);
+                // 큰 가지: 줄기 머리에서 수관 안쪽 위·바깥으로
+                for (int k = 0; k < 4; k++)
                 {
-                    float a = R(0f, Mathf.PI * 2f), r = Mathf.Sqrt(R(0.05f, 1f)) * rad;
-                    var hang = top + new Vector3(Mathf.Cos(a) * r, (1f - r / rad) * 1.6f + 0.6f, Mathf.Sin(a) * r);
-                    float drop = R(3.5f, Mathf.Max(3.6f, hang.y - g.y - 0.3f));
-                    float yaw = a + Mathf.PI * 0.5f + R(-0.5f, 0.5f);
+                    float a = k * Mathf.PI * 0.5f + R(-0.4f, 0.4f);
+                    var tip = c + new Vector3(Mathf.Cos(a) * crR * 0.55f, crH * R(0.35f, 0.65f), Mathf.Sin(a) * crR * 0.55f);
+                    MapKit.Beam(_root, top, tip, 0.28f * scale, bark, false, "WillowLimb");
+                    MapKit.Beam(_root, tip, tip + new Vector3(Mathf.Cos(a) * 1.4f, R(0.3f, 1f), Mathf.Sin(a) * 1.4f), 0.14f * scale, bark, false, "WillowTwig");
+                }
+                var tint = Color.Lerp(new Color(0.9f, 0.94f, 0.86f), Color.white, R(0f, 1f)) * seasonTint;
+                for (int k = 0; k < 280; k++)
+                {
+                    // 수관 겉면: 높이각 0~80°, 낮은 곳일수록 많이 (커튼 가장자리)
+                    float th = R(0f, Mathf.PI * 2f);
+                    float ph = Mathf.Pow(R(0f, 1f), 1.6f) * 80f * Mathf.Deg2Rad;
+                    float rr = ph < 0.5f ? R(0.85f, 1.05f) : R(0.5f, 1.02f);   // 꼭대기 쪽은 안쪽 겹도
+                    var hang = c + new Vector3(Mathf.Cos(ph) * Mathf.Cos(th) * crR * rr, Mathf.Sin(ph) * crH, Mathf.Cos(ph) * Mathf.Sin(th) * crR * rr);
+                    float toGround = hang.y - g.y;
+                    float drop = ph < 0.5f ? toGround - R(0.4f, 1.6f) : R(2.5f, Mathf.Max(2.6f, toGround * 0.75f));
+                    float yaw = th + Mathf.PI * 0.5f + R(-0.35f, 0.35f);
                     var dx = new Vector3(Mathf.Cos(yaw), 0f, Mathf.Sin(yaw)) * R(0.35f, 0.6f);
+                    var top0 = hang + Vector3.up * 0.25f;
                     int b = v.Count;
-                    v.Add(hang - dx); v.Add(hang + dx); v.Add(hang + dx + Vector3.down * drop); v.Add(hang - dx + Vector3.down * drop);
+                    var flare = new Vector3(Mathf.Cos(th), 0f, Mathf.Sin(th)) * drop * R(0.08f, 0.2f);   // 아래로 갈수록 바깥으로 퍼진다 (분수 모양)
+                    v.Add(top0 - dx); v.Add(top0 + dx); v.Add(top0 + dx + Vector3.down * drop + flare); v.Add(top0 - dx + Vector3.down * drop + flare);
                     uv.Add(new Vector2(0f, 0f)); uv.Add(new Vector2(1f, 0f)); uv.Add(new Vector2(1f, 1f)); uv.Add(new Vector2(0f, 1f));
-                    for (int q = 0; q < 4; q++) { col.Add(tint); nrm.Add(Vector3.up); }
+                    var ct = tint * R(0.9f, 1.05f);
+                    for (int q = 0; q < 4; q++) { col.Add(ct); nrm.Add(Vector3.up); }
                     tri.AddRange(new[] { b, b + 1, b + 2, b, b + 2, b + 3 });
                 }
             }
@@ -1391,7 +1480,7 @@ namespace Fishing.World
                 v.Add(new Vector3(xs, y, zc - w * 0.5f)); v.Add(new Vector3(xs, y, zc + w * 0.5f));
                 v.Add(new Vector3(xs + l, y, zc + w * 0.8f)); v.Add(new Vector3(xs + l, y, zc - w * 0.8f));
                 float u0 = R(0f, 1f);
-                uv.Add(new Vector2(u0, 0f)); uv.Add(new Vector2(u0 + 0.4f, 0f)); uv.Add(new Vector2(u0 + 0.4f, l * 0.6f)); uv.Add(new Vector2(u0, l * 0.6f));
+                uv.Add(new Vector2(u0, 0f)); uv.Add(new Vector2(u0 + 0.4f, 0f)); uv.Add(new Vector2(u0 + 0.4f, -l * 0.6f)); uv.Add(new Vector2(u0, -l * 0.6f));
                 t.AddRange(new[] { b, b + 1, b + 2, b, b + 2, b + 3 });
             }
             var mesh = new Mesh { name = "StoneRunoff" };
@@ -1451,7 +1540,7 @@ namespace Fishing.World
                 for (int i = 0; i < prof.Length; i++)
                 {
                     v.Add(new Vector3(x + prof[i].x, prof[i].y, z));
-                    uv.Add(new Vector2(z / 6f, vs[i] / 3f));
+                    uv.Add(new Vector2(z / 6f, -vs[i] / 3f));
                 }
             }
             int row = prof.Length;

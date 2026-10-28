@@ -1183,6 +1183,8 @@ namespace Fishing.Dev
                 ("tancheon", "72_tancheon_spawn", new Vector3(-6f, 1.1f, -45f), 0f, 10f, 10f, 12f, 10 * 60, Weather.Clear),
                 ("tancheon", "72b_tancheon_downstream", new Vector3(30f, 1.1f, -48f), 80f, 75f, 6f, 10f, 15 * 60, Weather.Clear),
                 ("tancheon", "72c_tancheon_stones", new Vector3(106f, 0.8f, -32f), 10f, 20f, 18f, 10f, 11 * 60, Weather.Clear),
+                ("tancheon", "72k_tancheon_willow", new Vector3(-14f, 1.1f, -47f), 270f, 285f, 6f, 9f, 10 * 60 + 30, Weather.Clear),
+                ("tancheon", "72l_tancheon_drones", new Vector3(-6f, 1.1f, -45f), 0f, 0f, 0f, 7f, 21 * 60 + 30, Weather.Clear),
                 ("tancheon", "72j_tancheon_stones_side", new Vector3(98f, 1.1f, -45f), 40f, 40f, 16f, 11f, 15 * 60, Weather.Clear),
                 ("tancheon", "72d_tancheon_levee", new Vector3(-52f, 6.8f, -93f), 0f, 15f, 24f, 14f, 13 * 60, Weather.Clear),
                 ("tancheon", "72f_tancheon_upstream", new Vector3(-30f, 1.1f, -46f), 270f, 280f, 6f, 10f, 17 * 60 + 30, Weather.Clear),

@@ -219,6 +219,9 @@ namespace Fishing.World
             {
                 Material ??= new Material(shader);
                 Material.SetTexture("_NormalTex", ProceduralTextures.WaterNormal);
+                // 물결 무늬 흐름: 맵마다 기본값으로 되돌린다 (탄천은 Extra에서 하류로 흐르게 바꾼다 — 재질을 모든 맵이 같이 쓴다)
+                Material.SetVector("_Speed1", new Vector4(0.015f, 0.008f, 0f, 0f));
+                Material.SetVector("_Speed2", new Vector4(-0.01f, 0.02f, 0f, 0f));
                 r.sharedMaterial = Material;
             }
             else r.sharedMaterial = Mats.Lit(new Color(0.13f, 0.3f, 0.38f), 0.93f);
