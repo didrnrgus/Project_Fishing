@@ -1228,7 +1228,7 @@ namespace Fishing.Dev
                 for (int k = 0; k < show.SceneCount; k++)
                 {
                     show.Jump(k);
-                    yield return new WaitForSeconds(0.6f);
+                    yield return new WaitForSeconds(2.3f);   // 윤곽 빛 줄기가 판 가운데쯤 지날 때
                     yield return Shot($"72m_drone_{k}");
                 }
                 show.JumpMid(0, 0.45f);

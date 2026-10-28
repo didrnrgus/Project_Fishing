@@ -1,0 +1,10 @@
+{
+    "_설명": "탄천 밤하늘 드론쇼 설정. 고치는 법은 같은 폴더의 읽어주세요.txt",
+    "folders": [
+        "{game}",
+        "{documents}"
+    ],
+    "scenes": [],
+    "holdSeconds": 10,
+    "moveSeconds": 5
+}
