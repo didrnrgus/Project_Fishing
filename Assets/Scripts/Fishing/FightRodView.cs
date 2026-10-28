@@ -312,8 +312,10 @@ namespace Fishing.Angling
                 _fish.transform.position = Vector3.Lerp(fishPos + Vector3.up * surface, transform.position + transform.forward * 2.2f + Vector3.up * 0.9f, lifted * 0.85f);
                 var look = (_origin - fishPos);
                 look.y = 0f;
-                float wiggle = Mathf.Sin(Time.time * (f.HpLow ? 6f : 14f)) * (f.HpLow ? 10f : 25f);
-                _fish.transform.rotation = Quaternion.LookRotation(look.normalized) * Quaternion.Euler(0f, 90f + wiggle * 0.4f, 0f);
+                // 몸 전체를 빠르게 좌우로 흔들면(예전 ±10°, 2Hz) 몸통이 한 덩어리로 뒤뚱거렸다. 꼬리 물결·머리 반동은
+                // 클립(build_fish.py)이 하므로 여기서는 버티며 이리저리 방향을 트는 느린 흔들림만
+                float wiggle = Mathf.Sin(Time.time * (f.HpLow ? 0.9f : 1.7f)) * (f.HpLow ? 3f : 7f) + Mathf.Sin(Time.time * 0.63f + 1.3f) * 3f;
+                _fish.transform.rotation = Quaternion.LookRotation(look.normalized) * Quaternion.Euler(0f, 90f + wiggle, 0f);
                 // 점프: 머리를 들고 솟았다가 고꾸라지며 떨어진다
                 if (air) _fish.transform.rotation *= Quaternion.Euler(Mathf.Lerp(-55f, 60f, f.AirPhase), 0f, 0f);   // 머리 +Z, X축 음수 = 머리 듦
                 // 질주·폭주하면 몸부림, 지치면 천천히, 그 밖에는 빠르게 헤엄

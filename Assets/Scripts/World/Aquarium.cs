@@ -31,7 +31,21 @@ namespace Fishing.World
         const float BaseY = 0.85f;
 
         Transform _fishRoot, _decorRoot;
-        readonly List<(Transform t, Vector3 target, float speed)> _swimmers = new List<(Transform, Vector3, float)>();
+        /// <summary>
+        /// 수조 속 한 마리. 일정한 속도로 목표점까지 직선으로 미끄러지면(예전) 꼬리만 흔드는 장난감처럼 보여서,
+        /// 진짜 물고기처럼 꼬리를 몇 번 쳐서 나아갔다가 미끄러지고(burst-and-glide), 방향은 천천히 틀며 몸을 기울이고,
+        /// 위아래로는 비스듬히만 움직이며, 가끔 멈춰 지느러미로 제자리를 지킨다.
+        /// </summary>
+        class Swimmer
+        {
+            public Transform T;
+            public GameObject Model;
+            public Vector3 Target;
+            public float Cruise, Speed, Phase, PhaseLeft, Yaw, Pitch, Bank, YawRate;
+            public bool Beat, Hover;
+            public string Clip;
+        }
+        readonly List<Swimmer> _swimmers = new List<Swimmer>();
         readonly List<Transform> _bubbles = new List<Transform>();
         readonly List<Transform> _weeds = new List<Transform>();
 
@@ -111,8 +125,11 @@ namespace Fishing.World
                 float shown = Mathf.Lerp(12f, 45f, Mathf.InverseLerp(s.MinLen, Mathf.Max(s.MaxLen, s.MinLen + 1f), f.length));
                 var model = FishModels.Create(s, shown, holder);
                 model.transform.localRotation = Quaternion.identity;
-                FishModels.Play(model, FishModels.SwimSlow, Random.Range(0.85f, 1.15f), 0f);
-                _swimmers.Add((holder, RandomInside(), Random.Range(0.18f, 0.32f)));
+                FishModels.Play(model, FishModels.SwimSlow, 1f, 0f);
+                float yaw = Random.Range(0f, 360f);
+                holder.localRotation = Quaternion.Euler(0f, yaw, 0f);
+                _swimmers.Add(new Swimmer { T = holder, Model = model, Target = NextTarget(holder.localPosition), Cruise = Random.Range(0.18f, 0.3f),
+                    Speed = 0.1f, Yaw = yaw, Beat = true, PhaseLeft = Random.Range(0.3f, 1f), Clip = FishModels.SwimSlow });
             }
 
             for (int i = 0; i < d.aquariumDecor.Count && i < MaxDecor; i++)
@@ -156,21 +173,80 @@ namespace Fishing.World
             }
         }
 
+        /// <summary>다음 목표점: 수평으로는 충분히 떨어진 곳, 높이는 조금만 바꾼다 (물고기는 수직으로 솟구치지 않는다).</summary>
+        static Vector3 NextTarget(Vector3 from)
+        {
+            for (int k = 0; k < 8; k++)
+            {
+                var p = RandomInside();
+                p.y = Mathf.Clamp(from.y + Random.Range(-0.18f, 0.18f), BaseY + 0.25f, BaseY + Inner.y * 0.85f);
+                if (new Vector2(p.x - from.x, p.z - from.z).magnitude > 0.5f) return p;
+            }
+            return RandomInside();
+        }
+
         void Update()
         {
             var d = Game.Profile?.Data;
+            float dt = Time.deltaTime;
             for (int i = 0; i < _swimmers.Count; i++)
             {
-                var (t, target, speed) = _swimmers[i];
-                if (t == null) continue;
+                var f = _swimmers[i];
+                if (f.T == null) continue;
                 // 배고픈 고기는 느릿느릿
                 float hunger = d != null && i < d.aquarium.Count ? Hunger(d.aquarium[i]) : 0f;
-                float sp = speed * (hunger > 60f ? 0.5f : 1f);
-                var to = target - t.localPosition;
-                if (to.magnitude < 0.08f) { _swimmers[i] = (t, RandomInside(), speed); continue; }
-                t.localPosition += to.normalized * sp * Time.deltaTime;
-                var look = Quaternion.LookRotation(to.normalized); // 모델 머리 = +Z
-                t.localRotation = Quaternion.Slerp(t.localRotation, look, Time.deltaTime * 3f);
+                float cruise = f.Cruise * (hunger > 60f ? 0.5f : 1f);
+                var to = f.Target - f.T.localPosition;
+                float dist = to.magnitude;
+
+                // 박자: 꼬리 치기 → 미끄러지기를 번갈아, 가끔 목표에서 멈춰 제자리 (지느러미만 살랑)
+                f.PhaseLeft -= dt;
+                if (f.Hover)
+                {
+                    if (f.PhaseLeft <= 0f) { f.Hover = false; f.Beat = true; f.PhaseLeft = Random.Range(0.6f, 1.2f); f.Target = NextTarget(f.T.localPosition); }
+                }
+                else if (dist < 0.12f)
+                {
+                    if (Random.value < 0.35f) { f.Hover = true; f.PhaseLeft = Random.Range(1.5f, 4f); }
+                    else f.Target = NextTarget(f.T.localPosition);
+                }
+                else if (f.PhaseLeft <= 0f)
+                {
+                    f.Beat = !f.Beat;
+                    f.PhaseLeft = f.Beat ? Random.Range(0.6f, 1.4f) : Random.Range(0.4f, 1.2f);
+                }
+                float want = f.Hover ? 0f : f.Beat ? cruise * 1.25f : 0f;
+                // 꼬리를 칠 땐 빨리 붙고, 미끄러질 땐 물의 저항으로 천천히 준다
+                f.Speed = Mathf.MoveTowards(f.Speed, want, (want > f.Speed ? 0.6f : 0.12f) * dt);
+
+                // 방향: 한 번에 돌 수 있는 각속도 제한, 위아래는 ±25°까지, 돌 때는 안쪽으로 몸을 기울인다
+                if (dist > 0.02f && !f.Hover)
+                {
+                    float wantYaw = Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg;
+                    float wantPitch = Mathf.Clamp(-Mathf.Atan2(to.y, new Vector2(to.x, to.z).magnitude) * Mathf.Rad2Deg, -25f, 25f);
+                    float turn = (f.Beat ? 75f : 40f) * dt;
+                    float ny = Mathf.MoveTowardsAngle(f.Yaw, wantYaw, turn);
+                    f.YawRate = Mathf.Lerp(f.YawRate, Mathf.DeltaAngle(f.Yaw, ny) / Mathf.Max(dt, 1e-4f), dt * 4f);
+                    f.Yaw = ny;
+                    f.Pitch = Mathf.MoveTowards(f.Pitch, wantPitch, 30f * dt);
+                }
+                else
+                {
+                    f.YawRate = Mathf.Lerp(f.YawRate, 0f, dt * 3f);
+                    f.Pitch = Mathf.MoveTowards(f.Pitch, 0f, 15f * dt);   // 멈추면 몸이 수평으로
+                }
+                f.Bank = Mathf.Lerp(f.Bank, Mathf.Clamp(-f.YawRate * 0.25f, -20f, 20f), dt * 3f);
+                f.T.localRotation = Quaternion.Euler(f.Pitch, f.Yaw, f.Bank);
+                // 모델 머리 = +Z, 머리가 보는 쪽으로만 나아간다 (돌면서 유리 밖으로 나가지 않게 수조 안에 가둔다)
+                var np = f.T.localPosition + f.T.localRotation * Vector3.forward * f.Speed * dt;
+                f.T.localPosition = new Vector3(Mathf.Clamp(np.x, -Inner.x * 0.44f, Inner.x * 0.44f),
+                    Mathf.Clamp(np.y, BaseY + 0.2f, BaseY + Inner.y * 0.88f), Mathf.Clamp(np.z, -Inner.z * 0.36f, Inner.z * 0.36f));
+
+                // 꼬리 박자는 실제로 미는 힘에 맞춘다: 칠 때 빠르게, 미끄러질 땐 거의 멈춤, 멈추면 제자리 맴돌기 클립
+                string clip = f.Hover && f.Speed < 0.03f ? FishModels.IdleHover : FishModels.SwimSlow;
+                if (clip != f.Clip) { f.Clip = clip; FishModels.Play(f.Model, clip, 1f, 0.4f); }
+                if (clip == FishModels.SwimSlow)
+                    FishModels.SetSpeed(f.Model, clip, f.Beat && !f.Hover ? Mathf.Lerp(0.7f, 1.6f, f.Speed / Mathf.Max(0.01f, cruise * 1.25f)) : 0.3f);
             }
             foreach (var b in _bubbles)
             {
