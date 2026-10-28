@@ -1468,33 +1468,8 @@ namespace Fishing.World
             var walk = bmWalk.Emit(_root, "StoneWalkway", granite);
             walk.AddComponent<MeshCollider>().sharedMesh = walk.GetComponent<MeshFilter>().sharedMesh;
             walk.GetComponent<Renderer>().enabled = false;
-            // 돌 사이 틈으로 빠져 하류로 번지는 물살: 디딤돌마다 하류 쪽 수면에 얇은 흐르는 물 판 (uv v가 하류로 흐른다)
-            var v = new List<Vector3>();
-            var uv = new List<Vector2>();
-            var t = new List<int>();
-            foreach (var st in steps)
-            {
-                float w = R(0.6f, 1.1f), l = R(1.6f, 3.2f), zc = st.z + R(-0.45f, 0.45f);
-                float xs = st.x + 0.55f, y = Water + 0.012f;
-                int b = v.Count;
-                v.Add(new Vector3(xs, y, zc - w * 0.5f)); v.Add(new Vector3(xs, y, zc + w * 0.5f));
-                v.Add(new Vector3(xs + l, y, zc + w * 0.8f)); v.Add(new Vector3(xs + l, y, zc - w * 0.8f));
-                float u0 = R(0f, 1f);
-                uv.Add(new Vector2(u0, 0f)); uv.Add(new Vector2(u0 + 0.4f, 0f)); uv.Add(new Vector2(u0 + 0.4f, -l * 0.6f)); uv.Add(new Vector2(u0, -l * 0.6f));
-                t.AddRange(new[] { b, b + 1, b + 2, b, b + 2, b + 3 });
-            }
-            var mesh = new Mesh { name = "StoneRunoff" };
-            mesh.SetVertices(v);
-            mesh.SetUVs(0, uv);
-            mesh.SetTriangles(t, 0);
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            var flow = new GameObject("StoneRunoff");
-            flow.transform.SetParent(_root, false);
-            flow.AddComponent<MeshFilter>().sharedMesh = mesh;
-            var fr = flow.AddComponent<MeshRenderer>();
-            fr.sharedMaterial = MapKit.WaterfallMat(0.35f, 0.3f, new Color(0.85f, 0.9f, 0.88f));
-            fr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            // 돌 뒤 하류 쪽 흰 물살 판은 뺐다: 넓은 판(사다리꼴·잎 모양)도 가는 거품 줄도 수면에 떠 보여 어색했다 (사용자 지적 세 번).
+            // 하류로 흐르는 느낌은 수면 물결 흐름과 떠내려가는 꽃잎(Flow)이 낸다
         }
 
         // ---------------------------------------------------------------- 보
@@ -1529,6 +1504,7 @@ namespace Fishing.World
                                new Vector2(3.25f, crest - 0.38f), new Vector2(4.8f, crest - 0.45f), new Vector2(5.4f, Water + 0.01f) };
             var v = new List<Vector3>();
             var uv = new List<Vector2>();
+            var uv2 = new List<Vector2>();
             var t = new List<int>();
             int nz = Mathf.CeilToInt((z1 - z0) / 2f);
             float vAcc = 0f;
@@ -1541,6 +1517,7 @@ namespace Fishing.World
                 {
                     v.Add(new Vector3(x + prof[i].x, prof[i].y, z));
                     uv.Add(new Vector2(z / 6f, -vs[i] / 3f));
+                    uv2.Add(new Vector2(j / (float)nz, vs[i] / vAcc));   // Fishing/Waterfall: 가로 0~1 (양 끝만 부드럽게), 턱 위 0 → 수면 1 (아래가 물보라)
                 }
             }
             int row = prof.Length;
@@ -1553,6 +1530,7 @@ namespace Fishing.World
             var mesh = new Mesh { name = "WeirFlow" };
             mesh.SetVertices(v);
             mesh.SetUVs(0, uv);
+            mesh.SetUVs(1, uv2);
             mesh.SetTriangles(t, 0);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
@@ -1561,6 +1539,7 @@ namespace Fishing.World
             flow.AddComponent<MeshFilter>().sharedMesh = mesh;
             var fr = flow.AddComponent<MeshRenderer>();
             fr.sharedMaterial = MapKit.WaterfallMat(0.9f, 0.75f, new Color(0.85f, 0.9f, 0.88f));
+            fr.sharedMaterial.SetFloat("_EdgeSoft", 0.03f);   // 강폭 60m라 가장자리 지우는 폭을 좁게
             fr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 

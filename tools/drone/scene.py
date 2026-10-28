@@ -4,6 +4,7 @@
   python tools/drone/scene.py --pasted                # Claude Code 대화에 붙여 넣은 마지막 이미지
   python tools/drone/scene.py --pasted 2 --name points_2   # 끝에서 둘째 이미지로 2번 장면을 바꾼다
   python tools/drone/scene.py 그림.png --tol 70 --edge-boost 3
+  python tools/drone/scene.py 그림.png --cutout                # 배경이 복잡하면 AI로 피사체만 (pip install "rembg[cpu]")
 
 점 뽑기는 drone_points.py (사용자 스크립트: 배경 자동 인식 + K-means 3,000점). 미리보기(소등 = 검정)를
 %TEMP%/drone_preview_<이름>.png 로 같이 저장하니 배경이 제대로 빠졌는지 보고 --tol 을 고친다.
@@ -84,6 +85,19 @@ def enlarged(src, side):
     return path
 
 
+def cutout(src, model):
+    """배경이 복잡한 그림(풍경·게임 화면): AI 배경 제거(rembg)로 피사체만 남기고 나머지를 검정(= 소등)으로 칠한 사본.
+    처음 쓸 때 모델을 내려받는다 (~/.u2net). isnet-general-use 가 만화·3D 렌더 모두 잘 딴다 (isnet-anime 는 이런 그림에서 거의 못 땄다)."""
+    from rembg import new_session, remove
+    img = Image.open(src).convert("RGB")
+    alpha = remove(img, session=new_session(model), only_mask=True)
+    out = Image.new("RGB", img.size)
+    out.paste(img, mask=alpha.point(lambda a: 255 if a >= 128 else 0))
+    path = os.path.join(tempfile.gettempdir(), "drone_cutout.png")
+    out.save(path)
+    return path
+
+
 def next_name(folder):
     nums = [int(m.group(1)) for f in os.listdir(folder) if (m := re.fullmatch(r"points_(\d+)\.json", f))]
     return f"points_{max(nums, default=0) + 1}"
@@ -95,6 +109,7 @@ def main():
     ap.add_argument("--pasted", type=int, nargs="?", const=1, help="붙여 넣은 이미지 중 끝에서 몇 번째 (기본 1 = 마지막)")
     ap.add_argument("--transcript", help="대화 기록 파일 (기본: 가장 최근 것)")
     ap.add_argument("--name", help="장면 파일 이름 (기본: 다음 번호 points_N). 같은 이름이면 덮어쓴다")
+    ap.add_argument("--cutout", nargs="?", const="isnet-general-use", help="AI 배경 제거 (rembg 모델, 기본 isnet-general-use) — 배경이 복잡할 때")
     ap.add_argument("--n", type=int, default=3000)
     ap.add_argument("--tol", type=int, default=45)
     ap.add_argument("--dark", type=int, default=30)
@@ -105,6 +120,8 @@ def main():
         ap.error("그림 경로나 --pasted 중 하나만")
 
     src = args.image or pasted_image(args.pasted, args.transcript)
+    if args.cutout:
+        src = cutout(src, args.cutout)
     folder = show_folder()
     os.makedirs(folder, exist_ok=True)
     name = (args.name or next_name(folder)).removesuffix(".json")
