@@ -18,6 +18,8 @@ namespace Fishing.World
     {
         public const int N = 3000;
         public const float Hold = 10f, Move = 5f;
+        /// <summary>트랜지션 안에서 출발을 나누는 폭 (초). 드론마다 Move - Wave초 동안 난다.</summary>
+        const float Wave = 1f;
         /// <summary>판 폭 (m). 장면 좌표 1 = 폭의 절반.</summary>
         public float Width = 150f;
         /// <summary>판 가운데가 대기 자리(땅)보다 높은 정도 (m).</summary>
@@ -130,7 +132,7 @@ namespace Fishing.World
                 _cTo[best] = art.C[k];
                 _fxTo[best] = art.Fx[k];
                 _phTo[best] = art.Ph[k];
-                _delay[best] = (art.P[k].x + 1f) * 0.75f + (float)rng.NextDouble() * 0.35f;
+                _delay[best] = Mathf.Clamp((art.P[k].x + 1f) * 0.4f + (float)rng.NextDouble() * 0.2f, 0f, Wave);
             }
             Debug.Log($"[DroneShow] {art.Name}: 점 {art.Count}개 중 {m}개에 드론 배정 (켜진 드론 {m}대 / {N}대)");
             for (int i = 0; i < N; i++)
@@ -139,7 +141,7 @@ namespace Fishing.World
                 _to[i] = _cur[i];
                 _cTo[i] = new Color(_cCur[i].r, _cCur[i].g, _cCur[i].b, 0f);
                 _fxTo[i] = 0;
-                _delay[i] = (_cur[i].x / S + 1f) * 0.75f;
+                _delay[i] = Mathf.Clamp((_cur[i].x / S + 1f) * 0.4f, 0f, Wave);
             }
         }
 
@@ -205,7 +207,7 @@ namespace Fishing.World
         void Apply()
         {
             float now = Time.time;
-            float span = Move - 2f;   // 한 드론이 날아가는 시간 (출발은 0~1.85초 사이로 물결)
+            float span = Move - Wave;   // 한 드론이 날아가는 시간 4초 (출발은 0~1초 사이로 물결) → 마지막 드론이 정확히 Move(5초)에 자리 잡는다
             for (int i = 0; i < N; i++)
             {
                 float k = Mathf.Clamp01((_t - _delay[i]) / span);
