@@ -184,6 +184,8 @@ namespace Fishing.Data
             // 낚시터마다 하나씩, 레벨 = 그 낚시터 입장 레벨. 같은 레벨 상점 장비보다 능력치가 한 단계 좋다 (VillageTrade).
             Trade("line_hangang", "한강 합사 3호", GearSlot.Line, 3, "hangang", 3, "#3a8fd0", "#2a3440",
                 "한강 둔치 터줏대감이 쓰는 파란 합사. 카본 3호보다 질기다.", strength: 1.4f),
+            Trade("rod_beodeul", "버들치 계류대", GearSlot.Rod, 3, "tancheon", 3, "#7aa86a", "#e8e0c8",
+                "탄천지기 윤씨가 버드나무 색으로 칠한 가벼운 계류대. 입문용 민물대보다 힘이 있고 여울 잔챙이 손맛이 살아 있다.", power: 1.2f, flex: 0.85f, range: 19f),
             Trade("rod_dalaengi", "다랭이 갯바위대", GearSlot.Rod, 5, "honghyeon", 5, "#3d6b3a", "#d9c27a",
                 "다랭이마을 어부가 계단 논 색으로 칠한 갯바위대. 중경조라 감성돔 처박기를 부드럽게 받는다.", power: 1.5f, flex: 0.55f, range: 23f),
             Trade("reel_hongwon", "홍원항 선상 릴", GearSlot.Reel, 6, "seocheon", 5, "#e8e8e8", "#c8302a",

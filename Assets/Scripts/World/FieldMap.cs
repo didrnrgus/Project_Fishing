@@ -151,6 +151,7 @@ namespace Fishing.World
         public static readonly FieldMapDef HanRiver = new HanRiverDef();
         public static readonly FieldMapDef Honghyeon = new HonghyeonDef();
         public static readonly FieldMapDef Seocheon = new SeocheonDef();
+        public static readonly FieldMapDef Tancheon = new CoastMapDef(KoreaCoasts.Tancheon());
         // 해안 맵 틀 (CoastMapDef + KoreaCoasts 사양)
         public static readonly FieldMapDef Yeongheung = new CoastMapDef(KoreaCoasts.Yeongheung());
         public static readonly FieldMapDef Taean = new CoastMapDef(KoreaCoasts.Taean());
@@ -182,7 +183,7 @@ namespace Fishing.World
         public static readonly FieldMapDef Duden = new CoastMapDef(OverseasCoasts.Duden());
 
         /// <summary>열린 낚시터 (입장 레벨 순, 도감 탭·대물 도전 순서).</summary>
-        public static readonly FieldMapDef[] All = { HanRiver, Honghyeon, Seocheon, Yeongheung, Taean, Samcheok, Deungdae, Heonhwa, Yokji, Jeju, Cheongjin, Geomun,
+        public static readonly FieldMapDef[] All = { HanRiver, Tancheon, Honghyeon, Seocheon, Yeongheung, Taean, Samcheok, Deungdae, Heonhwa, Yokji, Jeju, Cheongjin, Geomun,
             HaLong, Angkor, Vinpearl, DonKhone, Santorini, Phuket, Crete, Bangkok, Nile, KohSamui, Langkawi, Zakynthos, Sentosa, TelokBatek, Duden, Tioman, Tenggol };
 
         public static FieldMapDef Get(string id)

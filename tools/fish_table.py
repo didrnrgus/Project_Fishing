@@ -14,16 +14,16 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 DATA = os.path.join(ROOT, 'Assets', 'Scripts', 'Data')
 DOC = os.path.join(ROOT, 'docs', '02-game-design.md')
 
-SHORT = {'hangang': '한강', 'honghyeon': '홍현', 'seocheon': '서천', 'yeongheung': '영흥도', 'taean': '태안', 'samcheok': '삼척',
+SHORT = {'hangang': '한강', 'tancheon': '탄천', 'honghyeon': '홍현', 'seocheon': '서천', 'yeongheung': '영흥도', 'taean': '태안', 'samcheok': '삼척',
          'deungdae': '등대섬', 'heonhwa': '헌화로', 'yokji': '욕지도', 'cheongjin': '청진', 'geomun': '거문도', 'jeju': '제주',
          'halong': '하롱베이', 'santorini': '산토리니', 'nile': '나일강',
          'angkor': '앙코르와트', 'vinpearl': '빈펄', 'donkhone': '돈콘', 'phuket': '푸켓', 'bangkok': '방콕', 'kohsamui': '코사무이',
          'langkawi': '랑카위', 'sentosa': '센토사', 'telokbatek': '텔록 바텍', 'tioman': '티오만', 'tenggol': '탱글',
          'crete': '크레타', 'zakynthos': '자킨토스', 'duden': '듀덴'}
-ORDER = ['hangang', 'honghyeon', 'yokji', 'geomun', 'jeju', 'seocheon', 'yeongheung', 'taean', 'heonhwa', 'samcheok', 'deungdae', 'cheongjin',
+ORDER = ['hangang', 'tancheon', 'honghyeon', 'yokji', 'geomun', 'jeju', 'seocheon', 'yeongheung', 'taean', 'heonhwa', 'samcheok', 'deungdae', 'cheongjin',
          'halong', 'angkor', 'vinpearl', 'donkhone', 'phuket', 'bangkok', 'kohsamui', 'langkawi', 'sentosa', 'telokbatek', 'tioman', 'tenggol',
          'santorini', 'crete', 'zakynthos', 'duden', 'nile']
-FRESH = ('hangang', 'nile', 'angkor', 'donkhone', 'bangkok')
+FRESH = ('hangang', 'tancheon', 'nile', 'angkor', 'donkhone', 'bangkok')
 SOUTH = ['honghyeon', 'yokji', 'geomun', 'jeju']
 WEST = ['seocheon', 'yeongheung', 'taean']
 EAST = ['heonhwa', 'samcheok', 'deungdae', 'cheongjin']

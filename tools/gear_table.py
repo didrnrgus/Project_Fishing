@@ -15,12 +15,12 @@ DATA = os.path.join(ROOT, 'Assets', 'Scripts', 'Data')
 DOC = os.path.join(ROOT, 'docs', '18-gear-table.md')
 START, END = '<!-- gear-table:start -->', '<!-- gear-table:end -->'
 
-MAPS = {'hangang': '한강', 'honghyeon': '홍현', 'seocheon': '서천', 'yeongheung': '영흥도', 'taean': '태안', 'samcheok': '삼척',
+MAPS = {'hangang': '한강', 'tancheon': '탄천', 'honghyeon': '홍현', 'seocheon': '서천', 'yeongheung': '영흥도', 'taean': '태안', 'samcheok': '삼척',
         'deungdae': '등대섬', 'heonhwa': '헌화로', 'yokji': '욕지도', 'cheongjin': '청진포구', 'geomun': '거문도', 'jeju': '제주',
         'halong': '하롱베이', 'santorini': '산토리니', 'nile': '나일강', 'angkor': '앙코르와트', 'vinpearl': '빈펄', 'donkhone': '돈콘',
         'phuket': '푸켓', 'bangkok': '방콕', 'kohsamui': '코사무이', 'langkawi': '랑카위', 'sentosa': '센토사', 'telokbatek': '텔록 바텍',
         'tioman': '티오만', 'tenggol': '탱글', 'crete': '크레타', 'zakynthos': '자킨토스', 'duden': '듀덴'}
-KOREA = {'hangang', 'honghyeon', 'seocheon', 'yeongheung', 'taean', 'samcheok', 'deungdae', 'heonhwa', 'yokji', 'cheongjin', 'geomun', 'jeju'}
+KOREA = {'hangang', 'tancheon', 'honghyeon', 'seocheon', 'yeongheung', 'taean', 'samcheok', 'deungdae', 'heonhwa', 'yokji', 'cheongjin', 'geomun', 'jeju'}
 # GearDatabase에 출처가 안 적힌 보상 장비 (코드 위치)
 SPECIAL = {
     'rod_gege': '대회 1위 (TournamentSystem)',

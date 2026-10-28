@@ -1179,6 +1179,16 @@ namespace Fishing.Dev
                 ("zakynthos", "70b_zakynthos_wreck", new Vector3(-28f, 1.4f, -24f), 110f, 105f, 8f, 12f, 14 * 60, Weather.Clear),
                 ("duden", "71_duden_falls", new Vector3(-30f, 1.1f, -44f), 290f, 290f, 6f, 12f, 10 * 60, Weather.Clear),
                 ("duden", "71b_duden_sunset", new Vector3(60f, 1.1f, -44f), 280f, 285f, 4f, 12f, 17 * 60 + 40, Weather.Clear),
+                // 탄천 (World/Maps/Tancheon.cs): 시작 둔치에서 건너편 운동장, 하류(보·징검다리·사송교·롯데월드타워), 징검다리 위, 제방 위에서 내려다보기, 상류(야탑교), 밤
+                ("tancheon", "72_tancheon_spawn", new Vector3(-6f, 1.1f, -45f), 0f, 10f, 10f, 12f, 10 * 60, Weather.Clear),
+                ("tancheon", "72b_tancheon_downstream", new Vector3(30f, 1.1f, -48f), 80f, 75f, 6f, 10f, 15 * 60, Weather.Clear),
+                ("tancheon", "72c_tancheon_stones", new Vector3(106f, 0.8f, -30f), 10f, 20f, 18f, 10f, 11 * 60, Weather.Clear),
+                ("tancheon", "72d_tancheon_levee", new Vector3(-52f, 6.8f, -93f), 0f, 15f, 24f, 14f, 13 * 60, Weather.Clear),
+                ("tancheon", "72f_tancheon_upstream", new Vector3(-30f, 1.1f, -46f), 270f, 280f, 6f, 10f, 17 * 60 + 30, Weather.Clear),
+                ("tancheon", "72e_tancheon_night", new Vector3(-6f, 1.1f, -45f), 40f, 60f, 6f, 12f, 20 * 60 + 30, Weather.Clear),
+                ("tancheon", "72g_tancheon_festival", new Vector3(-104f, 1.1f, -51f), 180f, 160f, 14f, 13f, 20 * 60 + 40, Weather.Clear),
+                ("tancheon", "72i_tancheon_festival_day", new Vector3(-104f, 1.1f, -51f), 180f, 200f, 14f, 13f, 14 * 60, Weather.Clear),
+                ("tancheon", "72h_tancheon_footbridge", new Vector3(-14f, 1.1f, -47f), 60f, 62f, 4f, 9f, 9 * 60 + 30, Weather.Clear),
             };
             string loaded = null;
             foreach (var s in shots)

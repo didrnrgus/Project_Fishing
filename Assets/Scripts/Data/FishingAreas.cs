@@ -34,6 +34,8 @@ namespace Fishing.Data
         public static readonly List<FishingArea> Korea = new List<FishingArea>
         {
             new FishingArea { Id = "hangang", Name = "한강", Lon = 126.98f, Lat = 37.53f, Open = true, Level = 1, MapId = "hangang", Desc = "서울 한복판의 강. 붕어부터 잉어, 쏘가리까지." },
+            new FishingArea { Id = "tancheon", Name = "탄천", Lon = 127.12f, Lat = 37.41f, Open = true, Level = 3, MapId = "tancheon",
+                Desc = "성남 야탑 탄천종합운동장 앞 도심 하천. 갈대 물가와 벚나무 제방, 징검다리와 보. 버들치·갈겨니·각시붕어 같은 토종 민물고기, 봄엔 한강에서 잉어 떼가 올라온다." },
             new FishingArea { Id = "heonhwa", Name = "헌화로", Lon = 129.05f, Lat = 37.7f, Open = true, Level = 18, MapId = "heonhwa",
                 Desc = "강릉 절벽 바로 아래를 달리는 해안도로와 동해 갯바위. 바다부채길, 대문어 굴, 절벽엔 진달래." },
             new FishingArea { Id = "samcheok", Name = "삼척 앞바다", Lon = 129.3f, Lat = 37.42f, Open = true, Level = 14, MapId = "samcheok",

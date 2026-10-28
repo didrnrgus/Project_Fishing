@@ -203,6 +203,7 @@ namespace Fishing.Data
         static readonly (string map, string name, string epithet, string greet)[] UnionTable =
         {
             ("hangang", "박주임", "한국 낚시 조합 연락관", "한국 낚시 조합 연락관 박주임입니다. 한강에서 하실 일은 저한테 받아 가세요."),
+            ("tancheon", "강반장", "한국 낚시 조합 성남 지부", "탄천은 원래 낚시 금지 구역이에요. 조합이 생태조사 허가를 받은 구간이니, 낚은 고기는 기록하고 아끼면서 다뤄 주세요. 밤에 수달 보이면 조용히!"),
             ("honghyeon", "어촌계 정계장", "한국 낚시 조합 홍현 지부", "홍현에 참 별일이 다 생긴다니까. 바다가 예전 같지 않아."),
             ("seocheon", "어촌계 이계장", "한국 낚시 조합 서천 지부", "서해는 물때가 전부예요. 물 들어올 때 노 저으라는 말, 낚시도 똑같아요."),
             ("yeongheung", "어촌계 최계장", "한국 낚시 조합 영흥 지부", "해무가 끼면 한 치 앞도 안 보여요. 조심해서 다니세요."),
@@ -552,6 +553,24 @@ namespace Fishing.Data
                 Giver = QuestNpcs.ShopOf("honghyeon"), Reporter = QuestNpcs.ShopOf("honghyeon"), Title = "해 질 녘 전갱이",
                 Desc = "해 질 녘이면 전갱이가 방파제로 몰려와요. 구이용으로 세 마리만 부탁해요.",
                 Goal = QuestGoal.CatchSpeciesInBand, SpeciesId = "horsemackerel", Band = TimeBand.Evening, Count = 3, RewardGold = 3500, RewardExp = 800 },
+
+            // ---------- 탄천 (Lv.3, 성남 지부 생태조사) — 이야기 목록 가운데에 끼우면 저장된 진행 번호가 밀리므로 일반 퀘스트로 둔다 ----------
+            new QuestDef { Id = "tc_minnow", Type = QuestType.Normal, Lv = 3, MapId = "tancheon", AfterStory = "st00",
+                Giver = QuestNpcs.UnionOf("tancheon"), Reporter = QuestNpcs.UnionOf("tancheon"), Title = "성남의 깃대종",
+                Desc = "버들치는 성남시를 대표하는 깃대종이에요. 1급수에만 사니까 버들치가 있다는 건 탄천 물이 맑아졌다는 증거죠.\n징검다리 여울(G열)에서 세 마리만 확인해 주세요. 지렁이나 플라이가 좋아요.",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "chineseminnow", Count = 3, RewardGold = 1500, RewardExp = 300, RewardBaitId = "bait_worm", RewardBaitCount = 20 },
+            new QuestDef { Id = "tc_riffle", Type = QuestType.Normal, Lv = 3, MapId = "tancheon", AfterStory = "st00",
+                Giver = QuestNpcs.UnionOf("tancheon"), Reporter = QuestNpcs.UnionOf("tancheon"), Title = "보 아래 여울",
+                Desc = "보 아래 자갈 여울엔 참마자랑 돌고기가 바닥을 뒤지고 다녀요. 돌 많은 칸에서 두 마리 올려 주세요.",
+                Goal = QuestGoal.CatchInHabitat, Habitat = Habitat.Rocky, Count = 2, RewardGold = 2000, RewardExp = 400 },
+            new QuestDef { Id = "tc_bitterling", Type = QuestType.Normal, Lv = 4, MapId = "tancheon", AfterStory = "st00",
+                Giver = QuestNpcs.UnionOf("tancheon"), Reporter = QuestNpcs.UnionOf("tancheon"), Title = "조개에 알을 낳는 물고기",
+                Desc = "각시붕어는 손가락만 한 한국 고유종인데, 봄이면 수컷이 무지갯빛으로 물들어요. 갈대섬 수초 쪽에서 떡밥으로 찾아보세요.",
+                Goal = QuestGoal.CatchSpecies, SpeciesId = "rosybitterling", Count = 1, RewardGold = 3000, RewardExp = 600 },
+            new QuestDef { Id = "tc_carp", Type = QuestType.Normal, Lv = 4, MapId = "tancheon", AfterStory = "st00",
+                Giver = QuestNpcs.UnionOf("tancheon"), Reporter = QuestNpcs.UnionOf("tancheon"), Title = "한강에서 올라온 잉어 떼",
+                Desc = "봄이면 한강에서 잉어 수천 마리가 탄천을 거슬러 올라와요. 새벽 E4, 저녁 C5 어군에서 60cm 넘는 놈을 한 마리!",
+                Goal = QuestGoal.CatchMinLength, SpeciesId = "carp", MinLen = 60f, Count = 1, RewardGold = 5000, RewardExp = 900, RewardKeepNet = 1 },
         };
 
         public static int StoryIndex(string id) => Story.FindIndex(q => q.Id == id);

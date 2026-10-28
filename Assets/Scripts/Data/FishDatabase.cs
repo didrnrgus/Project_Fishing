@@ -62,8 +62,8 @@ namespace Fishing.Data
         /// <summary>바다 미끼를 파는 곳: 국내 바다 + 해외 바다(하롱베이·산토리니).</summary>
         public static readonly string[] SeaMaps = { "honghyeon", "yokji", "geomun", "jeju", "seocheon", "yeongheung", "taean", "heonhwa", "samcheok", "deungdae", "cheongjin", "halong", "santorini",
             "vinpearl", "phuket", "kohsamui", "langkawi", "sentosa", "tioman", "telokbatek", "tenggol", "crete", "zakynthos", "duden" };
-        /// <summary>민물 미끼(지렁이·떡밥·옥수수·플라이)를 파는 곳: 한강 · 나일강 · 앙코르와트(톤레삽) · 돈콘(메콩) · 방콕(짜오프라야).</summary>
-        public static readonly string[] FreshMaps = { "hangang", "nile", "angkor", "donkhone", "bangkok" };
+        /// <summary>민물 미끼(지렁이·떡밥·옥수수·플라이)를 파는 곳: 한강 · 탄천 · 나일강 · 앙코르와트(톤레삽) · 돈콘(메콩) · 방콕(짜오프라야).</summary>
+        public static readonly string[] FreshMaps = { "hangang", "tancheon", "nile", "angkor", "donkhone", "bangkok" };
         /// <summary>에기(가짜 새우 미끼)를 파는 곳: 서해(주꾸미·갑오징어), 동해(오징어·대문어), 제주·거문도(무늬오징어).</summary>
         public static readonly string[] EgiMaps = { "seocheon", "yeongheung", "taean", "heonhwa", "samcheok", "deungdae", "cheongjin", "jeju", "geomun" };
 

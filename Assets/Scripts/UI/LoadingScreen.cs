@@ -100,6 +100,7 @@ namespace Fishing.UI
         public static string Romanize(string mapId) => mapId switch
         {
             "hangang" => "Hangang",
+            "tancheon" => "Tancheon",
             "heonhwa" => "Heonhwaro",
             "samcheok" => "Samcheok",
             "cheongjin" => "Cheongjinpogu",
