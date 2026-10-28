@@ -1183,6 +1183,8 @@ namespace Fishing.Dev
                 ("tancheon", "72_tancheon_spawn", new Vector3(-6f, 1.1f, -45f), 0f, 10f, 10f, 12f, 10 * 60, Weather.Clear),
                 ("tancheon", "72b_tancheon_downstream", new Vector3(30f, 1.1f, -48f), 80f, 75f, 6f, 10f, 15 * 60, Weather.Clear),
                 ("tancheon", "72c_tancheon_stones", new Vector3(106f, 0.8f, -32f), 10f, 20f, 18f, 10f, 11 * 60, Weather.Clear),
+                ("tancheon", "72p_tancheon_kayak_dock", new Vector3(-62f, 1.1f, -44f), 280f, 290f, 16f, 11f, 11 * 60 + 30, Weather.Clear),
+                ("tancheon", "72q_tancheon_kayaks", new Vector3(12f, 3.2f, -14f), 270f, 268f, 6f, 7f, 11 * 60, Weather.Clear),   // 보행교 위에서 상류(카약 타는 물)
                 ("tancheon", "72k_tancheon_willow", new Vector3(-14f, 1.1f, -47f), 270f, 285f, 6f, 9f, 10 * 60 + 30, Weather.Clear),
                 ("tancheon", "72l_tancheon_drones", new Vector3(-6f, 1.1f, -45f), 0f, 0f, 0f, 7f, 21 * 60 + 30, Weather.Clear),
                 ("tancheon", "72j_tancheon_stones_side", new Vector3(98f, 1.1f, -45f), 40f, 40f, 16f, 11f, 15 * 60, Weather.Clear),
@@ -1214,6 +1216,19 @@ namespace Fishing.Dev
                 Game.CameraRig.Distance = s.dist;
                 yield return new WaitForSeconds(2.5f);
                 yield return Shot(s.shot);
+            }
+            // 탄천 카약: 선착장 위에서 물 쪽으로, 세 척을 바로 앞으로 불러와 가까이
+            if (Fishing.World.FieldMap.Id == "tancheon" && Fishing.World.KayakFleet.Instance != null)
+            {
+                var dv = Fishing.World.KayakFleet.DockView;
+                Game.Clock.Set(5, 11 * 60);
+                Game.Player.Teleport(dv + Vector3.up * 0.1f, 0f);
+                Game.CameraRig.Yaw = 10f;
+                Game.CameraRig.Pitch = 10f;
+                Game.CameraRig.Distance = 5f;
+                Fishing.World.KayakFleet.Instance.ParkForShot(new Vector2(dv.x + 2f, dv.z + 11f), 80f);
+                yield return new WaitForSeconds(2.5f);
+                yield return Shot("72r_tancheon_kayak_close");
             }
             // 탄천 드론쇼: 장면마다 한 장 + 다음 장면으로 바뀌는 중간 한 장 (트랜지션 확인). 사용자 점 파일 그림이라 docs/images에 옮기지 않는다
             if (Fishing.World.FieldMap.Id == "tancheon" && Fishing.World.DroneShow.Instance != null && Fishing.World.DroneShow.Instance.SceneCount > 0)
