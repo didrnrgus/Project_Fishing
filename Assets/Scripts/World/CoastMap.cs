@@ -403,6 +403,41 @@ namespace Fishing.World
         public static float CapeTop(CapeSpec c, float x, float z, float t) =>
             Mathf.Lerp(c.Height, c.Height * 0.55f, t) + (Mathf.PerlinNoise(x * 0.05f, z * 0.05f) - 0.5f) * 2f;
 
+        /// <summary>용두암 해안 (사용자 위성 사진 2026-10-28): 이 x보다 서쪽. 용두암 자리 x.</summary>
+        public const float YongduZone = -140f, YongduX = -168f;
+        /// <summary>너럭바위에서 바다로 뻗은 바위 줄기 (x, 길이, 반폭) — 가장 긴 줄기 끝에 용두암이 선다.</summary>
+        static readonly Vector3[] YongduFingers = { new Vector3(YongduX, 20f, 4.5f), new Vector3(-187f, 12f, 5.5f), new Vector3(-151f, 7f, 3.5f), new Vector3(-202f, 9f, 6f) };
+
+        /// <summary>용두암 해안 세기 0~1 (동쪽 모래밭 쪽으로 사라진다).</summary>
+        public float YongduWeight(float x) => (S.Features & CoastFeature.Yongduam) != 0 ? Smooth(YongduZone + 6f, YongduZone - 4f, x) : 0f;
+
+        /// <summary>너럭바위 바다 쪽 끝 (해안선에서 m): 들쭉날쭉한 가장자리 + 바위 줄기.</summary>
+        public float YongduEdge(float x)
+        {
+            float e = 7f + Mathf.PerlinNoise(x * 0.09f, 3.7f) * 5f + Mathf.PerlinNoise(x * 0.31f, 8.1f) * 2f;
+            foreach (var f in YongduFingers) e += f.y * Mathf.Exp(-(x - f.x) * (x - f.x) / (f.z * f.z));
+            return e;
+        }
+
+        /// <summary>
+        /// 용두암 해안 높이 (위성 사진: 도로 → 덤불 덮인 둔덕(산책로) → 물가 검은 용암 너럭바위 → 바다로 뻗은 바위 줄기, 가장 긴 줄기 끝에 용두암).
+        /// 둔덕 = 해안선 뭍 쪽 6.5~12.5m 윗면, 땅보다 4~5m 높고 바다 쪽은 바위 비탈. 너럭바위 = 물 위 30~80cm 울퉁불퉁, 군데군데 물웅덩이.
+        /// </summary>
+        float YongduCoast(float x, float z, float d, float y)
+        {
+            float wz = YongduWeight(x);
+            if (wz <= 0f || d < -18f) return y;
+            float n = Mathf.PerlinNoise(x * 0.07f + 3f, 1.3f);
+            float rough = Mathf.PerlinNoise(x * 0.35f, z * 0.35f + 9f) - 0.5f;
+            float shelf = LandY - 0.45f + rough * 0.55f + (Mathf.PerlinNoise(x * 0.9f, z * 0.9f) - 0.5f) * 0.25f;
+            float floor = -S.NearDepth - Mathf.Max(0f, d - 40f) * S.DepthSlope;
+            float edge = YongduEdge(x);
+            float coast = Mathf.Lerp(shelf, floor, Smooth(edge - 1f, edge + 6f, d + rough * 3f));
+            float top = LandY + (3.6f + n * 1.6f) * Smooth(-17.5f, -12.5f, d) + rough * 0.4f;
+            float bank = Mathf.Lerp(coast, top, Smooth(-2.5f, -6.5f, d + (n - 0.5f) * 3f + rough * 1.5f));
+            return Mathf.Lerp(y, bank, wz);
+        }
+
         public float HeightAt(float x, float z)
         {
             float shore = ShoreAt(x);
@@ -474,6 +509,7 @@ namespace Fishing.World
                 float sd = new Vector2(x - st.Pos.x, z - st.Pos.z).magnitude;
                 if (sd < st.Radius + 6f) y = Mathf.Max(y, Mathf.Lerp(LandY + 0.5f, -3f, Smooth(st.Radius, st.Radius + 6f, sd)));
             }
+            y = YongduCoast(x, z, d, y);
 
             // 강: 맞은편 둑 (완만한 진흙 둑 → 둑 위 평지, 멀어질수록 살짝 높아진다)
             if (S.FarShoreZ > 0f)
@@ -683,6 +719,22 @@ namespace Fishing.World
                     // 곶·섬은 바위가 많다
                     foreach (var i in S.Islets)
                         if (new Vector2(x - i.Center.x, z - i.Center.z).magnitude < i.Radius + 6f) rock = Mathf.Max(rock, i.Trees ? 0.25f : 0.6f);
+                    // 용두암 해안: 둔덕 바다 쪽 비탈부터 너럭바위·바위 줄기·그 둘레 물속까지 검은 현무암 (모래·자갈 대신)
+                    float yw = _map.YongduWeight(x);
+                    if (yw > 0f)
+                    {
+                        float edge = _map.YongduEdge(x);
+                        float lava = yw * Smooth(-8.5f - n * 3f, -6f, d) * Smooth(edge + 14f, edge + 6f, d);
+                        rock = Mathf.Max(rock, lava);
+                        sand *= 1f - lava;
+                        shore *= 1f - lava;
+                        // 둔덕 위 산책로: 바다 쪽 끝을 따라 자갈 흙길
+                        float path = yw * Smooth(-12f, -11f, d) * Smooth(-8.2f, -9.2f, d) * Smooth(LandYPlus(2.4f), LandYPlus(3f), y);
+                        shore = Mathf.Max(shore, path * 0.85f);
+                        rock *= 1f - path;
+                        // 둔덕 뭍 쪽 비탈은 가팔라도 풀 (바위는 바다 쪽 비탈만)
+                        rock *= 1f - yw * Smooth(-11.5f, -12.5f, d);
+                    }
                     w[0] = Mathf.Max(0f, 1f - rock - sand - shore - mud);
                     w[1] = sand;
                     w[2] = rock;
@@ -894,7 +946,7 @@ namespace Fishing.World
             {
                 bool rocky = true;
                 foreach (var seg in S.Shores) if (seg.Kind != ShoreKind.Rock && x > seg.X0 - 4f && x < seg.X1 + 4f) rocky = false;
-                if (!rocky) continue;
+                if (!rocky || _map.YongduWeight(x) > 0f) continue;   // 용두암 해안은 Yongduam()이 너덜 바위를 깐다
                 float z = _map.ShoreAt(x) + R(-1f, 6f);
                 if (z < CoastMapDef.TerrainMinZ + 10f) continue;
                 _props.Boulder(new Vector3(x, _map.BaseWaterY + R(-0.5f, 0.6f), z), R(1.8f, 4.2f), _rock);
@@ -1516,6 +1568,7 @@ namespace Fishing.World
             if ((S.Features & CoastFeature.Dunes) != 0 && S.DuneArea.Contains(new Vector2(x, z))) return true;
             if ((S.Features & CoastFeature.DryingRacks) != 0 && Mathf.Abs(x - DryingRackX) < 22f && Mathf.Abs(z - DryingRackZ) < 12f) return true;
             if ((S.Features & CoastFeature.Cranes) != 0 && Mathf.Abs(x - CraneX) < 40f && z > _map.ShoreAt(x) - 30f) return true;
+            if (_map.YongduWeight(x) > 0f && z > _map.ShoreAt(x) - 19f) return true;   // 용두암 둔덕·너럭바위
             foreach (var r in S.Reserved) if (r.Contains(new Vector2(x, z))) return true;
             return new Vector2(x - S.ShopPos.x, z - S.ShopPos.z).magnitude < 12f;
         }
@@ -1816,11 +1869,16 @@ namespace Fishing.World
             float w = Mathf.Lerp(c.WidthBase, c.WidthTip, t);
             var rim = spine + n * w;
             var inner = spine + n * (w - 6f);
-            var deck = new GameObject("ColumnarDeck").transform;
+            ViewDeck("ColumnarDeck", new Vector3(rim.x - n.x * 2f, H(inner.x, inner.y) + 0.6f, rim.y - n.y * 2f), new Vector3(n.x, 0f, n.y), Mats.Wood(new Color(0.55f, 0.34f, 0.2f)), false);
+        }
+
+        /// <summary>전망 데크 9×5m: at = 바닥 윗면 가운데 바다 쪽, facing = 바라보는 쪽 (로컬 +z). 바다 쪽 한 줄·양 끝 난간, legs면 땅에서 뜬 자리를 기둥으로 받친다 (비탈에 걸친 데크).</summary>
+        void ViewDeck(string name, Vector3 at, Vector3 facing, Material wood, bool legs)
+        {
+            var deck = new GameObject(name).transform;
             deck.SetParent(_root, false);
-            deck.localPosition = new Vector3(rim.x - n.x * 2f, H(inner.x, inner.y) + 0.6f, rim.y - n.y * 2f);
-            deck.localRotation = Quaternion.LookRotation(new Vector3(n.x, 0f, n.y));   // 로컬 +z = 바다 쪽
-            var wood = Mats.Wood(new Color(0.55f, 0.34f, 0.2f));
+            deck.localPosition = at;
+            deck.localRotation = Quaternion.LookRotation(new Vector3(facing.x, 0f, facing.z));   // 로컬 +z = 바다 쪽
             const float len = 9f, z0 = -4f, z1 = 1f;
             Mats.Prim(PrimitiveType.Cube, "DeckFloor", deck, new Vector3(0f, -0.15f, (z0 + z1) * 0.5f), new Vector3(len, 0.3f, z1 - z0), wood);
             Mats.Prim(PrimitiveType.Cube, "DeckBeam", deck, new Vector3(0f, -0.55f, z1 - 0.3f), new Vector3(len, 0.5f, 0.3f), wood, false);
@@ -1828,6 +1886,16 @@ namespace Fishing.World
             WoodRail(deck, new Vector3(-len * 0.5f, 0f, z1 - 0.1f), new Vector3(len * 0.5f, 0f, z1 - 0.1f), wood);
             WoodRail(deck, new Vector3(-len * 0.5f + 0.05f, 0f, z0 + 1.5f), new Vector3(-len * 0.5f + 0.05f, 0f, z1 - 0.1f), wood);
             WoodRail(deck, new Vector3(len * 0.5f - 0.05f, 0f, z0 + 1.5f), new Vector3(len * 0.5f - 0.05f, 0f, z1 - 0.1f), wood);
+            // 기둥: 바닥 밑 땅이 30cm 넘게 떨어진 자리
+            for (int i = 0; i < 4 && legs; i++)
+                foreach (float lz in new[] { z1 - 0.3f, (z0 + z1) * 0.5f })
+                {
+                    float lx = Mathf.Lerp(-len * 0.5f + 0.3f, len * 0.5f - 0.3f, i / 3f);
+                    var p = deck.TransformPoint(new Vector3(lx, 0f, lz));
+                    float drop = at.y - 0.3f - H(p.x, p.z);
+                    if (drop > 0.3f)
+                        Mats.Prim(PrimitiveType.Cube, "DeckLeg", deck, new Vector3(lx, -0.3f - drop * 0.5f, lz), new Vector3(0.2f, drop + 0.3f, 0.2f), wood, false);
+                }
         }
 
         /// <summary>
@@ -1909,27 +1977,29 @@ namespace Fishing.World
         }
 
         /// <summary>
-        /// 용두암 (사용자 요청·참고 사진 2026-10-27, 실제로는 제주시 앞바다): 서쪽 갯바위 끝 붉은 갈색 용암 둔덕 위에 선 높이 10m 남짓 검은 현무암 용머리.
-        /// 둔덕에서 굵게 솟아 허리가 잘록한 목 → 앞으로 길게 튀어나온 납작한 위턱(주둥이)과 짧은 아래턱 사이로 벌린 입, 머리 위 들쭉날쭉한 뿔 바위.
-        /// 등뼈를 따라 타원 단면을 이어 붙이고(로프트) 구멍 숭숭 울퉁불퉁하게. 뒤 언덕엔 나무 난간 산책로.
+        /// 용두암 (실제로는 제주시 앞바다). 사용자 위성 사진·사진 (2026-10-28, "근처가 너무 이질적"): 도로 → 덤불 덮인 둔덕(산책로·난간·전망 데크)
+        /// → 물가의 넓은 검은 용암 너럭바위(각진 현무암 너덜) → 바다로 손가락처럼 뻗은 바위 줄기들, 가장 긴 줄기 끝에 높이 10m 남짓 검은 현무암 용머리.
+        /// 땅 모양은 <see cref="CoastMapDef"/>의 YongduCoast, 여기서는 그 위에 바위·덤불·난간을 얹는다.
         /// </summary>
         void Yongduam()
         {
-            float x = -168f;
+            float x = CoastMapDef.YongduX;
             float shore = _map.ShoreAt(x);
+            var basalt = Mats.Weathered("darkrock", new Color(0.19f, 0.185f, 0.18f), 1.6f, 0.25f, 1f, 0.45f, 0.08f, new Color(0.25f, 0.3f, 0.18f), 0.35f);
+            var lava = Mats.Weathered("darkrock", new Color(0.27f, 0.19f, 0.15f), 1.8f, 0.22f, 1f, 0.3f, 0.12f, new Color(0.38f, 0.42f, 0.2f), 0.2f);
+            YongduRubble(basalt, lava);
             var t = new GameObject("Yongduam").transform;
             t.SetParent(_root, false);
-            t.localPosition = new Vector3(x, _map.BaseWaterY, shore + 11f);
+            t.localPosition = new Vector3(x, _map.BaseWaterY, shore + _map.YongduEdge(x) - 3f);   // 가장 긴 바위 줄기 끝
             t.localRotation = Quaternion.Euler(0f, -90f, 0f);   // 머리(+x)가 바다(북쪽)를 본다 → 포구에서 옆모습
-            var basalt = Mats.Weathered("darkrock", new Color(0.23f, 0.22f, 0.21f), 1.6f, 0.25f, 1f, 0.45f, 0.06f, new Color(0.25f, 0.3f, 0.18f), 0.35f);
-            var lava = Mats.Weathered("darkrock", new Color(0.33f, 0.22f, 0.17f), 1.8f, 0.22f, 1f, 0.3f, 0.18f, new Color(0.38f, 0.42f, 0.2f), 0.2f);
-            // 붉은 갈색 용암 둔덕: 물가에서 머리 밑까지 이어진 낮고 거친 바위 더미
-            for (int i = 0; i < 16; i++)
+            // 머리 밑: 줄기를 따라 뭍 쪽(로컬 -x)으로 이어지는 들쭉날쭉한 검붉은 바위 등줄기, 용머리 밑이 가장 높다
+            for (int i = 0; i < 30; i++)
             {
-                float u = i / 15f;
-                var pos = new Vector3(Mathf.Lerp(-12f, 4f, u) + R(-1.5f, 1.5f), R(-0.5f, 1.2f), R(-3.5f, 3.5f));
-                float sz = Mathf.Lerp(3.5f, 6.5f, Mathf.Sin(u * Mathf.PI)) * R(0.8f, 1.2f);
-                RockPiece(t, "YongduBase", pos, new Vector3(sz * 1.3f, sz * R(0.5f, 0.75f), sz), lava, i);
+                float u = i / 29f;
+                var pos = new Vector3(Mathf.Lerp(-16f, 4f, u) + R(-1.2f, 1.2f), R(-0.4f, 0.9f), R(-3f, 3f));
+                float sz = Mathf.Lerp(1.8f, 5f, Smooth(0f, 0.8f, u) * Smooth(1.05f, 0.85f, u)) * R(0.7f, 1.15f);
+                var size = R(0f, 1f) < 0.3f ? new Vector3(sz * 0.6f, sz * R(0.8f, 1.1f), sz * 0.6f) : new Vector3(sz * 1.2f, sz * R(0.45f, 0.7f), sz);
+                RockPiece(t, "YongduBase", pos, size, R(0f, 1f) < 0.45f ? lava : basalt, i);
             }
             // 용머리: Blender 조각 (tools/blender/sculpt.py yongduam — 비스듬히 솟은 목, 하늘로 든 주둥이와 벌린 입, 갈기 바위, 절리 홈). 머리 = 모델 앞(+Z) → 리그 안에서 90° 돌려 바다를 본다
             if (KenneyProps.Spawn("Props/yongduam", t, new Vector3(0f, 0.2f, 0f), 90f, 11.5f) == null)
@@ -1939,14 +2009,79 @@ namespace Fishing.World
             {
                 float a = i / 10f * Mathf.PI * 2f;
                 float sz = R(1.2f, 3f);
-                RockPiece(t, "YongduRock", new Vector3(Mathf.Cos(a) * R(8f, 13f) - 2f, R(-0.6f, 0.2f), Mathf.Sin(a) * R(6f, 10f)), new Vector3(sz * 1.3f, sz * 0.6f, sz), basalt, 40 + i);
+                RockPiece(t, "YongduRock", new Vector3(Mathf.Cos(a) * R(7f, 11f) + 1f, R(-0.6f, 0.2f), Mathf.Sin(a) * R(5f, 9f)), new Vector3(sz * 1.3f, sz * 0.6f, sz), basalt, 40 + i);
             }
-            // 뒤 언덕 산책로 나무 난간 (사진: 관광객이 내려다보는 붉은 갈색 난간)
-            var wood = Mats.Wood(new Color(0.55f, 0.3f, 0.2f));
-            float y = _map.LandY + 0.05f;
+            YongduBank(x, shore);
+        }
+
+        /// <summary>
+        /// 용두암 해안 너덜 바위: 둔덕 바다 쪽 비탈·물가 가장자리·바위 줄기는 빽빽하게, 너럭바위 가운데는 듬성듬성.
+        /// 대부분 낮은 다각형(모난 현무암 — 매끈한 절리면 바위는 냇돌처럼 둥글어 보여 큰 바위 몇 개만). 수백 덩이를 재질(검정·검붉은)별 메쉬 하나로 합친다.
+        /// </summary>
+        void YongduRubble(Material basalt, Material lava)
+        {
+            var parts = new[] { new List<CombineInstance>(), new List<CombineInstance>() };
+            for (float x = CoastMapDef.TerrainMinX + 3f; x < CoastMapDef.YongduZone + 2f; x += 1.4f)
+            {
+                float shore = _map.ShoreAt(x), edge = _map.YongduEdge(x), w = _map.YongduWeight(x);
+                for (float d = -8f; d < edge + 3f; d += 1.4f)
+                {
+                    float px = x + R(-0.6f, 0.6f), pz = shore + d + R(-0.6f, 0.6f);
+                    float dense = Mathf.Max(0.3f, Mathf.Max(Smooth(-3f, -6f, d) * 0.85f, Smooth(edge - 4f, edge - 0.5f, d) * 0.9f));
+                    if (R(0f, 1f) > dense * w) continue;
+                    float g = H(px, pz);
+                    if (g > _map.LandY + 3.5f || g < _map.BaseWaterY - 1.6f) continue;
+                    bool big = R(0f, 1f) < (d > edge - 4f ? 0.25f : 0.1f);
+                    float sz = big ? R(1.4f, 3f) : R(0.4f, 1.2f);
+                    var scale = new Vector3(sz * R(0.9f, 1.4f), sz * R(0.45f, 0.85f), sz * R(0.8f, 1.1f));
+                    bool red = R(0f, 1f) < (Mathf.Abs(px - CoastMapDef.YongduX) < 14f ? 0.4f : 0.15f);
+                    parts[red ? 1 : 0].Add(new CombineInstance
+                    {
+                        mesh = big && R(0f, 1f) < 0.4f ? Rocks.Mesh(_rng.Next(8)) : Rocks.Pebble(_rng.Next(8)),
+                        transform = Matrix4x4.TRS(new Vector3(px, g + scale.y * 0.1f, pz), Quaternion.Euler(R(-20f, 20f), R(0f, 360f), R(-20f, 20f)), scale),
+                    });
+                }
+            }
+            var mats = new[] { basalt, lava };
+            for (int k = 0; k < 2; k++)
+            {
+                var mesh = new Mesh { name = "YongduRubble", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+                mesh.CombineMeshes(parts[k].ToArray(), true, true);
+                mesh.RecalculateBounds();
+                var go = new GameObject("YongduRubble");
+                go.transform.SetParent(_root, false);
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                go.AddComponent<MeshRenderer>().sharedMaterial = mats[k];
+            }
+        }
+
+        /// <summary>용두암 둔덕 위: 낮은 덤불(위성 사진: 나무 없이 덤불로 덮였다), 바다 쪽 가장자리 산책로 나무 난간, 용두암을 내려다보는 기둥 받친 전망 데크.</summary>
+        void YongduBank(float x, float shore)
+        {
+            bool OnTop(float tx, float tz) => _map.YongduWeight(tx) > 0.9f && H(tx, tz) > _map.LandY + 2.6f && tz < _map.ShoreAt(tx) - 9.5f;
+            for (float bx = CoastMapDef.TerrainMinX + 4f; bx < CoastMapDef.YongduZone; bx += R(1.8f, 3.4f))
+            {
+                float bz = _map.ShoreAt(bx) + R(-16f, -9.5f);
+                if (OnTop(bx, bz)) KenneyProps.SpawnBush(_root, new Vector3(bx, H(bx, bz) - 0.05f, bz), R(0f, 360f), R(0.8f, 1.8f));
+            }
+            // 산책로 난간: 둔덕 바다 쪽 끝을 따라 4m 토막 (높이는 땅을 따른다, 비탈이 끊긴 자리·전망 데크 자리는 건너뛴다)
+            var wood = Mats.Wood(new Color(0.5f, 0.3f, 0.2f));
             var rail = new GameObject("YongduRail").transform;
             rail.SetParent(_root, false);
-            WoodRail(rail, new Vector3(x - 12f, y, shore - 1.5f), new Vector3(x + 12f, y, shore - 1.5f), wood);
+            for (float rx = CoastMapDef.TerrainMinX + 6f; rx < CoastMapDef.YongduZone - 4f; rx += 4f)
+            {
+                var a = new Vector3(rx, 0f, _map.ShoreAt(rx) - 8.5f);
+                var b = new Vector3(rx + 4f, 0f, _map.ShoreAt(rx + 4f) - 8.5f);
+                a.y = H(a.x, a.z);
+                b.y = H(b.x, b.z);
+                if (Mathf.Min(a.y, b.y) < _map.LandY + 2.4f || Mathf.Abs(a.y - b.y) > 1.2f || Mathf.Abs(rx + 2f - (x - 6f)) < 6f) continue;
+                WoodRail(rail, a, b, wood);
+            }
+            // 전망 데크: 용두암 조금 서쪽 둔덕 끝에서 줄기 끝 용머리를 바라본다
+            var at = new Vector3(x - 6f, 0f, shore - 8f);
+            var head = new Vector3(x, 0f, shore + _map.YongduEdge(x) - 3f);
+            at.y = H(at.x, at.z - 2f) + 0.45f;
+            ViewDeck("YongduDeck", at, head - at, wood, true);
         }
 
         /// <summary>예전 용머리 (Blender 모델이 없을 때): 목(세로) + 위턱(가로) + 아래턱을 타원 단면으로 이어 붙인다.</summary>

@@ -1123,8 +1123,11 @@ namespace Fishing.Dev
                 // 사용자가 빨간 펜으로 표시한 자리 (2026-10-27): 맵에 처음 들어온 자리에서 길·연석·가로등·부두가 보이게
                 ("deungdae", "46d_deungdae_road", new Vector3(48f, 1.1f, -47f), 270f, 255f, 14f, 9f, 11 * 60, Weather.Clear),
                 ("cheongjin", "49f_cheongjin_road", new Vector3(28f, 1.1f, -47f), 180f, 185f, 10f, 8f, 13 * 60, Weather.Clear),
-                ("jeju", "54i_jeju_yongduam_close", new Vector3(-152f, 1.1f, -50f), 323f, 323f, 8f, 9f, 15 * 60, Weather.Clear),
                 ("jeju", "54h_jeju_quay", new Vector3(26f, 1.1f, -47f), 190f, 200f, 12f, 9f, 11 * 60, Weather.Clear),
+                // 용두암 해안 (사용자 위성 사진 2026-10-28): 둔덕 산책로에서 너럭바위·바위 줄기 끝 용머리를 내려다본다
+                ("jeju", "54f_jeju_yongduam", new Vector3(-180f, 1.1f, -49f), 20f, 20f, 10f, 7f, 15 * 60, Weather.Clear),
+                ("jeju", "54g_jeju_yongduam_rocks", new Vector3(-150f, 1.1f, -35f), 300f, 300f, 6f, 6f, 15 * 60, Weather.Clear),
+                ("jeju", "54i_jeju_yongduam_close", new Vector3(-152f, 1.1f, -50f), 323f, 323f, 8f, 9f, 15 * 60, Weather.Clear),
                 ("halong", "55f_halong_quay", new Vector3(4f, 1.1f, -47f), 0f, 0f, 8f, 9f, 9 * 60, Weather.Clear),
                 ("bangkok", "62d_bangkok_quay", new Vector3(4f, 1.1f, -47f), 0f, 0f, 8f, 9f, 9 * 60, Weather.Clear),
                 ("duden", "71c_duden_quay", new Vector3(6f, 1.1f, -47f), 270f, 285f, 10f, 8f, 10 * 60, Weather.Clear),

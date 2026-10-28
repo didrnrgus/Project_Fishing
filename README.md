@@ -87,8 +87,8 @@
 | ![bridge_night](docs/images/00w_bridge_night.png) | ![bridge_far](docs/images/00w2_bridge_night_far.png) |
 | **63빌딩 (위로 좁아지는 금빛 유리 탑)** | **제주 주상절리대 (현무암 기둥 벽·너럭 단·전망 데크)** |
 | ![63_close](docs/images/00r2_63_close.png) | ![columnar](docs/images/54c_jeju_columnar.png) |
-| **제주 성산일출봉** | **제주 용두암** |
-| ![seongsan](docs/images/54e_jeju_seongsan.png) | ![yongduam](docs/images/54f_jeju_yongduam.png) |
+| **제주 성산일출봉** | **제주 용두암 (검은 용암 너럭바위, 바위 줄기 끝 용머리)** |
+| ![seongsan](docs/images/54e_jeju_seongsan.png) | ![yongduam](docs/images/54g_jeju_yongduam_rocks.png) |
 | **주상절리 곶과 외돌개** | **홍현 갯바위 둔덕 (퇴적층 턱·틈)** |
 | ![columnar_sea](docs/images/54d_jeju_columnar_sea.png) | ![outcrop](docs/images/22g_honghyeon_outcrop.png) |
 | **산토리니 비탈 마을과 파란 돔 정자** | **산토리니 포석 산책로·파란 아치문** |
