@@ -132,6 +132,7 @@ namespace Fishing.World
                 _phTo[best] = art.Ph[k];
                 _delay[best] = (art.P[k].x + 1f) * 0.75f + (float)rng.NextDouble() * 0.35f;
             }
+            Debug.Log($"[DroneShow] {art.Name}: 점 {art.Count}개 중 {m}개에 드론 배정 (켜진 드론 {m}대 / {N}대)");
             for (int i = 0; i < N; i++)
             {
                 if (used[i]) continue;
@@ -159,6 +160,13 @@ namespace Fishing.World
             Assign(_scene);
             _t = Move * progress;
             _on = 1f;
+        }
+
+        /// <summary>자동 촬영: 지금 장면을 끝내고 바로 다음 장면으로 넘어가기 시작한다 (실제 트랜지션을 연속으로 찍으려고).</summary>
+        public void NextNow()
+        {
+            _on = 1f;
+            _t = Move + Hold + 0.001f;
         }
 
         void Update()
@@ -266,7 +274,7 @@ namespace Fishing.World
         }
 
         /// <summary>
-        /// <c>[[x, y, r, g, b(, fx)], ...]</c> → 판 좌표. 점들의 테두리 상자 가운데를 판 가운데로, 폭 2 · 높이 1.5 안에 들어가게 키우고 y를 뒤집는다.
+        /// <c>[[x, y, r, g, b(, fx)], ...]</c> → 판 좌표. 점들의 테두리 상자 가운데를 판 가운데로, 폭 2 · 높이 1.2 안에 들어가게 키우고 y를 뒤집는다.
         /// 드론 수(<see cref="DroneShow.N"/>)보다 많으면 앞에서부터 자른다.
         /// </summary>
         public static DroneArt FromJson(string name, string json)
@@ -291,7 +299,7 @@ namespace Fishing.World
             if (rows.Count == 0) return art;
             float x0 = float.MaxValue, x1 = float.MinValue, y0 = float.MaxValue, y1 = float.MinValue;
             foreach (var r in rows) { x0 = Mathf.Min(x0, r[0]); x1 = Mathf.Max(x1, r[0]); y0 = Mathf.Min(y0, r[1]); y1 = Mathf.Max(y1, r[1]); }
-            float k = Mathf.Min(2f / Mathf.Max(1e-4f, x1 - x0), 1.5f / Mathf.Max(1e-4f, y1 - y0));
+            float k = Mathf.Min(2f / Mathf.Max(1e-4f, x1 - x0), 1.2f / Mathf.Max(1e-4f, y1 - y0));   // 세로 그림도 화면에 들어오게 높이 1.2까지
             float cx = (x0 + x1) * 0.5f, cy = (y0 + y1) * 0.5f;
             int n = Mathf.Min(rows.Count, DroneShow.N);
             for (int i = 0; i < n; i++)

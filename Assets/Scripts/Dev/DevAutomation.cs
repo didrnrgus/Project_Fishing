@@ -1234,6 +1234,19 @@ namespace Fishing.Dev
                 show.JumpMid(0, 0.45f);
                 yield return null;
                 yield return Shot("72n_drone_transition");
+                // 실제 트랜지션 연속 촬영: 장면 k → k+1 을 0.5초마다 (GIF로 묶어 본다)
+                for (int k = 0; k < show.SceneCount; k++)
+                {
+                    show.Jump(k);
+                    yield return new WaitForSeconds(0.3f);
+                    show.NextNow();
+                    float t0 = Time.time;
+                    for (int f = 0; f <= 12; f++)
+                    {
+                        while (Time.time < t0 + f * 0.5f) yield return null;
+                        yield return Shot($"72o_trans{k}_{f:00}");
+                    }
+                }
             }
             // 집 양식마다 한 채 가까이 (HouseKit): 맵에 들어가 출발점에서 가장 가까운 길가 집 앞에 서서 정면을 찍는다
             var houseShots = new[]
