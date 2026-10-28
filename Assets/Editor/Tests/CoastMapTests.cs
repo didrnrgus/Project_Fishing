@@ -41,8 +41,8 @@ namespace Fishing.EditorTools.Tests
                 Assert.IsNotNull(m.S.ShopOwner, m.Id);
                 Assert.IsTrue(m.CreateSchools().Count >= 4, $"{m.Id} 어군이 너무 적다");
                 Assert.IsNotNull(FishingAreas.All.FirstOrDefault(a => a.MapId == m.Id && a.Open), $"{m.Id}가 낚시터 목록에 열려 있지 않다");
-                // 물: 격자 가운데 먼 줄은 바다여야 한다 (강은 맞은편 둑이 있으니 가운데 E4)
-                int row = m.S.FarShoreZ > 0f ? 3 : 6;
+                // 물: 격자 가운데 먼 줄은 바다여야 한다 (강은 두 물가 사이 가운데 줄 — 넓은 강 E4, 좁은 탄천 E5)
+                int row = m.S.FarShoreZ > 0f ? Mathf.FloorToInt((m.S.FarShoreZ - m.S.ShoreZ) * 0.5f / m.CellH) : 6;
                 Assert.IsTrue(m.IsWater(m.CellCenter(4, row)), $"{m.Id} E{row + 1}이 물이 아니다");
                 if (m.S.FarShoreZ > 0f) Assert.IsTrue(m.IsWalkable(new Vector3(0f, 0f, m.FarShoreAt(0f) + 20f)), $"{m.Id} 맞은편 둑을 걸을 수 없다");
             }

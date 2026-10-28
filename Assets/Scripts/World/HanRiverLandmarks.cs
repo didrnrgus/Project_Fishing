@@ -279,12 +279,16 @@ namespace Fishing.World
             return new Vector2(c, s) * r;
         }
 
-        static void Lotte(Transform root)
+        static void Lotte(Transform root) => Lotte(root, LottePos, 1f, 18f); // 이음매 하나가 서북쪽(서울 도심)을 본다
+
+        /// <summary>롯데월드타워를 pos에 짓는다 (scale = 한강에서 쓰는 300m 탑의 배율). 탄천 맵도 멀리 북쪽에 하나 세운다.</summary>
+        internal static Transform Lotte(Transform root, Vector3 pos, float scale, float yaw)
         {
             var t = new GameObject("LotteWorldTower").transform;
             t.SetParent(root, false);
-            t.localPosition = LottePos;
-            t.localRotation = Quaternion.Euler(0f, 18f, 0f); // 이음매 하나가 서북쪽(서울 도심)을 본다
+            t.localPosition = pos;
+            t.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            t.localScale = Vector3.one * scale;
             float H = LotteHeight, bodyTop = 0.855f;
             // 층선: 123층을 300m로 줄였으니 한 층 약 2.1m. 한 장 = 6층 × 10칸
             // 밤 불빛은 20 × 20장(120층 256m × 가로 280m, 아래 둘레 약 165m) 아틀라스 하나로 몸통 전체를 덮는다: 한 장을 되풀이하면 위로 좁아지며
@@ -342,6 +346,7 @@ namespace Fishing.World
                 mallNight, new Color(1f, 0.9f, 0.7f), 0.6f, 0.1f, new Vector2(8f, 2f));
             Mats.Prim(PrimitiveType.Cube, "LotteMall", t, new Vector3(60f, 14f, 30f), new Vector3(110f, 28f, 50f), mall, false);
             Mats.Prim(PrimitiveType.Cube, "LotteMall2", t, new Vector3(-55f, 10f, 40f), new Vector3(80f, 20f, 60f), mall, false);
+            return t;
         }
 
         // ---------- 63빌딩 ----------

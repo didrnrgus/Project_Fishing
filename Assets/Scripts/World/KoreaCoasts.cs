@@ -12,7 +12,7 @@ namespace Fishing.World
     /// 욕지도(가두리 낚시터·출렁다리·삼여), 청진포구(눈 덮인 큰 항구·명태 덕장·얼음 조각), 거문도(거문도 등대·백도).
     /// 좌표: 해안선 z ≈ -40, 바다 +Z, 격자 A~H(x -160~160) × 1~8(z -40~200).
     /// </summary>
-    public static class KoreaCoasts
+    public static partial class KoreaCoasts
     {
         const float NaN = float.NaN;
         static Habitat S => Habitat.Shallow;

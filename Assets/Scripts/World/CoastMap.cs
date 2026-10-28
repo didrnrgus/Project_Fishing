@@ -14,7 +14,8 @@ namespace Fishing.World
     public enum Landmark { None, Pavilion, Lighthouse, GrandLighthouse, Shrine, MukhoLighthouse, GeomunLighthouse }
 
     /// <summary>물 위 시설: 가두리 양식장(통로만 걷는다), 해안 데크길(부채길), 잔교.</summary>
-    public enum PlatformKind { FishFarm, Boardwalk, Pier }
+    /// <summary>Custom = 걸을 수 있는 자리만 정하고 모양은 맵이 직접 짓는다 (탄천 징검다리·보행교).</summary>
+    public enum PlatformKind { FishFarm, Boardwalk, Pier, Custom }
 
     /// <summary>맵마다 켜는 특별 풍경.</summary>
     [Flags]
@@ -212,6 +213,23 @@ namespace Fishing.World
         public Action<CoastWorldBuilder> Extra;
         /// <summary>마을 집·나무를 놓지 않을 자리 (x, z, 너비, 깊이) — <see cref="Extra"/>가 지을 랜드마크 자리.</summary>
         public Rect[] Reserved = new Rect[0];
+
+        // ---- 도심 하천 (탄천): 폭 60m 남짓한 개울이라 바다 틀의 기본값이 맞지 않는 것들 ----
+        /// <summary>격자 한 칸의 세로(물 쪽) 길이 (기본 30m). 좁은 개울은 8행이 물 폭에 들어오게 줄인다.</summary>
+        public float CellH = 30f;
+        /// <summary>맞은편 둑 물가의 굽이 폭 배율 (기본 1 = ±14m). 좁은 개울은 작게.</summary>
+        public float FarShoreAmp = 1f;
+        /// <summary>
+        /// 땅 높이를 맵이 직접 정한다 (해안 모양·맞은편 둑 대신). 섬·바위기둥은 그 위에 그대로 더한다.
+        /// 탄천: 물 → 갈대 물가 → 둔치 → 제방 비탈 → 제방 위 도로 → 시가지.
+        /// </summary>
+        public Func<CoastMapDef, float, float, float> Terrain;
+        /// <summary>지형 칠하기를 맵이 직접 정한다 (map, x, z, 높이, 경사(도), 층 비율 w[풀·모래·절벽·물가 자갈·진흙]). <see cref="Terrain"/>과 같이 쓴다.</summary>
+        public Action<CoastMapDef, float, float, float, float, float[]> Splat;
+        /// <summary>둑·마을·물가 바위를 맵이 직접 짓는다 (<see cref="Extra"/>): 기본 마을·맞은편 둑 나무와 집·갯바위 덩어리를 건너뛴다.</summary>
+        public bool CustomBanks;
+        /// <summary>지도(미니맵·지역 지도)에 보일 범위. 비어 있으면 기본 (-180, -70, 360, 300).</summary>
+        public Rect MapView;
     }
 
     /// <summary>
@@ -246,12 +264,12 @@ namespace Fishing.World
             GridMinX = -160f;
             GridMinZ = spec.ShoreZ;
             CellW = 40f;
-            CellH = 30f;
+            CellH = spec.CellH;
             Cols = 8;
             Rows = 8;
             MinX = -200f;
             MaxX = 200f;
-            View = new Rect(-180f, -70f, 360f, 300f);
+            View = spec.MapView.width > 0f ? spec.MapView : new Rect(-180f, -70f, 360f, 300f);
             Spawn = spec.Spawn;
             ShopPos = spec.ShopPos;
             ShopRadius = 10f;
@@ -324,7 +342,7 @@ namespace Fishing.World
         }
 
         /// <summary>강 맞은편 둑의 물가 z (살짝 굽이친다).</summary>
-        public float FarShoreAt(float x) => S.FarShoreZ + 10f * Mathf.Sin(x * 0.011f + S.Seed) + 4f * Mathf.Sin(x * 0.031f + 1.7f);
+        public float FarShoreAt(float x) => S.FarShoreZ + (10f * Mathf.Sin(x * 0.011f + S.Seed) + 4f * Mathf.Sin(x * 0.031f + 1.7f)) * S.FarShoreAmp;
 
         public bool IsMudAt(float x, float z) => KindWeight(x, ShoreKind.Mud) > 0.5f && z > ShoreAt(x) - 2f && z < ShoreAt(x) + 110f;
 
@@ -442,6 +460,7 @@ namespace Fishing.World
         {
             float shore = ShoreAt(x);
             float d = z - shore;
+            if (S.Terrain != null) return Mathf.Max(AddIslets(S.Terrain(this, x, z), x, z), TerrainBaseY + 1f);
             // 해안 모양 섞기
             float wb = KindWeight(x, ShoreKind.Beach), wm = KindWeight(x, ShoreKind.Mud), wq = KindWeight(x, ShoreKind.Quay);
             float wr = Mathf.Max(0f, 1f - wb - wm - wq);
@@ -483,6 +502,26 @@ namespace Fishing.World
                 y = Mathf.Max(y, cape);
             }
 
+            y = AddIslets(y, x, z);
+            y = YongduCoast(x, z, d, y);
+
+            // 강: 맞은편 둑 (완만한 진흙 둑 → 둑 위 평지, 멀어질수록 살짝 높아진다)
+            if (S.FarShoreZ > 0f)
+            {
+                float e = z - FarShoreAt(x);
+                if (e > -30f)
+                {
+                    float bank = Mathf.Lerp(-S.NearDepth - 0.5f, LandY, Smooth(-26f, 0f, e));
+                    if (e > 0f) bank += Smooth(0f, 50f, e) * 1.6f + (Mathf.PerlinNoise(x * 0.03f, z * 0.03f) - 0.5f) * 1.2f * Smooth(0f, 20f, e);
+                    y = Mathf.Max(y, bank);
+                }
+            }
+            return Mathf.Max(y, TerrainBaseY + 1f);
+        }
+
+        /// <summary>섬·모래톱·바위기둥을 땅 높이 y에 더한다.</summary>
+        float AddIslets(float y, float x, float z)
+        {
             foreach (var i in S.Islets)
             {
                 float id = new Vector2(x - i.Center.x, z - i.Center.z).magnitude;
@@ -509,20 +548,7 @@ namespace Fishing.World
                 float sd = new Vector2(x - st.Pos.x, z - st.Pos.z).magnitude;
                 if (sd < st.Radius + 6f) y = Mathf.Max(y, Mathf.Lerp(LandY + 0.5f, -3f, Smooth(st.Radius, st.Radius + 6f, sd)));
             }
-            y = YongduCoast(x, z, d, y);
-
-            // 강: 맞은편 둑 (완만한 진흙 둑 → 둑 위 평지, 멀어질수록 살짝 높아진다)
-            if (S.FarShoreZ > 0f)
-            {
-                float e = z - FarShoreAt(x);
-                if (e > -30f)
-                {
-                    float bank = Mathf.Lerp(-S.NearDepth - 0.5f, LandY, Smooth(-26f, 0f, e));
-                    if (e > 0f) bank += Smooth(0f, 50f, e) * 1.6f + (Mathf.PerlinNoise(x * 0.03f, z * 0.03f) - 0.5f) * 1.2f * Smooth(0f, 20f, e);
-                    y = Mathf.Max(y, bank);
-                }
-            }
-            return Mathf.Max(y, TerrainBaseY + 1f);
+            return y;
         }
 
         // ---------------- 구조물 판정 ----------------
@@ -696,6 +722,7 @@ namespace Fishing.World
                 CoastMapDef.TerrainBaseY, CoastMapDef.TerrainHeight, 513, H, layers.ToArray(),
                 (x, z, y, steep, w) =>
                 {
+                    if (S.Splat != null) { S.Splat(_map, x, z, y, steep, w); return; }
                     float n = Mathf.PerlinNoise(x * 0.07f, z * 0.07f);
                     float d = z - _map.ShoreAt(x);
                     float rock = Smooth(26f, 38f, steep);
@@ -941,8 +968,8 @@ namespace Fishing.World
                         Mats.Prim(PrimitiveType.Cylinder, "Bollard", _root, new Vector3(x, _map.LandY + 0.3f, _map.ShoreAt(x) - 1.2f), new Vector3(0.45f, 0.3f, 0.45f),
                             Mats.Lit(new Color(0.2f, 0.22f, 0.24f), 0.4f), false);
             }
-            // 갯바위 해안: 물가에 바위 덩어리
-            for (float x = -195f; x < 195f; x += R(5f, 9f))
+            // 갯바위 해안: 물가에 바위 덩어리 (둑을 맵이 직접 짓는 탄천은 건너뛴다)
+            for (float x = -195f; x < 195f && !S.CustomBanks; x += R(5f, 9f))
             {
                 bool rocky = true;
                 foreach (var seg in S.Shores) if (seg.Kind != ShoreKind.Rock && x > seg.X0 - 4f && x < seg.X1 + 4f) rocky = false;
@@ -1340,6 +1367,7 @@ namespace Fishing.World
                 switch (pf.Kind)
                 {
                     case PlatformKind.FishFarm: FishFarm(pf.Area); break;
+                    case PlatformKind.Custom: break;
                     default: Boardwalk(pf.Area, pf.Kind == PlatformKind.Boardwalk); break;
                 }
             }
@@ -1504,7 +1532,7 @@ namespace Fishing.World
 
         void BuildVillage()
         {
-            if (!KenneyProps.Available) return;
+            if (!KenneyProps.Available || S.CustomBanks) return;
             float halfW = S.LandHalfWidth > 0f ? S.LandHalfWidth - 25f : 195f;
             string[] small = S.NorthPort ? new[] { "building-i", "building-j", "building-k", "building-l" } : new[] { "building-a", "building-b", "building-c", "building-d", "building-e", "building-h" };
             // 길가 건물 (바다를 본다)

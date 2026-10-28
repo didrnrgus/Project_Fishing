@@ -71,6 +71,7 @@ namespace Fishing.Core
         static readonly Dictionary<string, (string stem, string npc)> MapInfo = new Dictionary<string, (string, string)>
         {
             { "hangang", ("한강", "어도사 박영감") },
+            { "tancheon", ("탄천", "탄천지기 윤씨") },
             { "honghyeon", ("홍현", "이지훈") },
             { "seocheon", ("서천", "홍원항 김씨") },
             { "yeongheung", ("영흥도", "진두항 오씨") },

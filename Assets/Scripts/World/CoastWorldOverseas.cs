@@ -392,7 +392,7 @@ namespace Fishing.World
         /// <summary>강 건너: 물가를 따라 야자수 줄, 드문드문 흙집, 밭 (사막 쪽은 비워 둔다).</summary>
         void BuildFarBank()
         {
-            if (S.FarShoreZ <= 0f) return;
+            if (S.FarShoreZ <= 0f || S.CustomBanks) return;
             // 지형(x ±210, z -200~270) 밖으로도 양쪽 둑 땅이 이어져 보이게 사막(또는 들판) 판을 깐다.
             // 높이는 강가 평지(LandY)보다 0.3m 낮게: 지형 안에서는 땅 밑에 묻히고, 밖에서는 물(0.2)보다 높다
             var plain = S.SandLand ? Mats.Textured("sand", new Color(0.95f, 0.85f, 0.65f), 120f, 0.05f) : Mats.Textured("grass", Color.white, 120f, 0.05f);
