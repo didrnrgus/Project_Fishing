@@ -427,7 +427,7 @@ namespace Fishing.World
             Id = "jeju", MapName = "제주 서귀포 · 남해", ShortName = "제주", ShopName = "서귀포 낚시점", UnionContact = "서귀포항의 어촌계 고계장",
             LandName = "서귀포 마을", SeaName = "서귀포 앞바다", Seed = 21, DarkRock = true, CliffTexture = "darkrock", CliffTint = new Color(1.35f, 1.35f, 1.4f, 1f),
             WaterDeep = new Color(0.02f, 0.14f, 0.26f), WaterShallow = new Color(0.04f, 0.45f, 0.5f),
-            Shores = new[] { new ShoreSeg(-999f, -150f, ShoreKind.Rock), new ShoreSeg(-150f, -112f, ShoreKind.Beach), new ShoreSeg(-112f, -12f, ShoreKind.Rock),
+            Shores = new[] { new ShoreSeg(-999f, -132f, ShoreKind.Rock), new ShoreSeg(-132f, -112f, ShoreKind.Beach), new ShoreSeg(-112f, -12f, ShoreKind.Rock),
                              new ShoreSeg(-12f, 82f, ShoreKind.Quay), new ShoreSeg(82f, 999f, ShoreKind.Rock) },
             NearDepth = 5f, DepthSlope = 0.09f, FlatWidth = 40f, CliffHeight = 16f, CliffWidth = 50f, RoadOffset = 22f, VillageDensity = 0.7f,
             Breakwaters = new[]
