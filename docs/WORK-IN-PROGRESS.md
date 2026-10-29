@@ -9,7 +9,8 @@
   - 끝남 (148/206): fish_species.py 전부 · species_korea2·korea3 전부(미꾸라지·보리멸은 이미 맞아 그대로) · species_sea 전부 · species_sea2(mahseer 빼고) · species_sea_fresh 8종 · species_med 1종. B·D 에이전트는 마지막 확인 렌더 전에 멈췄다 (224종 정의는 모두 읽힘)
   - 남음: species_sea_fresh `arowana giantsnakehead clownknifefish wallago redtailcatfish stripedsnakehead hampalabarb giantgourami pacu silverbarb moonlightgourami` · species_sea2 `mahseer` · species_africa 전부 16 · species_med 16 · species_med2(상어·가오리 빼고) 12
   - 에이전트가 바란 생성기 기능: 지느러미별 색(꼬리·등 따로, 가장자리 띠), `stripe`에 s 구간, 늘어진 아래턱살(혹돔), 위아래 다른 꼬리(날치), 작은 머리 + 가파른 목덜미(`nape`), 등 짙은 색이 내려오는 높이. 황복 가슴 뒤 반점이 검게 안 나옴 (원인 모름)
-  - 남은 목록 확인: 설계 파일을 HEAD와 비교해 정의가 안 바뀐 어종 (상어·가오리·아귀·잉어·메기·두족류는 대상 아님)
+  - **다른 PC에서 이어 하기**: [사진 대조 작업 지침](fish-db/사진대조_작업지침.md) — 준비(bpyenv, `tools/image-search-mcp` 설치·`claude mcp add`), 남은 어종 확인 `bpyenv/Scripts/python -I tools/blender/photo_match_progress.py`, 한 어종씩 하는 순서와 규칙
+  - 남은 목록 확인: 설계 파일을 대조 시작 전 커밋(56c1da11)과 비교해 정의가 안 바뀐 어종 (상어·가오리·아귀·잉어·메기·두족류는 대상 아님)
   - CPU: 미리보기 렌더는 코어 1/6, 전체 빌드는 3/4 스레드(`FISH_THREADS`). 에이전트는 3개까지, 렌더는 한 번에 하나
   - 끝나면: 전체 빌드(`--sheet docs/images/32_fish_models.png`) → 테스트 → 09 문서 3-21장에 사진 대조 결과 → 커밋
 - 다음에 해 볼 것: 지느러미별 색
