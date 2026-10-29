@@ -21,11 +21,6 @@ def _shark_fins(d1, d1h, d2, d2h, an, anh, lobe, lobeh, low, lowh, pec, pech, pe
             _fin('pelvic', s=(pel, pel), h=0.05)]
 
 
-# 상어 아가미구멍 다섯 줄 (머리 뒤 세로 줄)
-def _gills(u0, u1, color, a=0.55):
-    return ('bands', dict(n=5, u=(u0, u1), w=0.006, color=color, v=(0.3, 0.72), a=a))
-
-
 SPECIES = {
     # ===== 암초·난파선 바닥 =====
     # 유럽붕장어 (Conger conger): 붕장어보다 훨씬 굵고 크다. 잿빛 등, 흰 배, 등지느러미가 가슴지느러미 끝 바로 뒤에서 시작하고
@@ -75,14 +70,14 @@ SPECIES = {
                           eye=dict(r=0.018, iris='#d84a30')),
 
     # ===== 모래 바닥 =====
-    # 지중해노랑가오리 (Dasyatis pastinaca): 가오리 틀이 없어 납작이(F) 틀로. 마름모꼴 원반(몸) + 꼬리지느러미를 가늘고 긴 가시 모양으로.
-    # 타협: 납작이는 두 눈을 몸 한쪽 가장자리 근처에 놓아서 가오리처럼 좌우 대칭이 아니다. 꼬리 독가시·꼬리 밑 피부 주름은 생략
-    'commonstingray': dict(type='F', name='지중해노랑가오리', flat='left', depth=0.5, width=0.075, tmax=0.5, body_end=0.44, ped=0.05,
-                           snout=0.95, mouth=0.0, xsec=1.6, tail_w=0.5, bones=8,
+    # 지중해노랑가오리 (Dasyatis pastinaca): 납작이(F) 틀을 옆으로 눕힌 마름모꼴 원반(disc까지) + 가늘어지는 채찍 꼬리.
+    # ray: 두 눈이 등 가운데 좌우로 나란히, 눈 뒤 숨구멍. 타협: 꼬리 독가시·꼬리 밑 피부 주름은 생략
+    'commonstingray': dict(type='F', name='지중해노랑가오리', flat='left', depth=0.5, width=0.075, tmax=0.22, body_end=1.0, disc=0.44, ped=0.045,
+                           snout=0.95, mouth=0.0, xsec=1.6, tail_w=0.4, bones=8, ray=dict(eye_z=0.16),
                            fins=[_fin('caudal', h=0.02, shape='point')],
                            colors=P('#6a5a40', '#8a7a5a', '#f2eee4', silver=0.0, fin_up=('#5a4a34', '#3a3024', 0.95), fin_low=('#5a4a34', '#3a3024', 0.95),
                                     patterns=[('mottle', dict(color='#4a3e2a', a=0.35, scale=0.08))]),
-                           eye=dict(s=0.24, r=0.014, iris='#a08850'), anim=dict(amp=0.6, freq=0.7)),
+                           eye=dict(s=0.105, r=0.014, iris='#a08850'), anim=dict(amp=0.6, freq=0.7)),
     # 붉은촉수 (Mullus barbatus): 가파른 이마, 아래로 처진 입, 턱 밑 수염 한 쌍, 떨어진 등지느러미 둘, 분홍빛 붉은 몸, 큰 비늘
     'redmullet': dict(type='C', name='붉은촉수', depth=0.24, width=0.12, tmax=0.32, snout=0.3, mouth=-0.35, arch=0.62, scales=34,
                       fins=[_fin('dorsal', (0.3, 0.44), 0.5, prof=[(0, 0.7), (0.25, 1.0), (1, 0.3)], spiny=True),
@@ -96,33 +91,37 @@ SPECIES = {
 
     # ===== 상어류 =====
     # 유럽별상어 (Mustelus mustelus): 날씬한 잿빛 소형 상어. 크기가 비슷한 등지느러미 둘, 고양이 눈, 무늬 없음
-    'smoothhound': dict(type='E', name='유럽별상어', depth=0.12, width=0.11, tmax=0.32, body_end=0.8, ped=0.2, arch=0.55, snout=0.7, mouth=0.1,
+    'smoothhound': dict(type='E', name='유럽별상어', depth=0.12, width=0.11, tmax=0.32, body_end=0.8, ped=0.2, arch=0.55, snout=0.7, mouth=0.0,
+                        shark=dict(mouth=0.085, gills=(0.2, 0.25), rostrum=0.3),
                         xsec=2.1, scales=0, bones=7,
                         fins=_shark_fins((0.3, 0.42), 0.75, (0.6, 0.7), 0.6, (0.68, 0.76), 0.35, (0.84, 1.0), 1.7, (0.92, 1.0), 0.9, 0.22, 0.12, 0.52),
                         colors=P('#5e6266', '#8a8e90', '#eceae4', silver=0.05, fin_up=('#5a5e62', '#4a4e52', 0.97), fin_low=('#6a6e72', '#5a5e62', 0.97),
-                                 patterns=[_gills(0.2, 0.25, '#3a3e42')]),
+                                 patterns=[]),
                         eye=dict(s=0.1, z=0.3, r=0.016, iris='#6a8a50'), anim=dict(amp=1.0, freq=1.0)),
     # 청새리상어 (Prionace glauca): 아주 날씬한 몸, 길고 뾰족한 주둥이, 낫처럼 긴 가슴지느러미, 쪽빛 등 · 하늘색 옆 · 흰 배
-    'blueshark': dict(type='E', name='청새리상어', depth=0.12, width=0.11, tmax=0.34, body_end=0.8, ped=0.17, arch=0.55, snout=0.9, mouth=0.12,
+    'blueshark': dict(type='E', name='청새리상어', depth=0.12, width=0.11, tmax=0.34, body_end=0.8, ped=0.17, arch=0.55, snout=0.9, mouth=0.0, blunt=0.6,
+                      shark=dict(mouth=0.095, gills=(0.22, 0.27), rostrum=0.34),
                       xsec=2.1, scales=0, bones=7,
                       fins=_shark_fins((0.38, 0.48), 0.75, (0.68, 0.73), 0.3, (0.72, 0.77), 0.28, (0.84, 1.0), 1.8, (0.92, 1.0), 0.9, 0.27, 0.26, 0.56),
                       colors=P('#1e3c8a', '#3e6ec0', '#f2f4f6', silver=0.15, metallic=0.15, fin_up=('#24448e', '#1a3070', 0.97), fin_low=('#3a64b0', '#2a4c90', 0.95),
-                               patterns=[_gills(0.22, 0.27, '#14286a', 0.5), ('sheen', 0.3)]),
+                               patterns=[('sheen', 0.3)]),
                       eye=dict(s=0.09, z=0.25, r=0.017, iris='#101418'), anim=dict(amp=1.1, freq=0.9)),
     # 청상아리 (Isurus oxyrinchus): 굵은 방추형, 원뿔 주둥이, 초승달 꼬리(위아래 거의 대칭이라 꼬리지느러미 그대로), 짧은 가슴지느러미,
     # 짙은 금속빛 남색 등. 꼬리자루가 아주 가늘다
-    'mako': dict(type='E', name='청상아리', depth=0.17, width=0.15, tmax=0.38, body_end=0.78, ped=0.1, arch=0.53, snout=0.85, mouth=0.1,
+    'mako': dict(type='E', name='청상아리', depth=0.17, width=0.15, tmax=0.38, body_end=0.78, ped=0.1, arch=0.53, snout=0.85, mouth=0.0,
+                 shark=dict(mouth=0.09, gills=(0.2, 0.26), rostrum=0.3),
                  xsec=2.2, scales=0, bones=7,
                  fins=[_fin('dorsal', (0.34, 0.45), 0.85, prof=[(0, 1.0), (0.55, 0.6), (1, 0.12)]),
                        _fin('dorsal', (0.72, 0.75), 0.18), _fin('anal', (0.74, 0.77), 0.16),
                        _fin('caudal', h=0.4, shape='deepfork'),
                        _fin('pectoral', s=(0.26, 0.26), h=0.15, long=True), _fin('pelvic', s=(0.6, 0.6), h=0.05)],
                  colors=P('#1a2a58', '#4a5e92', '#f2f4f6', silver=0.3, metallic=0.35, fin_up=('#1c2c5a', '#141e44', 0.97), fin_low=('#2a3a6a', '#1e2c58', 0.95),
-                          patterns=[_gills(0.2, 0.26, '#101a3a', 0.5), ('sheen', 0.5)]),
+                          patterns=[('sheen', 0.5)]),
                  eye=dict(s=0.1, z=0.25, r=0.02, iris='#06080a'), anim=dict(amp=0.9, freq=1.5)),
     # 환도상어 (Alopias vulpinus): 몸 절반이 낫 같은 위 꼬리. 타협: 위 꼬리는 꼬리지느러미 'point' 모양으로 몸 축을 따라 길게 뻗게 하고
     # (실제로는 살짝 위로 휜다), 작은 아래 꼬리는 꼬리자루 밑의 뒷지느러미로 흉내낸다
-    'thresher': dict(type='E', name='환도상어', depth=0.11, width=0.1, tmax=0.4, body_end=0.54, ped=0.2, arch=0.55, snout=0.65, mouth=0.1,
+    'thresher': dict(type='E', name='환도상어', depth=0.11, width=0.1, tmax=0.4, body_end=0.54, ped=0.2, arch=0.55, snout=0.65, mouth=0.0,
+                     shark=dict(mouth=0.11, gills=(0.24, 0.3), rostrum=0.3),
                      xsec=2.1, scales=0, bones=9,
                      fins=[_fin('dorsal', (0.42, 0.56), 0.95, prof=[(0, 1.0), (0.55, 0.6), (1, 0.12)]),
                            _fin('dorsal', (0.9, 0.93), 0.15), _fin('anal', (0.92, 0.95), 0.15),
@@ -130,7 +129,7 @@ SPECIES = {
                            _fin('caudal', h=0.05, shape='point'),
                            _fin('pectoral', s=(0.3, 0.3), h=0.17, long=True), _fin('pelvic', s=(0.72, 0.72), h=0.05)],
                      colors=P('#4a4658', '#7e7a8c', '#f0f0f0', silver=0.25, metallic=0.25, fin_up=('#4a4658', '#3a3648', 0.97), fin_low=('#5a5668', '#4a4658', 0.95),
-                              patterns=[_gills(0.24, 0.3, '#2a2638', 0.5), ('sheen', 0.35)]),
+                              patterns=[('sheen', 0.35)]),
                      eye=dict(s=0.12, z=0.3, r=0.02, iris='#0a0a10'), anim=dict(amp=1.2, freq=0.9)),
 
     # ===== 떼고기 =====
