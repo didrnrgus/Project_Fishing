@@ -280,6 +280,16 @@ namespace Fishing.Data
         /// <summary>어종 등급(★1~5)에 맞는 해체 미끼.</summary>
         public static BaitDef CutBaitFor(int rarity) => GetBait("bait_cut" + UnityEngine.Mathf.Clamp(rarity, 1, 5));
 
+        /// <summary>
+        /// 그 어종을 살림망에서 해체하면 나오는 미끼: 두족류(에기를 무는 어종)는 오징어살, 나머지는 등급(★1~5)에 맞는 해체 미끼.
+        /// 잡동사니는 null. 어종 표에 새 어종을 넣어도 등급·미끼만으로 정해지므로 따로 적을 것이 없다.
+        /// </summary>
+        public static BaitDef DissectBaitFor(FishSpecies s)
+        {
+            if (s == null || s.IsJunk) return null;
+            return s.IsCephalopod ? GetBait("bait_squid") : CutBaitFor(s.Rarity);
+        }
+
         public const string KimbapId = "food_kimbap";
 
         /// <summary>

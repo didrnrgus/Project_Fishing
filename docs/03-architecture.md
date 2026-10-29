@@ -47,11 +47,12 @@ Assets/
       FishDatabase.Korea3.cs     한국 20종 (꺽지·쉬리·도치·아귀·홍어·참조기·붉바리·날치…)
       FishDatabase.SeaAsia2.cs   동남아 16종 (흑기흉상어·골든 트레발리·타이탄 트리거피시·말레이 마시어…)
       FishDatabase.Africa.cs     나일 10종 + 지중해 6종 (비키르·짐나르쿠스·파하카 복어·달고기·유럽성대…)
-      GearDatabase.cs            낚싯대/릴/줄/배, 미끼(해체 미끼 5등급 포함), 음식 5종(FoodDef), 레벨 보상(LevelRewards)
+      GearDatabase.cs            낚싯대/릴/줄/배, 미끼(해체 미끼 5등급 포함, DissectBaitFor: 어종 → 해체 미끼, 두족류는 오징어살), 음식 5종(FoodDef), 레벨 보상(LevelRewards)
       ItemDatabase.cs            가방 아이템 이름·설명
       CostumeDatabase.cs         의상 6부위 25벌 + 능력치
-      AchievementDatabase.cs     업적 35개, 레벨 칭호
-      QuestDatabase.cs           이야기 퀘스트 87개 (낚시터마다, 해외 51개 — 새 해외 맵 14곳의 이야기는 그 맵 파일의 <이름>Chapter())
+      AchievementDatabase.cs     업적 46개 (거점 도감 동남아·지중해·나일강·세계 포함, 목표 수는 어종 표에서 센다), 레벨 칭호
+      QuestDatabase.cs           이야기 퀘스트 87개 (낚시터마다, 해외 51개 — 새 해외 맵 14곳의 이야기는 그 맵 파일의 <이름>Chapter()), 가이드·일반 퀘스트(Side)
+      QuestDatabase.Species.cs   일반 퀘스트로 붙이는 어종 퀘스트 78개(낚시터마다 새 어종) · 낚시터 생태 도감 30개(QuestGoal.MapDex) · 문박사 도감 25~200종 5개, 보상 공식 SideReward
       RodUpgrade.cs              장비 강화 규칙 (+1~+15, 확률·비용·재료·성능)
       Seasons.cs                 계절 (한 달 = 게임 7일, 1일째 = 4월), 제철 입질 배율
       TournamentRules.cs         대회 규칙 (미션 점수, 엠블럼, 대회 맵 순서 — 6일 주기, 해안 낚시터 지역 대회)
@@ -166,6 +167,7 @@ Assets/
     NatureKitBake.cs             Tree Creator 나무 → 일반 메쉬 프리팹 굽기 (빌드 전 자동, 메뉴 Fishing > Bake Nature Kit Trees)
     BalanceSim.cs                파이팅 밸런스 시뮬레이션 → docs/balance-report.md
     Tests/GameRulesTests.cs      EditMode 단위 테스트 26개 (sh tools/test.sh)
+    Tests/SpeciesWiringTests.cs  어종 연동 검사 6개 (도감 낚시터·찌/파이팅 패턴·퀘스트 어종/길이/시간대·낚시터마다 도감·어종 퀘스트·미끼 규칙·거점 도감 업적)
     Tests/CoastMapTests.cs       낚시터 정의 검사 5개 (+ GameRulesTests의 대회 지역 순환) (물때마다 걸을 수 있는 곳, 어종이 사는 곳에서 낚이는지, 가두리 통로, 모래톱, 강 맵 맞은편 둑)
 tools/
   build.sh, autoshot.sh, test.sh, balance.sh    배치모드 빌드 / 자동 스크린샷 / 테스트 / 밸런스

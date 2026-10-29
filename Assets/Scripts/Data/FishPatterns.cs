@@ -80,7 +80,32 @@ namespace Fishing.Data
             Fight(FightStyle.Darter, "crucian zacco bluegill sweetfish smelt mackerel horsemackerel atlanticmackerel atlantichorsemackerel bogue saddledbream pandora " +
                                      "damselfish shad sandfish goby filefish rainbowwrasse paintedcomber silverbarb moonlightgourami tilapia salema marbledspinefoot " +
                                      "rabbitfish archerfish redmullet whitecroaker silverpomfret cornetfish lionfish atkamackerel");
+
+            // ---- 2026-10-30: 목록에 빠져 있던 어종 (탄천 토종 7종, 2026-10-29 추가 52종, 찌 패턴이 없던 대형 회유어) ----
+            // 찌
+            Bite(BiteStyle.Rise, "bynni labeo heterotis soldierriverbarb tinfoilbarb snakeskingourami");
+            Bite(BiteStyle.Peck, "chineseminnow stripedshiner korsarcocheilichthys bitterling rosybitterling splendiddace pikegudgeon pondloach " +
+                                 "surfperch sillago pantherpuffer fahaka titantriggerfish medparrotfish orientalsweetlips spottedscat pompano");
+            Bite(BiteStyle.Bounce, "skinnybarbel tonguesole gurnard tubgurnard yellowcroaker searaven lumpsucker shidrum anglerfish synodontis elephantsnout " +
+                                   "electriccatfish bichir emperorsnapper malabarsnapper");
+            Bite(BiteStyle.Snap, "darkchub auchaperch darksleeper flathead stargazer greaterweever johndory marblegoby bagrusbajad giantmudskipper " +
+                                 "pacificherring saury indianmackerel flyingfish rainbowrunner goldentrevally gianttrevally bluefintrevally greateramberjack " +
+                                 "dentex barramundi mahimahi cornetfish albacore bluefintuna pacificbluefin yellowfintuna longtailtuna dogtoothtuna");
+            Bite(BiteStyle.Drag, "skate blacktipreefshark tigergrouper redspottedgrouper mahseer gymnarchus sailfish blackmarlin swordfish");
+            // 파이팅
+            Fight(FightStyle.Runner, "rainbowrunner goldentrevally blacktipreefshark mahseer soldierriverbarb");
+            Fight(FightStyle.Diver, "auchaperch tigergrouper redspottedgrouper emperorsnapper malabarsnapper orientalsweetlips medparrotfish");
+            Fight(FightStyle.Shaker, "flathead bagrusbajad marblegoby bichir fahaka gymnarchus");
+            Fight(FightStyle.Leaper, "flyingfish heterotis giantmudskipper");
+            Fight(FightStyle.Heavy, "anglerfish searaven shidrum johndory electriccatfish elephantsnout synodontis bynni labeo");
+            Fight(FightStyle.Clinger, "skate lumpsucker titantriggerfish tonguesole stargazer darksleeper");
+            Fight(FightStyle.Darter, "chineseminnow darkchub skinnybarbel stripedshiner korsarcocheilichthys bitterling rosybitterling splendiddace pikegudgeon " +
+                                     "pondloach surfperch sillago pantherpuffer pacificherring saury yellowcroaker gurnard tubgurnard greaterweever " +
+                                     "spottedscat snakeskingourami tinfoilbarb indianmackerel");
         }
+
+        /// <summary>찌·파이팅 패턴이 둘 다 목록에 있는지 (테스트: 새 어종을 넣으면 여기에도 넣는다).</summary>
+        public static bool Listed(string id) => Bites.ContainsKey(id) && Fights.ContainsKey(id);
 
         public static BiteStyle BiteOf(FishSpecies s)
         {

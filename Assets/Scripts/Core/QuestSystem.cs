@@ -123,10 +123,22 @@ namespace Fishing.Core
             int p;
             // 도감 종 수는 퀘스트를 받기 전에 잡은 것도 인정한다
             if (q.Goal == QuestGoal.DistinctSpecies) p = _profile.Data.dex.Count;
+            else if (q.Goal == QuestGoal.MapDex) p = MapDexCount(q.MapId);
             else if (q.Type == QuestType.Repeat) p = DailyOf(q)?.progress ?? 0;
             else p = Entry(q.Id)?.progress ?? 0;
             return Math.Min(p, q.Count);
         }
+
+        /// <summary>그 낚시터 어종 중 도감에 기록한 수 (어디서 낚았든).</summary>
+        int MapDexCount(string mapId)
+        {
+            int n = 0;
+            foreach (var s in FishDatabase.DexOf(mapId)) if (_profile.Dex(s.Id) != null) n++;
+            return n;
+        }
+
+        /// <summary>도감 수로 채우는 목표 (서로 다른 어종 · 낚시터 도감).</summary>
+        static bool IsDexGoal(QuestDef q) => q.Goal == QuestGoal.DistinctSpecies || q.Goal == QuestGoal.MapDex;
 
         /// <summary>원작 목표 줄: "참돔 잡아서 가져오기 2 / 5".</summary>
         public string ObjectiveLine(QuestDef q) => $"{q.Objective} {ProgressOf(q)} / {q.Count}";
@@ -266,7 +278,7 @@ namespace Fishing.Core
                 Game.SysLog($"{q.ItemName} 1개를 획득했습니다.", ItemColor);
                 Game.Notice($"[퀘스트] {q.Objective} 1 / 1");
             }
-            else if (q.Goal == QuestGoal.DistinctSpecies && ProgressOf(q) >= q.Count) MarkReady(q);
+            else if (IsDexGoal(q) && ProgressOf(q) >= q.Count) MarkReady(q);
             _profile.NotifyChanged();
             return true;
         }
@@ -430,9 +442,11 @@ namespace Fishing.Core
             foreach (var q in Active())
             {
                 if (IsReady(q)) continue;
-                if (q.Goal == QuestGoal.DistinctSpecies)
+                if (IsDexGoal(q))
                 {
                     if (!c.NewSpecies) continue;
+                    // 낚시터 도감: 그 낚시터에 사는 어종을 새로 기록했을 때만 알린다
+                    if (q.Goal == QuestGoal.MapDex && !c.Species.LivesIn(q.MapId)) continue;
                     if (ProgressOf(q) >= q.Count) MarkReady(q);
                     else Game.Notice($"[퀘스트] {ObjectiveLine(q)}");
                     continue;
@@ -455,6 +469,17 @@ namespace Fishing.Core
                 QuestGoal.CatchMinLength => c.Species.Id == q.SpeciesId && c.Length >= q.MinLen,
                 _ => false
             };
+        }
+
+        /// <summary>
+        /// 낚시 말고 다른 길로 도감이 늘었을 때 (통발 수거 등): 도감 수 목표를 다 채운 진행 중 퀘스트를 완료 가능으로.
+        /// </summary>
+        public void OnDexChanged()
+        {
+            bool any = false;
+            foreach (var q in Active())
+                if (IsDexGoal(q) && !IsReady(q) && ProgressOf(q) >= q.Count) { MarkReady(q); any = true; }
+            if (any) _profile.NotifyChanged();
         }
 
         void AdvanceGoal(QuestGoal goal, int by = 1)
@@ -498,7 +523,7 @@ namespace Fishing.Core
             if (cur != null)
             {
                 P.active.Add(new ActiveQuest { id = cur.Id });
-                if (cur.Goal == QuestGoal.DistinctSpecies && ProgressOf(cur) >= cur.Count) Entry(cur.Id).ready = true;
+                if (IsDexGoal(cur) && ProgressOf(cur) >= cur.Count) Entry(cur.Id).ready = true;
             }
             _profile.NotifyChanged();
         }
