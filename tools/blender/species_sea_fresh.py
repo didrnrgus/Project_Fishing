@@ -57,10 +57,11 @@ SPECIES = {
                                     fin_up=('#3a4044', '#222628', 0.9), fin_low=('#4a5054', '#2a2e30', 0.9),
                                     patterns=[('sheen', 0.45)]),
                            eye=dict(s=0.075, z=-0.1, r=0.014, iris='#b0b0a0'), anim=dict(amp=0.85, freq=0.75)),
-    # 아시아 아로와나 (Scleropages formosus): 길쭉하고 등이 평평한 몸, 위로 열린 큰 입과 턱끝 수염 한 쌍,
-    # 동전만 한 큰 비늘 다섯 줄, 등·뒷지느러미가 꼬리 가까이 몰려 있다. 금룡: 비늘마다 금빛 테
-    'arowana': dict(type='B', name='아시아 아로와나', depth=0.22, width=0.09, tmax=0.45, body_end=0.84, ped=0.55, arch=0.42, snout=0.85, mouth=0.65,
-                    xsec=1.8, scales=20,
+    # 아시아 아로와나 (Scleropages formosus): 주둥이 끝이 등선 높이에 있어 등선이 주둥이부터 등지느러미까지 거의 곧다. 가장 높은 곳은 뒤쪽(뒷지느러미 앞).
+    # 아래턱이 길게 나와 입이 비스듬히 위로 크게 찢어지고, 턱끝에 앞으로 뻗은 짧은 수염 한 쌍. 동전만 한 큰 비늘 다섯 줄 (금룡: 비늘마다 금빛 테),
+    # 등·뒷지느러미가 꼬리 가까이 몰리고 뒷지느러미가 더 길다, 둥근 부채꼴 꼬리, 길고 낮게 붙은 가슴지느러미
+    'arowana': dict(type='B', name='아시아 아로와나', depth=0.21, width=0.09, tmax=0.55, body_end=0.84, ped=0.55, arch=0.4, snout=0.9, blunt=1.0, mouth=0.9,
+                    mouth_slope=-0.5, gape=0.09, jaw=0.012, xsec=1.8, scales=20,
                     fins=[_fin('dorsal', (0.66, 0.98), 0.32, prof=[(0, 0.3), (0.5, 1.0), (1, 0.9)]),
                           _fin('anal', (0.56, 0.98), 0.4, prof=[(0, 0.3), (0.5, 1.0), (1, 0.9)]),
                           _fin('caudal', h=0.22, shape='round'),
@@ -69,7 +70,7 @@ SPECIES = {
                     colors=P('#4a4418', '#d8b038', '#f6e2a0', silver=0.6, metallic=0.65,
                              fin_up=('#8a6a20', '#c89838', 0.85), fin_low=('#c89838', '#e0b850', 0.8),
                              patterns=[('scale_edge', 1.0), ('sheen', 0.7)]),
-                    eye=dict(s=0.08, z=0.45, r=0.02, iris='#d8a020'), anim=dict(amp=0.9, freq=0.9)),
+                    eye=dict(s=0.08, z=0.4, r=0.021, iris='#d8a020'), anim=dict(amp=0.9, freq=0.9)),
     # ===== 대물 =====
     # 줄리엔 황금 잉어 (Probarbus jullieni, 일곱줄 바브): 길쭉한 잉어, 뾰족한 주둥이 밑으로 열린 입, 은회색에 금빛이 도는 몸에
     # 검은 세로줄 일곱 가닥, 새빨간 눈, 연분홍빛 회색 지느러미
@@ -122,16 +123,19 @@ SPECIES = {
                                             ('finspots', '#1e2014')]),
                          eye=dict(s=0.12, z=0.45, r=0.012, iris='#c0a040'), anim=dict(amp=0.9, freq=0.7)),
     # ===== 중간 =====
-    # 자이언트 스네이크헤드 (Channa micropeltes): 가물치 몸에 더 큰 머리, 다 자라면 짙은 청흑색 등, 흰 배, 희미한 검은 얼룩
-    'giantsnakehead': dict(type='H', name='자이언트 스네이크헤드', depth=0.16, width=0.14, head_w=1.05, tmax=0.4, body_end=0.84, ped=0.75, snout=0.62, mouth=0.15,
-                           scales=70,
+    # 자이언트 스네이크헤드 (Channa micropeltes): 가물치 몸에 더 길고 큰 머리 — 위아래로 눌린 머리에 눈 뒤까지 찢어진 큰 입, 아래턱이 살짝 나온다.
+    # 다 자라면 청흑색 등에 흰 배가 또렷이 나뉘고, 등 쪽에 희끄무레한 구불구불한 무늬. 등·뒷지느러미가 꼬리까지 길게 이어지고 둥근 꼬리
+    'giantsnakehead': dict(type='H', name='자이언트 스네이크헤드', depth=0.16, width=0.14, head_w=1.1, head_flat=0.15, tmax=0.4, body_end=0.84, ped=0.75,
+                           snout=0.8, blunt=0.92, mouth=0.05, gape=0.1, jaw=0.008, scales=70,
                            fins=[_fin('dorsal', (0.3, 0.98), 0.32, prof=[(0, 0.6), (0.2, 1.0), (1, 0.9)]),
                                  _fin('anal', (0.55, 0.98), 0.3, prof=[(0, 0.6), (0.2, 1.0), (1, 0.9)]),
                                  _fin('caudal', h=0.16, shape='round'), _fin('pectoral', s=(0.24, 0.24), h=0.12), _fin('pelvic', s=(0.33, 0.33), h=0.07)],
-                           colors=P('#18222c', '#3e5060', '#e4e6e4', silver=0.15,
+                           colors=P('#141e28', '#344858', '#eceeec', silver=0.15,
                                     fin_up=('#1e2a34', '#121a20', 0.95), fin_low=('#2a3640', '#1e2830', 0.9),
-                                    patterns=[('mottle', dict(color='#0e161e', a=0.5, scale=0.06)), ('eyeline', dict(color='#0e161e', w=0.03, n=1))]),
-                           eye=dict(s=0.07, z=0.4, r=0.012, iris='#d0a040')),
+                                    patterns=[('mottle', dict(color='#0e161e', a=0.5, scale=0.06)),
+                                              ('spots', dict(n=40, r=(2, 4), color='#a8bccc', v=(0.55, 0.95), u=(0.15, 0.9), a=0.4)),
+                                              ('eyeline', dict(color='#0e161e', w=0.03, n=1))]),
+                           eye=dict(s=0.065, z=0.4, r=0.012, iris='#d0a040')),
     # 줄무늬 메기 (Pangasianodon hypophthalmus): 상어 닮은 은빛 메기, 옆줄 위아래로 짙은 줄, 짙은 지느러미, 짧은 수염 두 쌍
     # 판가시우스보다 날씬하고 머리가 짧다, 입꼬리 높이의 큰 눈
     'stripedcatfish': dict(type='H', name='줄무늬 메기', depth=0.18, width=0.12, head_w=1.08, tmax=0.36, body_end=0.8, ped=0.28, arch=0.56, snout=0.8, blunt=0.95,
@@ -147,70 +151,79 @@ SPECIES = {
                                     patterns=[('stripe', dict(v=0.62, w=0.03, color='#283038', a=0.5)),
                                               ('stripe', dict(v=0.42, w=0.025, color='#3a444c', a=0.35)), ('sheen', 0.4)]),
                            eye=dict(s=0.075, z=-0.1, r=0.016, iris='#c0c0b0'), anim=dict(amp=0.9, freq=0.9)),
-    # 클라운 나이프피시 (Chitala ornata): 머리 뒤 등이 솟고(오목한 이마) 꼬리로 칼처럼 가늘어지는 납작한 몸,
-    # 등 가운데 깃털 같은 작은 등지느러미, 배를 따라 꼬리까지 이어지는 긴 뒷지느러미. 은회색, 뒤쪽 아래에 흰 테 두른 검은 눈알 무늬 한 줄
-    'clownknifefish': dict(type='C', name='클라운 나이프피시', depth=0.3, width=0.075, tmax=0.3, body_end=0.95, ped=0.07, arch=0.72, snout=0.6, mouth=0.2,
-                           xsec=1.5, scales=90,
+    # 클라운 나이프피시 (Chitala ornata): 작고 뾰족한 머리 뒤로 목덜미가 오목하게 꺼졌다가 등이 높이 솟고, 꼬리로 칼처럼 가늘어지는 아주 납작한 몸.
+    # 입이 눈 뒤까지 찢어진다. 등 가운데 깃털 같은 작은 등지느러미, 배를 따라 꼬리까지 이어지는 긴 뒷지느러미.
+    # 은회색, 몸 뒤쪽 아래에 흰 테 두른 큰 검은 눈알 무늬 한 줄 (꼬리 쪽으로 갈수록 크다), 등에 잔 점
+    'clownknifefish': dict(type='C', name='클라운 나이프피시', depth=0.25, width=0.07, tmax=0.34, body_end=0.95, ped=0.07, arch=0.72, snout=1.0, blunt=1.25,
+                           mouth=0.1, gape=0.09, jaw=0.006, hump=-0.05, hump_s=0.16, xsec=1.5, scales=90,
                            fins=[_fin('dorsal', (0.42, 0.48), 0.18, prof=[(0, 0.6), (0.3, 1.0), (1, 0.5)]),
                                  _fin('anal', (0.3, 1.0), 0.34, prof=[(0, 0.3), (0.2, 1.0), (0.85, 0.7), (1, 0.4)]),
                                  _fin('caudal', h=0.1, shape='round'),
                                  _fin('pectoral', s=(0.24, 0.24), h=0.1), _fin('pelvic', s=(0.3, 0.3), h=0.03)],
                            colors=P('#5a6064', '#b8bcbc', '#ecece8', silver=0.6, metallic=0.2,
                                     fin_up=('#7a7e80', '#9a9e9e', 0.6), fin_low=('#9a9e9e', '#b8bcbc', 0.6),
-                                    patterns=[('spots', dict(n=7, r=(12, 12), color='#f4f4f0', v=(0.3, 0.3), u=(0.45, 0.85), row=True, a=0.9)),
-                                              ('spots', dict(n=7, r=(8, 8), color='#101214', v=(0.3, 0.3), u=(0.45, 0.85), row=True, a=0.95)),
+                                    patterns=[('spots', dict(n=6, r=(27, 27), color='#ffffff', v=(0.38, 0.38), u=(0.52, 0.9), row=True, a=1.0)),
+                                              ('spots', dict(n=6, r=(19, 19), color='#101214', v=(0.38, 0.38), u=(0.52, 0.9), row=True, a=0.95)),
                                               ('spots', dict(n=40, r=(1, 2), color='#3a3e40', v=(0.5, 1.0), a=0.4))]),
                            eye=dict(s=0.08, z=0.35, r=0.014, iris='#d0c890'), anim=dict(amp=0.8, freq=0.9)),
-    # 월라고 (Wallago attu): 길고 옆으로 납작한 메기, 눈 뒤까지 찢어진 큰 입, 아주 작은 등지느러미, 몸 절반을 덮는 긴 뒷지느러미,
-    # 갈라진 꼬리, 긴 위턱 수염 한 쌍과 짧은 아래턱 수염. 은회색에 올리브빛 등
-    'wallago': dict(type='H', name='월라고', depth=0.15, width=0.1, head_w=1.1, tmax=0.3, body_end=0.86, ped=0.3, arch=0.55, snout=0.65, mouth=0.15, xsec=1.8,
+    # 월라고 (Wallago attu): 길고 옆으로 납작한 메기, 등선은 곧고 배가 깊다(가장 높은 곳이 머리 바로 뒤). 머리가 눌리고 눈 뒤까지 찢어진 아주 큰 입,
+    # 아래턱이 나온다. 아주 작은 등지느러미, 몸 절반을 덮는 긴 뒷지느러미, 갈라진 꼬리, 뒷지느러미까지 닿는 긴 위턱 수염 한 쌍과 짧은 아래턱 수염.
+    # 올리브 회색 등, 은백색 옆구리·배, 작은 눈이 입꼬리 위 앞쪽에
+    'wallago': dict(type='H', name='월라고', depth=0.15, width=0.09, head_w=1.1, head_flat=0.15, tmax=0.26, body_end=0.86, ped=0.28, arch=0.42, snout=0.78,
+                    blunt=0.95, mouth=0.05, gape=0.12, jaw=0.01, xsec=1.8,
                     fins=[_fin('dorsal', (0.28, 0.33), 0.3, prof=[(0, 1.0), (1, 0.5)]),
                           _fin('anal', (0.5, 0.97), 0.24, prof=[(0, 0.6), (0.2, 1.0), (1, 0.8)]),
                           _fin('caudal', h=0.2, shape='fork'),
                           _fin('pectoral', s=(0.18, 0.18), h=0.11), _fin('pelvic', s=(0.4, 0.4), h=0.06)],
-                    barbels=[(0.03, 0.1, 0.18, 0.004, 'side'), (0.02, -0.4, 0.04, 0.0025, 'down')],
+                    barbels=[(0.03, 0.1, 0.26, 0.0035, 'side'), (0.02, -0.4, 0.04, 0.0022, 'down')],
                     colors=P('#444a40', '#a2a698', '#eeeee6', silver=0.45, metallic=0.15,
                              fin_up=('#545a50', '#3a3e38', 0.85), fin_low=('#9a9a8a', '#b8b8a8', 0.75),
                              patterns=[('sheen', 0.4), ('mottle', dict(color='#3a3e34', a=0.2, scale=0.07))]),
-                    eye=dict(s=0.08, z=0.35, r=0.008, iris='#c0b880'), anim=dict(amp=1.0, freq=0.9)),
-    # 붉은꼬리 메기 (Hemibagrus wyckioides): 동자개 닮은 메기, 회갈색 몸, 긴 기름지느러미, 수염 네 쌍, 새빨간 꼬리.
-    # 꼬리지느러미만 아랫지느러미 색 칸(low)을 써서 붉게 칠한다 (아래 지느러미도 주황빛이 돈다)
-    'redtailcatfish': dict(type='H', name='붉은꼬리 메기', depth=0.18, width=0.14, head_w=1.2, tmax=0.3, body_end=0.83, ped=0.38, snout=0.5,
-                           fins=[_fin('dorsal', (0.3, 0.38), 0.5, prof=[(0, 1.0), (1, 0.6)], spine=True),
-                                 _fin('adipose', (0.58, 0.82), 0.14, prof=[(0, 0.3), (0.3, 1.0), (1, 0.6)]),
-                                 _fin('anal', (0.66, 0.8), 0.3), _fin('caudal', h=0.26, shape='fork', group='low'),
-                                 _fin('pectoral', s=(0.17, 0.17), h=0.14, spine=True), _fin('pelvic', s=(0.42, 0.42), h=0.08)],
-                           barbels=[(0.03, 0.15, 0.13, 0.004, 'side'), (0.035, 0.35, 0.04, 0.0025, 'up'),
-                                    (0.025, -0.3, 0.05, 0.0025, 'down'), (0.03, -0.42, 0.04, 0.0025, 'down')],
-                           colors=P('#3a4044', '#7e8488', '#dcdcd6', silver=0.15,
-                                    fin_up=('#3a4044', '#2a3034', 0.9), fin_low=('#c8341e', '#e8442a', 0.9),
-                                    patterns=[('mottle', dict(color='#2a3034', a=0.25, scale=0.07))]),
+                    eye=dict(s=0.07, z=0.25, r=0.008, iris='#c0b880'), anim=dict(amp=1.0, freq=0.9)),
+    # 붉은꼬리 메기 (Hemibagrus wyckioides): 위아래로 눌린 넓적한 머리, 길쭉한 몸, 가시 있는 세모 등지느러미, 길고 낮은 기름지느러미,
+    # 수염 네 쌍 (위턱 수염은 배지느러미 너머까지 아주 길다), 끝이 뾰족하게 갈라진 새빨간 꼬리. 회갈색 등, 흰 배, 가슴·배지느러미는 회색.
+    # 꼬리·뒷지느러미만 아랫지느러미 색 칸(low)으로 붉게, 가슴·배지느러미는 윗지느러미 색 칸(up)으로 회색
+    'redtailcatfish': dict(type='H', name='붉은꼬리 메기', depth=0.17, width=0.13, head_w=1.2, head_flat=0.25, tmax=0.32, body_end=0.83, ped=0.36, snout=0.7,
+                           blunt=0.9, mouth=-0.05, gape=0.06,
+                           fins=[_fin('dorsal', (0.3, 0.38), 0.5, prof=[(0, 1.0), (0.4, 0.65), (1, 0.25)]),
+                                 _fin('adipose', (0.56, 0.8), 0.12, prof=[(0, 0.3), (0.3, 1.0), (1, 0.6)]),
+                                 _fin('anal', (0.66, 0.78), 0.3), _fin('caudal', h=0.28, shape='deepfork', group='low'),
+                                 _fin('pectoral', s=(0.17, 0.17), h=0.14, spine=True, group='up'), _fin('pelvic', s=(0.42, 0.42), h=0.08, group='up')],
+                           barbels=[(0.03, 0.15, 0.3, 0.0035, 'side'), (0.035, 0.35, 0.04, 0.0025, 'up'),
+                                    (0.025, -0.3, 0.06, 0.0025, 'down'), (0.03, -0.42, 0.05, 0.0025, 'down')],
+                           colors=P('#3e4246', '#86888a', '#e6e4dc', silver=0.2,
+                                    fin_up=('#4a4e52', '#6a6e72', 0.85), fin_low=('#c8341e', '#e8442a', 0.9),
+                                    patterns=[('mottle', dict(color='#2a3034', a=0.15, scale=0.07)), ('sheen', 0.3)]),
                            eye=dict(s=0.07, z=0.45, r=0.01, iris='#c0a050'), anim=dict(amp=0.85, freq=0.75)),
     # ===== 흔한 고기 =====
-    # 줄무늬 스네이크헤드 (Channa striata): 가물치 몸, 갈회색 등에 비스듬한 짙은 V자 띠, 흰 배
-    'stripedsnakehead': dict(type='H', name='줄무늬 스네이크헤드', depth=0.15, width=0.13, head_w=1.0, tmax=0.4, body_end=0.83, ped=0.75, snout=0.65, mouth=0.1,
-                             scales=60,
+    # 줄무늬 스네이크헤드 (Channa striata): 원통형 가물치 몸, 위아래로 눌린 뱀 머리에 큰 비늘, 눈 뒤까지 찢어진 입(아래턱이 살짝 나온다).
+    # 짙은 갈색 등, 옆구리에 비스듬한 짙은 V자 띠, 연한 배 위 경계에 짙은 얼룩 점. 긴 등·뒷지느러미, 둥근 꼬리
+    'stripedsnakehead': dict(type='H', name='줄무늬 스네이크헤드', depth=0.15, width=0.13, head_w=1.05, head_flat=0.2, tmax=0.4, body_end=0.83, ped=0.75,
+                             snout=0.78, blunt=0.92, mouth=0.05, gape=0.09, jaw=0.006, scales=60,
                              fins=[_fin('dorsal', (0.3, 0.98), 0.3, prof=[(0, 0.6), (0.2, 1.0), (1, 0.9)]),
                                    _fin('anal', (0.55, 0.98), 0.28, prof=[(0, 0.6), (0.2, 1.0), (1, 0.9)]),
                                    _fin('caudal', h=0.15, shape='round'), _fin('pectoral', s=(0.24, 0.24), h=0.11), _fin('pelvic', s=(0.33, 0.33), h=0.07)],
-                             colors=P('#3a3426', '#7a6e56', '#e2dcc8', silver=0.0,
+                             colors=P('#2e2a1e', '#6a5e44', '#ddd6be', silver=0.0,
                                       fin_up=('#4a4232', '#3a3426', 0.9), fin_low=('#6a604a', '#5a5040', 0.9),
-                                      patterns=[('obliquebands', dict(n=11, color='#241e14', a=0.55)), ('mottle', dict(color='#2a241a', a=0.3, scale=0.06)),
+                                      patterns=[('obliquebands', dict(n=11, color='#241e14', a=0.45)), ('mottle', dict(color='#2a241a', a=0.3, scale=0.06)),
+                                                ('spots', dict(n=40, r=(2, 4), color='#241e14', v=(0.2, 0.42), u=(0.2, 0.9), a=0.5)),
                                                 ('eyeline', dict(color='#241e14', w=0.022, n=1))]),
-                             eye=dict(s=0.07, z=0.4, r=0.012, iris='#c09a50')),
-    # 햄팔라 바브 (Hampala macrolepidota): 날씬한 은빛 잉어, 등지느러미 밑 검은 쐐기 띠, 붉은 지느러미, 꼬리 위아래 끝이 검다
-    'hampalabarb': dict(type='B', name='햄팔라 바브', depth=0.26, width=0.11, tmax=0.4, snout=0.75, mouth=0.1, scales=34,
+                             eye=dict(s=0.065, z=0.4, r=0.013, iris='#c09a50')),
+    # 햄팔라 바브 (Hampala macrolepidota): 뾰족한 주둥이에 눈 밑까지 오는 큰 입 (잉어과 육식어), 큰 비늘의 은빛 몸.
+    # 등지느러미 앞 밑에서 옆구리 가운데로 내려오는 검은 쐐기 띠, 붉은 주황 지느러미, 꼬리 위아래 끝 가장자리가 검다
+    'hampalabarb': dict(type='B', name='햄팔라 바브', depth=0.26, width=0.11, tmax=0.4, arch=0.6, snout=0.9, blunt=1.15, mouth=0.05, gape=0.07, scales=34,
                         fins=[_fin('dorsal', (0.42, 0.54), 0.65, prof=[(0, 0.6), (0.15, 1.0), (1, 0.35)]),
                               _fin('anal', (0.66, 0.78), 0.45), _fin('caudal', h=0.28, shape='deepfork'),
                               _fin('pectoral', s=(0.22, 0.22), h=0.12), _fin('pelvic', s=(0.48, 0.48), h=0.1)],
                         colors=P('#4a5650', '#c0c6c0', '#f2f2ec', silver=0.75, metallic=0.2,
                                  fin_up=('#c84a2a', '#1a1a18', 0.85), fin_low=('#d0502e', '#e06a40', 0.85),
-                                 patterns=[('bands', dict(n=1, u=(0.43, 0.43), w=0.065, color='#141414', v=(0.3, 1.0), a=0.85)), ('scale_edge', 0.5)]),
+                                 patterns=[('bands', dict(n=1, u=(0.42, 0.42), w=0.06, color='#141414', v=(0.38, 1.0), a=0.85)), ('scale_edge', 0.6)]),
                         eye=dict(iris='#d8b060'), anim=dict(amp=1.0, freq=1.2)),
-    # 자이언트 구라미 (Osphronemus goramy): 높은 타원형 몸, 작은 머리에 두툼한 입술(어른은 이마가 솟는다), 뒤로 길게 뻗은 등·뒷지느러미,
-    # 실 같은 배지느러미, 둥근 꼬리. 분홍빛 도는 회갈색에 희미한 세로 띠
-    'giantgourami': dict(type='D', name='자이언트 구라미', depth=0.46, width=0.14, tmax=0.42, arch=0.6, snout=0.4, mouth=0.15, scales=32,
-                         fins=[_fin('dorsal', (0.45, 0.82), 0.3, prof=[(0, 0.4), (0.4, 0.8), (1, 1.2)], spiny=True),
+    # 자이언트 구라미 (Osphronemus goramy, 어른): 높은 타원형 몸, 작은 머리 위로 이마가 혹처럼 솟고(hump) 두툼한 입술과 나온 아래턱.
+    # 등지느러미는 몸 가운데 뒤에서 시작해 뒤로 길게 뻗고, 뒷지느러미는 더 길다, 실 같은 배지느러미, 둥근 꼬리. 분홍빛 도는 회갈색에 희미한 세로 띠
+    'giantgourami': dict(type='D', name='자이언트 구라미', depth=0.46, width=0.14, tmax=0.45, arch=0.6, snout=0.8, blunt=1.0, mouth=0.15, hump=0.08, hump_s=0.2,
+                         lips=1.6, jaw=0.006, gape=0.035, scales=32,
+                         fins=[_fin('dorsal', (0.5, 0.82), 0.3, prof=[(0, 0.4), (0.4, 0.8), (1, 1.2)], spiny=True),
                                _fin('anal', (0.35, 0.84), 0.35, prof=[(0, 0.4), (0.4, 0.8), (1, 1.2)], spiny=True),
                                _fin('caudal', h=0.28, shape='round'),
                                _fin('pectoral', s=(0.3, 0.3), h=0.14), _fin('pelvic', s=(0.3, 0.3), h=0.45, thread=True)],
@@ -218,32 +231,35 @@ SPECIES = {
                                   fin_up=('#5a524a', '#4a423a', 0.85), fin_low=('#7a6a5e', '#9a8a7a', 0.85),
                                   patterns=[('bands', dict(n=7, u=(0.25, 0.85), w=0.05, color='#5a5048', v=(0.2, 1.0), a=0.3)), ('scale_edge', 0.55)]),
                          eye=dict(s=0.12, z=0.3, r=0.02, iris='#c06040'), anim=dict(amp=0.75, freq=0.8)),
-    # 파쿠 (Piaractus brachypomus): 피라냐처럼 아주 높고 납작한 몸, 기름지느러미, 회은색 몸에 주황빛 붉은 가슴·배
-    'pacu': dict(type='D', name='파쿠', depth=0.5, width=0.12, tmax=0.42, body_end=0.82, ped=0.28, arch=0.55, snout=0.42, mouth=-0.05, scales=70,
-                 fins=[_fin('dorsal', (0.42, 0.56), 0.38, prof=[(0, 0.6), (0.25, 1.0), (1, 0.5)]),
-                       _fin('adipose', (0.74, 0.78), 0.12),
+    # 파쿠 (Piaractus brachypomus): 피라냐처럼 높고 납작한 둥근 몸, 뭉툭한 머리에 작은 입, 작은 기름지느러미. 짙은 회색 등·옆구리,
+    # 가슴·목 아래만 주황빛 붉은색(배 전체가 아니다), 붉은 배·뒷지느러미 끝은 거뭇하고, 등·꼬리지느러미는 짙은 먹색
+    'pacu': dict(type='D', name='파쿠', depth=0.5, width=0.12, tmax=0.42, body_end=0.82, ped=0.28, arch=0.55, snout=0.55, blunt=1.0, mouth=0.0, gape=0.03, scales=70,
+                 fins=[_fin('dorsal', (0.42, 0.56), 0.25, prof=[(0, 0.8), (0.25, 1.0), (1, 0.35)]),
+                       _fin('adipose', (0.74, 0.78), 0.08, prof=[(0, 0.5), (0.5, 1.0), (1, 0.6)]),
                        _fin('anal', (0.6, 0.84), 0.22, prof=[(0, 1.0), (0.3, 0.7), (1, 0.6)]),
                        _fin('caudal', h=0.3, shape='fork'),
                        _fin('pectoral', s=(0.27, 0.27), h=0.13), _fin('pelvic', s=(0.42, 0.42), h=0.1)],
-                 colors=P('#3e4448', '#9aa0a0', '#d86a3a', silver=0.5, metallic=0.2,
+                 colors=P('#2e3438', '#80888a', '#c4c2ba', silver=0.5, metallic=0.2,
                           fin_up=('#3a4044', '#22262a', 0.9), fin_low=('#c85a30', '#2a2420', 0.85),
-                          patterns=[('throat', '#d0502a'), ('spots', dict(n=50, r=(1, 3), color='#2e3438', v=(0.3, 1.0), a=0.35))]),
+                          patterns=[('throat', '#d0502a'), ('spots', dict(n=50, r=(1, 3), color='#2e3438', v=(0.3, 1.0), a=0.25))]),
                  eye=dict(s=0.12, z=0.35, r=0.02, iris='#c8a040'), anim=dict(amp=0.85, freq=1.0)),
-    # 실버 바브 (Barbonymus gonionotus): 체고가 높은 은빛 잉어, 작은 머리, 높은 세모 등지느러미, 노란 아랫지느러미, 작은 수염
-    'silverbarb': dict(type='A', name='실버 바브', depth=0.37, width=0.12, tmax=0.4, snout=0.6, mouth=0.0, scales=30,
-                       fins=[_fin('dorsal', (0.38, 0.52), 0.65, prof=[(0, 0.5), (0.15, 1.0), (1, 0.3)]),
-                             _fin('anal', (0.7, 0.8), 0.42), _fin('caudal', h=0.28, shape='deepfork'),
+    # 실버 바브 (Barbonymus gonionotus): 작고 뾰족한 머리 뒤로 등이 가파르게 솟는 높은 은빛 잉어, 끝에 작은 입과 작은 수염.
+    # 톱니 가시가 있는 높은 세모 등지느러미, 작은 뒷지느러미, 깊게 갈라진 꼬리. 큰 비늘에 거뭇한 테, 노란 배·뒷지느러미
+    'silverbarb': dict(type='A', name='실버 바브', depth=0.37, width=0.12, tmax=0.42, arch=0.66, snout=0.85, blunt=1.05, mouth=0.0, gape=0.025, scales=28,
+                       fins=[_fin('dorsal', (0.38, 0.5), 0.7, prof=[(0, 0.5), (0.12, 1.0), (1, 0.25)], spine=True),
+                             _fin('anal', (0.7, 0.79), 0.35, prof=[(0, 0.7), (0.2, 1.0), (1, 0.4)]), _fin('caudal', h=0.28, shape='deepfork'),
                              _fin('pectoral', s=(0.24, 0.24), h=0.12), _fin('pelvic', s=(0.5, 0.5), h=0.1)],
                        barbels=[(0.03, -0.25, 0.02, 0.002, 'down')],
                        colors=P('#5a6250', '#ccccba', '#f4f2e6', silver=0.85, metallic=0.3,
                                 fin_up=('#8a8a70', '#a0a080', 0.65), fin_low=('#d8b850', '#e8c868', 0.75),
-                                patterns=[('scale_edge', 0.5), ('sheen', 0.5)]),
+                                patterns=[('scale_edge', 0.7), ('sheen', 0.5)]),
                        eye=dict(iris='#d8c070'), anim=dict(amp=1.0, freq=1.2)),
-    # 문라이트 구라미 (Trichopodus microlepis): 납작한 타원형 몸, 위로 열린 작은 입, 아주 잔 비늘의 달빛 같은 은녹색,
-    # 몸 길이만큼 긴 실 같은 배지느러미, 긴 뒷지느러미
-    'moonlightgourami': dict(type='D', name='문라이트 구라미', depth=0.4, width=0.09, tmax=0.42, arch=0.5, snout=0.6, mouth=0.4, scales=0,
-                             fins=[_fin('dorsal', (0.52, 0.72), 0.22, prof=[(0, 0.5), (0.5, 1.0), (1, 0.8)]),
-                                   _fin('anal', (0.32, 0.86), 0.3, prof=[(0, 0.3), (0.3, 0.8), (1, 1.1)]),
+    # 문라이트 구라미 (Trichopodus microlepis): 작고 뾰족한 머리에 위로 열린 작은 입, 머리 뒤 등선이 오목하다가 뒤쪽(뒷지느러미 앞)이 가장 높은
+    # 마름모꼴 납작한 몸. 아주 잔 비늘의 달빛 같은 은녹색, 몸 길이만큼 긴 실 같은 배지느러미, 뒤로 넓어지는 긴 뒷지느러미, 뒤쪽 작은 등지느러미
+    'moonlightgourami': dict(type='D', name='문라이트 구라미', depth=0.38, width=0.09, tmax=0.5, arch=0.5, snout=0.95, blunt=1.15, mouth=0.55, mouth_slope=-0.8,
+                             gape=0.025, scales=0,
+                             fins=[_fin('dorsal', (0.58, 0.74), 0.2, prof=[(0, 0.5), (0.5, 1.0), (1, 0.8)]),
+                                   _fin('anal', (0.3, 0.88), 0.3, prof=[(0, 0.3), (0.3, 0.8), (1, 1.1)]),
                                    _fin('caudal', h=0.28, shape='emarg'),
                                    _fin('pectoral', s=(0.28, 0.28), h=0.12), _fin('pelvic', s=(0.3, 0.3), h=0.6, thread=True)],
                              colors=P('#7a8c84', '#d4dcd8', '#f4f6f2', silver=0.9, metallic=0.35,

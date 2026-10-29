@@ -161,10 +161,11 @@ SPECIES = {
                         eye=dict(s=0.14, z=0.32, r=0.024, iris='#c89a40'), anim=dict(amp=0.8, freq=1.1)),
 
     # ===== 메콩·짜오프라야 민물 =====
-    # 말레이 마시어 (켈라, Tor tambroides): 큰 비늘의 어뢰형 잉어, 아래쪽에 열린 두툼한 입술(아랫입술 가운데 혀 같은 돌기), 수염 두 쌍,
-    # 깊게 갈라진 꼬리. 짙은 올리브 등, 청동·금빛 옆구리, 붉은 주황빛 지느러미 (켈라 메라)
-    'mahseer': dict(type='A', name='말레이 마시어', depth=0.25, width=0.13, tmax=0.4, body_end=0.8, ped=0.4, arch=0.58, snout=0.62, mouth=-0.25, scales=24,
-                    fins=[_fin('dorsal', (0.38, 0.52), 0.6, prof=[(0, 0.5), (0.15, 1.0), (1, 0.35)]),
+    # 말레이 마시어 (켈라, Tor tambroides): 큰 비늘의 어뢰형 잉어, 길쭉하고 끝이 둥근 주둥이 밑에 열린 두툼한 입술(아랫입술 가운데 혀 같은 돌기),
+    # 수염 두 쌍, 높은 세모 등지느러미, 깊게 갈라진 꼬리. 짙은 올리브 등, 청동·금빛 옆구리에 큰 비늘 테가 또렷, 붉은 주황빛 지느러미 (켈라 메라)
+    'mahseer': dict(type='A', name='말레이 마시어', depth=0.24, width=0.13, tmax=0.4, body_end=0.8, ped=0.4, arch=0.58, snout=0.8, blunt=0.95, mouth=-0.3,
+                    lips=1.8, gape=0.035, scales=24,
+                    fins=[_fin('dorsal', (0.38, 0.52), 0.65, prof=[(0, 0.5), (0.15, 1.0), (1, 0.3)]),
                           _fin('anal', (0.7, 0.8), 0.48, prof=[(0, 0.6), (0.2, 1.0), (1, 0.4)]),
                           _fin('caudal', h=0.28, shape='deepfork'),
                           _fin('pectoral', s=(0.22, 0.22), h=0.13), _fin('pelvic', s=(0.5, 0.5), h=0.11)],
