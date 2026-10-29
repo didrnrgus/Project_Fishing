@@ -453,7 +453,7 @@ SPECIES = {
                               patterns=[('hstripes', dict(n=4, v=(0.55, 0.9), w=0.012, color='#f0d060', a=0.6))]),
                      eye=dict(s=0.08, z=0.55, r=0.03, iris='#e0d0a0'), anim=dict(amp=0.9, freq=1.0)),
     # 무늬오징어 (Sepioteuthis lessoniana): 외투막을 두르는 넓은 지느러미, 반투명한 갈색 얼룩. 에깅의 왕
-    'bigfinsquid': dict(type='Q', name='무늬오징어',
+    'bigfinsquid': dict(type='Q', name='무늬오징어', mantle_w=0.82, fin_w=1.7, tentacles=True,
                         colors=P('#7a5a46', '#b8957a', '#efe2d6', silver=0.05, fin_up=('#c8b098', '#ead8c4', 0.75), fin_low=('#c8b098', '#ead8c4', 0.75),
                                  patterns=[('mottle', dict(color='#5a3e2c', a=0.45, scale=0.05)), ('spots', dict(n=120, r=(1, 3), color='#4a2e20', v=(0.4, 1.0), a=0.5))]),
                         eye=dict(iris='#40c0c8')),
@@ -573,13 +573,13 @@ SPECIES = {
                            patterns=[('spots', dict(n=220, r=(4, 8), color='#e0c050', v=(0.0, 1.0), a=0.85))]),
                   eye=dict(iris='#c0a040')),
     # 참다랑어 (Thunnus thynnus): 굵은 방추형, 짙은 남색 등, 은빛 배, 노란 토막지느러미, 초승달 꼬리
-    'bluefintuna': dict(type='E', name='참다랑어', depth=0.25, width=0.18, tmax=0.4, ped=0.1, snout=0.75, mouth=0.05,
+    'bluefintuna': dict(type='E', name='참다랑어', depth=0.25, width=0.18, tmax=0.4, ped=0.1, snout=0.92, mouth=0.05,
                         fins=[_fin('dorsal', (0.32, 0.44), 0.4, prof=[(0, 1.0), (1, 0.25)], spiny=True), _fin('dorsal', (0.52, 0.6), 0.55, prof=[(0, 1.0), (1, 0.3)]),
                               _fin('anal', (0.56, 0.64), 0.5, prof=[(0, 1.0), (1, 0.3)]), _fin('caudal', h=0.42, shape='deepfork'),
                               _fin('pectoral', s=(0.26, 0.26), h=0.12), _fin('pelvic', s=(0.3, 0.3), h=0.06)],
                         colors=P('#101a3a', '#7a8a9a', '#e8ecee', silver=0.8, metallic=0.45, fin_up=('#141e3a', '#0a1028', 0.9), fin_low=('#a0a8b0', '#c0c8d0', 0.7),
                                  patterns=[('finlets', True), ('sheen', 0.5)]),
-                        eye=dict(iris='#202830'), anim=dict(amp=0.9, freq=1.6)),
+                        eye=dict(iris='#9aa2a8'), anim=dict(amp=0.9, freq=1.6)),
     # ===== 해외: 나일강 =====
     # 나일농어 (Lates niloticus): 바라문디 닮은 큰 몸, 은회색, 오목한 이마
     'nileperch': dict(type='C', name='나일농어', depth=0.28, width=0.14, snout=0.55, mouth=0.35, arch=0.65, scales=55,
@@ -619,7 +619,7 @@ JUNK = ['can', 'trap', 'box', 'fishcan', 'robotfish', 'shoe']
 
 
 # 2026-10-19부터 늘어난 어종: 지역별 파일 (docs/fish-db). 각 파일은 SPECIES = {...}를 내놓는다 (P·_fin은 여기서 가져간다)
-for _mod in ('species_korea2', 'species_sea_fresh', 'species_sea', 'species_med', 'species_med2'):
+for _mod in ('species_korea2', 'species_sea_fresh', 'species_sea', 'species_med', 'species_med2', 'species_korea3', 'species_sea2', 'species_africa'):
     try:
         SPECIES.update(__import__(_mod).SPECIES)
     except ImportError:

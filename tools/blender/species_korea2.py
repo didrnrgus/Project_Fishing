@@ -64,14 +64,14 @@ SPECIES = {
     # ===== 남해·제주 =====
     # 태평양 참다랑어 (Thunnus orientalis): 대서양 참다랑어와 거의 같은 굵은 방추형, 짙은 남색 등, 은빛 배에 희미한 흰 점선,
     # 짧은 가슴지느러미, 노란 토막지느러미, 초승달 꼬리
-    'pacificbluefin': dict(type='E', name='태평양 참다랑어', depth=0.26, width=0.19, tmax=0.4, ped=0.1, snout=0.75, mouth=0.05,
+    'pacificbluefin': dict(type='E', name='태평양 참다랑어', depth=0.26, width=0.19, tmax=0.4, ped=0.1, snout=0.92, mouth=0.05,
                            fins=[_fin('dorsal', (0.32, 0.44), 0.4, prof=[(0, 1.0), (1, 0.25)], spiny=True), _fin('dorsal', (0.52, 0.6), 0.55, prof=[(0, 1.0), (1, 0.3)]),
                                  _fin('anal', (0.56, 0.64), 0.5, prof=[(0, 1.0), (1, 0.3)]), _fin('caudal', h=0.42, shape='deepfork'),
                                  _fin('pectoral', s=(0.26, 0.26), h=0.11), _fin('pelvic', s=(0.3, 0.3), h=0.06)],
                            colors=P('#0e1834', '#76869a', '#e8ecee', silver=0.8, metallic=0.45, fin_up=('#121c38', '#0a1028', 0.9), fin_low=('#a0a8b0', '#c0c8d0', 0.7),
                                     patterns=[('finlets', True), ('sheen', 0.5),
                                               ('hstripes', dict(n=3, v=(0.18, 0.36), w=0.006, color='#f4f6f8', a=0.45))]),
-                           eye=dict(iris='#202830'), anim=dict(amp=0.9, freq=1.6)),
+                           eye=dict(iris='#9aa2a8'), anim=dict(amp=0.9, freq=1.6)),
     # 혹돔 (Semicossyphus reticulatus): 커다란 놀래기. 수컷은 이마에 큰 혹이 솟아 머리가 뭉툭하고 높다(arch·snout로 흉내),
     # 두꺼운 입술, 긴 등지느러미, 붉은 자줏빛 몸, 턱 밑은 희다
     'sheepsheadwrasse': dict(type='C', name='혹돔', depth=0.33, width=0.15, tmax=0.26, body_end=0.82, ped=0.42, arch=0.7, snout=0.28, hump=0.22, mouth=-0.2, scales=45,

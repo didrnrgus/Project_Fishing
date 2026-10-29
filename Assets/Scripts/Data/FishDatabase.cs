@@ -73,7 +73,8 @@ namespace Fishing.Data
 
     /// <summary>
     /// 어종 표. 이 파일의 <see cref="All"/>이 처음 만든 77종 + 잡동사니이고, 2026-10-19부터 늘어난 어종은 지역별 partial 파일에 있다
-    /// (<c>FishDatabase.Korea2.cs</c>, <c>.SeaAsiaFresh.cs</c>(동남아 민물), <c>.SeaAsia.cs</c>(동남아 바다), <c>.Mediterranean.cs</c>·<c>.Mediterranean2.cs</c> — docs/fish-db 기준).
+    /// (<c>FishDatabase.Korea2.cs</c>, <c>.SeaAsiaFresh.cs</c>(동남아 민물), <c>.SeaAsia.cs</c>(동남아 바다), <c>.Mediterranean.cs</c>·<c>.Mediterranean2.cs</c> — docs/fish-db 기준,
+    /// 2026-10-29 추가분 <c>.Korea3.cs</c>·<c>.SeaAsia2.cs</c>·<c>.Africa.cs</c>(나일강 + 지중해)).
     /// 지역 파일은 새 어종 목록(<c>…Species</c>)과, 이미 있는 어종이 새 낚시터에도 살게 하는 목록(<c>…MapAdds</c>)을 내놓고
     /// 정적 생성자가 합친다. 정적 생성자는 모든 partial 파일의 필드 초기화가 끝난 뒤에 돈다.
     /// </summary>
@@ -559,9 +560,9 @@ namespace Fishing.Data
 
         static FishDatabase()
         {
-            foreach (var list in new[] { Korea2Species, SeaAsiaFreshSpecies, SeaAsiaSpecies, MediterraneanSpecies, Mediterranean2Species })
+            foreach (var list in new[] { Korea2Species, SeaAsiaFreshSpecies, SeaAsiaSpecies, MediterraneanSpecies, Mediterranean2Species, Korea3Species, SeaAsia2Species, AfricaSpecies })
                 if (list != null) All.AddRange(list);
-            foreach (var adds in new[] { Korea2MapAdds, SeaAsiaFreshMapAdds, SeaAsiaMapAdds, MediterraneanMapAdds, Mediterranean2MapAdds })
+            foreach (var adds in new[] { Korea2MapAdds, SeaAsiaFreshMapAdds, SeaAsiaMapAdds, MediterraneanMapAdds, Mediterranean2MapAdds, Korea3MapAdds, SeaAsia2MapAdds, AfricaMapAdds })
             {
                 if (adds == null) continue;
                 foreach (var (id, maps) in adds)
