@@ -70,20 +70,20 @@ SPECIES = {
                                            ('spots', dict(n=40, r=(2, 4), color='#c8b088', v=(0.2, 0.9), a=0.3)),
                                            ('finspots', '#2a2016')]),
                         eye=dict(s=0.1, z=0.55, r=0.018, iris='#b09050'), anim=dict(amp=0.8, freq=0.8)),
-    # 미꾸라지 (Misgurnus mizolepis): 가늘고 긴 원통형 몸, 꼬리 쪽은 옆으로 납작, 작은 입가에 수염 다섯 쌍(눈 지름의 4배쯤으로 길다),
-    # 둥근 꼬리. 누런 올리브 바탕에 잔 검은 점이 촘촘하고 배는 연노랑. 꼬리 밑동 위에 작은 검은 점
-    'pondloach': dict(type='G', name='미꾸라지', depth=0.1, width=0.08, tmax=0.28, hold=0.3, body_end=0.88, ped=0.55, tail_w=0.22, snout=0.55, mouth=-0.4,
+    # 미꾸라지 (Misgurnus mizolepis): 가늘고 긴 원통형 몸, 꼬리 쪽은 옆으로 납작, 작은 눈이 머리 위쪽에. 주둥이 밑 작은 입가에 수염 다섯 쌍
+    # (위턱 수염이 눈 지름의 4배쯤으로 길다), 둥근 꼬리. 짙은 올리브 갈색 등에서 연노랑 배로 옅어지고, 잔 검은 점이 촘촘하다. 꼬리 밑동 위에 작은 검은 점
+    'pondloach': dict(type='G', name='미꾸라지', depth=0.1, width=0.08, tmax=0.28, hold=0.3, body_end=0.88, ped=0.55, tail_w=0.22, snout=0.6, blunt=0.6, mouth=-0.4,
                       fins=[_fin('dorsal', (0.5, 0.6), 0.55, prof=[(0, 0.7), (0.3, 1.0), (1, 0.6)]),
                             _fin('anal', (0.68, 0.76), 0.45, prof=[(0, 0.7), (0.3, 1.0), (1, 0.6)]),
                             _fin('caudal', h=0.13, shape='round'),
                             _fin('pectoral', s=(0.12, 0.12), h=0.07), _fin('pelvic', s=(0.52, 0.52), h=0.05)],
-                      barbels=[(0.02, -0.35, 0.04, 0.0018, 'down'), (0.03, -0.15, 0.035, 0.0016, 'side'), (0.025, -0.6, 0.03, 0.0015, 'down')],
-                      colors=P('#4e4628', '#867a4c', '#d8cca0', silver=0.1,
-                               fin_up=('#7a7048', '#9a9068', 0.75), fin_low=('#b0a478', '#c8bc94', 0.7),
-                               patterns=[('spots', dict(n=420, r=(2.5, 4.5), color='#2a2616', v=(0.3, 1.0), a=0.6)),
-                                         ('mottle', dict(color='#3a3420', a=0.18, scale=0.05)),
+                      barbels=[(0.02, -0.35, 0.055, 0.0018, 'down'), (0.03, -0.15, 0.05, 0.0016, 'side'), (0.025, -0.6, 0.04, 0.0015, 'down')],
+                      colors=P('#3a3420', '#7a6e44', '#dccf9c', silver=0.1,
+                               fin_up=('#6a6040', '#8a8060', 0.75), fin_low=('#b0a478', '#c8bc94', 0.7),
+                               patterns=[('spots', dict(n=420, r=(2.5, 4.5), color='#241f12', v=(0.3, 1.0), a=0.65)),
+                                         ('mottle', dict(color='#2e2a18', a=0.3, scale=0.05)),
                                          ('spots', dict(n=1, r=(5, 5), u=(0.98, 0.98), v=(0.72, 0.72), color='#1a180e', a=0.85))]),
-                      eye=dict(s=0.06, z=0.45, r=0.01, iris='#c8a858'), anim=dict(amp=1.3, freq=1.0)),
+                      eye=dict(s=0.06, z=0.5, r=0.009, iris='#c8a858'), anim=dict(amp=1.3, freq=1.0)),
 
     # ===== 동해 (청진·삼척·헌화로·등대섬) =====
     # 청어 (Clupea pallasii): 정어리보다 길쭉한 청어형, 둥근 배, 아래턱이 살짝 나온 입, 몸 가운데 등지느러미 하나, 깊게 갈라진 꼬리.
@@ -245,18 +245,19 @@ SPECIES = {
                        eye=dict(s=0.14, z=0.82, r=0.014, iris='#a08050'), anim=dict(amp=0.6, freq=0.6)),
 
     # ===== 남해·제주 =====
-    # 보리멸 (Sillago japonica): 가늘고 긴 몸, 뾰족한 주둥이 밑의 작은 입, 등지느러미 둘. 무늬 없는 연한 모랫빛 은색,
-    # 배·아래 지느러미는 연노랑. 여름 모래 해변 원투낚시의 단골
-    'sillago': dict(type='B', name='보리멸', depth=0.16, width=0.1, tmax=0.4, snout=0.9, mouth=-0.25, arch=0.55, scales=78,
-                    fins=[_fin('dorsal', (0.3, 0.42), 0.45, prof=[(0, 0.6), (0.2, 1.0), (1, 0.3)], spiny=True),
+    # 보리멸 (Sillago japonica): 가늘고 긴 몸, 길고 뾰족한 원뿔 주둥이 밑의 작은 입, 비교적 큰 눈. 가시가 선 세모난 첫 등지느러미와
+    # 길고 낮은 둘째 등지느러미, 같은 길이의 뒷지느러미, 끝이 살짝 파인 꼬리(끝이 거뭇하다). 무늬 없는 연한 모랫빛 은색에 옆구리 가운데
+    # 희미한 은빛 세로띠, 배·아래 지느러미는 연노랑. 여름 모래 해변 원투낚시의 단골
+    'sillago': dict(type='B', name='보리멸', depth=0.15, width=0.1, tmax=0.4, snout=0.95, blunt=1.08, mouth=-0.25, gape=0.03, arch=0.55, scales=78,
+                    fins=[_fin('dorsal', (0.3, 0.42), 0.5, prof=[(0, 0.7), (0.2, 1.0), (1, 0.25)], spiny=True),
                           _fin('dorsal', (0.45, 0.78), 0.3, prof=[(0, 0.8), (0.3, 1.0), (1, 0.7)]),
                           _fin('anal', (0.5, 0.78), 0.26, prof=[(0, 0.8), (0.3, 1.0), (1, 0.7)]),
                           _fin('caudal', h=0.22, shape='emarg'),
                           _fin('pectoral', s=(0.22, 0.22), h=0.1), _fin('pelvic', s=(0.3, 0.3), h=0.07)],
-                    colors=P('#a8987a', '#d8cebc', '#f6f2ea', silver=0.6, metallic=0.2,
-                             fin_up=('#c4b89c', '#d8d0b8', 0.5), fin_low=('#e6d4a0', '#f0e2c0', 0.6),
-                             patterns=[('scale_edge', 0.22), ('sheen', 0.5)]),
-                    eye=dict(s=0.11, r=0.022, iris='#d8d0b0'), anim=dict(amp=1.0, freq=1.2)),
+                    colors=P('#a8946a', '#d8cebc', '#f6f2ea', silver=0.6, metallic=0.2,
+                             fin_up=('#c4b89c', '#9a8e78', 0.5), fin_low=('#e6d4a0', '#f0e2c0', 0.6),
+                             patterns=[('scale_edge', 0.22), ('stripe', dict(v=0.52, w=0.025, color='#eceae2', a=0.45)), ('sheen', 0.5)]),
+                    eye=dict(s=0.1, z=0.3, r=0.021, iris='#d8d0b0'), anim=dict(amp=1.0, freq=1.2)),
     # 졸복 (Takifugu pardalis): 통통한 복어 몸, 비늘 없는 피부, 작은 입, 뒤쪽 작은 등·뒷지느러미. 누런 올리브 등에 둥근 짙은 갈색
     # 표범 무늬 점이 촘촘히 박힌다. 흰 배와의 경계에 노란 띠, 지느러미는 노랗다. 미끼만 뜯어 가는 얌체
     'pantherpuffer': dict(type='C', name='졸복', depth=0.3, width=0.27, tmax=0.36, body_end=0.82, ped=0.32, arch=0.55, snout=0.4, mouth=0.05, xsec=2.0, scales=0,
