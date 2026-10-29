@@ -138,6 +138,15 @@ namespace Fishing.EditorTools
                 importer.wrapMode = UnityEngine.TextureWrapMode.Clamp;
                 importer.maxTextureSize = 256;
             }
+            else if (assetPath.Contains("Resources/Portraits/"))
+            {
+                // 퀘스트 NPC 초상화 (대화창·대기실 직원 카드의 동그란 얼굴). 작게 보이므로 밉맵으로 계단이 지지 않게
+                importer.textureType = TextureImporterType.Default;
+                importer.mipmapEnabled = true;
+                importer.wrapMode = UnityEngine.TextureWrapMode.Clamp;
+                importer.maxTextureSize = 512;
+                importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            }
         }
 
         void OnPreprocessAnimation()

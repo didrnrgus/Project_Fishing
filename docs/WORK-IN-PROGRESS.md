@@ -2,6 +2,12 @@
 
 세션이 끊겨도 이 파일만 보고 이어서 작업할 수 있게 남기는 메모. 끝난 일은 로드맵·각 문서에 합쳤다.
 
+## 2026-10-30 (2): 대기실 퀘스트 NPC 초상화
+- 대기실 조합 직원 4명(오실장·서대표·문박사·한서윤)이 이름 첫 글자 원뿐이라, 사용자 요청대로 이미지 검색 MCP로 서브컬처풍 그림을 골라 얼굴 둘레로 잘라 `Resources/Portraits/lobby_<desk|chief|doctor|manager>.png` (대화창 머리·직원 카드, 카드 얼굴 72 → 84px)
+- `TranslucentAvatar.Set(name, color, key)`: `Portraits/<키의 :·@를 _로>`가 있으면 동그란 얼굴, 없으면 글자 — 낚시터 연락관도 `union_<맵>.png`만 넣으면 된다
+- **자유 라이선스 아님** (원작자 그림·AI 생성 사이트 그림): 출처는 `Resources/Portraits/SOURCES.md`, THIRD_PARTY_NOTICES에 "배포 전 교체 필요"로 적음
+- 자동 촬영 `00a1_lobby_quest` (`sh tools/autoshot.sh 00a1_lobby_quest`) → ![대기실 퀘스트](images/13t_lobby_quest_portraits.png)
+
 ## 2026-10-30: 새 어종 도감·퀘스트·미끼 연동 → [02 문서 13-12장](02-game-design.md)
 - "물고기가 추가·변경됐으니 도감·도감 퀘스트, 맵 내 퀘스트, 물고기로 만드는 미끼 등 다 업데이트": 224종 전부를 오래된 어종과 같은 방식으로 이었는지 점검
   - 이미 어종 표(`Maps`·`DexOf`)를 따라가던 것: 도감 탭·생태조사(납품 업적)·일일 의뢰·빙고·통발·대회·오늘의 이벤트 어종·물속 그림자·낚시꾼 잡담 → 고칠 것 없음

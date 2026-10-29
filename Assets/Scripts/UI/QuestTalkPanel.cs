@@ -127,7 +127,7 @@ namespace Fishing.UI
             string name = n?.Name ?? _npc?.Look.Name ?? "조합";
             string epithet = n?.Epithet ?? _npc?.Look.Title ?? "";
             Title.text = $"{name}  <size=16><color=#9fd8ff><noparse><{epithet}></noparse></color></size>";
-            _avatar.Set(name, n != null ? n.Color : AvatarColor(_key));
+            _avatar.Set(name, n != null ? n.Color : AvatarColor(_key), _key);
             _greet.text = n?.Greeting ?? "무슨 일이신가요?";
 
             UIFactory.ClearChildren(_content);
@@ -303,8 +303,8 @@ namespace Fishing.UI
                 var rt = (RectTransform)card.transform;
                 rt.At(new Vector2(0, 1), new Vector2(22 + i * (cw + gap), -76), new Vector2(cw, 136), new Vector2(0, 1));
                 if (sel) UIFactory.AddBorder((LeTai.Asset.TranslucentImage.TranslucentImage)card.targetGraphic, new Color(0.55f, 0.95f, 0.9f, 0.8f), 2f, 4f);
-                var av = new TranslucentAvatar(rt, new Vector2((cw - 72) / 2f, -10), 72f);
-                av.Set(n.Name, n.Color);
+                var av = new TranslucentAvatar(rt, new Vector2((cw - 84) / 2f, -8), 84f);
+                av.Set(n.Name, n.Color, n.Key);
                 var label = card.GetComponentInChildren<TMP_Text>();
                 label.text = $"<b>{n.Name}</b>\n<size=12><color=#9fb0c0>{n.Epithet}</color></size>";
                 label.alignment = TextAlignmentOptions.Bottom;
@@ -381,6 +381,7 @@ namespace Fishing.UI
     {
         readonly Graphic _bg;
         readonly TMP_Text _letter;
+        readonly LeTai.Asset.TranslucentImage.TranslucentImage _face;
 
         public TranslucentAvatar(RectTransform parent, Vector2 topLeft, float size)
         {
@@ -390,14 +391,31 @@ namespace Fishing.UI
             _bg = bg;
             _letter = UIFactory.Text(bg.transform, "", size * 0.45f, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             _letter.rectTransform.Fill();
+            _face = UIFactory.RoundedTexture(bg.transform, null, size / 2f, "Face");
+            _face.rectTransform.Fill(2, 2, 2, 2);
+            _face.raycastTarget = false;
         }
 
-        public void Set(string name, Color color)
+        /// <summary>key: 퀘스트 NPC 키("lobby:desk"). Resources/Portraits/lobby_desk 초상화가 있으면 동그란 얼굴, 없으면 이름 첫 글자.</summary>
+        public void Set(string name, Color color, string key = null)
         {
             _bg.color = color;
+            var tex = Portrait(key);
+            _face.rawTexture = tex;
+            _face.gameObject.SetActive(tex != null);
             // "어촌계 정계장"처럼 직함이 앞에 붙으면 마지막 낱말의 첫 글자
             var word = string.IsNullOrEmpty(name) ? "?" : name.Substring(name.LastIndexOf(' ') + 1);
-            _letter.text = word.Substring(0, 1);
+            _letter.text = tex != null ? "" : word.Substring(0, 1);
+        }
+
+        static readonly Dictionary<string, Texture2D> Portraits = new Dictionary<string, Texture2D>();
+
+        public static Texture2D Portrait(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return null;
+            if (!Portraits.TryGetValue(key, out var t))
+                Portraits[key] = t = Resources.Load<Texture2D>("Portraits/" + key.Replace(':', '_').Replace('@', '_'));
+            return t;
         }
     }
 

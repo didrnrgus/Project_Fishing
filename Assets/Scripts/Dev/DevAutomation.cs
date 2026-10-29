@@ -103,6 +103,11 @@ namespace Fishing.Dev
             Game.Clock.Set(1, 10 * 60);
             yield return new WaitForSeconds(3f);
             yield return Shot("00a_lobby");
+            // 대기실 [퀘스트]: 조합 직원 4명 초상화 줄 + 대화 카드
+            Game.UI.QuestTalk.OpenLobby(QuestNpcs.Doctor);
+            yield return new WaitForSeconds(0.6f);
+            yield return Shot("00a1_lobby_quest");
+            Game.UI.QuestTalk.Close();
             // 대기실 [옷 바꾸기]: 무작위 옷을 입은 모습 → 원래 옷으로 (세이브는 안 건드린다)
             {
                 var prevOutfit = Game.Profile.Data.outfit;

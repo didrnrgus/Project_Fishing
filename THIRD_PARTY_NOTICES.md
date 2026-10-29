@@ -16,6 +16,7 @@
 | Liberation Sans | TextMesh Pro 기본 글꼴 | SIL OFL 1.1 | `Assets/TextMesh Pro/Fonts/LiberationSans - OFL.txt` |
 | Cinzel, East Sea Dokdo, Song Myung, Jeju Hallasan | 인트로·RESULT·도감 그림 만들기 (`tools/intro`) | SIL OFL 1.1 | `tools/intro/fonts/OFL-*.txt` |
 | [Unity Starter Assets – Third Person](https://assetstore.unity.com/packages/essentials/starter-assets-thirdperson-updates-in-new-charactercontroller-pa-196526) (Unity Technologies) | 대기·걷기·뛰기·점프 동작 (원본 FBX `Assets/ThirdParty/StarterAssets`, 180° 돌려 구운 클립 `Resources/Animations/StarterAssets`) | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) | [Assets/ThirdParty/StarterAssets/SOURCES.md](Assets/ThirdParty/StarterAssets/SOURCES.md) |
+| 대기실 퀘스트 NPC 초상화 4장 (이미지 검색에서 고른 서브컬처풍 그림, 일부 AI 생성) | 조합 직원 얼굴 (`Resources/Portraits`) | **자유 라이선스 아님** — 원작자 권리, 배포 전 교체 필요 | [Assets/Resources/Portraits/SOURCES.md](Assets/Resources/Portraits/SOURCES.md) |
 | TextMesh Pro 기본 리소스 (Unity) | `Assets/TextMesh Pro` | Unity Companion License | Unity 패키지 |
 
 ## 원작에 대해
