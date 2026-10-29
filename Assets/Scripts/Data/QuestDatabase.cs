@@ -15,6 +15,11 @@ namespace Fishing.Data
         DeliverFish,
         /// <summary>통발 설치해보기.</summary>
         InstallTrap,
+        /// <summary>
+        /// 낚시터 도감 채우기: MapId 낚시터에 사는 어종을 Count종 도감에 기록하기 (도감 퀘스트).
+        /// 다른 낚시터에서 이미 기록한 어종도, 퀘스트를 받기 전에 기록한 어종도 센다 (도감 탭의 "기록/전체"와 같다).
+        /// </summary>
+        MapDex,
     }
 
     /// <summary>원작 퀘스트 종류: 이야기(STORY, 보라) · 일일반복(REPEAT, 파랑) · 가이드(GUIDE, 연보라) · 일반(흰색).</summary>
@@ -84,6 +89,7 @@ namespace Fishing.Data
                     QuestGoal.CatchInHabitat => $"{Names.Of(Habitat)} 포인트에서 {Count}마리 낚기",
                     QuestGoal.CatchSpeciesInBand => $"{Names.Of(Band)}에 {fish} {Count}마리 낚기",
                     QuestGoal.CatchMinLength => $"{MinLen:0.#}cm 이상 {fish} 낚기",
+                    QuestGoal.MapDex => $"{MapShort} 어종 {Count}종 도감에 기록하기",
                     _ => Objective
                 };
             }
@@ -112,8 +118,19 @@ namespace Fishing.Data
                         ? $"{fish}{QuestNpcs.Josa(fish, "을", "를")} {Fishing.World.Maps.Get(MapId).ShortName}에서 납품하기"
                         : "물고기 납품해보기",
                     QuestGoal.InstallTrap => "통발 설치해보기",
+                    QuestGoal.MapDex => $"{MapShort} 어종 도감에 기록하기",
                     _ => ""
                 };
+            }
+        }
+
+        /// <summary>퀘스트 낚시터의 짧은 이름 (낚시터 목록 데이터에서, 월드 맵 정의를 만들지 않는다).</summary>
+        string MapShort
+        {
+            get
+            {
+                foreach (var a in FishingAreas.All) if (a.MapId == MapId) return a.Name;
+                return MapId ?? "";
             }
         }
 
@@ -520,7 +537,7 @@ namespace Fishing.Data
         }
 
         /// <summary>가이드(시스템 익히기)와 일반(한 번짜리 부탁) 퀘스트.</summary>
-        public static readonly List<QuestDef> Side = new List<QuestDef>
+        public static readonly List<QuestDef> Side = WithSpeciesQuests(new List<QuestDef>
         {
             // ---------- 가이드 ----------
             new QuestDef { Id = "g_release", Type = QuestType.Guide, Lv = 2, MapId = "hangang", AfterStory = "st00",
@@ -571,7 +588,7 @@ namespace Fishing.Data
                 Giver = QuestNpcs.UnionOf("tancheon"), Reporter = QuestNpcs.UnionOf("tancheon"), Title = "한강에서 올라온 잉어 떼",
                 Desc = "봄이면 한강에서 잉어 수천 마리가 탄천을 거슬러 올라와요. 새벽 E4, 저녁 C5 어군에서 60cm 넘는 놈을 한 마리!",
                 Goal = QuestGoal.CatchMinLength, SpeciesId = "carp", MinLen = 60f, Count = 1, RewardGold = 5000, RewardExp = 900, RewardKeepNet = 1 },
-        };
+        }); // + 낚시터마다 어종 퀘스트·도감 퀘스트, 문박사 도감 퀘스트 (QuestDatabase.Species.cs)
 
         public static int StoryIndex(string id) => Story.FindIndex(q => q.Id == id);
 

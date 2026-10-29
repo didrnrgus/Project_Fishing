@@ -87,7 +87,7 @@ namespace Fishing.UI
             // 가진 음식 중 첫 번째를 먹는다 (가방에서 골라 먹을 수도 있다)
             var food = GearDatabase.Foods.FirstOrDefault(fd => p.Count(fd.Id) > 0);
             RowButton(footer, food != null ? $"{food.Name} 먹기 ({p.Count(food.Id)}개)" : "음식 없음", () => Eat(food), 0, 240, UIFactory.BtnGood, food != null, 17);
-            Cell(rows.Next(40), $"{PlayerProfile.BaitFishMaxLength:0}cm 미만은 생미끼로, 그보다 큰 고기는 해체해서 해체 미끼·반짝이는 비늘(강화 재료)·별모래를 얻습니다.",
+            Cell(rows.Next(40), $"{PlayerProfile.BaitFishMaxLength:0}cm 미만은 생미끼로, 그보다 큰 고기는 해체해서 해체 미끼·반짝이는 비늘(강화 재료)·별모래를 얻습니다. 오징어·문어는 해체하면 오징어살.",
                 4, 840, 13, UIFactory.TextDim);
 
             RefreshSide(net, total, cook);

@@ -43,6 +43,26 @@ namespace Fishing.Data
             return (list.Count(s => p.Dex(s.Id) != null), list.Count);
         }
         static IEnumerable<string> AllMapIds => FishingAreas.Korea.Where(a => a.Open).Select(a => a.MapId);
+        /// <summary>거점(동남아·지중해·아프리카)의 열린 낚시터.</summary>
+        static IEnumerable<string> HubMapIds(string hub) => FishingAreas.InHub(hub).Where(a => a.Open).Select(a => a.MapId);
+        /// <summary>모든 도감 어종 (잡동사니 제외, 지금 224종).</summary>
+        static (int, int) DexWorld(Core.PlayerProfile p)
+        {
+            var list = FishDatabase.DexSpecies.ToList();
+            return (list.Count(s => p.Dex(s.Id) != null), list.Count);
+        }
+        /// <summary>이 어종들을 모두 도감에 기록했는지 (진행도 = 기록한 수).</summary>
+        static (int, int) Caught(Core.PlayerProfile p, params string[] ids) => (ids.Count(id => p.Dex(id) != null), ids.Length);
+        static AchievementDef DexOfHub(string id, string hub, string name, string title, int conch) => new AchievementDef
+        {
+            Id = id, Name = $"{name} 도감 완성", Desc = $"{name} 낚시터의 모든 어종을 도감에 기록", Title = title, Conch = conch,
+            Done = p => DexProgress(p, HubMapIds(hub)) is var (a, b) && a >= b, Progress = p => DexProgress(p, HubMapIds(hub)),
+        };
+        static AchievementDef CatchAll(string id, string name, string desc, string title, int conch, params string[] ids) => new AchievementDef
+        {
+            Id = id, Name = name, Desc = desc, Title = title, Conch = conch,
+            Done = p => Caught(p, ids) is var (a, b) && a >= b, Progress = p => Caught(p, ids),
+        };
 
         public static readonly List<AchievementDef> All = new List<AchievementDef>
         {
@@ -100,7 +120,7 @@ namespace Fishing.Data
                 Done = p => p.Data.level >= 25, Progress = p => (p.Data.level, 25) },
 
             // ---- 전국 낚시터 (영흥도·태안·삼척·등대섬·헌화로·욕지도·청진포구·거문도) ----
-            new AchievementDef { Id = "allmaps", Name = "전국 일주", Desc = "국내 낚시터 12곳에 모두 가 보기", Title = "전국구 조사", Conch = 10,
+            new AchievementDef { Id = "allmaps", Name = "전국 일주", Desc = $"국내 낚시터 {FishingAreas.Korea.Count}곳에 모두 가 보기", Title = "전국구 조사", Conch = 10,
                 Done = p => AllMapIds.All(id => p.Data.visitedMaps.Contains(id)),
                 Progress = p => (AllMapIds.Count(id => p.Data.visitedMaps.Contains(id)), AllMapIds.Count()) },
             new AchievementDef { Id = "dexeast", Name = "동해 박사", Desc = "동해(헌화로·삼척·등대섬·청진포구)의 모든 어종을 도감에 기록", Title = "동해 박사", Conch = 10,
@@ -120,6 +140,26 @@ namespace Fishing.Data
                 Progress = p => ((p.Dex("damselfish") != null ? 1 : 0) + (p.Dex("tilefish") != null ? 1 : 0) + (p.Dex("bigfinsquid") != null ? 1 : 0), 3) },
             new AchievementDef { Id = "hairtail", Name = "5지 갈치", Desc = "110cm가 넘는 갈치 낚기", Conch = 5,
                 Done = p => Dex(p, "hairtail", 110f) },
+
+            // ---- 2026-10-30: 새 어종·해외 거점 도감 (어종 표가 늘면 목표 수도 따라 는다) ----
+            new AchievementDef { Id = "dextancheon", Name = "탄천 도감 완성", Desc = "탄천의 모든 어종을 도감에 기록", Title = "탄천 지킴이", Conch = 10,
+                Done = p => DexCount(p, "tancheon") >= DexTotal("tancheon"), Progress = p => (DexCount(p, "tancheon"), DexTotal("tancheon")) },
+            DexOfHub("dexsoutheast", "sea", "동남아", "동남아 박사", 20),
+            DexOfHub("dexmed", "med", "지중해", "지중해 박사", 15),
+            DexOfHub("dexnile", "africa", "나일강", "나일 박사", 10),
+            new AchievementDef { Id = "dexworld", Name = "세계 어류 도감", Desc = "모든 낚시터의 모든 어종을 도감에 기록", Title = "어류 대백과", Conch = 50,
+                Done = p => DexWorld(p) is var (a, b) && a >= b, Progress = DexWorld },
+            CatchAll("native", "한국 고유종", "탄천·한강의 한국 고유종 꺽지·쉬리·동사리·참중고기·각시붕어를 모두 낚기", "토종 지킴이", 5,
+                "auchaperch", "splendiddace", "darksleeper", "korsarcocheilichthys", "rosybitterling"),
+            CatchAll("gangwonwinter", "강원도 겨울 밥상", "동해 겨울 별미 도치·삼세기·청어를 모두 낚기", null, 3, "lumpsucker", "searaven", "pacificherring"),
+            new AchievementDef { Id = "gulbi", Name = "굴비 반 두름", Desc = "참조기 10마리 낚기 (서해)", Conch = 3,
+                Done = p => (p.Dex("yellowcroaker")?.count ?? 0) >= 10, Progress = p => (p.Dex("yellowcroaker")?.count ?? 0, 10) },
+            CatchAll("electric", "찌릿찌릿", "나일강의 전기 물고기 전기메기·코끼리주둥이고기·짐나르쿠스를 모두 낚기", "전기 물고기 박사", 5,
+                "electriccatfish", "elephantsnout", "gymnarchus"),
+            new AchievementDef { Id = "mahseer", Name = "급류의 왕", Desc = "80cm가 넘는 말레이 마시어 낚기 (돈콘)", Title = "마시어 헌터", Conch = 5,
+                Done = p => Dex(p, "mahseer", 80f) },
+            CatchAll("reefshark", "산호초의 사냥꾼들", "동남아 바다의 흑기흉상어·타이거 그루퍼·타이탄 트리거피시를 모두 낚기", null, 5,
+                "blacktipreefshark", "tigergrouper", "titantriggerfish"),
         };
 
         public static AchievementDef Get(string id) => All.FirstOrDefault(a => a.Id == id);

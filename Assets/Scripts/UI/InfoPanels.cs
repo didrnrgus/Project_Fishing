@@ -349,15 +349,31 @@ namespace Fishing.UI
             // 가이드 · 일반
             rows.Next(10);
             UIFactory.SectionTitle(rows.Next(28), "가이드 · 일반 퀘스트", 4, 18);
-            foreach (var q in QuestDatabase.Side)
+            Cell(rows.Next(22), "낚시터마다 어종 부탁 · 생태 도감(그곳 어종 N종 기록), 대기실 문박사의 도감 퀘스트 · 아직 못 가는 낚시터는 한 줄로 접는다", 10, 900, 14, UIFactory.TextDim);
+            // 대기실(낚시터 없음) → 낚시터 입장 레벨 순으로 묶는다. 갈 수 있는 낚시터(레벨 + 2)만 펼친다
+            var groups = QuestDatabase.Side.GroupBy(q => q.MapId ?? "")
+                .OrderBy(g => g.Key.Length == 0 ? -1 : FishingAreas.EntryLevel(g.Key)).ToList();
+            foreach (var g in groups)
             {
-                bool done = quests.IsDone(q), active = quests.IsActive(q);
-                var giver = QuestNpcs.Get(q.Giver);
-                bool open = !done && !active && quests.AvailableAt(q.Giver).Contains(q);
-                string state = done ? "<color=#70e070>완료</color>" : active ? (quests.IsReady(q) ? "<color=#7ee07e>완료 가능</color>" : $"진행 중 {quests.ProgressOf(q)}/{q.Count}")
-                    : open ? $"<color=#ffd060>받을 수 있음</color> — {giver?.Where}" : "<color=#606c78>아직 (이야기를 더 진행하세요)</color>";
-                string tag = q.Type == QuestType.Guide ? "<color=#e6a8ff>[가이드]</color>" : "[일반]";
-                Cell(rows.Next(24, 1), $"{tag} <color=#8090a0>Lv.{q.Lv}</color> {q.Title}  <size=13>{state}</size>", 10, 900, 16, done ? UIFactory.Good : UIFactory.TextMain);
+                var list = g.ToList();
+                int doneCount = list.Count(quests.IsDone);
+                string where = g.Key.Length == 0 ? "대기실 (한국 낚시 조합)" : Fishing.World.Maps.Get(g.Key).ShortName;
+                int entry = g.Key.Length == 0 ? 1 : FishingAreas.EntryLevel(g.Key);
+                bool reachable = TestMode.LevelOk(entry - 2) || list.Any(q => quests.IsActive(q) || quests.IsDone(q));
+                Cell(rows.Next(24, 1), $"<b>{where}</b>  <size=13><color=#8090a0>{doneCount}/{list.Count} 완료" + (reachable ? "" : $" · Lv.{entry}부터") + "</color></size>",
+                    6, 900, 16, doneCount == list.Count ? UIFactory.Good : reachable ? UIFactory.Accent : UIFactory.TextDim);
+                if (!reachable) continue;
+                foreach (var q in list)
+                {
+                    bool done = quests.IsDone(q), active = quests.IsActive(q);
+                    var giver = QuestNpcs.Get(q.Giver);
+                    bool open = !done && !active && quests.AvailableAt(q.Giver).Contains(q);
+                    string state = done ? "<color=#70e070>완료</color>" : active ? (quests.IsReady(q) ? "<color=#7ee07e>완료 가능</color>" : $"진행 중 {quests.ProgressOf(q)}/{q.Count}")
+                        : open ? $"<color=#ffd060>받을 수 있음</color> — {giver?.Where}"
+                        : p.Data.level + 2 < q.Lv ? $"<color=#606c78>Lv.{q.Lv}부터</color>" : "<color=#606c78>아직 (이야기를 더 진행하세요)</color>";
+                    string tag = q.Type == QuestType.Guide ? "<color=#e6a8ff>[가이드]</color>" : "[일반]";
+                    Cell(rows.Next(24, 1), $"{tag} <color=#8090a0>Lv.{q.Lv}</color> {q.Title}  <size=13>{state}</size>", 22, 890, 16, done ? UIFactory.Good : UIFactory.TextMain);
+                }
             }
             rows.Next(6);
             Cell(rows.Next(26), $"지금까지 완료한 퀘스트 {p.Data.quest.completedTotal}개 · 그중 일일반복 {p.Data.dailyCompleted}개", 4, 900, 15, UIFactory.TextDim);

@@ -85,7 +85,8 @@ namespace Fishing.Core
         }
 
         /// <summary>
-        /// 살림망의 고기를 해체한다 (20cm 이상). 등급에 맞는 해체 미끼, 반짝이는 비늘, 가끔 별모래.
+        /// 살림망의 고기를 해체한다 (20cm 이상, 두족류는 크기와 상관없이). 미끼는 <see cref="GearDatabase.DissectBaitFor"/>:
+        /// 물고기는 등급에 맞는 해체 미끼 + 반짝이는 비늘, 두족류(오징어·문어)는 오징어살(비늘이 없다). 가끔 별모래.
         /// 돌려주는 값: 결과 문장.
         /// </summary>
         public string Dissect(int index)
@@ -93,19 +94,27 @@ namespace Fishing.Core
             if (index < 0 || index >= Data.keepNet.Count) return null;
             var fish = Data.keepNet[index];
             var s = FishDatabase.Get(fish.speciesId);
-            if (s == null || s.IsJunk) return null;
+            var bait = GearDatabase.DissectBaitFor(s);
+            if (bait == null) return null;
             Data.keepNet.RemoveAt(index);
-            var bait = GearDatabase.CutBaitFor(s.Rarity);
-            int baits = 2 + Mathf.FloorToInt(fish.length / 20f);
-            int scales = Mathf.Max(1, Mathf.RoundToInt((1 + fish.length / 15f) * (1f + s.Rarity * 0.3f)));
+            int baits = DissectBaitCount(s, fish.length);
+            int scales = DissectScales(s, fish.length);
             float starChance = 0.03f * s.Rarity + (s.IsTrophy(fish.length) ? 0.15f : 0f);
             bool star = UnityEngine.Random.value < starChance;
             AddItem(bait.Id, baits);
-            AddItem(RodUpgrade.ScaleId, scales);
+            if (scales > 0) AddItem(RodUpgrade.ScaleId, scales);
             if (star) AddItem(RodUpgrade.StarSandId, 1);
             NotifyChanged();
-            return $"{s.Name} 해체: {bait.Name} {baits}개, 반짝이는 비늘 {scales}개" + (star ? ", <color=#ffd060>별모래 1개!</color>" : "");
+            return $"{s.Name} 해체: {bait.Name} {baits}개" + (scales > 0 ? $", 반짝이는 비늘 {scales}개" : "") + (star ? ", <color=#ffd060>별모래 1개!</color>" : "");
         }
+
+        /// <summary>해체해서 나오는 미끼 개수: 물고기는 2 + 20cm마다 1, 두족류는 몸이 다 살이라 2 + 10cm마다 1.</summary>
+        public static int DissectBaitCount(FishSpecies s, float length) =>
+            2 + Mathf.FloorToInt(length / (s != null && s.IsCephalopod ? 10f : 20f));
+
+        /// <summary>해체해서 나오는 반짝이는 비늘 (두족류는 비늘이 없어 0).</summary>
+        public static int DissectScales(FishSpecies s, float length) =>
+            s == null || s.IsCephalopod ? 0 : Mathf.Max(1, Mathf.RoundToInt((1 + length / 15f) * (1f + s.Rarity * 0.3f)));
 
         public GearDef Line => GearDatabase.GetGear(Data.lineId) ?? GearDatabase.GetGear("line_nylon");
         public GearDef Boat => string.IsNullOrEmpty(Data.boatId) ? null : GearDatabase.GetGear(Data.boatId);
@@ -456,12 +465,11 @@ namespace Fishing.Core
             return Mathf.RoundToInt(s.Price * Mathf.Pow(fish.length / s.MinLen, 1.2f));
         }
 
-        /// <summary>요리해서 먹으면 무게에 비례해 체력을 회복한다.</summary>
-        /// <summary>미끼로 만들 수 있는 작은 고기인지 (20cm 미만, 잡동사니 제외).</summary>
+        /// <summary>생미끼로 만들 수 있는 작은 고기인지 (20cm 미만, 잡동사니 제외). 두족류는 작아도 해체해서 오징어살로 쓴다.</summary>
         public static bool CanMakeBait(CaughtFish fish)
         {
             var s = FishDatabase.Get(fish.speciesId);
-            return s != null && !s.IsJunk && fish.length < BaitFishMaxLength;
+            return s != null && !s.IsJunk && !s.IsCephalopod && fish.length < BaitFishMaxLength;
         }
 
         public const float BaitFishMaxLength = 20f;
@@ -469,6 +477,7 @@ namespace Fishing.Core
         /// <summary>작은 고기 한 마리로 만드는 생미끼 개수: 10cm 미만 2개, 그 이상 3개.</summary>
         public static int BaitFromFish(CaughtFish fish) => fish.length < 10f ? 2 : 3;
 
+        /// <summary>요리해서 먹으면 무게에 비례해 체력을 회복한다.</summary>
         public static float CookStamina(CaughtFish fish) => Mathf.Clamp(fish.weight / 25f, 5f, 60f);
     }
 

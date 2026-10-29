@@ -39,6 +39,10 @@ namespace Fishing.UI
             { "upgrade10", CatTool },
             { "combo5", CatMaster }, { "dexhan", CatMaster }, { "dexsea", CatMaster }, { "dexwest", CatMaster }, { "dexeast", CatMaster },
             { "dexkorea", CatMaster }, { "level25", CatMaster },
+            // 2026-10-30 새 어종·해외 도감
+            { "gulbi", CatFishing }, { "mahseer", CatTrophy },
+            { "native", CatSpecial }, { "gangwonwinter", CatSpecial }, { "electric", CatSpecial }, { "reefshark", CatSpecial },
+            { "dextancheon", CatMaster }, { "dexsoutheast", CatMaster }, { "dexmed", CatMaster }, { "dexnile", CatMaster }, { "dexworld", CatMaster },
         };
 
         string _achCat = EcoSurvey.CatEco;

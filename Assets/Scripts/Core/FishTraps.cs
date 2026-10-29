@@ -272,6 +272,8 @@ namespace Fishing.Core
             Game.Notice($"{RoundTrapName} 수거 완료  ·  {SpotOf(t).Name}");
             var items = t.items ?? new List<ItemStack>();
             Traps.Remove(t);
+            // 통발 고기로 도감이 늘었으면 도감 퀘스트(서로 다른 어종·낚시터 도감)도 채운다
+            if (keep > 0) Game.Quests?.OnDexChanged();
             p.NotifyChanged();
             Game.Save();
             return items;

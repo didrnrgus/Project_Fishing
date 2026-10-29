@@ -42,6 +42,11 @@ namespace Fishing.Data
         /// <summary>잡동사니끼리의 상대 빈도 (잡동사니가 걸릴 확률 자체는 BiteSelector.JunkChance).</summary>
         public float JunkWeight = 1f;
         public bool IsJunk => Rarity == 0;
+        /// <summary>
+        /// 두족류(주꾸미·갑오징어·오징어·대문어·무늬오징어): 에기를 무는 어종이 곧 두족류다 (에기는 두족류 전용 가짜 새우).
+        /// 살림망에서 해체하면 해체 미끼 대신 오징어살이 나오고, 작아도 생미끼로 만들지 않는다 (<see cref="GearDatabase.DissectBaitFor"/>).
+        /// </summary>
+        public bool IsCephalopod => Baits != null && System.Array.IndexOf(Baits, BaitKind.Egi) >= 0;
         public bool LivesIn(string mapId) => Maps == null || mapId == null || System.Array.IndexOf(Maps, mapId) >= 0;
 
         public static readonly string[] HanOnly = { "hangang" };
