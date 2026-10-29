@@ -172,6 +172,8 @@ tools/
   fish_table.py                  FishDatabase*.cs(지역별 partial·이름 붙은 맵 배열·MapAdds 포함) → 02 문서 11장 어종 표 (--write)
   fightsim/                      Unity 없이 파이팅 밸런스 재기 (.NET 8, 게임 소스 + UnityEngine 대체 Stubs.cs) — 04 문서
   blender/                       headless Blender(bpy) 파이프라인: 물고기(build_fish.py, 어종 설계는 fish_species.py + 지역별 species_*.py), 아이콘(build_icons.py), 해외 소품(build_props.py + props_sea.py)
+                                 photo_match_progress.py(실물 사진 대조 진행률), preview_grid.py(미리보기 여러 장 모으기)
+  image-search-mcp/              이미지 검색 MCP 서버(server.py) + imgsearch.py(사진 모음 한 장) — 물고기 실물 사진 대조, 설치는 README
   intro/build_intro_art.py       인트로 그림 → Resources/Intro (numpy·PIL로 그린 달밤 수묵 산수화 겹, 붓글씨 타이틀, 낙관). 글꼴 intro/fonts (SIL OFL)
 ```
 
