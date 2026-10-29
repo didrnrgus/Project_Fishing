@@ -3,14 +3,16 @@ from fish_species import P, _fin  # noqa: F401
 
 SPECIES = {
     # ===== 외해 회유어 =====
-    # 날개다랑어 (Thunnus alalunga): 다랑어 방추형, 몸 절반을 넘는 긴 칼 모양 가슴지느러미, 짙은 남색 등, 꼬리 뒤 가장자리가 희다
-    'albacore': dict(type='E', name='날개다랑어', depth=0.24, width=0.17, tmax=0.4, ped=0.1, snout=0.92, mouth=0.05,
+    # 날개다랑어 (Thunnus alalunga): 다랑어 방추형, 몸 절반을 넘는 긴 칼 모양 가슴지느러미, 짙은 남색 등, 꼬리 뒤 가장자리가 희다.
+    # 원뿔처럼 곧게 모이는 머리(blunt)와 눈 밑까지 오는 입, 등의 남색이 은빛 옆구리와 또렷하게 갈린다(넓은 stripe), 큰 눈
+    'albacore': dict(type='E', name='날개다랑어', depth=0.24, width=0.17, tmax=0.4, ped=0.1, snout=0.92, mouth=0.05, blunt=1.2, mouth_h=0.13, gape=0.075,
                      fins=[_fin('dorsal', (0.32, 0.44), 0.38, prof=[(0, 1.0), (1, 0.25)], spiny=True), _fin('dorsal', (0.52, 0.6), 0.45, prof=[(0, 1.0), (1, 0.3)]),
                            _fin('anal', (0.56, 0.64), 0.42, prof=[(0, 1.0), (1, 0.3)]), _fin('caudal', h=0.4, shape='deepfork'),
                            _fin('pectoral', s=(0.27, 0.27), h=0.36, long=True), _fin('pelvic', s=(0.3, 0.3), h=0.06)],
                      colors=P('#14204a', '#7c8ca0', '#eceef0', silver=0.8, metallic=0.45, fin_up=('#18244a', '#c8ccd4', 0.85), fin_low=('#a0a8b4', '#c8ccd4', 0.7),
-                              patterns=[('finlets', True), ('stripe', dict(v=0.55, w=0.03, color='#5a7aa8', a=0.35)), ('sheen', 0.5)]),
-                     eye=dict(r=0.024, iris='#9aa2a8'), anim=dict(amp=0.9, freq=1.6)),
+                              patterns=[('stripe', dict(v=0.92, w=0.2, color='#101a3e', a=0.85)), ('finlets', True),
+                                        ('stripe', dict(v=0.66, w=0.035, color='#5a7aa8', a=0.45)), ('sheen', 0.5)]),
+                     eye=dict(r=0.027, iris='#9aa2a8'), anim=dict(amp=0.9, freq=1.6)),
     # 대서양점다랑어 (Euthynnus alletteratus): 작은 다랑어, 몸 뒤쪽 등에만 굵은 물결무늬, 가슴지느러미 밑 검은 점 몇 개, 비늘 없음
     'littletunny': dict(type='E', name='대서양점다랑어', depth=0.23, width=0.16, tmax=0.4, ped=0.1, snout=0.92, mouth=0.05,
                         fins=[_fin('dorsal', (0.3, 0.46), 0.42, prof=[(0, 1.0), (0.3, 0.6), (1, 0.15)], spiny=True), _fin('dorsal', (0.52, 0.58), 0.3, prof=[(0, 1.0), (1, 0.35)]),

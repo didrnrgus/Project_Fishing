@@ -63,7 +63,7 @@ class Body:
         # 장어형(G)도 머리가 둥글다 (예전 1.0은 바늘처럼 뾰족한 주둥이였다). 갈치는 어종 값으로 뾰족하게
         self.blunt = d.get('blunt', 0.55 if d['type'] == 'G' else 0.8)
         # 입 높이 (주둥이 끝 단면이 남는 비율). 장어·두족류는 둥근 머리 그대로
-        self.m0 = d.get('mouth_h', 0.0 if d['type'] == 'G' or d.get('ceph') else 0.17)
+        self.m0 = d.get('mouth_h', 0.0 if d['type'] == 'G' or d.get('ceph') or d.get('shark') else 0.17)
         # 등·배 능선: 몸 단면 위아래가 뾰족해진다 (꼬리 쪽으로 갈수록 더). 둥근 원통처럼 보이지 않게
         self.keel = d.get('keel', 0.0 if d.get('ceph') else 0.1 if d['type'] == 'G' else 0.3)
 
@@ -87,12 +87,24 @@ class Body:
         tm = d['tmax']
         en = (0.2 + d['snout'] * 0.7) * self.blunt
         if s < tm:
-            return H * self.snout(s, en, self.m0)
+            return H * self.snout(s, en, self.m0) * self.head_flat(s)
+        disc = d.get('disc')
+        if disc:
+            # 가오리: 원반이 disc에서 끝나고 그 뒤는 가늘어지는 꼬리 (예전에는 꼬리지느러미 판을 길게 늘여서 종이띠 같았다)
+            if s >= disc:
+                return H * d['ped'] * (1 - 0.75 * (s - disc) / (1 - disc))
+            t = (s - tm) / (disc - tm)
+            return H * (d['ped'] + (1 - d['ped']) * math.cos(math.pi / 2 * t) ** 1.5)
         t = (s - tm) / (1 - tm)
         # hold: 몸통 굵기를 그만큼 유지하다가 꼬리로 가늘어진다 (장어: 몸 대부분이 같은 굵기)
         hold = d.get('hold', 0.0)
         t = max(0.0, (t - hold) / (1 - hold))
-        return H * (d['ped'] + (1 - d['ped']) * math.cos(math.pi / 2 * t) ** 1.5)
+        return H * (d['ped'] + (1 - d['ped']) * math.cos(math.pi / 2 * t) ** 1.5) * self.head_flat(s)
+
+    def head_flat(self, s):
+        """아귀처럼 위아래로 눌린 넓적한 머리: 머리 쪽 높이를 줄인다 (몸 뒤쪽은 그대로)."""
+        hf = self.d.get('head_flat', 0.0)
+        return 1 - hf * (1 - fish_tex_smooth(0.04, 0.5, s)) if hf else 1.0
 
     def width(self, s):
         d = self.d
@@ -106,7 +118,13 @@ class Body:
             t = max(0.0, (t - hold) / (1 - hold))
             # 꼬리 끝 폭 비율: 꼬리자루는 옆으로 얇은 칼날이다 (예전 0.32는 위에서 보면 머리부터 꼬리까지 굵기가 같은 소시지였다)
             tw = d.get('tail_w', 0.17)
-            w = self.W * (tw + (1 - tw) * math.cos(math.pi / 2 * t) ** 1.1)
+            disc = d.get('disc')
+            if disc and s >= disc:
+                w = self.W * tw * (1 - 0.75 * (s - disc) / (1 - disc))
+            else:
+                if disc:
+                    t = (s - tm) / (disc - tm)
+                w = self.W * (tw + (1 - tw) * math.cos(math.pi / 2 * t) ** 1.1)
         hw = d.get('head_w', 1.0)
         if hw != 1.0 and s < 0.35:
             w *= 1 + (hw - 1) * (1 - s / 0.35) * min(1, s / 0.05)
@@ -114,7 +132,11 @@ class Body:
 
     def zc(self, s):
         m = self.d.get('mouth', 0.0)
-        return m * 0.32 * self.H * max(0.0, 1 - s / 0.32) ** 2
+        z = m * 0.32 * self.H * max(0.0, 1 - s / 0.32) ** 2
+        if self.d.get('shark'):
+            # 상어 주둥이: 코끝이 몸 가운데보다 높이 떠서 배 쪽 입 위로 처마처럼 나온다. 턱 밑이 코끝으로 비스듬히 올라간다
+            z += self.d['shark'].get('rostrum', 0.32) * self.H * max(0.0, 1 - s / 0.3) ** 2
+        return z
 
     def arch(self, s):
         a = self.d['arch']
@@ -174,10 +196,16 @@ def build_body_mesh(d, B):
     flat = d.get('flat')
     if not flat:
         # 머리(입술·눈두덩)와 아가미 뚜껑 턱이 뭉개지지 않게 그 근처에 고리를 더 넣는다
-        extra = [0.004 * i for i in range(1, int((he + 0.03) / 0.004))]
+        top = he + 0.03
+        if d.get('shark'):
+            top = max(top, d['shark']['gills'][1] + 0.02)   # 아가미구멍 홈이 뭉개지지 않게
+        if d.get('gape'):
+            top = max(top, d['gape'] * 1.3)
+        extra = [0.004 * i for i in range(1, int(top / 0.004))]
         ss = sorted(set(round(x, 4) for x in ss + extra))
     nr = len(ss)
     relief = not flat and not d.get('ceph')
+    shark = d.get('shark')
     if relief:
         es, ev, eru, erv = fish_tex.eye_uv(d)
         er = d['eye']['r']
@@ -185,25 +213,44 @@ def build_body_mesh(d, B):
         for k in range(NA):
             a = 2 * math.pi * k / NA
             x, y, z = B.ring_point(s, a)
-            if not flat:
+            v = body_uv(d, s, a)[1]
+            if shark:
+                # 상어: 아가미 뚜껑 대신 옆구리에 세로로 난 아가미구멍 다섯 줄 (살짝 파인 홈 · 뒤 가장자리 피부가 덮는다)
+                g0, g1 = shark['gills']
+                for k in range(5):
+                    gu = g0 + (g1 - g0) * k / 4 + 0.012 * (v - 0.5)
+                    gd = (s - gu) / 0.0035
+                    x *= 1 - 0.035 * math.exp(-gd * gd) * fish_tex_smooth(0.28, 0.36, v) * fish_tex_smooth(0.72, 0.64, v)
+                # 배 쪽 초승달 입: 홈이 파이고 그 뒤 아래턱이 살짝 도톰하다
+                md = (s - fish_tex.shark_mouth_s(d, v)) / 0.0045
+                cres = fish_tex_smooth(0.26, 0.2, v)
+                k = 1 - 0.1 * math.exp(-md * md) * cres + 0.03 * math.exp(-((md - 2.2) / 1.2) ** 2) * cres
+                x *= k
+                z = B.zc(s) + (z - B.zc(s)) * k
+            elif not flat:
                 # 아가미 뚜껑 판이 몸 위로 살짝 덮인다: 뒤 가장자리 바로 앞이 볼록하고 그 뒤로 턱이 진다.
                 # 옆면 가운데만 (예전에는 등·배까지 둘러서 머리가 따로 붙은 헬멧처럼 보였다)
-                v = body_uv(d, s, a)[1]
                 ge = fish_tex.gill_edge(d, v)
                 bump = fish_tex_smooth(ge - 0.07, ge - 0.006, s) * fish_tex_smooth(ge + 0.014, ge + 0.002, s)
                 side = fish_tex_smooth(0.12, 0.35, v) * fish_tex_smooth(0.88, 0.62, v)
                 x *= 1 + (0.018 if d['type'] != 'G' else 0.0) * bump * side   # 0.035면 머리 둘레에 목걸이 같은 턱이 졌다   # 장어는 아가미 뚜껑이 없다 (작은 구멍뿐)
-                # 입: 입술 사이가 실제로 파인 홈 (텍스처 입 선과 같은 자리: v = mouth_v + 0.6 s, 주둥이 끝에서 mlen까지)
+                # 입: 입술 사이가 실제로 파인 홈 (텍스처 입 선과 같은 자리: v = mouth_v + slope × s, 주둥이 끝에서 mlen까지)
                 if not d.get('ceph'):
                     mv = fish_tex.mouth_v(d)
                     mlen = fish_tex.mouth_len(d)
-                    md = v - mv - 0.6 * s
+                    md = v - mv - fish_tex.mouth_slope(d) * s
                     reach = fish_tex_smooth(mlen * 1.1, mlen * 0.5, s)
-                    groove = math.exp(-(md ** 2) / (2 * 0.03 ** 2)) * reach
-                    # 입술: 홈 위아래가 도톰하다 (입 둘레가 그냥 파인 선이 아니라 살이 있게)
-                    lips = math.exp(-((abs(md) - 0.055) ** 2) / (2 * 0.025 ** 2)) * fish_tex_smooth(mlen * 1.3, mlen * 0.6, s)
-                    x *= 1 - 0.34 * groove + 0.07 * lips
-                    z = B.zc(s) + (z - B.zc(s)) * (1 - 0.12 * groove)
+                    gw = 0.03 * d.get('gape_w', 1.0)
+                    groove = math.exp(-(md ** 2) / (2 * gw ** 2)) * reach
+                    # 입술: 홈 위아래가 도톰하다 (입 둘레가 그냥 파인 선이 아니라 살이 있게). lips: 잉어처럼 두툼한 입술
+                    lw = 0.055 * d.get('gape_w', 1.0)
+                    lips = math.exp(-((abs(md) - lw) ** 2) / (2 * 0.025 ** 2)) * fish_tex_smooth(mlen * 1.3, mlen * 0.6, s)
+                    x *= 1 - 0.34 * d.get('gape_d', 1.0) * groove + 0.07 * d.get('lips', 1.0) * lips
+                    z = B.zc(s) + (z - B.zc(s)) * (1 - 0.12 * d.get('gape_d', 1.0) * groove + 0.04 * (d.get('lips', 1.0) - 1) * lips)
+                    jaw = d.get('jaw')
+                    if jaw:
+                        # 아래턱이 위턱보다 앞으로 튀어나온다 (아귀): 입 선 아래쪽 앞부분을 앞으로 민다
+                        y -= jaw * fish_tex_smooth(0.02, -0.06, md) * fish_tex_smooth(mlen, 0.0, s)
             if relief and abs(x) > 1e-7:
                 # 눈두덩: 눈 둘레 뼈 테가 살짝 솟고 바로 붙은 자리는 꺼진다 (눈이 머리에 붙인 단추처럼 보이지 않게)
                 v = body_uv(d, s, a)[1]
@@ -394,8 +441,12 @@ def make_eye(d, B, side):
     if flat:
         # 납작한 고기: 두 눈이 모두 눈 있는 쪽에 (위쪽 눈은 등 가장자리 가까이)
         eside = -1 if flat == 'left' else 1
-        zr = 0.35 if side > 0 else -0.05
-        s = e['s'] if side > 0 else e['s'] + 0.025
+        if d.get('ray'):
+            # 가오리·홍어: 두 눈이 등 가운데 좌우로 나란히 (가자미처럼 한쪽 가장자리로 몰리지 않는다)
+            zr = d['ray'].get('eye_z', 0.12) * side
+        else:
+            zr = 0.35 if side > 0 else -0.05
+            s = e['s'] if side > 0 else e['s'] + 0.025
         side = eside
     # 진짜 물고기 눈처럼 머리에 묻힌 납작한 돔: 겉으로는 반지름의 0.18만 나오고 (0.3이면 탁구공처럼 튀어나와 보였다), 옆(x)으로 눌러서
     # 머리가 얇은 어종(빙어·갈치·전갱이 …)도 안쪽 끝이 몸 가운데를 넘지 않게 한다 (넘으면 반대편 머리로 뚫고 나온다).
@@ -447,17 +498,46 @@ def make_tube(points, r0, r1, uv_rect, sides=6):
 def make_barbels(d, B):
     out = []
     for (s, zr, L, th, kind) in d['barbels']:
+        if kind == 'lure':
+            # 아귀 낚싯대 (첫 등지느러미 가시가 변한 것): 머리 위 가운데에 하나, 앞으로 휘고 끝에 미끼 같은 살덩이(에스카)
+            start = mathutils.Vector((0.0, B.y(s), B.zc(s) + B.top(s) - 0.003))
+            pts = []
+            for i in range(11):
+                t = i / 10
+                pts.append(tuple(start + mathutils.Vector((0.0, -0.45 * L * t * t, L * (t - 0.35 * t * t)))))
+            out.append(make_tube(pts, th, th * 0.55, (0.875, 0.25, 0.9375, 0.375), sides=8))
+            if L < 0.08:
+                continue   # 뒤의 짧은 가시 둘째·셋째는 미끼 없이
+            esca = bmesh.new()
+            bmesh.ops.create_uvsphere(esca, u_segments=10, v_segments=6, radius=th * 2.6)
+            bmesh.ops.scale(esca, vec=(0.8, 1.3, 1.0), verts=esca.verts)
+            uvl = esca.loops.layers.uv.new('UV')
+            for f in esca.faces:
+                for lp in f.loops:
+                    lp[uvl].uv = (0.906, 0.31)
+            for vv in esca.verts:
+                vv.co += mathutils.Vector(pts[-1])
+            out.append(esca)
+            continue
         for side in (1, -1):
             x = B.surface_x(s, zr) * 0.9
             start = mathutils.Vector((side * x, B.y(s), B.z_at(s, zr)))
-            dirs = {'down': (0.35, -0.2, -1.0), 'side': (1.0, -0.35, -0.25), 'up': (0.8, -0.3, 0.45)}[kind]
+            dirs = {'down': (0.35, -0.2, -1.0), 'side': (1.0, -0.35, -0.25), 'up': (0.8, -0.3, 0.45), 'flap': (1.0, 0.1, -0.6)}[kind]
             d0 = mathutils.Vector((dirs[0] * side, dirs[1], dirs[2])).normalized()
             pts = []
-            for i in range(9):
-                t = i / 8
-                p = start + d0 * L * t + mathutils.Vector((0, 0.55, -0.15)) * L * t * t
+            n = 12 if L > 0.06 else 9
+            for i in range(n):
+                t = i / (n - 1)
+                # 살 수염은 물에서 힘없이 뒤로 흐르고 아래로 처진다 (긴 수염일수록 많이)
+                droop = mathutils.Vector((0.12 * side * math.sin(math.pi * t), 0.55, -0.15 - 0.2 * min(1.0, L / 0.1)))
+                p = start + d0 * L * t + droop * L * t * t
                 pts.append(tuple(p))
-            out.append(make_tube(pts, th * 0.7, th * 0.2, (0.875, 0.25, 0.9375, 0.375)))   # 가늘고 끝이 뾰족한 살 수염
+            if kind == 'flap':
+                # 아귀 머리 둘레 피부 술: 짧고 끝이 납작하게 퍼진다
+                out.append(make_tube(pts, th, th * 1.3, (0.875, 0.25, 0.9375, 0.375), sides=5))
+            else:
+                # 밑동이 도톰하고 끝이 가늘다 (예전 0.7·0.2 비율은 가는 실이라 게임 화면에서 안 보였다)
+                out.append(make_tube(pts, th * 1.05, th * 0.3, (0.875, 0.25, 0.9375, 0.375), sides=8))
     if d.get('beak'):
         L = d['beak']
         z0 = B.zc(0.02) - B.bot(0.02) * 0.4
@@ -549,12 +629,12 @@ def outward_normals(ob):
 def breathing_parts(d, B=None):
     """숨 쉬는 부위. 'jaw': (경첩 s, 경첩 z) — 입꼬리 뒤에서 아래턱이 내려간다, 'gill': 아가미 뚜껑 앞 경계 s.
     납작한 고기(몸을 눕혀 축이 다르다)·두족류는 없고, 장어는 아가미 뚜껑 대신 작은 구멍뿐이라 턱만."""
-    if d.get('flat') or d.get('ceph'):
-        return {}
+    if d.get('flat') or d.get('ceph') or d.get('shark'):
+        return {}   # 상어는 아가미 뚜껑·옆 입이 없다 (입은 배 쪽)
     B = B or Body(d)
     out = {}
     s_h = fish_tex.mouth_len(d) * 2.0
-    vg = fish_tex.mouth_v(d) + 0.6 * fish_tex.mouth_len(d)
+    vg = fish_tex.mouth_v(d) + fish_tex.mouth_slope(d) * fish_tex.mouth_len(d)
     out['jaw'] = (s_h, B.ring_point(s_h, math.pi * min(0.95, vg))[2])
     if d['type'] != 'G':
         out['gill'] = float(fish_tex.gill_edge(d, 0.55)) - 0.075
@@ -680,7 +760,7 @@ def build_rig(d, B, body, fins):
         if jaw and s < jaw[0]:
             # 아래턱: 입 선 아래, 경첩(입꼬리 뒤) 앞쪽
             vv = vert_v(s, v.co.z)
-            wj = fish_tex_smooth(0.0, 0.06, mv + 0.6 * min(s, mlen) - vv) * fish_tex_smooth(jaw[0], mlen * 0.9, s) ** 1.5
+            wj = fish_tex_smooth(0.0, 0.06, mv + fish_tex.mouth_slope(d) * min(s, mlen) - vv) * fish_tex_smooth(jaw[0], mlen * 0.9, s) ** 1.5
             if wj > 0:
                 w = mix(w, 'Jaw', wj)
         if gill and abs(v.co.x) > 1e-4 and s < 0.45:
@@ -868,7 +948,8 @@ def build(sid):
     for name, fv, ff, fu, kind in make_fins(d, B):
         fins.append(mesh_from(name, fv, ff, fu))
     fins = join(fins, 'Fins')
-    solidify(fins, 0.0028 if d['type'] != 'G' else 0.0018)
+    # 상어 지느러미는 살갗에 덮인 두툼한 판 (얇은 막이 아니다)
+    solidify(fins, 0.007 if d.get('shark') else 0.0028 if d['type'] != 'G' else 0.0018)
     for p in fins.data.polygons:
         p.use_smooth = True
     if d.get('flat'):
@@ -1009,6 +1090,10 @@ def render_setup(res, transparent, samples=24):
             bpy.data.objects.remove(bpy.data.objects[nm])
     sc.render.engine = 'CYCLES'
     sc.cycles.device = 'CPU'
+    # CPU를 다 먹지 않게 렌더 스레드를 묶는다: 미리보기는 여럿이 함께 돌리므로 코어 1/6, 전체 빌드는 3/4 (FISH_THREADS로 바꾼다)
+    cores = os.cpu_count() or 4
+    sc.render.threads_mode = 'FIXED'
+    sc.render.threads = int(os.environ.get('FISH_THREADS', 0)) or max(1, cores // 6 if '--preview' in ARGS else cores * 3 // 4)
     sc.cycles.samples = samples
     sc.cycles.use_denoising = True   # 지느러미(반투명)·코팅 반사가 적은 샘플에서 모래알처럼 자글거렸다
     sc.render.resolution_x, sc.render.resolution_y = res

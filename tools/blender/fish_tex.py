@@ -71,13 +71,32 @@ def gill_edge(d, v):
 
 
 def mouth_len(d):
-    """입 선(입술 사이 홈)이 주둥이 끝에서 뻗는 길이 (몸 구간 s). 텍스처·모델 홈·턱뼈가 같이 쓴다."""
+    """입 선(입술 사이 홈)이 주둥이 끝에서 뻗는 길이 (몸 구간 s). 텍스처·모델 홈·턱뼈가 같이 쓴다. gape: 아귀처럼 머리 뒤까지 찢어진 입"""
+    if d.get('gape'):
+        return d['gape']
     return 0.035 + 0.03 * max(0, d.get('mouth', 0)) + (0.03 if d['type'] == 'C' else 0.0)
 
 
 def mouth_v(d):
-    """입 선의 높이 (v: 0 배 ~ 1 등). 주둥이 끝에서 뒤로 갈수록 0.6 s만큼 올라간다."""
+    """입 선의 높이 (v: 0 배 ~ 1 등). 주둥이 끝에서 뒤로 갈수록 mouth_slope(d) × s만큼 올라간다."""
     return 0.5 + 0.35 * d.get('mouth', 0) * 0.3
+
+
+def mouth_slope(d):
+    """입 선이 뒤로 갈수록 오르는 기울기 (아귀처럼 위로 열린 큰 입은 입꼬리가 내려간다)."""
+    return d.get('mouth_slope', 0.6)
+
+
+def shark_mouth_s(d, v):
+    """상어 입 (배 쪽 초승달): v(0 배 가운데)에서 입 선의 s. 가운데가 가장 앞이고 입꼬리가 뒤로 휜다."""
+    return d['shark']['mouth'] + 0.6 * v * v
+
+
+def ray_eye_v(d, zr):
+    """가오리 눈 자리 (zr: 원반 가운데에서 좌우로 -1~1)의 텍스처 v. 등(눈 있는 쪽) = 왼쪽 옆면 (v 0.5~1)."""
+    xs = d.get('xsec', 2.0)
+    cz = math.copysign(abs(zr) ** (xs / 2.0), zr)
+    return 1.0 - math.acos(max(-1.0, min(1.0, -cz))) / (2 * math.pi)
 
 
 def eye_uv(d):
@@ -289,6 +308,9 @@ def paint(d, seed=0):
     not_ceph = 0.0 if d.get('ceph') else 1.0
     # 아가미 틈은 목덜미 위로 넘어가지 않는다 (머리 꼭대기까지 둘러진 선이 헬멧 테두리처럼 보였다)
     gband = smooth(0.05, 0.25, vside) * smooth(0.86, 0.66, vside) * eyed * not_ceph
+    shark, ray = d.get('shark'), d.get('ray')
+    if shark or ray:
+        gband = gband * 0.0   # 연골어류는 아가미 뚜껑이 없다 (아래에 아가미구멍을 따로 그린다)
     if d['type'] == 'G':
         # 장어는 아가미 뚜껑 대신 가슴지느러미 앞의 작은 구멍뿐 (머리 둘레에 선을 두르면 헬멧처럼 보였다)
         gband = smooth(0.2, 0.3, vside) * smooth(0.5, 0.4, vside) * eyed * 0.6
@@ -325,6 +347,7 @@ def paint(d, seed=0):
         es, ev, eru, erv = eye_uv(d)
         ed = np.sqrt(((u - es) / eru) ** 2 + ((vside - ev) / erv) ** 2)
         noflat = 0 if flat else 1
+        bony = 0 if shark else 1   # 상어 콧구멍은 주둥이 밑에 있다 (옆 콧구멍·눈두덩 그늘 없음)
         orbit = smooth(1.3, 1.02, ed) * smooth(0.85, 0.98, ed) * eyed * noflat
         blend(body, back * 0.55, orbit * 0.18)
         h_b -= orbit * 0.12
@@ -335,16 +358,67 @@ def paint(d, seed=0):
         for k in (0.0, 1.0):
             nu_, nv_ = es * (0.42 + 0.16 * k), ev + erv * 0.25
             nd = np.sqrt(((u - nu_) / (eru * 0.15)) ** 2 + ((vside - nv_) / (erv * 0.13)) ** 2)
-            pit = smooth(1.0, 0.4, nd) * eyed * noflat
+            pit = smooth(1.0, 0.4, nd) * eyed * noflat * bony
             blend(body, back * 0.45, pit * 0.35)    # 진하면 돼지코처럼 보인다
             h_b -= pit * 0.45
-            h_b += np.exp(-((nd - 1.1) / 0.3) ** 2) * 0.2 * eyed * noflat
+            h_b += np.exp(-((nd - 1.1) / 0.3) ** 2) * 0.2 * eyed * noflat * bony
         # 주둥이 위는 진하게
         blend(body, back * 0.8, smooth(0.08, 0.0, u) * smooth(0.45, 0.8, vside) * 0.4 * eyed)
+    if shark:
+        # 상어 피부: 비늘 대신 잔 방패비늘(피부이빨)이라 사포처럼 결이 곱고 덜 번들거린다
+        h_b += (noise(BW, H, 160, rng.integers(1 << 30), 1) - 0.5) * 0.18
+        smooth_b -= 0.12
+        # 배 쪽 초승달 입: 짙은 틈 + 그 뒤 아래턱 입술이 밝게, 입꼬리 끝에 짧은 주름(순구)
+        ms = shark_mouth_s(d, v)
+        cres = smooth(0.27, 0.2, v)
+        mline = np.exp(-((u - ms) / 0.004) ** 2) * cres
+        blend(body, back * 0.2, mline * 0.9)
+        h_b -= mline * 1.2
+        h_b += np.exp(-((u - ms - 0.009) / 0.005) ** 2) * cres * 0.4
+        corner = np.exp(-((u - ms) / 0.006) ** 2) * smooth(0.19, 0.24, v) * smooth(0.3, 0.25, v)
+        blend(body, back * 0.35, corner * 0.6)
+        # 콧구멍: 주둥이 밑, 입 앞쪽 좌우에 비스듬한 짧은 틈
+        nsd = np.sqrt(((u - shark['mouth'] * 0.45) / 0.007) ** 2 + ((v - 0.2 - (u - shark['mouth'] * 0.45) * 2.0) / 0.03) ** 2)
+        blend(body, back * 0.3, smooth(1.0, 0.5, nsd) * 0.7)
+        h_b -= smooth(1.0, 0.5, nsd) * 0.6
+        # 아가미구멍 다섯 줄: 위아래로 길고 살짝 휜 틈. 앞쪽은 그늘, 뒤 가장자리는 피부가 덮어 밝은 턱
+        g0, g1 = shark['gills']
+        for k in range(5):
+            gu = g0 + (g1 - g0) * k / 4 + 0.012 * (v - 0.5) + 0.004 * np.sin((v - 0.3) * 6)
+            span = smooth(0.28, 0.36, v) * smooth(0.72 - 0.02 * k, 0.62 - 0.02 * k, v)
+            slit = np.exp(-((u - gu) / 0.0028) ** 2) * span
+            lip = np.exp(-((u - gu - 0.004) / 0.003) ** 2) * span
+            blend(body, back * 0.35, slit * 0.75)
+            body *= (1 + 0.08 * lip)[..., None]
+            h_b += lip * 0.6 - slit * 1.0
+    if ray:
+        # 가오리·홍어 등: 눈 바로 뒤 숨구멍(분수공) 한 쌍. 배 쪽: 가로로 난 입과 아가미구멍 다섯 쌍
+        es_ = d['eye']['s']
+        ez = ray['eye_z'] if 'eye_z' in ray else 0.12
+        for zr in (ez, -ez):
+            sv = ray_eye_v(d, zr * 1.05)
+            # 숨구멍은 눈보다 작은 반달 틈 (눈과 크기가 같으면 눈이 네 개처럼 보였다)
+            sd = np.sqrt(((u - es_ - 0.026) / 0.006) ** 2 + ((v - sv) / 0.0035) ** 2)
+            blend(body, back * 0.35, smooth(1.0, 0.6, sd) * 0.6)
+            h_b += np.exp(-((sd - 1.1) / 0.3) ** 2) * 0.25 - smooth(1.0, 0.5, sd) * 0.7
+            # 눈 둘레 볼록한 살
+            ed = np.sqrt(((u - es_) / 0.02) ** 2 + ((v - ray_eye_v(d, zr)) / 0.012) ** 2)
+            h_b += np.exp(-((ed - 1.0) / 0.35) ** 2) * 0.4
+        vb = 1.0 - ray_eye_v(d, 0.0)   # 배 가운데 (왼쪽 등 가운데의 맞은편)
+        ms = es_ - 0.01
+        mline = np.exp(-((u - ms - 25 * (v - vb) ** 2) / 0.004) ** 2) * smooth(0.035, 0.025, np.abs(v - vb))
+        blend(body, back * 0.3, mline * 0.8)
+        h_b -= mline
+        for k in range(5):
+            gu = es_ + 0.06 + 0.022 * k
+            for sgn in (1, -1):
+                gs = np.exp(-((v - vb - sgn * (0.05 + 0.004 * k)) / 0.002) ** 2) * smooth(0.012, 0.006, np.abs(u - gu))
+                blend(body, back * 0.45, gs * 0.6)
+                h_b -= gs * 0.6
     # 입 선
-    if not flat and not d.get('ceph'):
+    if not flat and not d.get('ceph') and not shark:
         mlen = mouth_len(d)
-        md = v - mouth_v(d) - (u * 0.6)
+        md = v - mouth_v(d) - (u * mouth_slope(d))
         reach = smooth(mlen, mlen * 0.6, u)
         mouth = np.exp(-(md ** 2) / (2 * 0.006 ** 2)) * reach
         # 입술: 갈라진 선 위아래로 도톰하고 밝은 살
@@ -352,6 +426,12 @@ def paint(d, seed=0):
         blend(body, belly * 0.85 + side * 0.15, lips * 0.45)
         h_b += lips * 0.6 - mouth * 0.9
         blend(body, back * 0.25, mouth * 0.8)
+        if d.get('teeth'):
+            # 아귀 이빨: 입술 안쪽으로 휜 가는 송곳니가 위아래로 줄지어 (입 선 따라 밝은 가시)
+            tooth = smooth(0.55, 0.9, 0.5 + 0.5 * np.cos(u * 520 + np.sin(u * 37) * 2)) * reach
+            tband = np.exp(-((np.abs(md) - 0.012) ** 2) / (2 * 0.006 ** 2))
+            blend(body, np.array([0.93, 0.9, 0.82], np.float32), tooth * tband * 0.9)
+            h_b += tooth * tband * 0.8
 
     # ---------------- 무늬 ----------------
     def draw_spots(n, r, color, vr=(0, 1), ur=(0.05, 0.98), a=1.0, row=False, irregular=0.3):
@@ -517,6 +597,9 @@ def paint(d, seed=0):
         if d.get('ceph'):
             # 두족류 지느러미는 뼈 줄기가 없는 살 막: 몸처럼 잔 얼룩만
             rays = rays * 0.0
+        if d.get('shark'):
+            # 상어 지느러미: 뼈 줄기 없는 살갗 판 (속 연골 줄기가 아주 희미하게만)
+            rays = rays * 0.08
         if d['type'] == 'G':
             # 장어 지느러미: 가시 없는 부드러운 막. 줄기가 진하면 몸 길이만큼 늘어난 텍스처에서 톱니처럼 보였다
             rays = rays * 0.25
@@ -535,8 +618,10 @@ def paint(d, seed=0):
         # 알파 (Fishing/FishFin이 반투명으로 섞는다): 밑동·줄기는 거의 불투명, 막은 끝으로 갈수록 얇아져 비친다.
         # 가장자리는 줄기 끝이 조금 더 나오고 줄기 사이 막이 살짝 들어간 물결 모양 (예전: 노이즈 구멍으로 해진 종이 같았다)
         mem_a = 0.82 - (0.82 - ta * 0.75) * smooth(0.05, 1.0, fv)
+        if d.get('shark'):
+            mem_a = np.full_like(fv, 0.99)
         a = np.maximum(mem_a, rays * (0.95 - 0.25 * fv))
-        edge_v = 0.975 - 0.045 * membrane if d['type'] != 'G' else np.full_like(membrane, 0.96)
+        edge_v = 0.975 - 0.045 * membrane if d['type'] != 'G' and not d.get('shark') else np.full_like(membrane, 0.97)
         a *= smooth(edge_v, edge_v - 0.035, fv)
         alb[0:FHb, x0:x0 + FWb, :3] = np.clip(c, 0, 1)
         alb[0:FHb, x0:x0 + FWb, 3] = np.clip(a, 0, 1)
