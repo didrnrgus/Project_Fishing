@@ -5,6 +5,7 @@
   python -I tools/blender/build_fish.py --only carp        # 하나만 (쉼표로 여러 개)
   python -I tools/blender/build_fish.py --preview --only carp --out Screenshots/fish   # 미리보기 렌더 (옆·위·비스듬히)
   python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.png         # 전체 어종 한 장 (도감용 확인)
+  python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.png --sheet-only   # 다시 만들지 않고 렌더해 둔 그림(Screenshots/fish/sheet)으로 시트만
   python -I tools/blender/build_fish.py --no-icons         # 아이콘 렌더 건너뛰기
 
 결과 (Unity):
@@ -191,7 +192,7 @@ def build_body_mesh(d, B):
                 ge = fish_tex.gill_edge(d, v)
                 bump = fish_tex_smooth(ge - 0.07, ge - 0.006, s) * fish_tex_smooth(ge + 0.014, ge + 0.002, s)
                 side = fish_tex_smooth(0.12, 0.35, v) * fish_tex_smooth(0.88, 0.62, v)
-                x *= 1 + (0.035 if d['type'] != 'G' else 0.0) * bump * side   # 장어는 아가미 뚜껑이 없다 (작은 구멍뿐)
+                x *= 1 + (0.018 if d['type'] != 'G' else 0.0) * bump * side   # 0.035면 머리 둘레에 목걸이 같은 턱이 졌다   # 장어는 아가미 뚜껑이 없다 (작은 구멍뿐)
                 # 입: 입술 사이가 실제로 파인 홈 (텍스처 입 선과 같은 자리: v = mouth_v + 0.6 s, 주둥이 끝에서 mlen까지)
                 if not d.get('ceph'):
                     mv = fish_tex.mouth_v(d)
@@ -207,7 +208,7 @@ def build_body_mesh(d, B):
                 # 눈두덩: 눈 둘레 뼈 테가 살짝 솟고 바로 붙은 자리는 꺼진다 (눈이 머리에 붙인 단추처럼 보이지 않게)
                 v = body_uv(d, s, a)[1]
                 ed = math.sqrt(((s - es) / eru) ** 2 + ((v - ev) / erv) ** 2)
-                bump = 0.2 * math.exp(-((ed - 1.4) / 0.32) ** 2) - 0.08 * math.exp(-((ed - 1.0) / 0.12) ** 2)
+                bump = 0.08 * math.exp(-((ed - 1.4) / 0.32) ** 2) - 0.05 * math.exp(-((ed - 1.0) / 0.12) ** 2)   # 눈두덩은 아주 살짝
                 if bump:
                     x += math.copysign(er * bump, x)
             verts.append((x, y, z))
@@ -396,11 +397,11 @@ def make_eye(d, B, side):
         zr = 0.35 if side > 0 else -0.05
         s = e['s'] if side > 0 else e['s'] + 0.025
         side = eside
-    # 진짜 물고기 눈처럼 머리에 묻힌 납작한 돔: 겉으로는 반지름의 0.3만 나오고, 옆(x)으로 눌러서
+    # 진짜 물고기 눈처럼 머리에 묻힌 납작한 돔: 겉으로는 반지름의 0.18만 나오고 (0.3이면 탁구공처럼 튀어나와 보였다), 옆(x)으로 눌러서
     # 머리가 얇은 어종(빙어·갈치·전갱이 …)도 안쪽 끝이 몸 가운데를 넘지 않게 한다 (넘으면 반대편 머리로 뚫고 나온다).
     sx = B.surface_x(s, zr)
     kx = min(r * 0.8, (sx + r * 0.25) / 2)
-    x = sx + r * 0.3 - kx
+    x = sx + r * 0.18 - kx
     c = mathutils.Vector((side * x, B.y(s), B.z_at(s, zr)))
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=20, v_segments=12, radius=r)
@@ -703,7 +704,7 @@ def build_rig(d, B, body, fins):
         if pec_info and abs(v.co.x) > 0.003:
             py, ph = pec_info[0]
             # 가슴지느러미: 몸 옆으로 튀어나온 부분
-            if py - 0.01 <= v.co.y <= py + ph + 0.02 and abs(v.co.x) > B.surface_x((v.co.y + 0.5) / B.be, -0.3) * 0.9:
+            if py - 0.01 <= v.co.y <= py + ph + 0.02 and abs(v.co.x) > B.surface_x(min(1.0, (v.co.y + 0.5) / B.be), -0.3) * 0.9:   # 몸 끝을 넘는 긴 가슴지느러미(날치)도 몸 끝 폭으로
                 t = min(1.0, max(0.0, (v.co.y - py) / max(0.01, ph * 0.5)))
                 nm = 'Pec_R' if v.co.x > 0 else 'Pec_L'
                 return {nm: t, 'Root': 1 - t}
@@ -978,6 +979,10 @@ def apply_preview_materials(d, body, fins, tex_path):
             # Unity Fishing/FishFin: 알파만큼 반투명한 막 (얇은 막이라 뒤에서 빛이 비친다)
             nt.links.new(t.outputs['Alpha'], bsdf.inputs['Alpha'])
             bsdf.inputs['Transmission Weight'].default_value = 0.25
+        else:
+            # Unity Fishing/Fish의 점액 막(_Coat): 비늘 위 매끈한 막의 좁은 하이라이트·가장자리 반사
+            bsdf.inputs['Coat Weight'].default_value = 0.5
+            bsdf.inputs['Coat Roughness'].default_value = 0.08
         nm = nt.nodes.new('ShaderNodeNormalMap')
         nt2 = nt.nodes.new('ShaderNodeTexImage')
         nt2.image = nimg
@@ -1005,15 +1010,32 @@ def render_setup(res, transparent, samples=24):
     sc.render.engine = 'CYCLES'
     sc.cycles.device = 'CPU'
     sc.cycles.samples = samples
-    sc.cycles.use_denoising = False
+    sc.cycles.use_denoising = True   # 지느러미(반투명)·코팅 반사가 적은 샘플에서 모래알처럼 자글거렸다
     sc.render.resolution_x, sc.render.resolution_y = res
     sc.render.film_transparent = transparent
     sc.view_settings.view_transform = 'Standard'
     w = bpy.data.worlds.new('W')
     sc.world = w
     w.use_nodes = True
-    w.node_tree.nodes['Background'].inputs['Color'].default_value = (0.42, 0.55, 0.62, 1)
-    w.node_tree.nodes['Background'].inputs['Strength'].default_value = 0.9
+    # 하늘빛 그러데이션 (위 밝고 아래 어둡다): 젖은 몸·은빛 비늘에 비치는 주변 빛. 단색이면 반사가 밋밋했다
+    nt = w.node_tree
+    bg = nt.nodes['Background']
+    tc = nt.nodes.new('ShaderNodeTexCoord')
+    sep = nt.nodes.new('ShaderNodeSeparateXYZ')
+    ramp = nt.nodes.new('ShaderNodeValToRGB')
+    nt.links.new(tc.outputs['Generated'], sep.inputs[0])
+    # 월드의 Generated 좌표는 보는 방향(-1~1)이라 z를 0~1로 옮긴다: 아래 어두운 물빛 · 수평선 · 위 밝은 하늘
+    mr = nt.nodes.new('ShaderNodeMapRange')
+    mr.inputs['From Min'].default_value = -1.0
+    nt.links.new(sep.outputs['Z'], mr.inputs['Value'])
+    nt.links.new(mr.outputs['Result'], ramp.inputs['Fac'])
+    els = ramp.color_ramp.elements
+    els[0].position, els[0].color = 0.3, (0.05, 0.07, 0.08, 1)
+    els[1].position, els[1].color = 0.92, (1.0, 1.0, 1.0, 1)
+    mid = els.new(0.52)
+    mid.color = (0.36, 0.44, 0.5, 1)
+    nt.links.new(ramp.outputs['Color'], bg.inputs['Color'])
+    bg.inputs['Strength'].default_value = 1.0
     key = bpy.data.objects.new('Key', bpy.data.lights.new('Key', 'SUN'))
     key.data.energy = 3.2
     key.rotation_euler = (math.radians(40), math.radians(-25), math.radians(-30))
@@ -1052,8 +1074,10 @@ def side_dir(d):
     return (1, 0, 0)
 
 
-def render_icon(d, arm, body, fins, out):
-    cam = render_setup((256, 128), True, samples=20)
+def render_icon(d, arm, body, fins, out, big=None):
+    """도감 아이콘 256×128. 두 배로 렌더해 줄인다 (가장자리·지느러미 결이 깨끗하다). big: 큰 그림도 남길 경로 (모음 시트용)."""
+    from PIL import Image
+    cam = render_setup((512, 256), True, samples=24)
     pose_frame(arm, 'Idle_Hover', 0)
     sd = side_dir(d)
     look(cam, (sd[0] * 3, sd[1], sd[2] * 3), (0, 0, 0), ortho=1.06)
@@ -1061,6 +1085,10 @@ def render_icon(d, arm, body, fins, out):
         cam.rotation_euler = (0, 0, math.radians(-90))
     bpy.context.scene.render.filepath = out
     bpy.ops.render.render(write_still=True)
+    im = Image.open(out)
+    if big:
+        im.save(big)
+    im.resize((256, 128), Image.LANCZOS).save(out)
 
 
 def render_preview(d, arm, out_dir):
@@ -1102,18 +1130,29 @@ def render_anim_strip(d, arm, out_dir):
     sheet.save(os.path.join(out_dir, f'{d["id"]}_anim.png'))
 
 
-def contact_sheet(paths, out, cols=6, cw=256, ch=150):
-    """아이콘 모음 한 장 (docs/images). 칸마다 어종 Id."""
-    from PIL import Image, ImageDraw
+def contact_sheet(paths, out, cols=6, cw=320, ch=196):
+    """모음 한 장 (docs/images). 칸마다 그림 밑에 한글 이름과 Id.
+    예전에는 이름이 그림 위에 붙어서, 위 칸 그림 바로 밑의 다음 줄 이름을 그 그림 이름으로 읽기 쉬웠다 (무늬오징어 밑에 폭군삼치).
+    칸마다 옅은 판을 깔아 경계를 보이게 한다."""
+    from PIL import Image, ImageDraw, ImageFont
     rows = (len(paths) + cols - 1) // cols
-    sheet = Image.new('RGBA', (cols * cw, rows * ch), (34, 46, 56, 255))
+    sheet = Image.new('RGBA', (cols * cw, rows * ch), (26, 34, 42, 255))
+    draw = ImageDraw.Draw(sheet)
+    try:
+        font = ImageFont.truetype('C:/Windows/Fonts/malgunbd.ttf', 17)
+        small = ImageFont.truetype('C:/Windows/Fonts/malgun.ttf', 12)
+    except OSError:
+        font = small = ImageFont.load_default()
     for i, (sid, p) in enumerate(paths):
-        im = Image.open(p).convert('RGBA')
         x, y = (i % cols) * cw, (i // cols) * ch
-        sheet.alpha_composite(im, (x, y + 18))
-        ImageDraw.Draw(sheet).text((x + 8, y + 4), sid, fill=(220, 230, 235, 255))
+        draw.rounded_rectangle((x + 4, y + 4, x + cw - 4, y + ch - 4), 8, fill=(38, 50, 60, 255))
+        im = Image.open(p).convert('RGBA').resize((cw - 16, (cw - 16) // 2), Image.LANCZOS)
+        sheet.alpha_composite(im, (x + 8, y + 8))
+        name = FS.SPECIES[sid].get('name', sid) if sid in FS.SPECIES else sid
+        draw.text((x + 12, y + ch - 40), name, font=font, fill=(235, 240, 244, 255))
+        draw.text((x + 12, y + ch - 19), sid, font=small, fill=(140, 160, 172, 255))
     os.makedirs(os.path.dirname(out), exist_ok=True)
-    sheet.convert('RGB').save(out)
+    sheet.convert('RGB').save(out, optimize=True)
 
 
 def main():
@@ -1124,6 +1163,10 @@ def main():
     sheet = arg('--sheet')
     out_dir = os.path.abspath(arg('--out', os.path.join(ROOT, 'Screenshots', 'fish')))
     done = []
+    if sheet and '--sheet-only' in ARGS:
+        done = [(sid, os.path.join(out_dir, 'sheet', sid + '.png')) for sid in ids]
+        done = [x for x in done if os.path.exists(x[1])]
+        ids = []
     for sid in ids:
         d, arm, body, fins, lods, tris = build(sid)
         tex = write_textures(d)
@@ -1141,8 +1184,12 @@ def main():
         if icons or sheet:
             os.makedirs(OUT_ICON, exist_ok=True)
             ip = os.path.join(OUT_ICON, sid + '.png')
-            render_icon(d, arm, body, fins, ip)
-            done.append((sid, ip))
+            big = None
+            if sheet:
+                os.makedirs(os.path.join(out_dir, 'sheet'), exist_ok=True)
+                big = os.path.join(out_dir, 'sheet', sid + '.png')
+            render_icon(d, arm, body, fins, ip, big)
+            done.append((sid, big or ip))
     if sheet:
         contact_sheet(done, os.path.join(ROOT, sheet) if not os.path.isabs(sheet) else sheet)
         print('[fish] sheet', sheet, flush=True)

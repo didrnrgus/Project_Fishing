@@ -71,7 +71,7 @@ def enum_list(expr, table, any_label='전부'):
 def maps_of(expr):
     if expr is None:
         return ['hangang']
-    if expr.startswith('M('):
+    if expr.startswith('M(') or expr.startswith('new'):   # M("a", "b") · new[] { "a", "b" }
         return re.findall(r'"(\w+)"', expr)
     return list(GROUPS[expr]) if GROUPS[expr] else GROUPS[expr]
 
@@ -95,7 +95,7 @@ def map_adds(srcs):
     adds = {}
     for _, src in srcs:
         for blk in re.findall(r'MapAdds\s*=\s*\{(.*?)\};', src, re.S):
-            for sid, expr in re.findall(r'\("(\w+)",\s*(M\([^)]*\)|\w+)\)', blk):
+            for sid, expr in re.findall(r'\("(\w+)",\s*(M\([^)]*\)|new\[\]\s*\{[^}]*\}|\w+)\)', blk):
                 adds.setdefault(sid, []).extend(maps_of(expr) or [])
     return adds
 

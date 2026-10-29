@@ -27,7 +27,7 @@ SPECIES = {
                                  patterns=[('bands', dict(n=12, u=(0.25, 0.8), w=0.02, color='#7aa0c8', v=(0.35, 0.85), a=0.3)), ('sheen', 0.5)]),
                         eye=dict(s=0.1, z=0.2, r=0.018, iris='#22324a'), anim=dict(amp=0.9, freq=1.1)),
     # 황다랑어 (Thunnus albacares): 참다랑어보다 날씬, 낫처럼 길게 뻗은 노란 둘째 등·뒷지느러미, 옆구리 금빛 띠, 노란 토막지느러미
-    'yellowfintuna': dict(type='E', name='황다랑어', depth=0.23, width=0.16, tmax=0.4, ped=0.1, snout=0.75, mouth=0.05,
+    'yellowfintuna': dict(type='E', name='황다랑어', depth=0.23, width=0.16, tmax=0.4, ped=0.1, snout=0.92, mouth=0.05,
                           fins=[_fin('dorsal', (0.32, 0.43), 0.4, prof=[(0, 1.0), (1, 0.25)], spiny=True),
                                 _fin('dorsal', (0.52, 0.59), 1.15, prof=[(0, 1.0), (0.4, 0.45), (1, 0.12)], group='low'),
                                 _fin('anal', (0.56, 0.63), 1.05, prof=[(0, 1.0), (0.4, 0.45), (1, 0.12)]),
@@ -36,7 +36,7 @@ SPECIES = {
                           colors=P('#0e1a3c', '#8090a4', '#e8ecee', silver=0.8, metallic=0.45, fin_up=('#141e3c', '#0c1430', 0.9), fin_low=('#d8b028', '#f0cc38', 0.9),
                                    patterns=[('stripe', dict(v=0.62, w=0.035, color='#e8c030', a=0.7)), ('finlets', True), ('sheen', 0.5),
                                              ('bands', dict(n=14, u=(0.45, 0.85), w=0.012, color='#d8e0e8', v=(0.1, 0.45), a=0.4))]),
-                          eye=dict(iris='#202830'), anim=dict(amp=0.9, freq=1.6)),
+                          eye=dict(iris='#9aa2a8'), anim=dict(amp=0.9, freq=1.6)),
     # 와후 (Acanthocybium solandri): 아주 길쭉한 몸, 길고 뾰족한 주둥이, 낮고 긴 첫 등지느러미, 코발트빛 세로 줄무늬
     'wahoo': dict(type='E', name='와후', depth=0.11, width=0.085, tmax=0.42, body_end=0.82, ped=0.14, snout=0.95, mouth=0.05,
                   fins=[_fin('dorsal', (0.22, 0.56), 0.4, prof=[(0, 1.0), (0.15, 0.9), (1, 0.35)], spiny=True),
@@ -95,13 +95,13 @@ SPECIES = {
                                           patterns=[('bands', dict(n=24, u=(0.25, 0.9), w=0.016, color='#2a3e58', v=(0.35, 0.95), a=0.6)), ('finlets', True)]),
                                  eye=dict(iris='#c8c8b0'), anim=dict(amp=1.1, freq=1.4)),
     # 백다랑어 (Thunnus tonggol): 작고 날씬한 다랑어, 꼬리자루가 길다, 배에 흰 무늬, 노란 토막지느러미
-    'longtailtuna': dict(type='E', name='백다랑어', depth=0.2, width=0.14, tmax=0.38, body_end=0.8, ped=0.09, snout=0.78, mouth=0.05,
+    'longtailtuna': dict(type='E', name='백다랑어', depth=0.2, width=0.14, tmax=0.38, body_end=0.8, ped=0.09, snout=0.92, mouth=0.05,
                          fins=[_fin('dorsal', (0.3, 0.43), 0.4, prof=[(0, 1.0), (1, 0.25)], spiny=True), _fin('dorsal', (0.51, 0.58), 0.6, prof=[(0, 1.0), (1, 0.3)]),
                                _fin('anal', (0.55, 0.62), 0.55, prof=[(0, 1.0), (1, 0.3)]), _fin('caudal', h=0.4, shape='deepfork'),
                                _fin('pectoral', s=(0.26, 0.26), h=0.16, long=True), _fin('pelvic', s=(0.3, 0.3), h=0.06)],
                          colors=P('#142a4a', '#8a9aac', '#eceff0', silver=0.8, metallic=0.4, fin_up=('#1a2a48', '#10203a', 0.9), fin_low=('#a8a890', '#c8c098', 0.7),
                                   patterns=[('spots', dict(n=40, r=(3, 6), color='#f0f4f6', v=(0.05, 0.35), u=(0.4, 0.85), a=0.5)), ('finlets', True), ('sheen', 0.5)]),
-                         eye=dict(iris='#202830'), anim=dict(amp=0.95, freq=1.6)),
+                         eye=dict(iris='#9aa2a8'), anim=dict(amp=0.95, freq=1.6)),
     # 블루핀 트레발리 (Caranx melampygus): GT보다 날씬하고 머리가 덜 가파르다, 청동빛 몸에 검푸른 잔점, 전기처럼 파란 지느러미
     'bluefintrevally': dict(type='D', name='블루핀 트레발리', depth=0.32, width=0.12, snout=0.55, mouth=0.05, ped=0.13, scales=0,
                             fins=[_fin('dorsal', (0.3, 0.45), 0.3, prof=[(0, 0.6), (0.3, 1.0), (1, 0.4)], spiny=True),

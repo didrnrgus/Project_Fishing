@@ -39,11 +39,14 @@ Assets/
     Data/                        정적 데이터 테이블 (순수 C#)
       Enums.cs                   Habitat, TimeBand, Weather, BaitKind + 한글 이름
       FishDatabase.cs            어종 77종(한국·첫 해외 거점) + 잡동사니 6종 (맵·제철·어군 전용·먼바다 전용·괴물 어종 BossCoins). 바다 묶음 SouthSea·WestSea·EastSea·AllSeas, 미끼 판매 SeaMaps·FreshMaps.
-                                 정적 생성자가 아래 지역별 partial의 …Species 목록과 …MapAdds(이미 있는 어종이 새 맵에도 산다)를 합친다 → 모두 165종
+                                 정적 생성자가 아래 지역별 partial의 …Species 목록과 …MapAdds(이미 있는 어종이 새 맵에도 산다)를 합친다 → 모두 224종 (2026-10-29: Korea3·SeaAsia2·Africa 추가)
       FishDatabase.Korea2.cs     한국 7종 (황복·웅어·참다랑어 등, docs/fish-db 01)
       FishDatabase.SeaAsiaFresh.cs  동남아 민물 20종 (메콩 대형 메기·자이언트 바브·피라루쿠…, 앙코르·돈콘·방콕)
       FishDatabase.SeaAsia.cs    동남아 바다 27종 (돛새치·청새치·대왕바리·나폴레옹피시…)
       FishDatabase.Mediterranean.cs / .Mediterranean2.cs  지중해 34종 (덴텍스·갈색 그루퍼·미거·쏠배감펭…)
+      FishDatabase.Korea3.cs     한국 20종 (꺽지·쉬리·도치·아귀·홍어·참조기·붉바리·날치…)
+      FishDatabase.SeaAsia2.cs   동남아 16종 (흑기흉상어·골든 트레발리·타이탄 트리거피시·말레이 마시어…)
+      FishDatabase.Africa.cs     나일 10종 + 지중해 6종 (비키르·짐나르쿠스·파하카 복어·달고기·유럽성대…)
       GearDatabase.cs            낚싯대/릴/줄/배, 미끼(해체 미끼 5등급 포함), 음식 5종(FoodDef), 레벨 보상(LevelRewards)
       ItemDatabase.cs            가방 아이템 이름·설명
       CostumeDatabase.cs         의상 6부위 25벌 + 능력치
