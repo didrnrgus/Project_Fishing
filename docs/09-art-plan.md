@@ -1065,10 +1065,12 @@ sh tools/inspect.sh "seocheon:Pavilion:200:12:1.3;sentosa:merlion:210:5:1.0"    
 | 물가 길 | 이쪽 둔치 물가 길은 회색 아스팔트 3m + 민트색 가운데 선, 안쪽 길·샛길도 회색 아스팔트 (예전 붉은 탄성포장·청록 자전거도로) |
 | 강 건너 그물망 (`TallNet`) | 단풍 든 나무 위로 26m 쇠기둥이 9m마다 줄지어 선 그물망 (야구장 강 쪽, 탄천로 너머). 그물은 가는 줄 1.5m 격자 — 반투명 판은 멀리서 불투명한 벽처럼 보였다 |
 | 촬영 | 하류 장면 `72b`는 커진 버드나무에 가려 카메라를 둔치 안쪽으로 |
+| 보행교 끝 (사용자 지적: 다리 입구가 길을 침범) | 9m 경사로를 없애고 양 끝을 둔치 물가 길 가장자리에서 끝내 길에 T자로 닿게(길 높이), 상판은 가운데 수면 위 2.75m로 완만하게 솟는 아치 — 오르막·내리막. 둑 위 끝 경간 아치는 땅에 묻힘. 다리 입구 앞을 막던 벤치는 치우고 이쪽 벤치는 물가 길 안쪽 잔디로 |
 
 ![사송교 낮](images/72s2_tancheon_bridge_day_side.png) ![사송교 밤](images/72s_tancheon_bridge_night.png)
 ![보행교 낮](images/72y2_tancheon_footbridge_day.png) ![징검다리 낮](images/72x3_tancheon_stones_day.png)
 ![물가 길·사석](images/72aa_tancheon_path_riprap.png) ![그물망](images/72ab_tancheon_tall_net.png)
+![보행교 끝 T자](images/72y4_tancheon_footbridge_t.png) ![보행교 건너편 끝](images/72y3_tancheon_footbridge_end.png)
 
 ## 부록: 어종별 설계 시트 (조사 기록)
 

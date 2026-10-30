@@ -1281,14 +1281,20 @@ namespace Fishing.World
                     bmSteel.Block(at + q * new Vector3(lx, 0.62f, 0.27f), new Vector3(0.05f, 0.4f, 0.05f), 0.01f, q, c, c);
                 }
             }
-            // 산책로 물가 쪽 벤치 (물을 본다)
+            // 산책로 벤치 (물을 본다): 이쪽은 물가 길 안쪽 잔디(물가엔 사석 줄, 사용자 낮 사진), 맞은편은 물가 쪽. 보행교·징검다리 입구 앞은 비운다
+            bool Entrance(float x) => Mathf.Abs(x - KoreaCoasts.TcFootX) < 6f || Mathf.Abs(x - KoreaCoasts.TcStonesX) < 6f;
             for (float x = -200f; x < 200f; x += R(22f, 34f))
             {
-                if (UnderFootRamp(x, -44f) || Mathf.Abs(x - KoreaCoasts.TcStonesX) < 5f) continue;
-                float z = NearZ(x, 7f);
-                Bench(new Vector3(x, H(x, z), z), 180f);
-                float zf = FarZ(x + 9f, 7f);
-                Bench(new Vector3(x + 9f, H(x + 9f, zf), zf), 0f);
+                if (!Entrance(x))
+                {
+                    float z = NearZ(x, 11.6f);
+                    Bench(new Vector3(x, H(x, z), z), 180f);
+                }
+                if (!Entrance(x + 9f))
+                {
+                    float zf = FarZ(x + 9f, 7f);
+                    Bench(new Vector3(x + 9f, H(x + 9f, zf), zf), 0f);
+                }
             }
             // 파고라 (등나무 그늘 쉼터): 기둥 6 + 각재 지붕살
             foreach (var (px, near) in new[] { (-48f, true), (40f, true), (-60f, false), (150f, false) })
@@ -1595,18 +1601,27 @@ namespace Fishing.World
         /// <summary>
         /// 탄천 보행교 (사용자가 직접 찍은 실물 사진, 2026-10-30: 운동장 앞 조깅 다리). 베이지 콘크리트의 낮은 연속 아치교 —
         /// 경간 8.4m 남짓 여덟, 아치는 수면 밑에서 솟는 활꼴(원호, 높이:폭 ≈ 1:3)이라 물에 비치면 둥근 눈이 줄지어 보인다.
-        /// 교각 사이는 꽉 찬 벽이고 위아래 물 쪽으로 낮은 둥근 물가름이 수면 위 0.75m까지 나왔다. 상판은 수면 위 2.6m로 낮고 거의 평평, 옆면 위엔 이음매가 보이는 띠(상판 끝).
+        /// 교각 사이는 꽉 찬 벽이고 위아래 물 쪽으로 낮은 둥근 물가름이 수면 위 0.75m까지 나왔다. 상판은 양 끝 길 높이에서 가운데 수면 위 2.75m로 완만하게 솟고, 옆면 위엔 이음매가 보이는 띠(상판 끝).
         /// 난간은 가볍다: 가장자리 낮은 턱 위에 밤색 철 기둥이 2.4m마다, 사이에 가는 와이어 세 가닥 (보이지 않는 벽이 떨어지지 않게 막는다), 가운데쯤 주황 구명환.
-        /// 상류 쪽 가장자리엔 11m마다 등롱 가로등이 서고 밤엔 상판에 동그란 빛 웅덩이가 진다. 양쪽 끝은 둔치 산책로로 이어지는 경사. 낮엔 물때 낀 회색 콘크리트 (사용자 낮 사진).
+        /// 상류 쪽 가장자리엔 11m마다 등롱 가로등이 서고 밤엔 상판에 동그란 빛 웅덩이가 진다.
+        /// 양 끝은 둔치 물가 길 가장자리에 T자로 닿고(길 높이), 상판은 가운데(수면 위 2.75m)로 완만하게 솟는 아치 — 오르막·내리막 (사용자 지적: 예전 9m 경사로가 길을 덮었다). 낮엔 물때 낀 회색 콘크리트 (사용자 낮 사진).
         /// (예전: 막돌 마감 + 돌 난간·철제 난간 — 실물과 달라 바꿨다)
         /// </summary>
         void Footbridge()
         {
             float x = KoreaCoasts.TcFootX;
             const float W = 3.8f, Curb = 0.14f, Fascia = 0.55f, PierW = 1.3f;
-            float zA = NearZ(x, 3.5f), zB = FarZ(x, 3.5f);
-            float deckEnd = Water + 2.6f;
-            float Deck(float z) => deckEnd + 0.12f * Mathf.Sin(Mathf.PI * Mathf.Clamp01((z - zA) / (zB - zA)));
+            // 양 끝은 둔치 물가 길 가장자리에서 끝난다 — 길에 T자로 닿는다 (예전 9m 경사로가 길을 덮었다는 사용자 지적)
+            float zA = NearZ(x, 7.4f), zB = FarZ(x, 7.6f);
+            float endA = H(x, zA) + 0.07f, endB = H(x, zB) + 0.07f;
+            const float Mid = 2.75f;   // 가운데 상판 높이 (수면 위)
+            // 상판: 양 끝 길 높이에서 가운데로 솟는 완만한 아치 (오르막·내리막, 사용자 사진)
+            float Deck(float z)
+            {
+                float t = Mathf.Clamp01((z - zA) / (zB - zA));
+                float baseY = Mathf.Lerp(endA, endB, t);
+                return baseY + (Water + Mid - (endA + endB) * 0.5f) * (1f - (2f * t - 1f) * (2f * t - 1f));
+            }
             var concBase = Mats.Weathered("concrete", new Color(0.64f, 0.62f, 0.58f), 2.5f, 0.12f, 1f, 0.6f, 0.25f, new Color(0.3f, 0.34f, 0.22f), 0.45f, 0f, "wallconcrete");   // 회색 콘크리트에 물때 (사용자 낮 사진)
             var conc = Mats.VertexAO(concBase);
             var paving = Mats.Weathered("concrete", new Color(0.74f, 0.73f, 0.7f), 2f, 0.12f, 0.2f, 0.1f, 0.05f, null, 0.5f);
@@ -1623,13 +1638,16 @@ namespace Fishing.World
             float sl = (zB - zA) / spans;
             float spring = Water - 0.15f;
             float half = (sl - PierW) * 0.5f;
-            // 아치 밑선: 교각 면(spring)에서 원호로 솟아 경간 가운데 상판 띠 바로 밑(crown)까지
+            // 아치 밑선: 교각 면(spring)에서 원호로 솟아 경간 가운데 상판 띠 바로 밑(crown)까지. 둑 위 끝 경간은 낮아 아치가 땅에 묻힌다
             float Soffit(float z)
             {
-                float d = Mathf.Abs(Mathf.Repeat(z - zA, sl) - sl * 0.5f);
+                int k = Mathf.Clamp(Mathf.FloorToInt((z - zA) / sl), 0, spans - 1);
+                float zc = zA + (k + 0.5f) * sl;
+                float d = Mathf.Abs(z - zc);
                 if (d >= half) return spring;
-                float crown = Deck(z) - Fascia;
+                float crown = Deck(zc) - Fascia;
                 float rise = crown - spring;
+                if (rise < 0.4f) return spring;
                 float r = (half * half + rise * rise) / (2f * rise);
                 return crown - (r - Mathf.Sqrt(r * r - d * d));
             }
@@ -1681,17 +1699,11 @@ namespace Fishing.World
                     bm.Block(new Vector3(x + sg * (hw + 0.01f), (a.y + b.y) * 0.5f - Fascia * 0.5f + 0.02f, (a.z + b.z) * 0.5f), new Vector3(0.1f, Fascia, d.magnitude - 0.03f), 0.015f,
                         Quaternion.LookRotation(d.normalized), c * 0.97f, c * 0.9f);
                 }
-            // 양 끝: 둑에 박힌 교대 + 산책로로 이어지는 경사
+            // 양 끝: 둑에 박힌 교대 (다리 밑 안쪽으로만, 길을 침범하지 않게)
             foreach (var (zEnd, dir) in new[] { (zA, -1f), (zB, 1f) })
             {
-                float g0 = H(x, zEnd);
-                bm.Block(new Vector3(x, (deckEnd + Mathf.Min(g0, Water) - 1f) * 0.5f, zEnd + dir * 0.6f), new Vector3(W, deckEnd - Mathf.Min(g0, Water) + 1f, 1.6f), 0.08f, Quaternion.identity, c, wet);
-                float zFar = zEnd + dir * 9f;
-                float g = H(x, zFar) + 0.04f;
-                var a = new Vector3(x, deckEnd, zEnd);
-                var b = new Vector3(x, g, zFar);
-                var d = b - a;
-                bmDeck.Block((a + b) * 0.5f + Vector3.down * 0.5f, new Vector3(W, 1f, d.magnitude + 0.1f), 0.03f, Quaternion.LookRotation(d.normalized), c, wet);
+                float top = Deck(zEnd), bot = Mathf.Min(H(x, zEnd), Water) - 1f;
+                bm.Block(new Vector3(x, (top + bot) * 0.5f - 0.01f, zEnd - dir * 0.75f), new Vector3(W, top - bot - 0.02f, 1.5f), 0.04f, Quaternion.identity, c, wet);
             }
             var go = bm.Emit(root, "FootBridge", conc);
             go.AddComponent<MeshCollider>().sharedMesh = go.GetComponent<MeshFilter>().sharedMesh;
