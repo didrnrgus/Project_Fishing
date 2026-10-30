@@ -176,7 +176,7 @@ class Body:
 
 
 def body_uv(d, s, a):
-    u = s * 0.75
+    u = min(s * 0.75, 0.745)   # 꼬리 끝이 바로 옆 지느러미 칸 색을 끌어오지 않게 (꼬리 끝에 검은 점)
     if d.get('flat'):
         v = a / (2 * math.pi)
     else:
@@ -187,6 +187,13 @@ def body_uv(d, s, a):
 def fish_tex_smooth(e0, e1, x):
     t = min(1.0, max(0.0, (x - e0) / (e1 - e0 + 1e-9)))
     return t * t * (3 - 2 * t)
+
+
+def tail_lobe(d):
+    """꼬리지느러미 밑동을 덮는 비늘 살의 길이 (몸 길이 비율). 장어·상어·가오리·두족류는 몸이 꼬리로 그대로 이어져 없다."""
+    if d['type'] == 'G' or d.get('shark') or d.get('ray') or d.get('ceph') or not any(f['kind'] == 'caudal' for f in d['fins']):
+        return 0.0
+    return d.get('tail_lobe', 0.04)
 
 
 def build_body_mesh(d, B):
@@ -206,6 +213,7 @@ def build_body_mesh(d, B):
     nr = len(ss)
     relief = not flat and not d.get('ceph')
     shark = d.get('shark')
+    lobe = tail_lobe(d)
     if relief:
         es, ev, eru, erv = fish_tex.eye_uv(d)
         er = d['eye']['r']
@@ -251,6 +259,15 @@ def build_body_mesh(d, B):
                     if jaw:
                         # 아래턱이 위턱보다 앞으로 튀어나온다 (아귀): 입 선 아래쪽 앞부분을 앞으로 민다
                         y -= jaw * fish_tex_smooth(0.02, -0.06, md) * fish_tex_smooth(mlen, 0.0, s)
+            if lobe:
+                # 꼬리자루 끝: 비늘 덮인 살이 꼬리지느러미 밑동을 볼록한 초승달로 덮는다 (가운데가 가장 뒤로, 위아래 가장자리는 그대로).
+                # 살 끝은 얇아져 지느러미에 붙는다. 예전에는 몸이 세로 한 줄로 뚝 끊기고 네모난 지느러미가 꽂혀 있었다
+                w = fish_tex_smooth(0.84, 1.0, s)
+                if w > 0:
+                    hz = B.top(s) if z > B.zc(s) else B.bot(s)
+                    czr = min(1.0, abs(z - B.zc(s)) / hz) if hz > 1e-7 else 0.0
+                    y += lobe * w * (1 - czr ** 2)
+                    x *= 1 - 0.7 * w ** 0.7 * (1 - czr ** 2)   # 너무 얇으면 지느러미 판이 살을 뚫고 나온다
             if relief and abs(x) > 1e-7:
                 # 눈두덩: 눈 둘레 뼈 테가 살짝 솟고 바로 붙은 자리는 꺼진다 (눈이 머리에 붙인 단추처럼 보이지 않게)
                 v = body_uv(d, s, a)[1]
@@ -263,7 +280,7 @@ def build_body_mesh(d, B):
     nose = len(verts)
     verts.append((0.0, B.y(0.0), B.zc(0.0)))
     tail = len(verts)
-    verts.append((0.0, B.y(1.0) + 0.002, B.zc(1.0)))
+    verts.append((0.0, B.y(1.0) + 0.003 + lobe, B.zc(1.0)))
     loops_uv = []
     for i in range(nr - 1):
         for k in range(NA):
@@ -279,7 +296,7 @@ def build_body_mesh(d, B):
         loops_uv.append([(0.0, 0.5), body_uv(d, ss[0], a2), body_uv(d, ss[0], a1)])
         base = (nr - 1) * NA
         faces.append((tail, base + k, base + k2))
-        loops_uv.append([(0.75, 0.5), body_uv(d, 1.0, a1), body_uv(d, 1.0, a2)])
+        loops_uv.append([(0.745, 0.5), body_uv(d, 1.0, a1), body_uv(d, 1.0, a2)])
     return verts, faces, loops_uv
 
 
@@ -374,9 +391,17 @@ def make_fins(d, B):
             def ctz(vc, shape=shape, hc=hc):
                 k = {'round': 0.85, 'point': 0.5, 'truncate': 0.95}.get(shape, 1.0)
                 return vc * hc * k
-            def base(u, yb=yb, zb=zb, ph=ph):
+            # 위아래 바깥 줄기(전류조)는 꼬리자루 등·배 가장자리를 따라 앞에서부터 짧게 붙기 시작한다:
+            # 지느러미 윤곽이 꼬리자루에서 매끈하게 벌어진다 (같은 높이의 네모 판이 꽂힌 것처럼 보이지 않게)
+            pr = 0.0 if d.get('shark') or d['type'] == 'G' else f.get('procurrent', 0.075)
+            def base(u, yb=yb, zb=zb, ph=ph, pr=pr):
                 vc = u * 2 - 1
-                return (0.0, yb, zb + vc * ph)
+                t = fish_tex_smooth(0.5, 1.0, abs(vc)) if pr else 0.0
+                if t <= 0:
+                    return (0.0, yb, zb + vc * ph)
+                sb = 1.0 - pr * t
+                ze = B.zc(sb) + math.copysign((B.top(sb) if vc > 0 else B.bot(sb)) - 0.0015, vc)
+                return (0.0, yb + (B.y(sb) - yb) * t, (zb + vc * ph) * (1 - t) + ze * t)
             def tip(u, yb=yb, zb=zb):
                 vc = u * 2 - 1
                 return (0.0, yb + cl(vc), zb + ctz(vc))
