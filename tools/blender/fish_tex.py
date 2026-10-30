@@ -644,6 +644,8 @@ def paint(d, seed=0):
         c *= (0.78 + 0.3 * membrane)[..., None]           # 줄기는 짙고 막은 밝다
         c *= (1 - 0.25 * rays * seg)[..., None]           # 마디
         c *= (0.92 + 0.12 * noise(FWb, FHb, 10, rng.integers(1 << 30), 2))[..., None]
+        if not d.get('ceph'):
+            blend(c, side * 0.8 + back * 0.2, smooth(0.3, 0.0, fv) ** 1.5 * 0.55)   # 밑동은 살이 있어 몸 색으로 이어진다
         blend(c, tip * 0.6, smooth(0.8, 0.97, fv) * 0.35 * (0.3 if d.get('ceph') else 1))  # 끝 가장자리가 짙다
         if d.get('ceph'):
             blend(c, hexrgb(col['back']), smooth(0.5, 0.62, noise(FWb, FHb, 14, rng.integers(1 << 30), 3)) * 0.35)
