@@ -81,8 +81,17 @@ VRoid 프로젝트(pixiv)가 VRoid Studio 알파 시절 샘플로 **CC0** 공개
 ```
 
 - 게임 폴더(`StreamingAssets/Characters/characters.json`)가 기본, 문서 폴더에 같은 이름 파일이 있으면 **적은 항목만** 덮는다 (`npc`는 합치고 같은 이름은 문서 폴더가 이긴다).
-- 파일 이름 → id: 문서 폴더에 있으면 `user/`, 없으면 `builtin/`. 그래서 같은 이름의 `.vrm`을 문서 폴더에 넣기만 해도 기본 캐릭터가 바뀐다.
-- NPC는 `npc` 이름 지정 → 성별 목록에서 이름의 FNV 해시로 고르기(실행마다 같다) → 다른 성별 목록 → 기본 캐릭터.
+- 파일 이름 → id: 문서 폴더에 있으면 `user/`, 추가 캐릭터(정보 있는 것)면 `pack/`, 아니면 `builtin/`. 그래서 같은 이름의 `.vrm`을 문서 폴더에 넣기만 해도 기본 캐릭터가 바뀐다.
+- NPC는 `npc` 이름 지정 → 성별 목록(+ 추가 캐릭터 중 그 성별)에서 이름의 FNV 해시로 고르기(실행마다 같다) → 다른 성별 목록 → 기본 캐릭터.
+
+### 추가 캐릭터 폴더 (CharacterPack, 2026-10-30)
+
+- 게임 폴더(`ProjectFishing.exe` 옆)의 `Characters`, 에디터는 `Builds/Windows/Characters`. 빌드(StreamingAssets)에 넣지 않고 저장소에도 안 올라간다(`.gitignore` `Builds/`) — 재배포 허락이 애매한 남의 모델(VRoid Hub)을 공개 저장소 밖에서 쓰는 자리.
+- `파일.vrm` + 같은 이름 `파일.json`(`name`·`gender`·`author`·`url`·`license`·`credit`·`brightness`)이 둘 다 있어야 쓴다. 정보 없는 `.vrm`은 `CharacterPack.Warnings` → 캐릭터 창 노란 글씨.
+- `gender`가 `female`/`male`이면 그 성별 NPC 후보에 더한다. 이름·만든 사람은 정보 파일이 VRM 메타를 이긴다(메타는 일본어라 글꼴에 없는 글자가 많다).
+- 캐릭터 창: `추가 캐릭터` 표시, 목록 위 [열기](폴더가 없으면 만든다), [새로고침]이 폴더를 다시 훑는다. 목록은 정보 파일로 이름·만든 사람을 보여 주고 VRM은 **고를 때만** 읽는다 (처음엔 탭을 열 때 15개를 한꺼번에 읽어 멈춘 듯했다).
+  - ![추가 캐릭터 로지를 고른 캐릭터 창](images/21e_character_pack.png)
+- 첫 묶음: VRoid Hub에서 다운로드·재배포·개조 허락, 연령 제한 없는 여캐 15명(사용자가 썸네일 그리드에서 고름). Claude in Chrome으로 검색 API(`/api/search/character_models`, `X-Api-Version: 11`)를 읽어 이용 조건을 거르고 모델 페이지에서 받았다.
 - JSON이 깨졌거나 적힌 파일이 없으면 `CharacterRoster.Warnings` → 캐릭터 창 맨 위 노란 글씨 + 로그.
 - `brightness`: `[{ "file": "AvatarSample_G.vrm", "value": 0.7 }]` — 모델 밝기 배수(0.2~1.5). 읽을 때 한 번 원본 재질의 MToon `_Color`·`_ShadeColor`·`_EmissionColor`·`_MatcapColor`에 곱한다(`VrmLoader.ScaleBrightness`, 복제·옷 주인이 같은 재질을 쓴다). 문서 폴더 것과 합치고 같은 파일은 문서 폴더가 이긴다. 다시 켜야 바뀐다.
   - 2026-10-30 "AvatarSample G가 너무 밝다": 흰 머리(바탕 0.95, 머리 발광 0.92 — 다른 샘플은 0.25 안팎)·흰 원피스·흰 스타킹이라 밤 달빛·가로등 아래서도 혼자 하얗게 떠 보였다. 발광만 줄여 보니 거의 그대로(발광 텍스처가 머리 결 줄무늬뿐) → 모델 전체 0.7. Neutral 톤매핑이 밝은 쪽을 눌러서 0.78은 표가 덜 났다.

@@ -408,6 +408,15 @@ namespace Fishing.UI
                 CharacterRoster.Reload();
                 p.SetCharacterModel(p.Data.vrm, p.Data.vrmFemale); // 바뀐 파일·기본 캐릭터로 다시 입힌다
             }, 676, 138, null, true, 15);
+            // 추가 캐릭터: 게임 폴더/Characters, 빌드에 넣지 않고 정보 파일(.json)이 있는 것만 (CharacterPack)
+            var packRow = rows.Next(36, 4);
+            Cell(packRow, $"<size=14><color=#a0b0c0>추가 캐릭터: 게임 폴더의 <b>Characters</b>에 <b>파일.vrm</b>과 정보 <b>파일.json</b>을 함께 넣으면 쓸 수 있어요 ({CharacterPack.Entries.Count}명).</color></size>", 0, 666, 14)
+                .alignment = UIFactory.Align(TextAnchor.MiddleLeft);
+            RowButton(packRow, "열기", () =>
+            {
+                try { System.IO.Directory.CreateDirectory(CharacterPack.Folder); } catch (System.Exception e) { Debug.LogWarning($"[Dev] 추가 캐릭터 폴더를 만들지 못함: {e.Message}"); }
+                Application.OpenURL("file:///" + CharacterPack.Folder.Replace('\\', '/'));
+            }, 676, 138, null, true, 15);
             foreach (var w in CharacterRoster.Warnings)
             {
                 var warn = rows.Next(30, 2);
@@ -427,14 +436,17 @@ namespace Fishing.UI
             foreach (var id in ids)
             {
                 // 이름·만든 사람·키를 보여 주려고 뒤에서 읽는다. 게임과 함께 온 모델은 고를 때만 읽는다 (11개를 다 읽으면 메모리가 크다)
+                // 추가 캐릭터도 고를 때만 읽는다 (이름·만든 사람은 정보 .json에 있다, 15개를 한꺼번에 읽으면 멈춘 듯 느려졌다)
                 if (id.StartsWith("user/") || id == cur) VrmCharacters.Request(id);
                 var info = VrmCharacters.GetInfo(id);
+                var pack = id.StartsWith("pack/") ? CharacterPack.Find(id.Substring(5)) : null;
                 var row = rows.Next(66, 4);
                 UIFactory.RowBg(row, id == cur);
-                string title = Printable(info?.Title) ?? DisplayName(id);
-                string sub = info == null ? "게임과 함께 온 캐릭터" : info.Loading ? "읽는 중…" : info.Error != null ? $"<color=#ff9070>읽기 실패: {info.Error}</color>"
+                string title = Printable(info?.Title) ?? Printable(pack?.name) ?? DisplayName(id);
+                string sub = info == null ? (pack == null ? "게임과 함께 온 캐릭터" : Printable(pack.author) is string pa ? "만든 사람 " + pa : "만든 사람 모름")
+                    : info.Loading ? "읽는 중…" : info.Error != null ? $"<color=#ff9070>읽기 실패: {info.Error}</color>"
                     : $"{(Printable(info.Author) is string au ? "만든 사람 " + au : "만든 사람 모름")} · 키 {info.Height:0.00}m{PermissionNote(info)}";
-                string src = id.StartsWith("builtin/") ? "  <color=#80c0ff>기본 제공</color>" : "";
+                string src = id.StartsWith("builtin/") ? "  <color=#80c0ff>기본 제공</color>" : id.StartsWith("pack/") ? "  <color=#a0e080>추가 캐릭터</color>" : "";
                 Cell(row, $"<b>{title}</b>{src}\n<size=14><color=#8090a0>{sub}</color></size>", 20, 560, 19).alignment = UIFactory.Align(TextAnchor.MiddleLeft);
                 if (id == cur) RowButton(row, "사용 중", null, 600, 210, UIFactory.TabOn, false);
                 else RowButton(row, "고르기", () => { p.SetCharacterModel(id, p.Data.vrmFemale); Game.Sound.Coin(); }, 600, 210, null, info?.Error == null);
