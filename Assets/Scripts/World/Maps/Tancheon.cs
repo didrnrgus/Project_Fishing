@@ -254,6 +254,7 @@ namespace Fishing.World
             Stadium(new Vector3(-48f, CityY, 172f));
             DroneShow.Create(_root, new Vector3(-48f, CityY + 94f, 172f), 0f).Height = 88f;   // 운동장 위 밤하늘 드론쇼 (사용자 요청)
             Ballpark(new Vector3(84f, CityY, 112f));
+            TallNet();
             Gymnasium(new Vector3(-188f, CityY, 160f));
             City();
             Skyline();
@@ -450,22 +451,26 @@ namespace Fishing.World
             Mathf.Abs(x - KoreaCoasts.TcFootX) < 3.2f && z > -53f && z < 34f;
 
         /// <summary>
-        /// 둔치 길 (사용자 사진: 물가 쪽 붉은 탄성포장 산책로, 그 뒤 청록 자전거도로(흰 가운데 점선·가장자리 선), 맞은편은 마사토 산책로).
+        /// 둔치 길 (사용자 낮 사진 2026-10-30: 이쪽 물가 길은 회색 아스팔트에 민트색 가운데 선, 안쪽 길도 회색 아스팔트(노란 가운데 점선·흰 가장자리 선);
+        /// 맞은편은 마사토 산책로 + 청록 자전거도로). 예전 이쪽 붉은 탄성포장·청록 자전거도로는 실물과 달라 바꿨다.
         /// 지형 밖으로도 x ±520까지 이어 그린다.
         /// </summary>
         void Paths()
         {
-            var red = Mats.Weathered("asphalt", new Color(0.62f, 0.3f, 0.26f), 3f, 0.1f, 0f, 0f, 0.05f, null, 0.2f);
             var masa = Mats.Weathered("aggregate", new Color(0.78f, 0.7f, 0.56f), 2.5f, 0.05f, 0f, 0f, 0.1f, null, 0.3f);
             var bike = Mats.Weathered("asphalt", new Color(0.22f, 0.5f, 0.52f), 4f, 0.12f, 0f, 0f, 0.05f, null, 0.15f);
+            var asph = Mats.Weathered("asphalt", new Color(0.36f, 0.37f, 0.38f), 4f, 0.1f, 0f, 0f, 0.05f, null, 0.45f);
+            var mint = Mats.Lit(new Color(0.42f, 0.76f, 0.7f), 0.25f);
             var white = Mats.Lit(new Color(0.9f, 0.9f, 0.86f), 0.3f);
             var yellow = Mats.Lit(new Color(0.92f, 0.72f, 0.18f), 0.3f);
             float nWalk(float x) => NearZ(x, 9f);
             float nBike(float x) => NearZ(x, 18f);
             float fWalk(float x) => FarZ(x, 9f);
             float fBike(float x) => FarZ(x, 18f);
-            Strip("WalkNear", nWalk, 2.6f, -Ext, Ext, red, 0.04f);
-            Strip("BikeNear", nBike, 4.6f, -Ext, Ext, bike, 0.05f);
+            // 이쪽 둔치 (사용자 낮 사진): 물가 길은 회색 아스팔트에 민트색 가운데 선, 안쪽 길도 회색 아스팔트
+            Strip("WalkNear", nWalk, 3f, -Ext, Ext, asph, 0.04f);
+            Line(nWalk, 0f, 0.16f, -Ext, Ext, mint);
+            Strip("BikeNear", nBike, 4.6f, -Ext, Ext, asph, 0.05f);
             Strip("WalkFar", fWalk, 2.6f, -Ext, Ext, masa, 0.04f);
             Strip("BikeFar", fBike, 4.6f, -Ext, Ext, bike, 0.05f);
             foreach (var zf in new System.Func<float, float>[] { nBike, fBike })
@@ -488,7 +493,7 @@ namespace Fishing.World
                         pts.Face(new Vector3(x - 0.7f, y, z), new Vector3(x + 0.7f, y, z), new Vector3(x + 0.7f, H(x, z + 1.5f) + 0.03f, z + 1.5f),
                             new Vector3(x - 0.7f, H(x, z + 1.5f) + 0.03f, z + 1.5f), Vector3.up, Color.white);
                     }
-                    var g = pts.Emit(_root, "SidePath", near ? red : masa);
+                    var g = pts.Emit(_root, "SidePath", near ? asph : masa);
                     if (g != null) g.AddComponent<MeshCollider>().sharedMesh = g.GetComponent<MeshFilter>().sharedMesh;
                 }
             }
@@ -566,6 +571,26 @@ namespace Fishing.World
                     _b.Props.Boulder(new Vector3(x, Water + R(-0.25f, 0.2f), z), R(0.55f, 1.3f), rock);
                 }
             }
+            // 물가 길 가장자리 사석 (사용자 낮 사진: 길과 물·갈대 사이에 각진 회색 바위가 줄지어 길을 받친다) — 시작 둔치·NPC 자리·물가 시설 앞은 비운다
+            var slab = Mats.VertexAO(Mats.Weathered("granite", new Color(0.74f, 0.74f, 0.72f), 1.6f, 0.22f, 0.5f, 0.35f, 0.2f, null, 0.8f, 0f, null, 1.5f));
+            var bmRock = new BlockMesh();
+            float kayakX = FestX1 - 12f;
+            for (float x = -205f; x < 205f; x += R(0.45f, 0.8f))
+            {
+                if (x > -24f && x < 18f) continue;
+                if (Mathf.Abs(x - KoreaCoasts.TcStonesX) < 4f || Mathf.Abs(x - KoreaCoasts.TcWeirX) < 6f || Mathf.Abs(x - kayakX) < 4f) continue;
+                float d = R(5.4f, 7.7f);
+                float z = NearZ(x, d);
+                if (UnderFootRamp(x, z)) continue;
+                bool npc = false;
+                foreach (var n in _b.Spec.Npcs) if (Mathf.Abs(n.Pos.x - x) < 2.5f) npc = true;
+                if (npc) continue;
+                // 넓적하고 모난 판돌이 반쯤 묻혀 비스듬히 겹친다
+                var tone = Color.Lerp(new Color(0.62f, 0.64f, 0.66f), new Color(1f, 1f, 0.97f), R(0f, 1f));
+                bmRock.Block(new Vector3(x, H(x, z) - R(0.05f, 0.15f), z), new Vector3(R(0.8f, 1.8f), R(0.4f, 0.6f), R(0.6f, 1.2f)), R(0.02f, 0.05f),
+                    Quaternion.Euler(R(-22f, 22f), R(-40f, 40f), R(-18f, 18f)), tone, new Color(0.35f, 0.36f, 0.34f));
+            }
+            bmRock.Emit(_root, "PathRiprap", slab);
             // 보 아래 여울: 물 위로 머리를 내민 돌
             for (int i = 0; i < 46; i++)
             {
@@ -1404,14 +1429,14 @@ namespace Fishing.World
         /// 징검다리 (사용자가 직접 찍은 실물 사진 + 위성 사진 탑뷰, 2026-10-30): 길쭉한 화강석 판(길을 가로질러 1.3m × 0.78m)이
         /// **두 줄 나란히 사다리 가로대처럼** 1.15m마다 놓였다 — 같은 줄 판 사이 35cm 틈으로 물이 빠지고, 두 줄 사이엔 15cm 좁은 틈.
         /// 판은 모두 같은 쪽으로 15° 비스듬해 위에서 보면 두 줄이 조금 어긋나 보인다. 길 전체는 완만한 S자로 휜다 (±1.25m).
-        /// 윗면은 곰보 진 밝은 회색 화강석, 수면 위 30cm로 두툼하고 옆면은 젖어 어둡다. 판마다 높이·기울기가 조금씩 다르고 가끔 하나가 내려앉았다.
+        /// 윗면은 정으로 쪼은 베이지빛 화강석, 수면 위 45cm로 두툼하고 옆면은 젖어 어둡다. 판마다 높이·기울기가 조금씩 다르고 가끔 하나가 내려앉았다.
         /// 옆 여울엔 막돌이 흩어져 물살이 부서진다. 양 끝은 콘크리트 계단 참. 걷는 받침은 줄과 줄을 잇는 보이지 않는 판.
         /// (예전: 화강석 지그재그 한 줄 + 너럭돌 → 좌우 반 칸 엇갈림 — 사진을 잘못 읽었다는 사용자 지적, 위성 사진으로 바로잡음)
         /// </summary>
         void SteppingStones()
         {
             float x0 = KoreaCoasts.TcStonesX;
-            var block = Mats.VertexAO(Mats.Weathered("granite", new Color(0.7f, 0.69f, 0.66f), 0.9f, 0.14f, 1f, 0.3f, 0.3f, new Color(0.28f, 0.32f, 0.22f), 0.7f, 0f, "concrete", 1.5f));
+            var block = Mats.VertexAO(Mats.Weathered("granite", new Color(0.8f, 0.76f, 0.67f), 0.9f, 0.12f, 1f, 0.3f, 0.2f, new Color(0.3f, 0.32f, 0.22f), 0.75f, 0f, "sandstone", 1.4f));   // 베이지빛 거친 화강석 (사용자 낮 사진)
             var field = Mats.VertexAO(Mats.Weathered("granite", new Color(0.66f, 0.64f, 0.6f), 1.4f, 0.1f, 1f, 0.1f, 0.45f, new Color(0.3f, 0.36f, 0.2f), 0.5f, 0f, null, 1.35f));
             var conc = Mats.VertexAO(Mats.Weathered("concrete", new Color(0.8f, 0.79f, 0.75f), 2f, 0.12f, 1f, 0.3f, 0.2f, null, 0.5f));
             var bmCut = new BlockMesh();
@@ -1421,7 +1446,7 @@ namespace Fishing.World
             var wet = new Color(0.3f, 0.32f, 0.27f);
             var mossy = new Color(0.55f, 0.58f, 0.48f);
             float z0 = NearZ(x0, 1.2f), z1 = FarZ(x0, 1.2f);
-            float top = Water + 0.3f;
+            float top = Water + 0.45f;
             // 길 가운데 x: 완만한 S자로 휜다 (최대 ±1.25m, 위성 사진)
             float Mid(float z) => x0 + 1.1f * Mathf.Sin(z * 0.075f + 0.7f) + 0.15f * Mathf.Sin(z * 0.17f + 2.1f);
             var steps = new List<Vector3>();   // 디딤 자리 (줄 가운데)
@@ -1571,8 +1596,8 @@ namespace Fishing.World
         /// 탄천 보행교 (사용자가 직접 찍은 실물 사진, 2026-10-30: 운동장 앞 조깅 다리). 베이지 콘크리트의 낮은 연속 아치교 —
         /// 경간 8.4m 남짓 여덟, 아치는 수면 밑에서 솟는 활꼴(원호, 높이:폭 ≈ 1:3)이라 물에 비치면 둥근 눈이 줄지어 보인다.
         /// 교각 사이는 꽉 찬 벽이고 위아래 물 쪽으로 낮은 둥근 물가름이 수면 위 0.75m까지 나왔다. 상판은 수면 위 2.6m로 낮고 거의 평평, 옆면 위엔 이음매가 보이는 띠(상판 끝).
-        /// 난간은 없다: 가장자리 낮은 턱 위에 밤색 철 말뚝이 5.5m마다 서 있을 뿐 (보이지 않는 벽이 떨어지지 않게 막는다).
-        /// 양 끝 둔치와 가운데 물가름 위에 은색 가로등(등 둘)이 서고 밤엔 상판에 동그란 빛 웅덩이가 진다. 양쪽 끝은 둔치 산책로로 이어지는 경사.
+        /// 난간은 가볍다: 가장자리 낮은 턱 위에 밤색 철 기둥이 2.4m마다, 사이에 가는 와이어 세 가닥 (보이지 않는 벽이 떨어지지 않게 막는다), 가운데쯤 주황 구명환.
+        /// 상류 쪽 가장자리엔 11m마다 등롱 가로등이 서고 밤엔 상판에 동그란 빛 웅덩이가 진다. 양쪽 끝은 둔치 산책로로 이어지는 경사. 낮엔 물때 낀 회색 콘크리트 (사용자 낮 사진).
         /// (예전: 막돌 마감 + 돌 난간·철제 난간 — 실물과 달라 바꿨다)
         /// </summary>
         void Footbridge()
@@ -1582,7 +1607,7 @@ namespace Fishing.World
             float zA = NearZ(x, 3.5f), zB = FarZ(x, 3.5f);
             float deckEnd = Water + 2.6f;
             float Deck(float z) => deckEnd + 0.12f * Mathf.Sin(Mathf.PI * Mathf.Clamp01((z - zA) / (zB - zA)));
-            var concBase = Mats.Weathered("concrete", new Color(0.76f, 0.72f, 0.64f), 2.5f, 0.12f, 1f, 0.55f, 0.25f, new Color(0.3f, 0.34f, 0.22f), 0.45f, 0f, "wallconcrete");
+            var concBase = Mats.Weathered("concrete", new Color(0.64f, 0.62f, 0.58f), 2.5f, 0.12f, 1f, 0.6f, 0.25f, new Color(0.3f, 0.34f, 0.22f), 0.45f, 0f, "wallconcrete");   // 회색 콘크리트에 물때 (사용자 낮 사진)
             var conc = Mats.VertexAO(concBase);
             var paving = Mats.Weathered("concrete", new Color(0.74f, 0.73f, 0.7f), 2f, 0.12f, 0.2f, 0.1f, 0.05f, null, 0.5f);
             var maroon = Mats.Lit(new Color(0.42f, 0.13f, 0.11f), 0.4f, 0.3f);
@@ -1675,6 +1700,7 @@ namespace Fishing.World
             // 가장자리 낮은 턱 · 밤색 철 말뚝 · 보이지 않는 벽
             var bmCurb = new BlockMesh();
             var bmPost = new BlockMesh();
+            var bmWire = new BlockMesh();
             var bmWall = new BlockMesh();
             const float step = 1.2f;
             foreach (float sg in new[] { -1f, 1f })
@@ -1691,39 +1717,48 @@ namespace Fishing.World
                     bmCurb.Block(new Vector3(px, mid.y + Curb * 0.5f, mid.z), new Vector3(0.26f, Curb, d.magnitude + 0.02f), 0.02f, q, c, c);
                     bmWall.Block(new Vector3(px, mid.y + 1.1f, mid.z), new Vector3(0.26f, 2.2f, d.magnitude), 0f, q, c, c);
                 }
-                for (float z = zA + 1.2f; z < zB - 0.5f; z += 5.5f)
+                // 밤색 철 기둥 2.4m마다 + 사이에 가는 와이어 세 가닥 (사용자 낮 사진)
+                int nPost = Mathf.CeilToInt((zB - zA - 1f) / 2.4f);
+                for (int k = 0; k <= nPost; k++)
                 {
+                    float z = Mathf.Lerp(zA + 0.5f, zB - 0.5f, k / (float)nPost);
                     float y = Deck(z) + Curb;
-                    bmPost.Block(new Vector3(px, y + 0.5f, z), new Vector3(0.14f, 1f, 0.14f), 0.05f, Quaternion.identity, c, c);
-                    bmPost.Block(new Vector3(px, y + 1.02f, z), new Vector3(0.18f, 0.05f, 0.18f), 0.02f, Quaternion.identity, c, c);
+                    bmPost.Block(new Vector3(px, y + 0.5f, z), new Vector3(0.12f, 1f, 0.12f), 0.045f, Quaternion.identity, c, c);
+                    bmPost.Block(new Vector3(px, y + 1.02f, z), new Vector3(0.16f, 0.05f, 0.16f), 0.02f, Quaternion.identity, c, c);
+                    if (k == nPost) continue;
+                    float z1 = Mathf.Lerp(zA + 0.5f, zB - 0.5f, (k + 1) / (float)nPost);
+                    var a = new Vector3(px, Deck(z) + Curb, z);
+                    var b = new Vector3(px, Deck(z1) + Curb, z1);
+                    var d = b - a;
+                    foreach (float wy in new[] { 0.32f, 0.62f, 0.92f })
+                        bmWire.Block((a + b) * 0.5f + Vector3.up * wy, new Vector3(0.02f, 0.02f, d.magnitude), 0f, Quaternion.LookRotation(d.normalized), c, c);
                 }
             }
             var curbGo = bmCurb.Emit(root, "FootCurb", paving);
             curbGo.AddComponent<MeshCollider>().sharedMesh = curbGo.GetComponent<MeshFilter>().sharedMesh;
             bmPost.Emit(root, "FootBollard", maroon);
+            bmWire.Emit(root, "FootWire", Mats.Lit(new Color(0.3f, 0.33f, 0.32f), 0.4f, 0.5f)).GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             var wallGo = bmWall.Emit(root, "FootRailCollider", paving);
             wallGo.AddComponent<MeshCollider>().sharedMesh = wallGo.GetComponent<MeshFilter>().sharedMesh;
             wallGo.GetComponent<Renderer>().enabled = false;
-            // 은색 가로등 (양 끝 둔치 + 가운데 교각 물가름 위, 짧은 팔에 등 둘): 밤엔 상판에 동그란 빛 웅덩이
+            // 등롱 가로등: 상류 쪽 가장자리 11m마다 은회색 기둥 위 네모 등롱 (사용자 낮 사진), 밤엔 상판에 동그란 빛 웅덩이
             var bmPole = new BlockMesh();
-            float zMid = zA + (spans / 2) * sl;
-            foreach (var (zp, sg) in new[] { (zA - 1.2f, 1f), (zB + 1.2f, -1f), (zMid, 1f) })
+            for (float zp = zA + 3f; zp < zB - 2f; zp += 11f)
             {
-                float px = x + sg * (hw + 0.2f);
-                float gy = zp > zA && zp < zB ? Water + 0.95f : H(px, zp);
-                float Ht = deckEnd + 3.8f - gy;
-                bmPole.Block(new Vector3(px, gy + Ht * 0.5f, zp), new Vector3(0.13f, Ht, 0.13f), 0.04f, Quaternion.identity, c, c);
-                bmPole.Block(new Vector3(px - sg * 0.45f, gy + Ht - 0.15f, zp), new Vector3(0.9f, 0.06f, 0.06f), 0.01f, Quaternion.identity, c, c);
-                foreach (float o in new[] { -0.25f, 0.25f })
-                {
-                    var head = new Vector3(px - sg * 0.45f, gy + Ht - 0.24f, zp + o * 1.4f);
-                    bmPole.Block(head, new Vector3(0.32f, 0.12f, 0.24f), 0.03f, Quaternion.identity, c, c);
-                    var lens = Mats.Prim(PrimitiveType.Cube, "Bulb", root, head + Vector3.down * 0.07f, new Vector3(0.26f, 0.02f, 0.18f), Mats.Lit(new Color(0.75f, 0.74f, 0.7f)), false);
-                    lens.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                    _b.AddBulb(lens.GetComponent<Renderer>());
-                }
-                _b.AddLamp(new Vector3(px - sg * 1.6f, gy + Ht - 1f, zp), new Color(0.88f, 0.93f, 1f), 13f, 1.5f);
+                float px = x - (hw - 0.13f), gy = Deck(zp) + Curb;
+                const float Ht = 3.6f;
+                bmPole.Block(new Vector3(px, gy + Ht * 0.5f, zp), new Vector3(0.12f, Ht, 0.12f), 0.04f, Quaternion.identity, c, c);
+                bmPole.Block(new Vector3(px, gy + 0.2f, zp), new Vector3(0.22f, 0.4f, 0.22f), 0.04f, Quaternion.identity, c, c);
+                bmPole.Block(new Vector3(px, gy + Ht + 0.02f, zp), new Vector3(0.36f, 0.06f, 0.36f), 0.02f, Quaternion.identity, c, c);
+                bmPole.Block(new Vector3(px, gy + Ht + 0.62f, zp), new Vector3(0.42f, 0.08f, 0.42f), 0.03f, Quaternion.identity, c, c);
+                var lantern = Mats.Prim(PrimitiveType.Cube, "Bulb", root, new Vector3(px, gy + Ht + 0.32f, zp), new Vector3(0.3f, 0.52f, 0.3f), Mats.Lit(new Color(0.88f, 0.88f, 0.84f), 0.6f), false);
+                lantern.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                _b.AddBulb(lantern.GetComponent<Renderer>());
+                _b.AddLamp(new Vector3(px + 0.8f, gy + Ht, zp), new Color(1f, 0.92f, 0.78f), 11f, 1.3f);
             }
+            // 주황 구명환 (상류 쪽 와이어에 걸었다)
+            float zr = zA + (spans / 2) * sl - 2.4f;
+            KenneyProps.Spawn("Props/harbor_lifering", root, new Vector3(x - hw - 0.02f, Deck(zr) + Curb + 0.25f, zr), 90f, 0.7f);
             bmPole.Emit(root, "FootLampPole", silver);
         }
 
@@ -1857,7 +1892,7 @@ namespace Fishing.World
             Material Glow(Color col, float k) => HanRiverLandmarks.Mat(col * 0.5f, null, Texture2D.whiteTexture, col * k, 0.3f, 0f, Vector2.one);
             var warm = Glow(new Color(1f, 0.8f, 0.55f), 2.2f);
             var steel = Mats.Lit(new Color(0.22f, 0.24f, 0.27f), 0.4f, 0.5f);
-            var pipe = Mats.Lit(new Color(0.72f, 0.74f, 0.76f), 0.55f, 0.7f);
+            var pipe = Mats.Lit(new Color(0.72f, 0.74f, 0.76f), 0.45f, 0.25f);
             var white = Mats.Lit(new Color(0.88f, 0.89f, 0.9f), 0.35f, 0.3f);
             float len = zB - zA, zc = (zA + zB) * 0.5f;
             var c = Color.white;
@@ -1866,19 +1901,46 @@ namespace Fishing.World
             foreach (float s in new[] { -1f, 1f })
                 Mats.Prim(PrimitiveType.Cube, "BridgeWalk", root, new Vector3(x + s * (W * 0.5f - 1.5f), top - 0.1f, zc), new Vector3(3f, 0.5f, len), concBase);
             var bm = new BlockMesh();
-            // 슬래브 몸통 (밑면 매끈) + 양쪽 캔틸레버 (바깥으로 얇아진다) + 바깥 끝 띠
-            bm.Block(new Vector3(x, (top - 0.5f + soffit) * 0.5f, zc), new Vector3(Core * 2f, top - 0.5f - soffit, len), 0.06f, Quaternion.identity, c, c * 0.75f);
+            // 교각: 물·둔치에 34m마다
+            var piers = new List<float>();
+            for (float z = zA + 28f; z < zB - 20f; z += 34f) piers.Add(z);
+            // 밑면은 교각 쪽이 0.6m 두껍고 경간 가운데로 갈수록 얇아진다 (헌치, 사용자 낮 사진: 교각 사이 밑면이 아치처럼 휜다)
+            float S(float z)
+            {
+                float h = 0f;
+                foreach (float pz in piers) h = Mathf.Max(h, 1f - Mathf.Clamp01(Mathf.Abs(z - pz) / 14f));
+                return soffit - 0.6f * h * h * (3f - 2f * h);
+            }
+            // 슬래브 몸통 + 양쪽 캔틸레버 (바깥으로 얇아진다): 2m 마디로 헌치를 따라
+            const float Step = 2f;
+            for (float z = zA; z < zB - 0.01f; z += Step)
+            {
+                float z1 = Mathf.Min(z + Step, zB), sa = S(z), sb = S(z1);
+                bm.Face(new Vector3(x - Core, sa, z), new Vector3(x + Core, sa, z), new Vector3(x + Core, sb, z1), new Vector3(x - Core, sb, z1), Vector3.down, c * 0.75f);
+                foreach (float s in new[] { -1f, 1f })
+                {
+                    float xi = x + s * Core, xo = x + s * W * 0.5f;
+                    var n = new Vector3(s * (edgeBot - sa) / (W * 0.5f - Core), -1f, 0f).normalized;   // 바깥으로 올라가는 밑면
+                    bm.Face(new Vector3(xi, sa, z), new Vector3(xo, edgeBot, z), new Vector3(xo, edgeBot, z1), new Vector3(xi, sb, z1), n, c * 0.75f);
+                }
+            }
+            foreach (var (ze, dz) in new[] { (zA, -1f), (zB, 1f) })
+                bm.Face(new Vector3(x - W * 0.5f, edgeBot, ze), new Vector3(x + W * 0.5f, edgeBot, ze), new Vector3(x + W * 0.5f, top - 0.5f, ze), new Vector3(x - W * 0.5f, top - 0.5f, ze), new Vector3(0f, 0f, dz), c * 0.8f);
+            // 바깥 끝: 회색 강철 거더 (복부판 + 위아래 플랜지 + 1.25m마다 세로 보강재, 사용자 낮 사진)
+            var bmGirder = new BlockMesh();
             foreach (float s in new[] { -1f, 1f })
             {
-                float xi = x + s * Core, xo = x + s * W * 0.5f;
-                var n = new Vector3(s * (edgeBot - soffit) / (W * 0.5f - Core), -1f, 0f).normalized;   // 바깥으로 올라가는 밑면
-                bm.Face(new Vector3(xi, soffit, zA), new Vector3(xo, edgeBot, zA), new Vector3(xo, edgeBot, zB), new Vector3(xi, soffit, zB), n, c * 0.75f);
-                foreach (var (ze, dz) in new[] { (zA, -1f), (zB, 1f) })
-                    bm.Face(new Vector3(xi, soffit, ze), new Vector3(xo, edgeBot, ze), new Vector3(xo, top - 0.5f, ze), new Vector3(xi, top - 0.5f, ze), new Vector3(0f, 0f, dz), c * 0.8f);
-                bm.Block(new Vector3(x + s * (W * 0.5f + 0.05f), (edgeBot + top + 0.3f) * 0.5f, zc), new Vector3(0.36f, top + 0.3f - edgeBot, len), 0.04f, Quaternion.identity, c, c * 0.8f);
+                float gx0 = x + s * (W * 0.5f + 0.05f);
+                bmGirder.Block(new Vector3(gx0, (edgeBot + top + 0.3f) * 0.5f, zc), new Vector3(0.12f, top + 0.3f - edgeBot, len), 0.01f, Quaternion.identity, c, c * 0.8f);
+                bmGirder.Block(new Vector3(gx0 + s * 0.1f, edgeBot + 0.03f, zc), new Vector3(0.55f, 0.06f, len), 0.01f, Quaternion.identity, c, c * 0.8f);
+                bmGirder.Block(new Vector3(gx0 + s * 0.08f, top + 0.27f, zc), new Vector3(0.45f, 0.06f, len), 0.01f, Quaternion.identity, c, c);
+                for (float z = zA + 0.6f; z < zB; z += 1.25f)
+                    bmGirder.Block(new Vector3(gx0 + s * 0.14f, (edgeBot + top + 0.3f) * 0.5f, z), new Vector3(0.16f, top + 0.24f - edgeBot, 0.05f), 0f, Quaternion.identity, c, c * 0.85f);
             }
-            // 바깥 큰 관 두 줄 + 4m마다 받침 철물 (캔틸레버 밑)
-            float Under(float o) => Mathf.Lerp(soffit, edgeBot, Mathf.InverseLerp(Core, W * 0.5f, o));   // 가운데에서 o만큼 바깥 밑면 높이
+            var girder = bmGirder.Emit(root, "BridgeGirder", Mats.Lit(new Color(0.76f, 0.79f, 0.81f), 0.2f, 0f));
+            girder.AddComponent<MeshCollider>().sharedMesh = girder.GetComponent<MeshFilter>().sharedMesh;
+            // 바깥 큰 관 두 줄 + 4m마다 받침 철물 (캔틸레버 밑, 헌치가 깊은 교각 자리 기준으로 조금 낮게)
+            float Under(float o) => Mathf.Lerp(soffit - 0.6f, edgeBot, Mathf.InverseLerp(Core, W * 0.5f, o));   // 가운데에서 o만큼 바깥 밑면 높이
             var bmHang = new BlockMesh();
             foreach (float s in new[] { -1f, 1f })
             {
@@ -1893,9 +1955,6 @@ namespace Fishing.World
                 }
             }
             bmHang.Emit(root, "BridgeHanger", pipe);
-            // 교각: 물·둔치에 34m마다
-            var piers = new List<float>();
-            for (float z = zA + 28f; z < zB - 20f; z += 34f) piers.Add(z);
             var bmWhite = new BlockMesh();
             var bmGlow = new BlockMesh();
             float side = -Mathf.Sign(x);   // 시작 둔치(가운데 x)를 보는 쪽
@@ -1907,16 +1966,28 @@ namespace Fishing.World
                 float g = H(x, pz);
                 bool inWater = g < Water - 0.3f;
                 // 가로보 (교각 줄, 슬래브 밑)
-                bm.Block(new Vector3(x, soffit - 0.45f, pz), new Vector3(W - 9f, 0.9f, 1.6f), 0.05f, Quaternion.identity, c, c * 0.7f);
+                float sp = S(pz);
+                bm.Block(new Vector3(x, sp - 0.45f, pz), new Vector3(W - 9f, 0.9f, 1.6f), 0.05f, Quaternion.identity, c, c * 0.7f);
                 if (inWater)
                 {
                     float ground = Mathf.Min(g, Water) - 1.2f;
-                    float pTop = soffit - 1.3f;
+                    float pTop = sp - 1.3f;
+                    // 한 줄 = [둥근 기둥][네모 벽][네모 벽][둥근 기둥] (사용자 낮 사진): 바깥 둥근 기둥은 캔틸레버 밑을 네모 머리로 받친다
                     foreach (float s in new[] { -1f, 1f })
                     {
-                        Mats.Prim(PrimitiveType.Cube, "Pier", root, new Vector3(x + s * 5.4f, (ground + pTop) * 0.5f, pz), new Vector3(9f, pTop - ground, 2.6f), pierLit);
-                        foreach (float o in new[] { -3f, 3f })
-                            bm.Block(new Vector3(x + s * 5.4f + o, pTop + 0.2f, pz), new Vector3(0.9f, 0.42f, 0.9f), 0.03f, Quaternion.identity, c * 0.8f, c * 0.6f);
+                        Mats.Prim(PrimitiveType.Cube, "Pier", root, new Vector3(x + s * 4.9f, (ground + pTop) * 0.5f, pz), new Vector3(7.2f, pTop - ground, 2.6f), pierLit);
+                        foreach (float o in new[] { -2.5f, 2.5f })
+                            bm.Block(new Vector3(x + s * 4.9f + o, pTop + 0.2f, pz), new Vector3(0.9f, 0.42f, 0.9f), 0.03f, Quaternion.identity, c * 0.8f, c * 0.6f);
+                        float cx = x + s * 9.6f, capTop = Under(9.6f) - 0.05f;
+                        bm.Block(new Vector3(cx, capTop - 0.45f, pz), new Vector3(1.8f, 0.9f, 1.8f), 0.05f, Quaternion.identity, c, c * 0.75f);
+                        Mats.Prim(PrimitiveType.Cylinder, "PierColumn", root, new Vector3(cx, (ground + capTop - 0.9f) * 0.5f, pz), new Vector3(1.2f, (capTop - 0.9f - ground) * 0.5f, 1.3f), concBase);
+                        if (detail)
+                            for (int k = 0; k < 4; k++)   // 머리 둘레 흰 난간 (점검용)
+                            {
+                                var q = Quaternion.Euler(0f, k * 90f, 0f);
+                                bmWhite.Block(new Vector3(cx, capTop + 0.5f, pz) + q * new Vector3(0f, 0f, 0.9f), k % 2 == 0 ? new Vector3(1.85f, 0.05f, 0.05f) : new Vector3(0.05f, 0.05f, 1.85f), 0f, Quaternion.identity, c, c);
+                                bmWhite.Block(new Vector3(cx, capTop + 0.25f, pz) + q * new Vector3(0.9f, 0f, 0.9f), new Vector3(0.05f, 0.5f, 0.05f), 0f, Quaternion.identity, c, c);
+                            }
                     }
                     if (!detail) continue;
                     // 점검 통로: 교각 머리 곁 (시작 둔치 쪽 -z), 흰 난간, 위 천장에 등
@@ -1931,7 +2002,7 @@ namespace Fishing.World
                     for (float xx = x0 + 1f; xx < x1; xx += 2.6f)
                         bmGlow.Block(new Vector3(xx, soffit - 0.03f, cz), new Vector3(0.9f, 0.05f, 0.3f), 0f, Quaternion.identity, c, c);
                     // 교각 번호판 (파란 네모 + 흰 글자)
-                    var plate = Mats.Prim(PrimitiveType.Cube, "PierPlate", root, new Vector3(x + side * 2f, pTop - 0.6f, pz - 1.31f), new Vector3(0.7f, 0.6f, 0.02f), Mats.Lit(new Color(0.12f, 0.22f, 0.58f)), false);
+                    var plate = Mats.Prim(PrimitiveType.Cube, "PierPlate", root, new Vector3(x + side * 2.2f, pTop - 0.6f, pz - 1.31f), new Vector3(0.7f, 0.6f, 0.02f), Mats.Lit(new Color(0.12f, 0.22f, 0.58f)), false);
                     var no = Fishing.UI.UIFactory.WorldText(root, "P" + pierNo, plate.transform.localPosition + new Vector3(0f, 0f, -0.02f), Color.white, 4.5f, "PierNo");
                     Fishing.UI.UIFactory.OneSided(no);
                     // 물에 가장 가까운 교각: 상판에서 내려오는 점검 계단 + 흰 난간 발판 (상판 바깥)
@@ -1944,7 +2015,7 @@ namespace Fishing.World
                         Mats.Prim(PrimitiveType.Cylinder, "StairColumn", root, new Vector3(foot.x, (foot.y - 0.08f + fb) * 0.5f, pz), new Vector3(1.1f, (foot.y - 0.08f - fb) * 0.5f, 1.1f), concBase);
                     }
                     // 수위표 (빨강·흰 눈금 판)
-                    float gx = x + side * 9.95f;
+                    float gx = x + side * 8.55f;
                     Mats.Prim(PrimitiveType.Cube, "WaterGauge", root, new Vector3(gx, Water + 1.2f, pz), new Vector3(0.05f, 2.6f, 0.35f), Mats.Lit(new Color(0.92f, 0.92f, 0.9f)), false);
                     for (int k = 0; k < 6; k++)
                         Mats.Prim(PrimitiveType.Cube, "GaugeMark", root, new Vector3(gx + side * 0.03f, Water + 0.1f + k * 0.42f, pz), new Vector3(0.02f, 0.2f, 0.36f), Mats.Lit(new Color(0.8f, 0.15f, 0.12f)), false);
@@ -1953,7 +2024,7 @@ namespace Fishing.World
                 else
                 {
                     // 둔치: 둥근 기둥 둘 + 해머헤드 머리
-                    float capBot = soffit - 0.9f - 1.1f;
+                    float capBot = sp - 0.9f - 1.1f;
                     foreach (float s in new[] { -1f, 1f })
                     {
                         float cx = x + s * 6.5f;
@@ -1970,9 +2041,9 @@ namespace Fishing.World
             // 바깥 끝 띠: 밑 모서리 따뜻한 LED 줄 + 4m마다 작은 등
             foreach (float s in new[] { -1f, 1f })
             {
-                bmGlow.Block(new Vector3(x + s * (W * 0.5f + 0.24f), edgeBot + 0.07f, zc), new Vector3(0.05f, 0.1f, len), 0f, Quaternion.identity, c, c);
+                bmGlow.Block(new Vector3(x + s * (W * 0.5f + 0.42f), edgeBot + 0.1f, zc), new Vector3(0.05f, 0.1f, len), 0f, Quaternion.identity, c, c);
                 for (float z = zA + 2f; z < zB; z += 4f)
-                    bmGlow.Block(new Vector3(x + s * (W * 0.5f + 0.25f), top - 0.3f, z), new Vector3(0.06f, 0.12f, 0.45f), 0.01f, Quaternion.identity, c, c);
+                    bmGlow.Block(new Vector3(x + s * (W * 0.5f + 0.25f), edgeBot - 0.05f, z), new Vector3(0.06f, 0.12f, 0.45f), 0.01f, Quaternion.identity, c, c);
             }
             // 난간: 짙은 쇠 살대 (끝 띠 위), 세로 LED 막대 (청록 → 자홍 → 파랑), 꽃 화분
             var bmRail = new BlockMesh();
@@ -2013,7 +2084,7 @@ namespace Fishing.World
                 if (bg != null) bg.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
             bmPot.Emit(root, "BridgePlanter", Mats.Lit(new Color(0.28f, 0.24f, 0.22f), 0.2f));
-            var flowerCols = new[] { new Color(0.95f, 0.5f, 0.75f), new Color(0.82f, 0.22f, 0.58f), new Color(0.72f, 0.58f, 0.9f), new Color(0.3f, 0.48f, 0.24f) };
+            var flowerCols = new[] { new Color(1f, 0.3f, 0.62f), new Color(0.88f, 0.16f, 0.5f), new Color(1f, 0.6f, 0.8f), new Color(0.28f, 0.45f, 0.2f) };   // 진분홍 페튜니아 (사용자 낮 사진)
             for (int k = 0; k < 4; k++)
             {
                 var fg = flowers[k].Emit(root, "BridgeFlowers", Mats.Lit(flowerCols[k], 0.1f));
@@ -2039,7 +2110,7 @@ namespace Fishing.World
                 // 다리 이름 판 (끝 띠 바깥, 양쪽 강 위)
                 foreach (float s in new[] { -1f, 1f })
                 {
-                    var t = Fishing.UI.UIFactory.WorldText(root, name, new Vector3(x + s * (W * 0.5f + 0.25f), top - 0.55f, zc - 6f), new Color(0.2f, 0.22f, 0.25f), 6f, "BridgeName");
+                    var t = Fishing.UI.UIFactory.WorldText(root, name, new Vector3(x + s * (W * 0.5f + 0.36f), top - 0.4f, zc - 6f), new Color(0.2f, 0.22f, 0.25f), 6f, "BridgeName");
                     t.transform.localRotation = Quaternion.Euler(0f, s > 0f ? -90f : 90f, 0f);
                     Fishing.UI.UIFactory.OneSided(t);
                 }
@@ -2552,6 +2623,39 @@ namespace Fishing.World
         }
 
         static Vector3 RotY(Vector3 p, float deg) => Quaternion.Euler(0f, deg, 0f) * p;
+
+        /// <summary>
+        /// 강 건너 높은 그물망 (사용자 사진 낮·밤 여러 장: 단풍 든 나무 위로 26m 쇠기둥이 줄지어 서고 사이에 비치는 그물) — 야구장 강 쪽, 탄천로 너머.
+        /// 기둥 9m마다, 그물은 가는 줄 1.5m 격자, 위·가운데·아래 줄. 그림자는 그물만 뺀다.
+        /// </summary>
+        void TallNet()
+        {
+            var steel = Mats.Lit(new Color(0.45f, 0.47f, 0.5f), 0.35f, 0.4f);
+            var net = Mats.Lit(new Color(0.3f, 0.33f, 0.32f), 0.1f);
+            var bmPole = new BlockMesh();
+            var bmNet = new BlockMesh();
+            var c = Color.white;
+            const float Ht = 26f;
+            float z0(float x) => FarRoadZ(x) + 13f;
+            for (float x = -6f; x < 128f; x += 9f)
+            {
+                var a = new Vector3(x, CityY, z0(x));
+                bmPole.Block(a + Vector3.up * Ht * 0.5f, new Vector3(0.36f, Ht, 0.36f), 0.08f, Quaternion.identity, c, c * 0.8f);
+                if (x + 9f >= 128f) continue;
+                var b = new Vector3(x + 9f, CityY, z0(x + 9f));
+                var d = b - a;
+                foreach (float y in new[] { 3f, Ht * 0.5f, Ht - 0.3f })
+                    bmPole.Block((a + b) * 0.5f + Vector3.up * y, new Vector3(0.05f, 0.05f, d.magnitude), 0f, Quaternion.LookRotation(d.normalized), c, c);
+                // 그물: 가는 줄을 1.5m 격자로 (반투명 판은 멀리서 벽처럼 보였다)
+                var q = Quaternion.LookRotation(d.normalized);
+                for (float y = 4.5f; y < Ht - 1f; y += 1.5f)
+                    bmNet.Block((a + b) * 0.5f + Vector3.up * y, new Vector3(0.03f, 0.03f, d.magnitude), 0f, q, c, c);
+                for (float t = 1.5f; t < d.magnitude - 0.5f; t += 1.5f)
+                    bmNet.Block(a + d.normalized * t + Vector3.up * (Ht + 3f) * 0.5f, new Vector3(0.03f, Ht - 3f, 0.03f), 0f, Quaternion.identity, c, c);
+            }
+            bmPole.Emit(_root, "TallNetPole", steel);
+            bmNet.Emit(_root, "TallNet", net).GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
 
         /// <summary>탄천체육관: 낮은 아치 지붕 상자 (은빛 금속 지붕, 유리 띠 창).</summary>
         void Gymnasium(Vector3 c)
