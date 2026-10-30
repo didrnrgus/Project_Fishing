@@ -29,11 +29,13 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _Blossom: 0
     - _Cutoff: 0.4
     - _Translucency: 0.35
     - _Wind: 0.31296203
     - _WindHeight: 52.16034
     m_Colors:
+    - _BlossomColor: {r: 1, g: 0.84, b: 0.88, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

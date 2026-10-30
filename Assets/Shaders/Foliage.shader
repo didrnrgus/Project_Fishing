@@ -11,6 +11,8 @@ Shader "Fishing/Foliage"
         _Wind ("Wind Sway (m)", Float) = 0.05
         _WindHeight ("Wind Full Height (m, object)", Float) = 8
         _Translucency ("Translucency", Range(0,1)) = 0.35
+        _Blossom ("Blossom (0 = leaves)", Range(0,1)) = 0
+        _BlossomColor ("Blossom Color", Color) = (1,0.84,0.88,1)
     }
     SubShader
     {
@@ -23,7 +25,8 @@ Shader "Fishing/Foliage"
 
         sampler2D _MainTex;
         fixed4 _Color;
-        half _Wind, _WindHeight, _Translucency;
+        half _Wind, _WindHeight, _Translucency, _Blossom;
+        fixed4 _BlossomColor;
 
         struct Input
         {
@@ -53,7 +56,9 @@ Shader "Fishing/Foliage"
         void surf(Input IN, inout SurfaceOutput o)
         {
             fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
-            o.Albedo = c.rgb;
+            // 꽃 핀 나무(벚나무): 잎 그림의 밝기 결만 남기고 꽃 색으로 칠한다 (잎 사이사이 그늘은 어둡게)
+            half lum = dot(c.rgb, half3(0.3, 0.59, 0.11));
+            o.Albedo = lerp(c.rgb, _BlossomColor.rgb * (0.55 + 1.2 * lum), _Blossom);
             o.Alpha = c.a;
             o.Normal = float3(0, 0, IN.facing > 0 ? 1 : -1);
         }

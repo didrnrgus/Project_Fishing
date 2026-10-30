@@ -144,6 +144,36 @@ namespace Fishing.World
             return go;
         }
 
+        static readonly Dictionary<Material, Material> BlossomMats = new Dictionary<Material, Material>();
+
+        /// <summary>
+        /// 꽃이 수관을 다 덮은 나무 (벚나무 꽃철): 실사 활엽수의 잎 재질을 Fishing/Foliage의 _Blossom으로 꽃 색을 입힌 복사본으로 바꾼다.
+        /// 예전엔 초록 잎 사이에 꽃 조각을 박아서 초록 나무에 보랏빛 점이 붙은 듯 보였다 (사용자 지적). 실사 나무가 없으면 null.
+        /// </summary>
+        public static GameObject SpawnBlossomTree(Transform parent, Vector3 localPos, float yaw, float height, Color bloom, float amount = 0.9f)
+        {
+            if (!PlantsAvailable || !VegetationLibrary.HasBroadleaf) return null;
+            var go = SpawnRealTree(VegetationLibrary.Lib.broadleaf, parent, localPos, yaw, height, false);
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+            {
+                var mats = r.sharedMaterials;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] == null || !mats[i].HasProperty("_Blossom")) continue;
+                    if (!BlossomMats.TryGetValue(mats[i], out var m))
+                    {
+                        m = new Material(mats[i]) { name = mats[i].name + "_Blossom" };
+                        m.SetFloat("_Blossom", amount);
+                        m.SetColor("_BlossomColor", bloom);
+                        BlossomMats[mats[i]] = m;
+                    }
+                    mats[i] = m;
+                }
+                r.sharedMaterials = mats;
+            }
+            return go;
+        }
+
         /// <summary>덤불 6종 (Resources/Plants/bush01~06, 위치로 종류를 고른다).</summary>
         static readonly string[] PlantBushes = { "bush01", "bush02", "bush03", "bush04", "bush05", "bush06" };
 
