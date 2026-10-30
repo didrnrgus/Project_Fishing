@@ -340,15 +340,15 @@ def paint(d, seed=0):
         metal_b += plate * (0.15 + 0.35 * silver)
         h_b += plate * stri * 0.12
         groove = np.exp(-((u - pre) ** 2) / (2 * 0.002 ** 2)) * gband * smooth(0.25, 0.45, vside)
-        blend(body, back * 0.6, groove * 0.15)
-        h_b -= groove * 0.35
+        blend(body, back * 0.6, groove * 0.22)   # 전새개골 홈: 볼과 아가미 뚜껑을 가르는 곡선 (눈 뒤에서 내려와 입꼬리 쪽으로 휜다)
+        h_b -= groove * 0.5
         # 눈 둘레: 눈에 바로 붙은 가는 그늘만 (넓고 짙은 테는 눈을 왕방울처럼 보이게 했다).
         # 그 바깥 눈두덩(뼈 테)은 모델이 도드라지게 하고, 텍스처는 위쪽을 살짝 진하게(눈썹처럼 그늘)
         es, ev, eru, erv = eye_uv(d)
         ed = np.sqrt(((u - es) / eru) ** 2 + ((vside - ev) / erv) ** 2)
         noflat = 0 if flat else 1
         bony = 0 if shark else 1   # 상어 콧구멍은 주둥이 밑에 있다 (옆 콧구멍·눈두덩 그늘 없음)
-        orbit = smooth(1.3, 1.02, ed) * smooth(0.85, 0.98, ed) * eyed * noflat
+        orbit = smooth(1.0, 0.76, ed) * smooth(0.62, 0.72, ed) * eyed * noflat   # 눈(보이는 테 0.7)에 바로 붙은 가는 그늘
         blend(body, back * 0.55, orbit * 0.18)
         h_b -= orbit * 0.12
         brow = np.exp(-((ed - 1.35) / 0.3) ** 2) * smooth(ev - erv * 0.2, ev + erv * 0.8, vside) * eyed * noflat
@@ -419,13 +419,49 @@ def paint(d, seed=0):
     if not flat and not d.get('ceph') and not shark:
         mlen = mouth_len(d)
         md = v - mouth_v(d) - (u * mouth_slope(d))
-        reach = smooth(mlen, mlen * 0.6, u)
+        reach = smooth(mlen * 1.02, mlen * 0.8, u)   # 입꼬리(위턱뼈 뒤 끝)까지 (예전에는 입 길이의 60~100%에서 흐려져 배스 입이 짧아 보였다)
         mouth = np.exp(-(md ** 2) / (2 * 0.006 ** 2)) * reach
-        # 입술: 갈라진 선 위아래로 도톰하고 밝은 살
+        # 입술: 갈라진 선 위아래로 도톰한 살. 윗입술(위턱 앞니뼈)은 머리 색, 아랫입술(아래턱)은 밝다
+        # (위아래 모두 밝으면 오리 부리처럼 보였다)
         lips = np.exp(-(md ** 2) / (2 * 0.022 ** 2)) * smooth(mlen * 1.25, mlen * 0.7, u)
-        blend(body, belly * 0.85 + side * 0.15, lips * 0.45)
+        up = smooth(-0.004, 0.006, md)[..., None]
+        blend(body, (side * 0.8 + back * 0.2) * up + (belly * 0.85 + side * 0.15) * (1 - up), lips * 0.45)
         h_b += lips * 0.6 - mouth * 0.9
         blend(body, back * 0.25, mouth * 0.8)
+        mx = d.get('maxilla', 0.0 if d['type'] in ('A', 'F', 'G', 'H') else 1.0)
+        if mx:
+            # 위턱뼈(상악골): 입 선 바로 위로 주둥이 끝에서 입꼬리까지 뻗는 뼈판. 앞은 가늘고 뒤 끝이 넓적하게 둥글다.
+            # 둘레(위·뒤 가장자리)는 볼과 갈리는 가는 홈, 판은 비늘 없이 매끈하고 살짝 밝다.
+            # 길이 단위로 계산: 몸 길이 1, v 1 = 반 둘레 kv
+            kv = math.pi * (d['depth'] + d['width']) / 4
+            y = md * kv
+            h1 = (0.38 * mlen + 0.006) * mx                      # 뒤 끝 높이 (배스 0.05 · 참돔 0.023)
+            es_, ev_, eru_, erv_ = eye_uv(d)
+            if es_ - eru_ * 1.3 < mlen * 1.02:
+                # 뒤 끝이 눈 밑에 오면 눈 테두리에 닿지 않게 낮춘다 (그루퍼·민어에서 판 끝이 눈을 받쳤다)
+                room = (ev_ - erv_ * 1.25 - mouth_v(d) - mouth_slope(d) * mlen) * kv
+                h1 = max(0.004, min(h1, room))
+            h0 = 0.003
+            a = h1 * 0.6                                         # 뒤 끝 둥근 부분 반지름 (u 방향)
+            cu = mlen * 1.02 - a
+            # 앞은 가는 막대로 가다가 뒤 1/3에서 넓적한 주걱으로 (고른 띠는 입 위에 말린 웃는 선처럼 보였다)
+            hu = h0 + (h1 - h0) * np.clip(u / max(cu, 1e-3), 0, 1) ** 2.4
+            q = np.sqrt(np.maximum(u - cu, 0) ** 2 / a ** 2 + ((y - h1 * 0.5) / (h1 * 0.5)) ** 2)
+            dist = np.where(u < cu, y - hu, (q - 1) * h1 * 0.5)  # 판 바깥쪽으로 + (가장자리 = 0)
+            low = smooth(0.0005, 0.003, y)                       # 아래는 입 선(입술)이 경계
+            plate = smooth(0.0012, -0.0012, dist) * low * eyed
+            # 둘레 홈은 위 가장자리와 뒤 끝 위쪽만 (뒤 끝 아래까지 두르면 입꼬리에 말린 고리처럼 보였다)
+            rim = np.exp(-(dist / 0.0013) ** 2) * low * smooth(cu * 0.25, cu * 0.6, u) * eyed * np.where(u > cu, smooth(h1 * 0.25, h1 * 0.6, y), 1.0)
+            blend(body, np.minimum(side * 1.08 + 0.03, 1.0), plate * 0.3)
+            blend(body, back * 0.35, rim * 0.35)
+            metal_b += plate * 0.25 * silver
+            h_b *= 1 - plate * 0.7                               # 판 위에는 비늘 결이 거의 없다
+            h_b += plate * 0.35 - rim * 0.6
+            smooth_b += plate * 0.08
+            # 아래턱(치골) 아래 가장자리: 입 선 아래로 나란히 가는 희미한 홈
+            jl = np.exp(-((y + hu * 0.9 + 0.003) / 0.0012) ** 2) * smooth(mlen, mlen * 0.6, u) * smooth(0.0, mlen * 0.2, u) * eyed
+            blend(body, back * 0.4, jl * 0.25)
+            h_b -= jl * 0.4
         if d.get('teeth'):
             # 아귀 이빨: 입술 안쪽으로 휜 가는 송곳니가 위아래로 줄지어 (입 선 따라 밝은 가시)
             tooth = smooth(0.55, 0.9, 0.5 + 0.5 * np.cos(u * 520 + np.sin(u * 37) * 2)) * reach
@@ -639,17 +675,17 @@ def paint(d, seed=0):
     th = np.arctan2(ey - cxe, ex - cxe)
     fib = noise(ES, ES, 6, rng.integers(1 << 30), 1)
     fibers = 0.5 + 0.5 * np.sin(th * 60 + fib * 6.0)
-    # 물고기 눈은 동공이 크고(머리 밖으로 보이는 눈의 60%쯤) 홍채는 가는 금속빛 고리다. 예전에는 동공이 작고 홍채 바깥에 짙은 테,
-    # 그 바깥에 또 짙은 피부 테가 있어 만화 속 왕방울 눈처럼 보였다
+    # 머리 밖으로 보이는 눈 = 텍스처 반지름 0.8 (build_fish.make_eye). 동공은 그 절반(0.4), 홍채는 0.4~0.78의 넓은 금속빛 고리:
+    # 동공 쪽 밝은 고리, 섬유 결·금빛 반점, 위쪽은 등 쪽 그늘로 어둡고 바깥은 살짝 어둡게. 가장자리는 머리 피부로 이어진다
     ty = (ey - cxe) / (ES / 2)                                              # -1 위 ~ +1 아래 (이미지 y는 아래로)
-    eye = iris[None, None] * (0.7 + 0.3 * fibers[..., None]) * (0.55 + 0.5 * smooth(0.76, 0.5, r))[..., None]
-    fleck = smooth(0.7, 0.85, noise(ES, ES, 30, rng.integers(1 << 30), 1)) * smooth(0.5, 0.56, r) * smooth(0.76, 0.66, r)
+    eye = iris[None, None] * (0.7 + 0.3 * fibers[..., None]) * (0.6 + 0.45 * smooth(0.74, 0.44, r))[..., None]
+    fleck = smooth(0.7, 0.85, noise(ES, ES, 30, rng.integers(1 << 30), 1)) * smooth(0.42, 0.48, r) * smooth(0.74, 0.62, r)
     blend(eye, np.minimum(iris * 1.35, 1.0), fleck * 0.5)
-    blend(eye, iris * 0.4, smooth(-0.1, -0.75, ty) * 0.55)                  # 홍채 위쪽은 색소로 어둡다 (등 쪽 그늘)
-    blend(eye, np.minimum(iris * 1.5 + 0.1, 1.0), smooth(0.54, 0.5, r) * smooth(0.46, 0.5, r) * 0.6)   # 동공 둘레 밝은 고리
-    blend(eye, iris * 0.6, smooth(0.68, 0.76, r) * 0.6)                     # 홍채 바깥은 살짝 어둡게 (검은 테는 아님)
+    blend(eye, iris * 0.4, smooth(-0.1, -0.75, ty) * smooth(0.42, 0.6, r) * 0.55)   # 홍채 위쪽은 색소로 어둡다 (등 쪽 그늘)
+    blend(eye, np.minimum(iris * 1.5 + 0.1, 1.0), smooth(0.47, 0.42, r) * smooth(0.38, 0.42, r) * 0.6)   # 동공 둘레 밝은 고리
+    blend(eye, iris * 0.55, smooth(0.66, 0.76, r) * 0.6)                    # 홍채 바깥은 살짝 어둡게 (검은 테는 아님)
     skin = hexrgb(col['side']) * 0.75 + hexrgb(col['back']) * 0.25
-    blend(eye, skin, smooth(0.77, 0.83, r))                                  # 눈 가장자리는 머리 피부색으로 이어진다
+    blend(eye, skin, smooth(0.77, 0.84, r))                                  # 눈 가장자리는 머리 피부색으로 이어진다
     tx = (ex - cxe) / (ES / 2)
     if d['type'] == 'O':
         # 문어: 가로로 길쭉한 네모 동공
@@ -659,11 +695,11 @@ def paint(d, seed=0):
         wcurve = 0.05 - 0.16 * np.abs(np.sin(tx * math.pi * 1.25))
         pupil = smooth(0.11, 0.07, np.abs(ty - wcurve)) * smooth(0.6, 0.52, np.abs(tx))
     else:
-        pupil = smooth(0.5, 0.46, r)
+        pupil = smooth(0.41, 0.38, r / d['eye'].get('pupil', 1.0))   # pupil: 동공 크기 비율 (1 = 보이는 눈의 절반)
     if d['type'] in ('O', 'Q'):
         blend(eye, np.minimum(iris * 1.2, 1.0), smooth(0.5, 0.3, r) * 0.4)   # 동공 둘레 홍채가 넓다
     blend(eye, np.array([0.015, 0.02, 0.025], np.float32), pupil)   # 동공
-    blend(eye, np.array([0.06, 0.1, 0.13], np.float32), smooth(0.4, 0.05, r) * 0.25)
+    blend(eye, np.array([0.06, 0.1, 0.13], np.float32), smooth(0.33, 0.04, r) * 0.25)
     hl = np.exp(-(((ex - cxe * 0.82) ** 2 + (ey - cxe * 0.74) ** 2) / (30.0 * S * S)))
     eye += hl[..., None] * 0.35
     ey0 = 256 * S
