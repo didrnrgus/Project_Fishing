@@ -2,6 +2,7 @@
 # 모델 디테일 확인: 맵을 열고 이름으로 찾은 물체를 HUD 없이 가까이 찍는다 → Screenshots/i_맵_물체_번호.png
 #   sh tools/inspect.sh "seocheon:Pavilion:200:15:1.6;sentosa:merlion:230:5:1.4"
 #   항목 = 맵:물체이름:방위각:고도각:거리배수[:시각(분)]  (거리배수 = 경계 반지름의 배수)
+#   물체이름 자리에 %x,y,z → 그 점을 본다 (거리 = 0.87m × 거리배수, 다리처럼 정적 배칭으로 경계가 합쳐진 큰 구조물)
 . "$(dirname "$0")/unity.sh"
 rm -rf "$PROJECT/Screenshots"
 "$PROJECT/Builds/Windows/ProjectFishing.exe" -screen-width 1600 -screen-height 900 -screen-fullscreen 0 \

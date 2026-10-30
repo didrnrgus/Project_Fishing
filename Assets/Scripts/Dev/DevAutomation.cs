@@ -1519,6 +1519,15 @@ namespace Fishing.Dev
                     act = null;
                     target = Game.Player.transform;
                 }
+                else if (name.StartsWith("%"))
+                {
+                    // "%x,y,z": 그 점을 본다 (거리 = 0.87m × 거리배수) — 정적 배칭으로 경계가 합쳐진 큰 구조물(다리)을 사진 구도로
+                    var p = name.Substring(1).Split(',');
+                    var ic = System.Globalization.CultureInfo.InvariantCulture;
+                    target = new GameObject("InspectPoint").transform;
+                    target.position = new Vector3(float.Parse(p[0], ic), float.Parse(p[1], ic), float.Parse(p[2], ic));
+                    name = "pt" + idx;
+                }
                 else if (Game.World != null)
                     foreach (var t in Game.World.GetComponentsInChildren<Transform>(true))
                         if (t.name == name) { target = t; break; }
