@@ -72,6 +72,8 @@ namespace Fishing.Angling
 
         /// <summary>개발용: 파이팅을 자동으로 진행한다 (스크린샷/밸런스 확인).</summary>
         public bool Autoplay;
+        /// <summary>파이팅 중 ESC 확인 창(FightQuitPanel)이 떠 있는 동안: 파이팅을 멈춘다.</summary>
+        public bool FightPaused;
         /// <summary>자동 촬영용: 좌클릭을 누르고 있는 것처럼 찌를 감는다.</summary>
         public bool DebugReeling;
         /// <summary>자동 촬영용: 마우스 대신 낚싯대 각도를 정한다 (AimMin~AimMax).</summary>
@@ -217,7 +219,10 @@ namespace Fishing.Angling
                 case FishingState.Casting: UpdateCasting(); break;
                 case FishingState.Waiting: UpdateWaiting(); break;
                 case FishingState.Bite: UpdateBite(); break;
-                case FishingState.Fighting: UpdateFighting(); break;
+                case FishingState.Fighting:
+                    if (FightPaused) Game.Sound.SetReel(0f, 0f);
+                    else UpdateFighting();
+                    break;
             }
             UpdateLine();
             UpdateCameraShot();
@@ -1147,6 +1152,12 @@ namespace Fishing.Angling
             ToIdle();
         }
 
+        /// <summary>파이팅 중 ESC → [그만두기]: 물고기를 놓친 것으로 끝낸다 (줄은 잃지 않는다).</summary>
+        public void GiveUpFight()
+        {
+            if (State == FishingState.Fighting && Fight != null && Fight.Outcome == FightOutcome.None) EndFight(FightOutcome.GaveUp);
+        }
+
         /// <summary>개발/테스트용: 캐스팅 없이 바로 파이팅을 시작한다.</summary>
         public void DebugStartFight(string speciesId, float length, float distance)
         {
@@ -1417,6 +1428,7 @@ namespace Fishing.Angling
                     FightOutcome.LineBroken => "낚싯줄이 끊어졌습니다! 장력이 HIGH를 넘지 않게 조심하세요.",
                     FightOutcome.HookOut => "바늘이 빠졌습니다! 줄을 너무 느슨하게 두었어요.",
                     FightOutcome.LineRunOut => "낚싯줄이 모두 풀려 버렸습니다! 거리를 좁히세요.",
+                    FightOutcome.GaveUp => "파이팅을 그만두었습니다. 물고기가 달아났어요.",
                     _ => "물고기를 놓쳤습니다."
                 };
                 string penalty = $"낚싯대 내구도 감소 : {rodLoss:0.00} %  릴 내구도 감소 : {reelLoss:0.00} %"

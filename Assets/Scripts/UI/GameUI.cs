@@ -13,6 +13,7 @@ namespace Fishing.UI
         public SystemLogView SysLog { get; private set; }
         public LoadingScreen Loading { get; private set; }
         public EscMenuPanel EscMenu { get; private set; }
+        public FightQuitPanel FightQuit { get; private set; }
         public FightHudView Fight { get; private set; }
         public ResultPanel Result { get; private set; }
         public KeepNetPanel KeepNet { get; private set; }
@@ -108,7 +109,8 @@ namespace Fishing.UI
                     Game.CameraRig.Yaw = 0f;
                 },
                 exitField: EnterLobby);
-            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, QuestTalk, Upgrade,Inventory, Character, Exchange, Trade, Aquarium, Options, EscMenu, Traps, ItemBag, Delivery };
+            FightQuit = new FightQuitPanel(canvas);
+            _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, QuestTalk, Upgrade,Inventory, Character, Exchange, Trade, Aquarium, Options, EscMenu, Traps, ItemBag, Delivery, FightQuit };
             LobbyHud.Root.transform.SetAsFirstSibling();
             SysLog = new SystemLogView(canvas);
             Loading = new LoadingScreen(canvas);
@@ -307,10 +309,14 @@ namespace Fishing.UI
 
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                // 열린 창이 있으면 닫고, 없으면 원작 ESC 메뉴 (파이팅 중엔 열지 않는다)
+                // 열린 창이 있으면 닫고(그만두기 확인 창이면 = 계속하기), 없으면 원작 ESC 메뉴. 파이팅 중엔 그만둘지 묻는다
                 bool any = BlockingPanelOpen;
                 foreach (var p in _panels) p.Close();
-                if (!any && !Loading.Showing && Game.Fishing.State != FishingState.Fighting) OpenExclusive(EscMenu);
+                if (!any && !Loading.Showing)
+                {
+                    if (Game.Fishing.State == FishingState.Fighting) FightQuit.Open();
+                    else OpenExclusive(EscMenu);
+                }
                 return;
             }
 
