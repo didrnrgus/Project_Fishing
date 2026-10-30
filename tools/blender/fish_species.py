@@ -9,7 +9,7 @@
   xsec    : 단면 지수 (2 = 타원, 작을수록 위아래가 뾰족한 납작한 몸)
   fins    : 지느러미. kind = dorsal/anal/caudal/pectoral/pelvic/adipose, s = 몸통 구간(시작, 끝), h = 높이(최대 몸높이 배율),
             prof = 모양(제어점), spiny = 가시 지느러미(막이 오목하게 파임), group = 텍스처 칸(up/low)
-  eye     : s(위치), z(머리 높이 비율 -1~1), r(반지름/길이), iris(홍채 색)
+  eye     : s(위치), z(머리 높이 비율 -1~1), r(반지름/길이), iris(홍채 색), pupil(동공 크기 배율, 1 = 보이는 눈의 절반), bulge(겉으로 나온 정도, 0.18 · 다랑어류 E 0.1)
   barbels : (s, z, 길이, 굵기, 방향) 수염
   colors  : back/side/belly, 무늬 patterns, fin_up/fin_low (지느러미 색: 밑동, 끝, 알파)
   anim    : amp(꼬리 흔드는 폭 배율), freq(빈도 배율) — Unity에서 재생 속도로 쓴다
@@ -18,7 +18,9 @@
   blunt(주둥이 끝 뾰족함, 0.8 기본) · mouth_h(주둥이 끝 단면이 남는 비율 = 입 높이, 0.17) · keel(등배 능선) · hump·hump_s(이마 혹)
   head_w(머리 폭 배율) · head_flat(머리를 위아래로 누름, 아귀) · hold(몸통 굵기 유지, 장어) · tail_w(꼬리자루 폭 비율)
   lips(입술 두께 배율, 잉어 2.2) · mouth_slope(입 선이 뒤로 오르는 기울기, 0.6) · gape·gape_w·gape_d(입 길이·홈 폭·깊이 배율) · jaw(아래턱 돌출) · teeth
-  beak(학꽁치 아래턱) · bill(황새치 칼) · barbels 방향 'down'·'side'·'up'·'lure'(머리 위 낚싯대 하나)·'flap'(피부 술)
+  maxilla(위턱뼈 판 크기 배율: 입 선 위로 입꼬리까지 뻗고 뒤 끝이 둥근 뼈판, 0 = 없음. 잉어·납작이·장어·메기 틀은 기본 0, 나머지 1)
+  hump 음수 = 오목한 목덜미
+  beak(학꽁치 아래턱) · bill(황새치 칼) · barbels 방향 'down'·'side'·'up'·'lure'(머리 위 낚싯대 하나)·'flap'(피부 술)·'chin'(아래턱 끝 가운데 하나, 대구)·'fwd'(앞으로 뻣뻣하게, 아로와나)
   shark=dict(mouth, gills, rostrum): 상어 — 배 쪽 초승달 입의 s, 아가미구멍 다섯 줄 s 범위, 코끝을 올리는 정도
   ray=dict(eye_z) + disc: 가오리·홍어 — 두 눈을 등 가운데 좌우로, 원반이 끝나는 s (뒤는 가늘어지는 꼬리)
 """
@@ -122,7 +124,7 @@ SPECIES = {
     # ===== A. 잉어형 =====
     # 붕어: 잉어보다 높은 몸에 작고 뾰족한 머리, 수염 없음, 큰 눈. 목덜미에서 등이 가파르게 솟고 등지느러미가 길다.
     # 황동빛 옆구리에 큰 비늘 테가 또렷하고, 아래 지느러미는 반투명한 호박색
-    'crucian': dict(type='A', name='붕어', depth=0.35, tmax=0.4, snout=0.85, blunt=1.12, head_w=0.95, scales=28, mouth=0.02, gape=0.03,
+    'crucian': dict(type='A', name='붕어', depth=0.35, tmax=0.4, snout=0.85, blunt=1.0, mouth_h=0.2, lips=1.3, head_w=0.95, scales=28, mouth=0.02, gape=0.03,
                     fins=[_fin('dorsal', (0.36, 0.74), 0.42, prof=[(0, 0.5), (0.1, 1.0), (0.35, 0.62), (1, 0.45)]),
                           _fin('anal', (0.73, 0.83), 0.42, prof=[(0, 0.5), (0.2, 1.0), (1, 0.45)]),
                           _fin('caudal', h=0.27, shape='fork'),
@@ -130,18 +132,18 @@ SPECIES = {
                           _fin('pelvic', s=(0.48, 0.48), h=0.11)],
                     colors=P('#363c24', '#a08c4c', '#e2d6a4', silver=0.3, fin_up=('#4a4630', '#2e2c20', 0.8), fin_low=('#8a7448', '#b09868', 0.6),
                              patterns=[('scale_edge', 0.6)]),
-                    eye=dict(s=0.09, z=0.25, r=0.022, iris='#c8a040')),
+                    eye=dict(s=0.09, z=0.25, r=0.024, iris='#c8a040')),
     # 잉어: 도톰한 입술(lips) · 입꼬리의 긴 수염 한 쌍과 윗입술의 짧은 수염 한 쌍
     'carp': dict(type='A', name='잉어', depth=0.27, scales=36, mouth=-0.08, lips=2.2,
-                 barbels=[(0.035, -0.3, 0.045, 0.0045, 'down'), (0.02, -0.05, 0.022, 0.0032, 'side')],
+                 barbels=[(0.035, -0.3, 0.032, 0.0035, 'down'), (0.02, -0.05, 0.016, 0.0026, 'side')],
                  colors=P('#3c4228', '#a9884a', '#e2d6a2', silver=0.15, fin_up=('#4c4630', '#3a3424', 0.85), fin_low=('#a8643a', '#c4502a', 0.85),
                           patterns=[('scale_edge', 0.75)]),
                  eye=dict(iris='#d8a838')),
     'goldkoi': dict(type='A', name='황금 비단잉어', depth=0.27, scales=36, mouth=-0.08, lips=2.2,
-                    barbels=[(0.035, -0.3, 0.045, 0.0045, 'down'), (0.02, -0.05, 0.022, 0.0032, 'side')],
+                    barbels=[(0.035, -0.3, 0.032, 0.0035, 'down'), (0.02, -0.05, 0.016, 0.0026, 'side')],
                     colors=P('#e0901a', '#f6b832', '#ffe08a', silver=0.6, metallic=0.7, fin_up=('#f0a830', '#ffe4a0', 0.75), fin_low=('#f0a830', '#ffe8b0', 0.75),
                              patterns=[('scale_edge', 0.4), ('sheen', 0.6)]),
-                    eye=dict(iris='#202020')),
+                    eye=dict(iris='#e0cc88')),
     # 누치: 길쭉한 몸에 길고 뾰족한 원뿔 주둥이, 입은 주둥이 밑에 있고 입꼬리에 짧은 수염 한 쌍.
     # 등지느러미는 굵은 가시로 높이 솟고, 은빛 도는 황갈색 몸에 옆줄 위로 희미한 점이 한 줄 (어릴 때 진하다)
     'nuchi': dict(type='A', name='누치', depth=0.2, width=0.11, tmax=0.4, mouth=-0.45, snout=0.95, blunt=1.05, scales=48, gape=0.03,
@@ -151,7 +153,7 @@ SPECIES = {
                   barbels=[(0.035, -0.5, 0.028, 0.003, 'down')],
                   colors=P('#5a5a4c', '#b8b2a0', '#eeebe2', silver=0.55, fin_up=('#7a786c', '#9a988c', 0.7), fin_low=('#c0a888', '#d8c0a0', 0.65),
                            patterns=[('spots', dict(n=9, r=(5, 7), color='#4a4a40', v=(0.6, 0.6), u=(0.25, 0.85), row=True, a=0.45))]),
-                  eye=dict(s=0.12, z=0.35, r=0.017, iris='#c0c0b0')),
+                  eye=dict(s=0.12, z=0.35, r=0.02, iris='#d8c8a0')),
     # ===== B. 날씬한 잉어형 =====
     # 피라미 (혼인색 수컷): 청록색 굵은 세로 띠 10줄 사이로 분홍·주황빛, 뺨이 붉고 뒷지느러미가 크게 늘어진다.
     # 은빛 몸, 작은 입, 꼬리는 깊게 갈라진다
@@ -182,7 +184,7 @@ SPECIES = {
                            _fin('anal', (0.58, 0.82), 0.4, prof=[(0, 1.0), (0.25, 0.75), (1, 0.4)]),
                            _fin('caudal', h=0.27, shape='deepfork', group='low'), _fin('pectoral', s=(0.22, 0.22), h=0.14), _fin('pelvic', s=(0.46, 0.46), h=0.1)],
                      colors=P('#526470', '#c8d0d4', '#f4f4f2', silver=0.85, fin_up=('#8a9aa2', '#a8b8c0', 0.6), fin_low=('#c8a898', '#d88a70', 0.7)),
-                     eye=dict(s=0.1, z=0.15, r=0.02, iris='#e0e0d0')),
+                     eye=dict(s=0.1, z=0.15, r=0.022, iris='#e0d090')),
     # 숭어: 위아래로 눌린 넓적하고 뭉툭한 머리, 작은 입, 둥근 통 같은 몸. 등지느러미 둘이 멀리 떨어져 있다
     # (앞은 가시 4개 삼각 돛, 뒤는 작은 부드러운 것). 짙은 청회색 등, 비늘 줄마다 짙은 가로 줄무늬, 꼬리가 갈라진다
     'mullet': dict(type='B', name='숭어', depth=0.19, width=0.14, tmax=0.4, snout=0.55, blunt=0.7, head_w=1.2, mouth=-0.05, gape=0.028, scales=40, xsec=2.2,
@@ -191,7 +193,7 @@ SPECIES = {
                          _fin('pectoral', s=(0.22, 0.32), h=0.11), _fin('pelvic', s=(0.38, 0.38), h=0.09)],
                    colors=P('#34444e', '#98a6ac', '#eaeeee', silver=0.7, fin_up=('#4e5e66', '#6a7a82', 0.75), fin_low=('#9aa6aa', '#b4bec0', 0.6),
                             patterns=[('hstripes', dict(n=7, v=(0.4, 0.88), w=0.014, color='#2e3e48', a=0.55))]),
-                   eye=dict(s=0.09, z=0.2, r=0.019, iris='#c0b080')),
+                   eye=dict(s=0.085, z=0.2, r=0.021, iris='#c8a040')),
     # ===== C. 농어형 =====
     # 쏘가리: 길고 뾰족한 머리에 눈 뒤까지 찢어진 큰 입, 아래턱이 앞으로 나온다. 가시가 촘촘한 긴 등지느러미,
     # 둥근 꼬리. 누런 바탕에 표범 같은 짙은 고리 무늬, 지느러미에도 점, 주둥이에서 눈을 지나는 검은 줄
@@ -204,17 +206,17 @@ SPECIES = {
                      colors=P('#6a5a30', '#c8aa5a', '#ece0b0', silver=0.1, fin_up=('#8a7a40', '#6a5a30', 0.9), fin_low=('#b09a58', '#c8b070', 0.85),
                               patterns=[('rosettes', dict(n=46, r=(8, 16), color='#2e2814', v=(0.25, 1.0))), ('eyeline', dict(color='#2e2814', w=0.03)),
                                         ('finspots', '#3a3018')]),
-                     eye=dict(s=0.11, z=0.45, r=0.018, iris='#d8a020')),
+                     eye=dict(s=0.11, z=0.45, r=0.02, iris='#d8a020')),
     # 배스 (큰입우럭): 이름대로 눈 뒤까지 닿는 아주 큰 입, 아래턱이 살짝 나온다. 가시 등지느러미와 부드러운 등지느러미
     # 사이가 깊게 파이고, 올리브색 몸 옆구리 가운데에 들쭉날쭉한 검은 띠
-    'bass': dict(type='C', name='배스', depth=0.26, mouth=0.2, snout=0.85, blunt=0.9, scales=65, gape=0.11, jaw=0.01, head_w=1.08,
+    'bass': dict(type='C', name='배스', depth=0.26, mouth=0.2, snout=0.85, blunt=0.9, scales=65, gape=0.12, jaw=0.01, head_w=1.08,
                  fins=[_fin('dorsal', (0.27, 0.5), 0.4, prof=[(0, 0.5), (0.3, 1.0), (1, 0.3)], spiny=True),
                        _fin('dorsal', (0.5, 0.76), 0.5, prof=[(0, 0.6), (0.3, 1.0), (1, 0.45)]),
                        _fin('anal', (0.6, 0.78), 0.42), _fin('caudal', h=0.24, shape='emarg'),
                        _fin('pectoral', s=(0.26, 0.26), h=0.14), _fin('pelvic', s=(0.3, 0.3), h=0.11)],
                  colors=P('#2f4422', '#7a8a4a', '#e6e2c0', silver=0.15, fin_up=('#4a5a30', '#3a4a26', 0.85), fin_low=('#7a8050', '#8a9060', 0.8),
                           patterns=[('blotchline', dict(v=0.55, color='#1e2a14', w=0.08)), ('mottle', dict(color='#3a4a24', a=0.4))]),
-                 eye=dict(s=0.11, z=0.4, r=0.019, iris='#b04020')),
+                 eye=dict(s=0.11, z=0.4, r=0.022, iris='#a0582a')),
     # 블루길: 접시처럼 둥글고 높은 몸에 가파른 이마, 작은 입, 큰 눈. 아가미 뚜껑 끝의 검은 귀(귓불)가 표지.
     # 가시·부드러운 등지느러미가 이어지고 뒤쪽이 더 높고 둥글다. 올리브빛 몸에 희미한 세로 띠, 가슴은 누런 주황
     'bluegill': dict(type='C', name='블루길', depth=0.45, width=0.12, tmax=0.4, mouth=0.15, snout=0.8, blunt=1.1, xsec=1.6, arch=0.56, scales=45, gape=0.035,
@@ -225,7 +227,7 @@ SPECIES = {
                      colors=P('#2a4048', '#6a8070', '#d8c078', silver=0.2, fin_up=('#3a5050', '#2a3a3a', 0.75), fin_low=('#6a7058', '#8a8a6a', 0.65),
                               patterns=[('bands', dict(n=7, u=(0.25, 0.85), w=0.06, color='#283a3c', v=(0.3, 1.0), a=0.4)),
                                         ('earflap', '#0c1418'), ('throat', '#b08a48')]),
-                     eye=dict(s=0.11, z=0.4, r=0.026, iris='#303840')),
+                     eye=dict(s=0.11, z=0.4, r=0.026, iris='#44566a')),
     # 농어: 길쭉한 은빛 몸에 뾰족한 머리, 눈 뒤까지 닿는 큰 입과 앞으로 나온 아래턱. 가시 등지느러미가 높고
     # 부드러운 등지느러미와 살짝 떨어진다. 등은 청회색, 등 쪽에 잔 검은 점(어린 농어일수록 많다), 꼬리는 얕게 갈라진다
     'seabass': dict(type='C', name='농어', depth=0.22, width=0.12, tmax=0.38, mouth=0.25, snout=0.92, blunt=1.0, scales=80, gape=0.1, jaw=0.012,
@@ -235,7 +237,7 @@ SPECIES = {
                           _fin('pectoral', s=(0.26, 0.26), h=0.14), _fin('pelvic', s=(0.3, 0.3), h=0.12)],
                     colors=P('#3e4e5c', '#b4bec4', '#f0f2f0', silver=0.8, fin_up=('#5a6a74', '#3e4a54', 0.75), fin_low=('#c0c4c4', '#d0d4d4', 0.6),
                              patterns=[('spots', dict(n=50, r=(3, 5), color='#1e262e', v=(0.62, 1.0), u=(0.18, 0.8), a=0.85))]),
-                    eye=dict(s=0.11, z=0.4, r=0.02, iris='#d8d0b0')),
+                    eye=dict(s=0.11, z=0.4, r=0.022, iris='#c8a868')),
     # 볼락: 얼굴의 반은 될 만큼 아주 큰 눈, 큰 머리에 앞으로 나온 아래턱. 옆으로 납작하고 높은 몸,
     # 가시가 억센 등지느러미와 큰 부채 가슴지느러미. 갈색·회갈색 바탕에 흐린 가로 띠 5개
     'rockfish': dict(type='C', name='볼락', depth=0.32, width=0.13, tmax=0.36, mouth=0.3, snout=0.75, blunt=0.9, head_w=1.1, mouth_h=0.22,
@@ -279,7 +281,7 @@ SPECIES = {
                             _fin('pectoral', s=(0.24, 0.24), h=0.18), _fin('pelvic', s=(0.29, 0.29), h=0.1)],
                       colors=P('#5a4a30', '#8a7650', '#d0c4a0', silver=0.05, fin_up=('#6a5a3a', '#5a4a2e', 0.85), fin_low=('#7a6a48', '#8a7a58', 0.8),
                                patterns=[('mottle', dict(color='#3a2e1e', a=0.55, scale=0.05)), ('stripe', dict(v=0.8, w=0.02, color='#c8b890', a=0.4))]),
-                      eye=dict(iris='#a08050')),
+                      eye=dict(iris='#c09840')),
     # 자이언트 그루퍼: 통나무처럼 두툼하고 긴 몸, 넓적한 큰 머리에 두꺼운 입술과 앞으로 나온 아래턱, 작은 눈.
     # 낮고 긴 가시 등지느러미 뒤로 둥글고 높은 부드러운 등지느러미, 둥근 꼬리. 회갈색 바탕에 흐린 얼룩과 연한 반점
     'giantgrouper': dict(type='C', name='자이언트 그루퍼', depth=0.3, width=0.2, tmax=0.38, head_w=1.2, mouth=0.28, snout=0.7, blunt=0.85, mouth_h=0.24,
@@ -302,7 +304,7 @@ SPECIES = {
                              _fin('pectoral', s=(0.27, 0.27), h=0.15), _fin('pelvic', s=(0.3, 0.3), h=0.12)],
                        colors=P('#4a3a34', '#8a7060', '#e0d8cc', silver=0.25, fin_up=('#5a463c', '#3a2c26', 0.9), fin_low=('#7a6658', '#5a4a40', 0.9),
                                 patterns=[('stripe', dict(v=0.5, w=0.05, color='#2a201c', a=0.35)), ('mottle', dict(color='#3a2e28', a=0.25))]),
-                       eye=dict(s=0.1, z=0.45, r=0.021, iris='#a08050'), anim=dict(amp=0.8, freq=0.75)),
+                       eye=dict(s=0.1, z=0.45, r=0.024, iris='#d0c090'), anim=dict(amp=0.8, freq=0.75)),
     # 돗돔 (Stereolepis doederleini): 높고 두툼한 거대한 몸에 큰 머리, 큰 입과 앞으로 나온 아래턱. 가시 등지느러미와
     # 부드러운 등지느러미 사이가 파이고 꼬리는 거의 곧다. 짙은 흑갈색에 흐린 세로 줄 흔적, 배는 조금 밝다
     'dotdom': dict(type='C', name='돗돔', depth=0.34, width=0.18, tmax=0.36, head_w=1.15, mouth=0.28, snout=0.75, blunt=0.9, mouth_h=0.22, scales=120,
@@ -313,7 +315,7 @@ SPECIES = {
                          _fin('pectoral', s=(0.27, 0.27), h=0.17), _fin('pelvic', s=(0.31, 0.31), h=0.13)],
                    colors=P('#24262a', '#44484c', '#8a8c88', silver=0.1, fin_up=('#2a2c30', '#1a1c1e', 0.95), fin_low=('#3a3c40', '#26282a', 0.95),
                             patterns=[('mottle', dict(color='#1a1c20', a=0.35))]),
-                   eye=dict(s=0.09, z=0.43, r=0.015, iris='#707060'), anim=dict(amp=0.7, freq=0.6)),
+                   eye=dict(s=0.09, z=0.43, r=0.02, iris='#b0a890'), anim=dict(amp=0.7, freq=0.6)),
     # ===== D. 도미형 =====
     # 감성돔: 달걀꼴 높은 몸에 이마가 가파르게 내려와 주둥이가 뾰족해지고, 입은 낮고 입술이 도톰하다.
     # 억센 가시 등지느러미가 길게 이어지고 꼬리는 갈라진다. 은빛 도는 짙은 회흑색, 흐린 가로 띠와 비늘 줄마다 가는 세로 줄
@@ -350,8 +352,8 @@ SPECIES = {
                            _fin('pectoral', s=(0.3, 0.3), h=0.17),
                            _fin('pelvic', s=(0.34, 0.34), h=0.13)],
                      colors=P('#4a4e50', '#9ea2a0', '#d8dad4', silver=0.25, fin_up=('#2a2e30', '#1e2224', 0.9), fin_low=('#3a3e40', '#2a2e30', 0.9),
-                              patterns=[('bands', dict(n=7, u=(0.08, 0.9), w=0.075, color='#16181a', v=(0.0, 1.0), a=0.9, taper=True))]),
-                     eye=dict(s=0.13, z=0.42, r=0.022, iris='#c0b090')),
+                              patterns=[('bands', dict(n=7, u=(0.11, 0.87), w=0.075, color='#16181a', v=(0.0, 1.0), a=0.9, taper=True))]),
+                     eye=dict(s=0.13, z=0.42, r=0.022, iris='#c8a860')),
     # 벵에돔: 둥글고 뭉툭한 주둥이에 아주 작은 입, 달걀꼴 몸. 낮은 등지느러미가 길게 이어지고 꼬리는 살짝 파인다.
     # 짙은 청흑색에 비늘마다 검은 점, 눈은 푸른빛
     'opaleye': dict(type='D', name='벵에돔', depth=0.37, width=0.13, tmax=0.4, snout=0.52, blunt=0.85, mouth=-0.05, lips=1.3, gape=0.028,
@@ -362,19 +364,20 @@ SPECIES = {
                              patterns=[('scale_dots', dict(color='#101614', a=0.5))]),
                     eye=dict(s=0.13, z=0.42, r=0.023, iris='#4a90b0')),
     # 쥐치: 마름모꼴 높은 몸, 뾰족하게 내민 주둥이 끝의 아주 작은 입. 눈 위에 굵은 가시 하나가 서고,
-    # 뒤쪽 등·뒷지느러미가 마주 보며 길고 낮다. 둥근 꼬리, 황갈색 바탕에 짙은 갈색 줄·얼룩
-    'filefish': dict(type='D', name='쥐치', depth=0.5, width=0.1, tmax=0.45, body_end=0.82, snout=0.85, blunt=1.1, mouth=0.25, gape=0.02, xsec=1.6, scales=0,
+    # 뒤쪽 등·뒷지느러미가 마주 보며 길고 낮다. 둥근 꼬리, 황갈색 바탕에 짙은 갈색 줄·얼룩.
+    # 머리: 눈 앞 이마가 오목하게 패여 주둥이가 원뿔처럼 튀어나오고, 노란 홍채의 큰 눈이 가시 밑 높은 곳에
+    'filefish': dict(type='D', name='쥐치', depth=0.5, width=0.1, tmax=0.45, body_end=0.82, snout=1.0, blunt=1.3, mouth=0.12, gape=0.02, hump=-0.06, hump_s=0.1, xsec=1.6, scales=0,
                      fins=[_fin('dorsal', (0.22, 0.25), 0.28, prof=[(0, 1.0), (1, 0.9)], spine=True),
                            _fin('dorsal', (0.52, 0.8), 0.25, prof=[(0, 0.7), (0.3, 1.0), (1, 0.6)]),
                            _fin('anal', (0.52, 0.8), 0.25, prof=[(0, 0.7), (0.3, 1.0), (1, 0.6)]),
                            _fin('caudal', h=0.2, shape='round'), _fin('pectoral', s=(0.28, 0.28), h=0.08)],
-                     eye=dict(s=0.2, z=0.5, r=0.025, iris='#80a040'),
+                     eye=dict(s=0.2, z=0.45, r=0.03, iris='#d8a830'),
                      colors=P('#6a6a4a', '#a4a07a', '#d8d4b8', silver=0.05, fin_up=('#c0b890', '#d8d0a8', 0.6), fin_low=('#c0b890', '#d8d0a8', 0.6),
                               patterns=[('mottle', dict(color='#4a4a32', a=0.5, scale=0.05)), ('hstripes', dict(n=5, v=(0.3, 0.8), w=0.015, color='#5a5a40', a=0.4))])),
     # ===== E. 유선형 =====
     # 고등어: 둥근 방추형 몸에 뾰족한 원뿔 머리, 큰 눈. 작은 첫 등지느러미와 둘째 등지느러미가 멀리 떨어지고 그 뒤로
     # 토막지느러미(작은 가시 줄)가 꼬리까지. 청록색 등에 검은 물결 무늬, 은백색 배, 깊게 갈라진 꼬리
-    'mackerel': dict(type='E', name='고등어', depth=0.17, width=0.13, tmax=0.42, snout=0.9, blunt=1.05, gape=0.06,
+    'mackerel': dict(type='E', name='고등어', depth=0.17, width=0.13, tmax=0.42, snout=0.9, blunt=1.05, gape=0.075,
                      fins=[_fin('dorsal', (0.3, 0.43), 0.4, prof=[(0, 1.0), (0.4, 0.7), (1, 0.15)], spiny=True),
                            _fin('dorsal', (0.56, 0.63), 0.38, prof=[(0, 1.0), (1, 0.3)]),
                            _fin('anal', (0.6, 0.67), 0.32, prof=[(0, 1.0), (1, 0.3)]),
@@ -383,7 +386,7 @@ SPECIES = {
                            _fin('pelvic', s=(0.32, 0.32), h=0.07)],
                      colors=P('#1e5a5a', '#9ab8b8', '#f2f4f2', silver=0.8, metallic=0.35, fin_up=('#3a5a5a', '#5a7a7a', 0.7), fin_low=('#9aaaaa', '#b8c4c4', 0.6),
                               patterns=[('waves', dict(color='#0e2a32', v=(0.6, 1.0), a=1.0)), ('finlets', True)]),
-                     eye=dict(s=0.1, z=0.3, r=0.022, iris='#202a2a')),
+                     eye=dict(s=0.1, z=0.38, r=0.022, iris='#c8ccc8')),
     # 전갱이: 고등어보다 높고 납작한 몸에 아주 큰 눈. 옆줄을 따라 꼬리까지 가시 비늘(모비늘) 줄이 이어지며 몸 가운데서
     # 아래로 꺾인다. 아가미 뚜껑 위 검은 점, 높은 삼각 첫 등지느러미와 길고 낮은 둘째 등·뒷지느러미, 누런 꼬리
     'horsemackerel': dict(type='E', name='전갱이', depth=0.23, width=0.11, tmax=0.4, snout=0.8, blunt=0.95, mouth=0.1, gape=0.055, jaw=0.006,
@@ -403,11 +406,11 @@ SPECIES = {
                            _fin('caudal', h=0.13, shape='fork'), _fin('pectoral', s=(0.24, 0.24), h=0.07), _fin('pelvic', s=(0.6, 0.6), h=0.05)],
                      colors=P('#4a7a7a', '#c0d8d4', '#f6f8f4', silver=0.85, metallic=0.3, fin_up=('#8aa0a0', '#a0b8b8', 0.55), fin_low=('#b8c8c8', '#d0dcdc', 0.5),
                               patterns=[('stripe', dict(v=0.55, w=0.05, color='#d0e8f0', a=0.6))]),
-                     eye=dict(s=0.16, z=0.3, r=0.014, iris='#d0d0c0'), anim=dict(amp=1.2, freq=1.3)),
+                     eye=dict(s=0.16, z=0.3, r=0.018, iris='#d8d8cc'), anim=dict(amp=1.2, freq=1.3)),
     # ===== F. 납작한 고기 =====
-    # 광어 (넙치): 두 눈이 왼쪽, 길쭉한 타원 몸에 큰 머리와 큰 입. 등·뒷지느러미가 몸 둘레를 감싸고 꼬리는 둥글다.
+    # 광어 (넙치): 두 눈이 왼쪽, 길쭉한 타원 몸에 큰 머리와 큰 입 (아래 눈 밑까지 찢어지고 송곳니가 보인다, 아래턱이 나온다). 등·뒷지느러미가 몸 둘레를 감싸고 꼬리는 둥글다.
     # 올리브 갈색 바탕에 짙은 구름 얼룩과 흰 점이 흩어진다 (뒷면은 흰색)
-    'flounder': dict(type='F', name='광어', flat='left', depth=0.4, mouth=0.1, snout=0.65,
+    'flounder': dict(type='F', name='광어', flat='left', depth=0.4, mouth=0.1, snout=0.65, gape=0.09, jaw=0.008, teeth=True, maxilla=0.8,
                      colors=P('#4a4030', '#6e6248', '#f2f0e8', silver=0.0, fin_up=('#5a4e3a', '#4a4030', 0.9), fin_low=('#6a5e48', '#5a4e3a', 0.9),
                               patterns=[('mottle', dict(color='#2a2418', a=0.6, scale=0.05)), ('spots', dict(n=70, r=(2, 5), color='#e0d4b8', v=(0.1, 1.0), a=0.5))]),
                      eye=dict(iris='#c0a050', r=0.026)),
@@ -435,9 +438,10 @@ SPECIES = {
                             patterns=[('pores', dict(color='#f8f6ee', v=0.55, n=40)), ('pores', dict(color='#f8f6ee', v=0.85, n=24))]),
                    eye=dict(s=0.045, z=0.4, r=0.011, iris='#c0b090')),
     # ===== H. 메기형 =====
-    # 메기 (Silurus asotus): 위턱의 아주 긴 수염 한 쌍(가슴지느러미까지) + 아래턱의 짧은 수염 한 쌍, 두툼한 입술
-    'catfish': dict(type='H', name='메기', lips=1.6,
-                    barbels=[(0.03, 0.1, 0.17, 0.0055, 'side'), (0.025, -0.35, 0.055, 0.0035, 'down')],
+    # 메기 (Silurus asotus): 위턱의 아주 긴 수염 한 쌍(가슴지느러미까지) + 아래턱의 짧은 수염 한 쌍, 두툼한 입술.
+    # 넓은 입은 아래턱이 위턱보다 앞으로 나오고, 작은 눈은 머리 옆 높은 곳에. 수염은 가늘게 휜다
+    'catfish': dict(type='H', name='메기', lips=1.6, jaw=0.008,
+                    barbels=[(0.03, 0.1, 0.17, 0.004, 'side'), (0.025, -0.35, 0.05, 0.0028, 'down')],
                     colors=P('#2a2a20', '#5a5640', '#d8d4bc', silver=0.0, fin_up=('#3a3a2c', '#2a2a20', 0.9), fin_low=('#4a4a38', '#3a3a2c', 0.9),
                              patterns=[('mottle', dict(color='#1e1e16', a=0.6, scale=0.06))]),
                     eye=dict(iris='#a09060')),
@@ -454,7 +458,8 @@ SPECIES = {
                             patterns=[('blotches', dict(color='#2e2410', a=0.75))]),
                    eye=dict(iris='#c0a040')),
     # 가물치: 뱀 머리처럼 위아래로 눌린 넓적한 머리에 큰 입(아래턱이 나온다), 통나무 같은 긴 몸.
-    # 등·뒷지느러미가 꼬리자루까지 길게 이어지고 둥근 꼬리. 올리브 회색 바탕에 검은 얼룩 두 줄, 눈 뒤로 검은 줄 두 개
+    # 등·뒷지느러미가 꼬리자루까지 길게 이어지고 둥근 꼬리. 올리브 회색 바탕에 검은 얼룩 두 줄, 눈 뒤로 검은 줄 두 개.
+    # 눈은 주둥이 가까이 높이 붙고 홍채가 주황빛
     'snakehead': dict(type='H', name='가물치', depth=0.15, width=0.14, head_w=1.12, head_flat=0.15, tmax=0.4, body_end=0.83, ped=0.75, snout=0.75, blunt=0.9,
                       mouth=0.15, gape=0.075, jaw=0.01, scales=70,
                       fins=[_fin('dorsal', (0.3, 0.98), 0.32, prof=[(0, 0.6), (0.2, 1.0), (1, 0.9)]),
@@ -462,7 +467,7 @@ SPECIES = {
                             _fin('caudal', h=0.15, shape='round'), _fin('pectoral', s=(0.24, 0.24), h=0.11), _fin('pelvic', s=(0.33, 0.33), h=0.07)],
                       colors=P('#2e3424', '#6a6c4a', '#d8d6c0', silver=0.0, fin_up=('#3a3e2c', '#4a4e38', 0.9), fin_low=('#4a4e38', '#5a5e48', 0.9),
                                patterns=[('blotchrows', dict(color='#16180e', a=0.8)), ('eyeline', dict(color='#16180e', w=0.025, n=2))]),
-                      eye=dict(s=0.07, z=0.4, r=0.012, iris='#c0a050')),
+                      eye=dict(s=0.07, z=0.4, r=0.015, iris='#e08a2a')),
     # 빙어: 가늘고 긴 반투명한 몸, 큰 눈, 아래턱이 살짝 나온 위로 향한 입. 등지느러미 뒤 꼬리자루 위에 작은 기름지느러미.
     # 연한 올리브빛 등, 옆구리 가운데 은빛 세로 띠
     'smelt': dict(type='B', name='빙어', depth=0.15, width=0.09, tmax=0.45, snout=0.85, mouth=0.25, scales=60, gape=0.05, jaw=0.005,
@@ -532,7 +537,7 @@ SPECIES = {
                          colors=P('#3e3422', '#9c8650', '#e8e0c8', silver=0.2, fin_up=('#5a4c30', '#3a3020', 0.85), fin_low=('#a89060', '#c0a878', 0.75),
                                   patterns=[('bands', dict(n=5, u=(0.24, 0.8), w=0.095, color='#2a2216', v=(0.28, 1.0), a=0.55)),
                                             ('mottle', dict(color='#3a2e1c', a=0.35, scale=0.05))]),
-                         eye=dict(iris='#c0b060'), anim=dict(amp=1.0, freq=1.1)),
+                         eye=dict(iris='#d89040'), anim=dict(amp=1.0, freq=1.1)),
     # 도루묵 (Arctoscopus japonicus): 비늘 없는 몸, 거의 세로로 열린 입(아래턱이 나옴), 큰 눈, 날개 같은 큰 가슴지느러미,
     # 멀리 떨어진 등지느러미 둘, 몸 가운데부터 긴 뒷지느러미. 등 쪽 절반은 금갈색 바탕에 잔 물결 같은 흑갈색 점, 옆·배는 은백색
     'sandfish': dict(type='C', name='도루묵', depth=0.22, width=0.11, tmax=0.33, ped=0.36, mouth=0.75, snout=0.5, arch=0.6, scales=0,
@@ -563,8 +568,8 @@ SPECIES = {
                          eye=dict(iris='#c8a040'), anim=dict(amp=0.25, freq=0.55)),
     # 대구 (Gadus macrocephalus): 몸의 1/4이 넘는 큰 머리, 위턱이 아래턱을 덮는 큰 입(눈 밑까지), 턱수염 하나,
     # 둥근 세모 등지느러미 셋·뒷지느러미 둘, 가슴지느러미보다 앞의 가는 배지느러미. 회갈색 등에 잔 갈색 점이 빽빽, 흰 옆줄, 흰 배
-    'cod': dict(type='C', name='대구', depth=0.22, width=0.14, head_w=1.1, tmax=0.3, ped=0.3, mouth=-0.15, snout=0.8, arch=0.55, scales=0, gape=0.085,
-                barbels=[(0.035, -0.6, 0.04, 0.003, 'down')],
+    'cod': dict(type='C', name='대구', depth=0.22, width=0.14, head_w=1.1, tmax=0.3, ped=0.3, mouth=-0.15, snout=0.8, arch=0.55, scales=0, gape=0.095,
+                barbels=[(0.03, -0.6, 0.04, 0.003, 'chin')],
                 fins=[_fin('dorsal', (0.3, 0.43), 0.34, prof=[(0, 0.5), (0.35, 1.0), (1, 0.35)]), _fin('dorsal', (0.47, 0.63), 0.3, prof=[(0, 0.5), (0.3, 1.0), (1, 0.35)]),
                       _fin('dorsal', (0.67, 0.82), 0.28, prof=[(0, 0.5), (0.3, 1.0), (1, 0.35)]),
                       _fin('anal', (0.45, 0.62), 0.26, prof=[(0, 0.5), (0.3, 1.0), (1, 0.4)]), _fin('anal', (0.66, 0.82), 0.25, prof=[(0, 0.5), (0.3, 1.0), (1, 0.4)]),
@@ -572,7 +577,7 @@ SPECIES = {
                 colors=P('#5a4c34', '#a09070', '#f0ece0', silver=0.05, fin_up=('#6a5c42', '#8a7a5a', 0.85), fin_low=('#b0a488', '#c8bca0', 0.8),
                          patterns=[('spots', dict(n=380, r=(2, 5), color='#45351e', v=(0.36, 1.0), a=0.8)),
                                    ('stripe', dict(v=0.58, w=0.012, color='#ece4cc', a=0.7))]),
-                eye=dict(s=0.1, z=0.42, r=0.019, iris='#b0a070'), anim=dict(amp=0.85, freq=0.8)),
+                eye=dict(s=0.1, z=0.42, r=0.019, iris='#c8a040'), anim=dict(amp=0.85, freq=0.8)),
     # 명태 (Gadus chalcogrammus): 대구보다 훨씬 날씬하고 머리가 작다, 아래턱이 위턱보다 나온 입, 큰 눈, 배지느러미 수염 없음.
     # 올리브 갈색 등에 잔 얼룩, 옆구리 위쪽을 따라 들쭉날쭉한 짙은 얼룩 띠, 은백색 배, 짙은 꼬리. 청진 명물
     'pollock': dict(type='C', name='명태', depth=0.165, width=0.1, tmax=0.34, ped=0.3, mouth=0.4, snout=0.9, arch=0.52, scales=0, jaw=0.012, gape=0.075,
@@ -583,7 +588,7 @@ SPECIES = {
                     colors=P('#433c2c', '#a09a88', '#f4f2ec', silver=0.5, fin_up=('#4a4234', '#2e2a22', 0.9), fin_low=('#b8b2a0', '#c8c4b4', 0.7),
                              patterns=[('mottle', dict(color='#3a3226', a=0.3, scale=0.035)),
                                        ('blotchline', dict(v=0.64, color='#3a3226', w=0.05)), ('stripe', dict(v=0.54, w=0.012, color='#e6e2d4', a=0.5))]),
-                    eye=dict(s=0.1, z=0.36, r=0.026, iris='#c0b890'), anim=dict(amp=0.9, freq=0.9)),
+                    eye=dict(s=0.1, z=0.36, r=0.026, iris='#d0ccc0'), anim=dict(amp=0.9, freq=0.9)),
     # 불볼락 (열기, Sebastes thompsoni): 연분홍 주황 몸에 등 쪽 붉은 갈색 안장 얼룩 4~5개, 아주 큰 눈(노란 테),
     # 아래턱이 살짝 나온 입, 높은 가시 등지느러미, 주홍빛 가슴지느러미
     'redrockfish': dict(type='C', name='불볼락', depth=0.32, width=0.13, tmax=0.36, mouth=0.3, snout=0.7, jaw=0.008, scales=60,
@@ -597,8 +602,9 @@ SPECIES = {
                                            ('mottle', dict(color='#a0482a', a=0.3, scale=0.05))])),
     # ===== 남해 (욕지도·거문도) =====
     # 방어 (Seriola quinqueradiata): 굵고 통통한 방추형(부시리보다 높은 몸, 조금 뭉툭한 머리), 숨은 듯 낮은 가시 등지느러미 뒤로
-    # 앞이 솟은 긴 등·뒷지느러미. 등은 청록·올리브, 몸 가운데 흐린 황록색 세로띠, 꼬리·배쪽 지느러미는 누런 올리브
-    'yellowtail': dict(type='E', name='방어', depth=0.235, width=0.13, tmax=0.4, ped=0.17, snout=0.72, mouth=0.05, gape=0.07,
+    # 앞이 솟은 긴 등·뒷지느러미. 등은 청록·올리브, 몸 가운데 흐린 황록색 세로띠, 꼬리·배쪽 지느러미는 누런 올리브.
+    # 머리: 노란 테 눈이 입꼬리 바로 위 낮은 곳에 작게, 뒤 끝이 둥근 큰 위턱뼈가 눈 밑까지
+    'yellowtail': dict(type='E', name='방어', depth=0.235, width=0.13, tmax=0.4, ped=0.17, snout=0.72, mouth=0.05, gape=0.08,
                        fins=[_fin('dorsal', (0.3, 0.4), 0.16, prof=[(0, 0.6), (0.3, 1.0), (1, 0.5)], spiny=True),
                              _fin('dorsal', (0.42, 0.82), 0.4, prof=[(0, 1.0), (0.15, 0.7), (0.35, 0.36), (1, 0.25)]),
                              _fin('anal', (0.58, 0.82), 0.32, prof=[(0, 1.0), (0.2, 0.6), (0.4, 0.35), (1, 0.25)]),
@@ -606,10 +612,10 @@ SPECIES = {
                              _fin('pectoral', s=(0.25, 0.25), h=0.11), _fin('pelvic', s=(0.31, 0.31), h=0.09)],
                        colors=P('#2c5458', '#a8bcbc', '#f4f4f0', silver=0.75, metallic=0.3, fin_up=('#4a6050', '#8a8448', 0.8), fin_low=('#a8a060', '#c8b448', 0.75),
                                 patterns=[('stripe', dict(v=0.56, w=0.03, color='#c8c050', a=0.6))]),
-                       eye=dict(iris='#d0c890'), anim=dict(amp=1.0, freq=1.2)),
+                       eye=dict(s=0.1, z=0.18, r=0.019, iris='#d8b040'), anim=dict(amp=1.0, freq=1.2)),
     # 부시리 (Seriola lalandi): 방어보다 길쭉하고 머리가 뾰족하다. 등은 짙은 남청색, 눈에서 꼬리까지 또렷한 샛노란 띠,
     # 샛노란 꼬리. 거문도 갯바위 대물
-    'amberjack': dict(type='E', name='부시리', depth=0.195, width=0.115, tmax=0.4, ped=0.16, snout=0.9, mouth=0.08, gape=0.07,
+    'amberjack': dict(type='E', name='부시리', depth=0.195, width=0.115, tmax=0.4, ped=0.16, snout=0.9, mouth=0.08, gape=0.08,
                       fins=[_fin('dorsal', (0.31, 0.41), 0.15, prof=[(0, 0.6), (0.3, 1.0), (1, 0.5)], spiny=True),
                             _fin('dorsal', (0.43, 0.82), 0.42, prof=[(0, 1.0), (0.15, 0.7), (0.35, 0.36), (1, 0.25)]),
                             _fin('anal', (0.6, 0.82), 0.34, prof=[(0, 1.0), (0.2, 0.6), (0.4, 0.35), (1, 0.25)]),
@@ -617,7 +623,7 @@ SPECIES = {
                             _fin('pectoral', s=(0.25, 0.25), h=0.09), _fin('pelvic', s=(0.31, 0.31), h=0.1)],
                       colors=P('#22406a', '#9ab0c0', '#f6f6f4', silver=0.75, metallic=0.3, fin_up=('#3a4a5a', '#7a8070', 0.8), fin_low=('#d8b830', '#f0cc30', 0.85),
                                patterns=[('stripe', dict(v=0.57, w=0.04, color='#f4cc28', a=0.95))]),
-                      eye=dict(iris='#d0c890'), anim=dict(amp=1.0, freq=1.25)),
+                      eye=dict(s=0.1, z=0.2, r=0.018, iris='#e0a040'), anim=dict(amp=1.0, freq=1.25)),
     # 갈치 (Trichiurus lepturus): 옆으로 아주 납작한 은빛 띠 모양, 꼬리지느러미 없이 채찍처럼 가늘어진다. 뾰족한 머리에
     # 아래턱이 튀어나온 큰 입(송곳니), 머리에 비해 큰 눈, 머리 바로 뒤부터 꼬리까지 이어진 낮고 투명한 등지느러미
     'hairtail': dict(type='G', name='갈치', depth=0.075, width=0.028, tmax=0.22, body_end=0.99, ped=0.05, snout=0.9, mouth=0.4, xsec=1.3, blunt=1.0, hold=0.0, tail_w=0.32,
@@ -626,10 +632,10 @@ SPECIES = {
                            _fin('caudal', h=0.01, shape='point'), _fin('pectoral', s=(0.1, 0.1), h=0.05)],
                      colors=P('#a8b8c4', '#e4eaee', '#f8fafa', silver=1.0, metallic=0.85, fin_up=('#d8dccc', '#c0c8b8', 0.45), fin_low=('#d0dce0', '#e8f0f0', 0.5),
                               patterns=[('sheen', 0.8)]),
-                     eye=dict(s=0.05, z=0.4, r=0.012, iris='#e8e0b8'), bones=14, anim=dict(amp=1.2, freq=0.9)),
+                     eye=dict(s=0.05, z=0.4, r=0.014, iris='#e8e0b8'), bones=14, anim=dict(amp=1.2, freq=0.9)),
     # 삼치 (Scomberomorus niphonius): 아주 길쭉한 방추형에 뾰족한 머리·큰 입, 길고 낮은 가시 등지느러미 + 작은 둘째 등지느러미,
     # 토막지느러미. 청회색 등 아래 옆구리에 잔 점이 일곱여덟 줄로 늘어선다 (폭군삼치의 물결 가로줄과 다르다)
-    'spanishmackerel': dict(type='E', name='삼치', depth=0.145, width=0.095, tmax=0.42, ped=0.14, snout=0.95, mouth=0.1, gape=0.07,
+    'spanishmackerel': dict(type='E', name='삼치', depth=0.145, width=0.095, tmax=0.42, ped=0.14, snout=0.95, mouth=0.1, gape=0.085, teeth=True,
                             fins=[_fin('dorsal', (0.27, 0.5), 0.26, prof=[(0, 1.0), (0.4, 0.7), (1, 0.25)], spiny=True),
                                   _fin('dorsal', (0.55, 0.62), 0.36, prof=[(0, 1.0), (1, 0.3)]),
                                   _fin('anal', (0.59, 0.66), 0.32, prof=[(0, 1.0), (1, 0.3)]), _fin('caudal', h=0.3, shape='deepfork'),
@@ -649,8 +655,10 @@ SPECIES = {
                                           ('spots', dict(n=1, r=(6, 6), u=(0.3, 0.3), v=(0.4, 0.4), color='#101214', a=0.9)), ('scale_edge', 0.6)]),
                        eye=dict(r=0.026, iris='#8a9a70'), anim=dict(amp=1.0, freq=1.4)),
     # 옥돔 (Branchiostegus japonicus): 말머리처럼 거의 수직으로 떨어지는 이마, 머리 꼭대기 가까이 붙은 큰 눈, 낮게 달린 작은 입,
-    # 길쭉한 몸에 머리 뒤부터 꼬리까지 이어진 낮은 등지느러미. 분홍빛 붉은 몸, 눈 뒤 아래 은빛 삼각 무늬, 꼬리에 노란 줄
+    # 길쭉한 몸에 머리 뒤부터 꼬리까지 이어진 낮은 등지느러미. 분홍빛 붉은 몸, 눈 뒤 아래 은빛 삼각 무늬, 꼬리에 노란 줄.
+    # 입 선은 머리 밑에서 거의 수평으로 눈 앞 아래까지 (위로 휘지 않는다)
     'tilefish': dict(type='C', name='옥돔', depth=0.25, width=0.12, tmax=0.28, snout=0.25, blunt=0.6, mouth=-0.45, arch=0.7, hump=0.05, hump_s=0.1, scales=70,
+                     mouth_slope=0.15, gape=0.05, maxilla=0.6,
                      fins=[_fin('dorsal', (0.24, 0.84), 0.26, prof=[(0, 0.6), (0.1, 1.0), (1, 0.85)]),
                            _fin('anal', (0.5, 0.84), 0.26, prof=[(0, 0.6), (0.2, 1.0), (1, 0.85)]), _fin('caudal', h=0.22, shape='truncate'),
                            _fin('pectoral', s=(0.24, 0.24), h=0.16), _fin('pelvic', s=(0.28, 0.28), h=0.1)],
@@ -677,7 +685,7 @@ SPECIES = {
     # ===== 한강 추가 (원작 2013 공략: 은어·떡붕어) =====
     # 은어 (Plecoglossus altivelis): 날씬한 원통형 몸에 뾰족한 머리, 눈 뒤까지 닿는 입, 아주 잔 비늘(매끈해 보임),
     # 몸 가운데의 높은 등지느러미 + 기름지느러미. 올리브 갈색 등, 금빛 도는 옆구리, 가슴지느러미 위 노란 점, 지느러미 끝이 노랗다
-    'sweetfish': dict(type='B', name='은어', depth=0.17, width=0.1, tmax=0.4, ped=0.36, snout=0.9, mouth=0.05, gape=0.06, scales=0,
+    'sweetfish': dict(type='B', name='은어', depth=0.17, width=0.1, tmax=0.4, ped=0.36, snout=0.9, mouth=0.05, gape=0.075, scales=0,
                       fins=[_fin('dorsal', (0.38, 0.5), 0.8, prof=[(0, 0.6), (0.2, 1.0), (1, 0.45)]), _fin('adipose', (0.72, 0.77), 0.2),
                             _fin('anal', (0.62, 0.78), 0.5, prof=[(0, 1.0), (1, 0.5)]), _fin('caudal', h=0.24, shape='fork'),
                             _fin('pectoral', s=(0.22, 0.22), h=0.11), _fin('pelvic', s=(0.45, 0.45), h=0.09)],
@@ -692,7 +700,7 @@ SPECIES = {
                               _fin('caudal', h=0.26, shape='fork'), _fin('pectoral', s=(0.24, 0.24), h=0.13), _fin('pelvic', s=(0.5, 0.5), h=0.1)],
                         colors=P('#5a5a44', '#c0b898', '#eeeadc', silver=0.6, fin_up=('#7a7a68', '#9a9a88', 0.6), fin_low=('#9a9a88', '#b0b0a0', 0.55),
                                  patterns=[('scale_edge', 0.55), ('sheen', 0.4)]),
-                        eye=dict(r=0.02, iris='#c8b060')),
+                        eye=dict(r=0.023, iris='#d8d0b0')),
     # ===== 괴물 어종 (원작 이벤트 몬스터: 괴물잉어 · 괴물가물치 · 폭군삼치 · 황새치) =====
     # 괴물잉어: 잉어(Cyprinus carpio) 그대로의 몸 — 도톰한 입술·입꼬리 긴 수염 + 윗입술 짧은 수염, 긴 등지느러미 — 를 더 굵게.
     # 이끼 낀 듯 검푸른 등, 큰 비늘마다 금빛 테, 붉은 배쪽 지느러미
@@ -745,7 +753,7 @@ SPECIES = {
                        eye=dict(s=0.1, z=0.45, iris='#d04020'), anim=dict(amp=1.0, freq=1.0)),
     # 얼룩바리 (Epinephelus coioides): 두툼하고 길쭉한 몸에 큰 머리, 아래턱이 나온 큰 입, 이어진 가시·연한 등지느러미, 둥근 꼬리.
     # 올리브 갈색 바탕에 주황 갈색 잔점이 빽빽하고(지느러미까지), 희미한 짙은 빗금 띠 다섯 줄
-    'orangegrouper': dict(type='C', name='얼룩바리', depth=0.27, width=0.16, tmax=0.38, snout=0.85, mouth=0.3, jaw=0.01, gape=0.1, scales=0,
+    'orangegrouper': dict(type='C', name='얼룩바리', depth=0.27, width=0.16, tmax=0.38, snout=0.85, mouth=0.3, jaw=0.012, gape=0.1, lips=1.3, scales=0,
                           fins=[_fin('dorsal', (0.3, 0.8), 0.32, prof=[(0, 0.6), (0.15, 1.0), (0.6, 0.8), (1, 1.1)], spiny=True),
                                 _fin('anal', (0.62, 0.8), 0.34, prof=[(0, 0.5), (0.4, 1.0), (1, 0.8)]), _fin('caudal', h=0.22, shape='round'),
                                 _fin('pectoral', s=(0.26, 0.26), h=0.16), _fin('pelvic', s=(0.3, 0.3), h=0.13)],
@@ -772,7 +780,7 @@ SPECIES = {
                                 _fin('caudal', h=0.4, shape='deepfork'), _fin('pectoral', s=(0.28, 0.28), h=0.26, long=True), _fin('pelvic', s=(0.34, 0.34), h=0.08)],
                           colors=P('#363c44', '#9aa2a8', '#e0e2e2', silver=0.7, metallic=0.35, fin_up=('#2a2e34', '#1a1e22', 0.9), fin_low=('#5a6066', '#3a4046', 0.9),
                                    patterns=[('scutes', dict(color='#6a7278', a=0.7)), ('spots', dict(n=70, r=(1, 2.5), color='#1a1e22', v=(0.4, 0.95), a=0.55))]),
-                          eye=dict(s=0.1, z=0.42, r=0.024, iris='#c8c0a0'), anim=dict(amp=1.0, freq=1.3)),
+                          eye=dict(s=0.1, z=0.42, r=0.024, iris='#a87040'), anim=dict(amp=1.0, freq=1.3)),
     # 꼬치고기 (Sphyraena jello): 창 같은 아주 길쭉한 몸, 뾰족한 머리에 아래턱이 튀어나온 큰 입(이빨), 멀리 떨어진 작은 등지느러미 둘,
     # 은빛 몸 위쪽 절반에 꺾인(<) 모양 짙은 빗금 줄 여럿, 노르스름한 꼬리
     'barracuda': dict(type='E', name='꼬치고기', depth=0.11, width=0.09, tmax=0.45, body_end=0.85, ped=0.3, snout=0.95, mouth=0.15,
@@ -798,14 +806,14 @@ SPECIES = {
                                              ('spots', dict(n=1, r=(7, 7), u=(0.2, 0.2), v=(0.56, 0.56), color='#c05050', a=0.5))]),
                           eye=dict(iris='#d8c070')),
     # 유럽농어 (Dicentrarchus labrax): 농어처럼 길쭉한 은빛 몸, 큰 입, 회청색 등, 아가미 뚜껑 위 끝의 흐린 검은 점, 떨어진 등지느러미 둘
-    'europeanseabass': dict(type='C', name='유럽농어', depth=0.22, width=0.12, mouth=0.25, snout=0.88, gape=0.08, scales=80,
+    'europeanseabass': dict(type='C', name='유럽농어', depth=0.22, width=0.12, mouth=0.25, snout=0.88, gape=0.09, jaw=0.008, scales=80,
                             fins=[_fin('dorsal', (0.28, 0.47), 0.45, prof=[(0, 0.45), (0.3, 1.0), (1, 0.35)], spiny=True),
                                   _fin('dorsal', (0.53, 0.76), 0.42, prof=[(0, 0.7), (0.3, 1.0), (1, 0.45)]),
                                   _fin('anal', (0.62, 0.77), 0.4, prof=[(0, 0.5), (0.3, 1.0), (1, 0.45)]), _fin('caudal', h=0.24, shape='emarg'),
                                   _fin('pectoral', s=(0.26, 0.26), h=0.14), _fin('pelvic', s=(0.3, 0.3), h=0.12)],
                             colors=P('#4e5e68', '#c4ccd0', '#f4f6f6', silver=0.8, metallic=0.2, fin_up=('#606e74', '#44525a', 0.8), fin_low=('#c8ccc8', '#d8dcd8', 0.6),
                                      patterns=[('spots', dict(n=1, r=(9, 9), u=(0.205, 0.205), v=(0.7, 0.7), color='#2a3238', a=0.75))]),
-                            eye=dict(iris='#d0c8a0')),
+                            eye=dict(r=0.023, iris='#d8d4c0')),
     # 유럽대구 (Merluccius merluccius): 길쭉한 몸에 큰 머리, 아래턱이 나온 큰 입(이빨), 큰 눈. 짧은 세모 첫 등지느러미와
     # 가운데가 오목한 긴 둘째 등지느러미·뒷지느러미, 각진 꼬리. 짙은 쇳빛 회색 등, 은백색 배
     'hake': dict(type='C', name='유럽대구', depth=0.165, width=0.1, tmax=0.32, ped=0.32, snout=0.92, mouth=0.3, jaw=0.012, gape=0.09, teeth=True, scales=90,
@@ -815,9 +823,9 @@ SPECIES = {
                        _fin('pectoral', s=(0.24, 0.24), h=0.14), _fin('pelvic', s=(0.22, 0.22), h=0.1)],
                  colors=P('#3e4a56', '#a8b0b8', '#eef0f2', silver=0.6, fin_up=('#4a5664', '#2e3844', 0.85), fin_low=('#b0b8c0', '#c8d0d8', 0.6),
                           patterns=[('sheen', 0.4)]),
-                 eye=dict(s=0.1, z=0.45, r=0.026, iris='#c8c8b0')),
+                 eye=dict(s=0.1, z=0.45, r=0.026, iris='#d8c070')),
     # 지중해곰치 (Muraena helena): 굵은 장어형 몸에 가슴지느러미가 없다. 머리 뒤부터 솟은 두툼한 등지느러미, 눈 뒤까지 찢어진 입.
-    # 짙은 흑갈색 바탕에 크림빛 노란 점이 빽빽 (작은 점이 모여 얼룩을 이룬다)
+    # 짙은 흑갈색 바탕에 크림빛 노란 점이 빽빽 (작은 점이 모여 얼룩을 이룬다). 작은 눈은 입 앞쪽 위에, 홍채는 연한 하늘빛 은색
     'moray': dict(type='G', name='지중해곰치', depth=0.09, width=0.07, snout=0.65, mouth=0.1, mouth_h=0.08, gape=0.06, jaw=0.006, teeth=True,
                   fins=[_fin('dorsal', (0.14, 1.0), 0.3, prof=[(0, 0.15), (0.1, 0.7), (0.55, 1.0), (1, 0.9)]),
                         _fin('anal', (0.45, 1.0), 0.3, prof=[(0, 0.15), (0.15, 0.75), (0.55, 1.0), (1, 0.9)]),
@@ -825,17 +833,18 @@ SPECIES = {
                   colors=P('#2a2016', '#3e3022', '#5a4a36', silver=0.0, fin_up=('#3a2e20', '#2a2014', 0.95), fin_low=('#3a2e20', '#2a2014', 0.95),
                            patterns=[('spots', dict(n=480, r=(3, 6), color='#e4cc70', v=(0.0, 1.0), a=0.85)),
                                      ('mottle', dict(color='#1a140e', a=0.35, scale=0.05))]),
-                  eye=dict(r=0.009, iris='#c0a040')),
+                  eye=dict(r=0.009, iris='#b8c8d8')),
     # 참다랑어 (Thunnus thynnus): 굵은 방추형(몸 가운데가 가장 높은 물방울 몸), 원뿔 머리, 짧은 가슴지느러미(둘째 등지느러미에 못 미침),
-    # 낫 모양 둘째 등·뒷지느러미, 노란 토막지느러미, 아주 가는 꼬리자루와 초승달 꼬리. 짙은 남색 등, 은빛 배에 희미한 흰 가로줄·점 줄
-    'bluefintuna': dict(type='E', name='참다랑어', depth=0.26, width=0.18, tmax=0.42, ped=0.08, snout=0.92, mouth=0.05, gape=0.06,
+    # 낫 모양 둘째 등·뒷지느러미, 노란 토막지느러미, 아주 가는 꼬리자루와 초승달 꼬리. 짙은 남색 등, 은빛 배에 희미한 흰 가로줄·점 줄.
+    # 머리: 은백색 홍채에 큰 동공의 눈이 입 선보다 꽤 위에, 입꼬리는 눈 앞 아래까지
+    'bluefintuna': dict(type='E', name='참다랑어', depth=0.26, width=0.18, tmax=0.42, ped=0.08, snout=0.92, mouth=0.05, gape=0.07,
                         fins=[_fin('dorsal', (0.3, 0.44), 0.36, prof=[(0, 1.0), (0.3, 0.6), (1, 0.15)], spiny=True), _fin('dorsal', (0.5, 0.6), 0.6, prof=[(0, 1.0), (0.4, 0.5), (1, 0.15)]),
                               _fin('anal', (0.56, 0.65), 0.52, prof=[(0, 1.0), (0.4, 0.5), (1, 0.15)]), _fin('caudal', h=0.46, shape='deepfork'),
                               _fin('pectoral', s=(0.26, 0.26), h=0.11), _fin('pelvic', s=(0.3, 0.3), h=0.06)],
                         colors=P('#0e1838', '#6e7e90', '#e8ecee', silver=0.8, metallic=0.45, fin_up=('#141e3a', '#0a1028', 0.9), fin_low=('#8a8c88', '#b0aa80', 0.75),
                                  patterns=[('finlets', True), ('sheen', 0.5),
                                            ('bands', dict(n=16, u=(0.3, 0.86), w=0.012, color='#f4f6f6', v=(0.12, 0.42), a=0.35))]),
-                        eye=dict(iris='#9aa2a8'), anim=dict(amp=0.9, freq=1.6)),
+                        eye=dict(s=0.1, z=0.36, r=0.02, iris='#c8ccd0', pupil=1.15), anim=dict(amp=0.9, freq=1.6)),
     # ===== 해외: 나일강 =====
     # 나일농어 (Lates niloticus): 바라문디와 같은 꼴 — 눈 위가 오목한 이마, 뾰족한 주둥이에 아래턱이 나온 큰 입 — 이지만 등이 더 높이
     # 솟은 거대한 몸, 높은 가시 등지느러미, 굵은 꼬리자루에 둥근 꼬리. 은회색에 푸르스름한 등, 노란 테 두른 검은 눈
@@ -864,7 +873,7 @@ SPECIES = {
                            fins=[_fin('dorsal', (0.24, 0.86), 0.28, prof=[(0, 0.5), (0.08, 1.0), (1, 0.9)]),
                                  _fin('anal', (0.44, 0.86), 0.3, prof=[(0, 0.5), (0.08, 1.0), (1, 0.9)]),
                                  _fin('caudal', h=0.14, shape='round'), _fin('pectoral', s=(0.15, 0.15), h=0.1), _fin('pelvic', s=(0.42, 0.42), h=0.06)],
-                           barbels=[(0.02, -0.05, 0.16, 0.006, 'side'), (0.012, 0.25, 0.07, 0.004, 'up'), (0.03, -0.35, 0.08, 0.004, 'down'), (0.035, -0.5, 0.06, 0.004, 'down')],
+                           barbels=[(0.02, -0.05, 0.16, 0.0038, 'side'), (0.012, 0.25, 0.07, 0.0026, 'up'), (0.03, -0.35, 0.08, 0.0026, 'down'), (0.035, -0.5, 0.06, 0.0026, 'down')],
                            colors=P('#3a3a2c', '#6e6a52', '#d8d4c4', silver=0.0, fin_up=('#3a3a2e', '#2a2a22', 0.95), fin_low=('#4a4a3c', '#3a3a2e', 0.95),
                                     patterns=[('mottle', dict(color='#1e1e16', a=0.6, scale=0.05)), ('mottle', dict(color='#8a8668', a=0.35, scale=0.035))]),
                            eye=dict(iris='#a08040')),

@@ -448,27 +448,93 @@ def make_eye(d, B, side):
             zr = 0.35 if side > 0 else -0.05
             s = e['s'] if side > 0 else e['s'] + 0.025
         side = eside
-    # 진짜 물고기 눈처럼 머리에 묻힌 납작한 돔: 겉으로는 반지름의 0.18만 나오고 (0.3이면 탁구공처럼 튀어나와 보였다), 옆(x)으로 눌러서
-    # 머리가 얇은 어종(빙어·갈치·전갱이 …)도 안쪽 끝이 몸 가운데를 넘지 않게 한다 (넘으면 반대편 머리로 뚫고 나온다).
+    # 눈 = 머리 겉면에 맞춰 붙은 볼록 렌즈 (보이는 테 반지름 rim·r에서 머리 겉면과 딱 만나고 가운데만 bulge·r 솟는다).
+    # 예전에는 머리에 박은 공이라, 보이는 테가 방향마다 달라 동공이 찌그러지고 머리 위가 좁은 어종(꼬치고기)은 눈알 위쪽이
+    # 머리 밖으로 솟아 눈 위에 눈이 또 있는 것처럼 보였다. 공일 때 0.3이면 탁구공처럼 튀어나와 보였다.
+    # bulge: 가운데가 솟은 정도 (반지름 비율). 다랑어·고등어류(E)는 기름눈꺼풀 밑에 거의 평평하게 묻혀 있다
+    bulge = e.get('bulge', 0.1 if d['type'] == 'E' else 0.18)
+    if abs(zr) >= 0.55 or (flat and not d.get('ray')):
+        return make_eye_ball(d, B, side, s, zr, r, bulge)
+    rim = 0.7
+    c = mathutils.Vector((side * B.surface_x(s, zr), B.y(s), B.z_at(s, zr)))
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=20, v_segments=12, radius=r)
+    uvl = bm.loops.layers.uv.new('UV')
+    # 보이는 테가 눈 텍스처 반지름 0.8 (동공 0.4 = 눈의 절반, 홍채는 넓은 금빛·은빛 고리)
+    for f in bm.faces:
+        for l in f.loops:
+            p = l.vert.co
+            q = math.hypot(p.y, p.z) / r
+            k = min(q * 0.8 / rim, 0.98) / q if q > 1e-6 else 0.0
+            l[uvl].uv = (0.75 + 0.125 * (0.5 + 0.5 * p.y / r * k), 0.25 + 0.25 * (0.5 + 0.5 * p.z / r * k))
+
+    def surf(y, z):
+        s2 = min(1.0, max(0.0, (y - B.y0) / B.be))
+        hh = B.top(s2) if z > B.zc(s2) else B.bot(s2)
+        zr2 = max(-1.0, min(1.0, (z - B.zc(s2)) / hh)) if hh > 1e-6 else 0.0
+        return B.surface_x(s2, zr2)
+    for vv in bm.verts:
+        p = vv.co.copy()
+        y, z = c.y + p.y, c.z + p.z
+        t = math.hypot(p.y, p.z) / r
+        sx2 = surf(y, z)
+        if p.x > 0:
+            # 바깥 반구: 테 안은 머리 겉면 + 볼록한 각막, 테 밖은 머리 속으로 살짝 묻힌다
+            x = sx2 + (bulge * r * (1 - (t / rim) ** 2) if t < rim else -0.03 * r)
+        else:
+            x = max(0.0, sx2 - 0.03 * r - r * 0.5 * math.sqrt(max(0.0, 1 - t * t)))   # 뒤쪽은 머리 속 (몸 가운데를 넘지 않게)
+        vv.co = mathutils.Vector((side * x, y, z))
+    return bm
+
+
+def make_eye_ball(d, B, side, s, zr, r, bulge):
+    """머리 위쪽에 붙은 눈(말뚝망둥어·양태·통구멍)과 가자미 눈: 머리 위로 솟는 공. 겉면이 거의 위를 보는 곳이라
+    옆(x)으로 붙이는 렌즈로는 납작하게 찢어졌다. 안쪽 끝은 몸 가운데를 넘지 않게 옆으로 누른다."""
     sx = B.surface_x(s, zr)
-    kx = min(r * 0.8, (sx + r * 0.25) / 2)
-    x = sx + r * 0.18 - kx
-    c = mathutils.Vector((side * x, B.y(s), B.z_at(s, zr)))
+    kx = min(r * 0.8, (sx + r * bulge) / 2 * 0.95)
+    c = mathutils.Vector((side * (sx + r * bulge - kx), B.y(s), B.z_at(s, zr)))
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=20, v_segments=12, radius=r)
     bmesh.ops.scale(bm, vec=(kx / r, 1.0, 1.0), verts=bm.verts)
     uvl = bm.loops.layers.uv.new('UV')
+
+    def outside(th, t):
+        yy, zz = c.y + t * r * math.cos(th), c.z + t * r * math.sin(th)
+        s2 = min(1.0, max(0.0, (yy - B.y0) / B.be))
+        hh = B.top(s2) if zz > B.zc(s2) else B.bot(s2)
+        zr2 = max(-1.0, min(1.0, (zz - B.zc(s2)) / hh)) if hh > 1e-6 else 0.0
+        return abs(c.x) + kx * math.sqrt(max(0.0, 1 - t * t)) > B.surface_x(s2, zr2)
+
+    def cap_at(th):
+        # 보이는 테: 가운데에서 바깥으로 훑어 처음 머리 속으로 들어가는 곳 (머리 위로 솟은 쪽은 끝까지 보인다)
+        prev = 0.0
+        for i in range(1, 41):
+            t = i / 40
+            if not outside(th, t):
+                lo, hi = prev, t
+                for _ in range(10):
+                    m = (lo + hi) / 2
+                    lo, hi = (m, hi) if outside(th, m) else (lo, m)
+                return max(lo, 0.3)
+            prev = t
+        return 1.0
+    NC = 16
+    caps = [cap_at(2 * math.pi * i / NC) for i in range(NC)]
     for f in bm.faces:
         for l in f.loops:
             p = l.vert.co
-            # 옆에서 투영: 바깥쪽 면이 눈 텍스처(홍채·동공)
-            l[uvl].uv = (0.75 + 0.125 * (0.5 + p.y / (2 * r) * 0.98), 0.25 + 0.25 * (0.5 + p.z / (2 * r) * 0.98))
+            q = math.hypot(p.y, p.z) / r
+            fi = (math.atan2(p.z, p.y) % (2 * math.pi)) / (2 * math.pi) * NC
+            i0 = int(fi) % NC
+            cap = caps[i0] + (caps[(i0 + 1) % NC] - caps[i0]) * (fi - int(fi))
+            k = min(q * 0.8 / cap, 0.98) / q if q > 1e-6 else 0.0
+            l[uvl].uv = (0.75 + 0.125 * (0.5 + 0.5 * p.y / r * k), 0.25 + 0.25 * (0.5 + 0.5 * p.z / r * k))
     for vv in bm.verts:
         vv.co += c
     return bm
 
 
-def make_tube(points, r0, r1, uv_rect, sides=6):
+def make_tube(points, r0, r1, uv_rect, sides=6, taper=1.0):
     bm = bmesh.new()
     uvl = bm.loops.layers.uv.new('UV')
     rings = []
@@ -478,7 +544,7 @@ def make_tube(points, r0, r1, uv_rect, sides=6):
         t = (mathutils.Vector(points[min(i + 1, n - 1)]) - mathutils.Vector(points[max(i - 1, 0)])).normalized()
         a = t.orthogonal().normalized()
         b = t.cross(a)
-        r = r0 + (r1 - r0) * i / (n - 1)
+        r = r1 + (r0 - r1) * (1 - i / (n - 1)) ** taper   # taper > 1: 밑동에서 빨리 가늘어지고 끝은 채찍처럼 길게
         ring = [bm.verts.new(p + (a * math.cos(2 * math.pi * k / sides) + b * math.sin(2 * math.pi * k / sides)) * r) for k in range(sides)]
         rings.append(ring)
     u0, v0, u1, v1 = uv_rect
@@ -519,25 +585,31 @@ def make_barbels(d, B):
                 vv.co += mathutils.Vector(pts[-1])
             out.append(esca)
             continue
-        for side in (1, -1):
-            x = B.surface_x(s, zr) * 0.9
-            start = mathutils.Vector((side * x, B.y(s), B.z_at(s, zr)))
-            dirs = {'down': (0.35, -0.2, -1.0), 'side': (1.0, -0.35, -0.25), 'up': (0.8, -0.3, 0.45), 'flap': (1.0, 0.1, -0.6)}[kind]
+        # chin: 아래턱 끝 가운데 하나 (대구·쉬드럼), fwd: 앞으로 뻗은 뻣뻣한 수염 (아로와나 턱, 코 수염)
+        for side in ((0,) if kind == 'chin' else (1, -1)):
+            if kind == 'chin':
+                start = mathutils.Vector((0.0, B.y(s), B.zc(s) - B.bot(s) * 0.92))
+            else:
+                x = B.surface_x(s, zr) * 0.9
+                start = mathutils.Vector((side * x, B.y(s), B.z_at(s, zr)))
+            dirs = {'down': (0.35, -0.2, -1.0), 'side': (1.0, -0.35, -0.25), 'up': (0.8, -0.3, 0.45), 'flap': (1.0, 0.1, -0.6),
+                    'chin': (0.0, 0.25, -1.0), 'fwd': (0.25, -1.0, -0.12)}[kind]
             d0 = mathutils.Vector((dirs[0] * side, dirs[1], dirs[2])).normalized()
+            limp = 0.25 if kind == 'fwd' else 1.0
             pts = []
             n = 12 if L > 0.06 else 9
             for i in range(n):
                 t = i / (n - 1)
                 # 살 수염은 물에서 힘없이 뒤로 흐르고 아래로 처진다 (긴 수염일수록 많이)
-                droop = mathutils.Vector((0.12 * side * math.sin(math.pi * t), 0.55, -0.15 - 0.2 * min(1.0, L / 0.1)))
+                droop = mathutils.Vector((0.12 * side * math.sin(math.pi * t), 0.55, -0.15 - 0.2 * min(1.0, L / 0.1))) * limp
                 p = start + d0 * L * t + droop * L * t * t
                 pts.append(tuple(p))
             if kind == 'flap':
                 # 아귀 머리 둘레 피부 술: 짧고 끝이 납작하게 퍼진다
                 out.append(make_tube(pts, th, th * 1.3, (0.875, 0.25, 0.9375, 0.375), sides=5))
             else:
-                # 밑동이 도톰하고 끝이 가늘다 (예전 0.7·0.2 비율은 가는 실이라 게임 화면에서 안 보였다)
-                out.append(make_tube(pts, th * 1.05, th * 0.3, (0.875, 0.25, 0.9375, 0.375), sides=8))
+                # 밑동이 도톰하고 빨리 가늘어져 끝은 실처럼 (0.7·0.2는 안 보였고, 1.05·0.3 고른 굵기는 막대처럼 보였다)
+                out.append(make_tube(pts, th * 1.1, th * 0.12, (0.875, 0.25, 0.9375, 0.375), sides=8, taper=1.8))
     if d.get('beak'):
         L = d['beak']
         z0 = B.zc(0.02) - B.bot(0.02) * 0.4
