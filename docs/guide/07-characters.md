@@ -6,14 +6,41 @@ VRM은 [VRoid Studio](https://vroid.com/studio)(무료) 같은 프로그램으�
 
 > 같은 설명서가 게임 폴더 `ProjectFishing_Data\StreamingAssets\Characters\읽어주세요.txt`에도 들어 있다.
 
-## 폴더 두 곳
+## 폴더 세 곳
 
 | | 위치 | 특징 |
 |---|---|---|
 | **[A] 내 폴더** | `문서\짭풍명월\Characters` | 캐릭터 창(C) → [캐릭터 모델] → **[폴더 열기]**로 열린다. 게임을 지우거나 새 버전을 깔아도 남는다. OneDrive로 문서를 옮긴 PC는 `OneDrive\문서` 아래 |
 | **[B] 게임 폴더** | `게임 설치 폴더\ProjectFishing_Data\StreamingAssets\Characters` | 게임과 함께 온 기본 캐릭터 11개, `characters.json`, `읽어주세요.txt`. 새 버전을 깔면 원래대로 돌아간다 |
+| **[C] 추가 캐릭터** | `게임 설치 폴더\Characters` (ProjectFishing.exe 옆) | 빌드에 넣지 않는 캐릭터(VRoid Hub 등에서 받은 남의 모델). **`파일.vrm`과 같은 이름의 정보 `파일.json`이 함께 있는 것만** 쓴다. 캐릭터 창 [캐릭터 모델] 위 **[열기]** |
 
-같은 이름의 파일이 두 곳에 다 있으면 **[A] 내 폴더 것이 이긴다.** 그래서 바꿀 때는 [A]를 쓰는 게 좋다.
+같은 이름의 파일이 여러 곳에 있으면 **[A] → [C] → [B]** 순으로 이긴다. 그래서 바꿀 때는 [A]를 쓰는 게 좋다.
+
+### [C] 추가 캐릭터 정보 파일
+
+`Rosi.vrm` 옆에 `Rosi.json`:
+
+```json
+{
+    "name": "로지",
+    "gender": "female",
+    "author": "skye_cloudx",
+    "url": "https://hub.vroid.com/characters/8388903670414959937/models/3821787996741928815",
+    "license": "VRoid Hub 이용 조건: 재배포·개조·상업 이용 허락",
+    "credit": false
+}
+```
+
+| 항목 | 뜻 |
+|---|---|
+| `name` | 게임에 보일 이름 (비우면 VRM 안의 이름, 일본어는 글꼴에 없어 빠질 수 있다) |
+| `gender` | `"female"` / `"male"` — 적으면 그 성별 **NPC 후보에 저절로 들어간다** (`characters.json`의 `npcFemale`/`npcMale`에 더해서) |
+| `author`, `url`, `license` | 만든 사람·받은 곳·이용 조건 (캐릭터 창에 만든 사람이 나온다) |
+| `credit` | `true`면 캐릭터 창에 "만든 사람 표기가 필요해요" |
+| `brightness` | 밝기 배수 (0.2~1.5, 적지 않으면 `characters.json`의 `brightness` 또는 1) |
+
+정보 파일이 없는 `.vrm`은 목록에 안 나오고 캐릭터 창에 노란 글씨로 알려 준다. 게임 폴더를 통째로 남에게 줄 때는 [C]의 모델마다 **재배포 허락**을 확인할 것 (VRoid Hub 모델 페이지의 이용 조건).
+에디터에서 실행하면 `Builds\Windows\Characters`를 읽는다 (저장소에는 안 올라간다, `.gitignore`의 `Builds/`).
 
 ## 1. 내 캐릭터 바꾸기 (가장 쉬움)
 

@@ -9,8 +9,8 @@ namespace Fishing.Characters
     /// 누구에게 어떤 VRM을 입히는지 (characters.json). 빌드한 뒤에도 파일만 바꿔 갈아입힐 수 있다 — 안내는 docs/guide/09-characters.md.
     /// - 게임 폴더 StreamingAssets/Characters/characters.json: 게임과 함께 나가는 기본 설정 (기본 VRM들과 같은 폴더)
     /// - 문서/짭풍명월/Characters/characters.json: 있으면 적은 항목만 위를 덮는다 (게임을 다시 깔아도 남는다)
-    /// 파일 이름은 문서 폴더에 있으면 그것을, 없으면 게임 폴더 것을 쓴다 → 같은 이름으로 문서 폴더에 넣으면 기본 캐릭터가 바뀐다.
-    /// NPC: 이름으로 정한 것(npc)이 있으면 그것, 없으면 성별 목록(npcMale/npcFemale)에서 이름으로 하나를 고른다(늘 같은 사람 = 같은 모델).
+    /// 파일 이름은 문서 폴더 → 추가 캐릭터 폴더(<see cref="CharacterPack"/>) → 게임 폴더 순으로 찾는다 → 같은 이름으로 문서 폴더에 넣으면 기본 캐릭터가 바뀐다.
+    /// NPC: 이름으로 정한 것(npc)이 있으면 그것, 없으면 성별 목록(npcMale/npcFemale + 추가 캐릭터 중 그 성별)에서 이름으로 하나를 고른다(늘 같은 사람 = 같은 모델).
     /// </summary>
     public static class CharacterRoster
     {
@@ -62,6 +62,8 @@ namespace Fishing.Characters
         public static void Reload()
         {
             _warnings.Clear();
+            CharacterPack.Reload();
+            _warnings.AddRange(CharacterPack.Warnings);
             _cfg = Read(Path.Combine(VrmCharacters.BuiltInFolder, FileName)) ?? new Config();
             var user = Read(Path.Combine(VrmCharacters.UserFolder, FileName));
             if (user != null)
@@ -91,9 +93,10 @@ namespace Fishing.Characters
                     _cfg.brightness = merged.ToArray();
                 }
             }
+            int packWarnings = _warnings.Count;
             foreach (var f in AllFiles())
                 if (IdOf(f) == null) _warnings.Add($"{FileName}에 적힌 \"{f}\" 파일이 없습니다.");
-            foreach (var w in _warnings) Debug.LogWarning("[Dev] " + w);
+            for (int i = packWarnings; i < _warnings.Count; i++) Debug.LogWarning("[Dev] " + _warnings[i]); // 추가 캐릭터 경고는 CharacterPack이 이미 남겼다
         }
 
         static Config Read(string path)
@@ -119,13 +122,14 @@ namespace Fishing.Characters
             if (_cfg.npc != null) foreach (var a in _cfg.npc) yield return a.file;
         }
 
-        /// <summary>파일 이름 → VRM id. 문서 폴더에 있으면 user/, 없으면 게임 폴더(builtin/). 둘 다 없으면 null.</summary>
+        /// <summary>파일 이름 → VRM id. 문서 폴더에 있으면 user/, 추가 캐릭터(정보 있는 것)면 pack/, 아니면 게임 폴더(builtin/). 다 없으면 null.</summary>
         public static string IdOf(string file)
         {
             if (string.IsNullOrWhiteSpace(file)) return null;
             file = file.Trim();
             if (!file.EndsWith(".vrm", StringComparison.OrdinalIgnoreCase)) file += ".vrm";
             if (File.Exists(Path.Combine(VrmCharacters.UserFolder, file))) return "user/" + file;
+            if (CharacterPack.Find(file) is CharacterPack.Entry pack) return "pack/" + pack.File;
             if (File.Exists(Path.Combine(VrmCharacters.BuiltInFolder, file))) return "builtin/" + file;
             return null;
         }
@@ -142,6 +146,7 @@ namespace Fishing.Characters
         public static float BrightnessOf(string file)
         {
             Ensure();
+            if (CharacterPack.Find(file) is CharacterPack.Entry pack && pack.brightness > 0f) return Mathf.Clamp(pack.brightness, 0.2f, 1.5f);
             if (_cfg.brightness != null)
                 foreach (var b in _cfg.brightness)
                     if (string.Equals(b.file, file, StringComparison.OrdinalIgnoreCase)) return Mathf.Clamp(b.value, 0.2f, 1.5f);
@@ -168,7 +173,15 @@ namespace Fishing.Characters
                         var id = IdOf(a.file);
                         if (id != null) return id;
                     }
-            return Pick(female ? _cfg.npcFemale : _cfg.npcMale, name) ?? Pick(female ? _cfg.npcMale : _cfg.npcFemale, name) ?? PlayerDefault(female);
+            return Pick(NpcFiles(female), name) ?? Pick(NpcFiles(!female), name) ?? PlayerDefault(female);
+        }
+
+        /// <summary>그 성별 NPC가 고를 파일: characters.json 목록 + 추가 캐릭터 중 그 성별.</summary>
+        static IEnumerable<string> NpcFiles(bool female)
+        {
+            var list = female ? _cfg.npcFemale : _cfg.npcMale;
+            if (list != null) foreach (var f in list) yield return f;
+            foreach (var f in CharacterPack.FilesFor(female)) yield return f;
         }
 
         /// <summary>characters.json의 npc에 이름으로 정해 둔 사람 (색을 바꾸지 않는다).</summary>
@@ -181,14 +194,13 @@ namespace Fishing.Characters
             return false;
         }
 
-        static string Pick(string[] files, string name)
+        static string Pick(IEnumerable<string> files, string name)
         {
-            if (files == null) return null;
             var ids = new List<string>();
             foreach (var f in files)
             {
                 var id = IdOf(f);
-                if (id != null) ids.Add(id);
+                if (id != null && !ids.Contains(id)) ids.Add(id);
             }
             if (ids.Count == 0) return null;
             return ids[(int)(StableHash(name ?? "") % (uint)ids.Count)];

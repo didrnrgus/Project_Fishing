@@ -9,7 +9,8 @@ namespace Fishing.Characters
 {
     /// <summary>
     /// VRM 캐릭터 (VRoid Studio 등에서 만든 .vrm, 0.x·1.0 모두). 빌드를 다시 하지 않아도 폴더에 넣으면 캐릭터 창에서 골라 쓸 수 있다.
-    /// - 폴더: 문서/짭풍명월/Characters (유저), StreamingAssets/Characters (게임에 넣어 배포하는 기본 캐릭터)
+    /// - 폴더: 문서/짭풍명월/Characters (유저), StreamingAssets/Characters (게임에 넣어 배포하는 기본 캐릭터),
+    ///   게임 폴더/Characters (추가 캐릭터, 빌드에 넣지 않고 정보 .json이 있는 것만 — <see cref="CharacterPack"/>)
     /// - UniVRM(MIT, Packages/manifest.json)으로 실행 중에 읽는다 (Vrm/VrmLoader, 따로 어셈블리). 한 번 읽은 것은 숨긴 선반에 원본으로 두고 복제해 쓴다
     ///   (필드 캐릭터·대기실 캐릭터·NPC·초상화가 한 파일을 함께 쓴다). 맵을 지을 때는 <see cref="LoadNow"/>로 그 자리에서 읽고,
     ///   캐릭터 창 목록은 <see cref="Request"/>로 뒤에서 읽어 다 읽으면 <see cref="Loaded"/>로 알린다.
@@ -48,7 +49,7 @@ namespace Fishing.Characters
         /// <summary>VRM 하나를 다 읽었을 때 (실패해도 알린다, Info.Error).</summary>
         public static event Action<string> Loaded;
 
-        /// <summary>쓸 수 있는 VRM id 목록: "builtin/파일.vrm", "user/파일.vrm".</summary>
+        /// <summary>쓸 수 있는 VRM id 목록: "builtin/파일.vrm", "pack/파일.vrm", "user/파일.vrm".</summary>
         public static List<string> List()
         {
             var ids = new List<string>();
@@ -64,6 +65,7 @@ namespace Fishing.Characters
                 catch (Exception e) { Debug.LogWarning($"[Dev] VRM 폴더를 읽지 못함: {folder} ({e.Message})"); }
             }
             Scan(BuiltInFolder, "builtin/");
+            foreach (var e in CharacterPack.Entries) ids.Add("pack/" + e.File);
             Scan(UserFolder, "user/");
             Scan(OutfitFolder, "user/outfits/");
             return ids;
@@ -74,6 +76,7 @@ namespace Fishing.Characters
             if (string.IsNullOrEmpty(id)) return null;
             if (id.StartsWith("builtin/")) return System.IO.Path.Combine(BuiltInFolder, id.Substring(8));
             if (id.StartsWith("user/")) return System.IO.Path.Combine(UserFolder, id.Substring(5));
+            if (id.StartsWith("pack/")) return CharacterPack.Find(id.Substring(5)) != null ? System.IO.Path.Combine(CharacterPack.Folder, id.Substring(5)) : null;
             return null;
         }
 
@@ -189,9 +192,16 @@ namespace Fishing.Characters
 
             if (meta.Title != null) info.Title = meta.Title;
             info.Author = meta.Author;
+            // 추가 캐릭터는 정보 파일에 적은 이름·만든 사람이 이긴다 (VRM 안 이름은 일본어가 많다)
+            if (info.Id.StartsWith("pack/") && CharacterPack.Find(info.Id.Substring(5)) is CharacterPack.Entry pack)
+            {
+                if (!string.IsNullOrWhiteSpace(pack.name)) info.Title = pack.name;
+                if (!string.IsNullOrWhiteSpace(pack.author)) info.Author = pack.author;
+                if (pack.credit) info.CreditRequired = true;
+            }
             info.Thumbnail = meta.Thumbnail;
             info.Permission = meta.Permission;
-            info.CreditRequired = meta.CreditRequired;
+            info.CreditRequired |= meta.CreditRequired;
             _templates[info.Id] = go;
             Debug.Log($"[Dev] VRM 읽음: {info.Id} \"{info.Title}\" ({info.Author}), 키 {info.Height:0.00}m");
         }
