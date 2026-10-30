@@ -47,7 +47,7 @@ namespace Fishing.World
             },
             Platforms = new[]
             {
-                new PlatformSpec { Area = new Rect(TcStonesX - 2.6f, -44f, 5.2f, 70f), Kind = PlatformKind.Custom, Name = "탄천 징검다리" },
+                new PlatformSpec { Area = new Rect(TcStonesX - 3.2f, -44f, 6.4f, 70f), Kind = PlatformKind.Custom, Name = "탄천 징검다리" },
                 new PlatformSpec { Area = new Rect(TcFootX - 1.5f, -51f, 3f, 83f), Kind = PlatformKind.Custom, Name = "탄천 보행교" },
             },
             Areas = new[]
@@ -657,7 +657,7 @@ namespace Fishing.World
             bool Clear(float x, float z)
             {
                 if (x > -24f && x < 18f && z < 0f) return true;   // 시작 둔치 앞 물가
-                if (Mathf.Abs(x - KoreaCoasts.TcStonesX) < 3f || Mathf.Abs(x - KoreaCoasts.TcWeirX) < 4f) return true;
+                if (Mathf.Abs(x - KoreaCoasts.TcStonesX) < 4f || Mathf.Abs(x - KoreaCoasts.TcWeirX) < 4f) return true;
                 if (UnderFootRamp(x, z)) return true;
                 if (Mathf.Abs(Mathf.Abs(x) - KoreaCoasts.TcBridgeX) < 13.5f && (z < NearZ(x, 4f) || z > FarZ(x, 4f))) return true;   // 차도교 밑 광장
                 foreach (var n in _b.Spec.Npcs) if (new Vector2(n.Pos.x - x, n.Pos.z - z).magnitude < 4f) return true;
@@ -1401,12 +1401,12 @@ namespace Fishing.World
         // ---------------------------------------------------------------- 징검다리
 
         /// <summary>
-        /// 징검다리 (사용자가 직접 찍은 실물 사진, 2026-10-30): 길쭉한 화강석 판(길을 가로질러 1.5m × 0.62m)을 두 줄로 놓되
-        /// 왼쪽 줄과 오른쪽 줄이 반 칸씩 앞뒤로 엇갈린 지그재그 — 반 칸(0.64m)마다 왼쪽·오른쪽 번갈아 한 장씩, 두 줄은 가운데서 40cm쯤 겹치고 판 사이엔 좁은 틈.
-        /// 윗면은 곰보 진 밝은 회색 화강석, 수면 위 34cm로 두툼하고 옆면은 젖어 어둡다. 판마다 높이·기울기·방향이 조금씩 다르고 가끔 하나가 내려앉았다.
-        /// 길은 아주 완만하게 휜다. 옆 여울엔 막돌이 흩어져 물살이 부서진다. 양 끝은 콘크리트 계단 참.
-        /// 걷는 받침은 판과 판을 잇는 보이지 않는 판 (돌 위를 디디듯 지나간다).
-        /// (예전: 화강석 지그재그 한 줄 + 너럭돌 → 한 줄에 둘씩 나란히 — 실물과 달라 바꿨다)
+        /// 징검다리 (사용자가 직접 찍은 실물 사진 + 위성 사진 탑뷰, 2026-10-30): 길쭉한 화강석 판(길을 가로질러 1.3m × 0.78m)이
+        /// **두 줄 나란히 사다리 가로대처럼** 1.15m마다 놓였다 — 같은 줄 판 사이 35cm 틈으로 물이 빠지고, 두 줄 사이엔 15cm 좁은 틈.
+        /// 판은 모두 같은 쪽으로 15° 비스듬해 위에서 보면 두 줄이 조금 어긋나 보인다. 길 전체는 완만한 S자로 휜다 (±1.25m).
+        /// 윗면은 곰보 진 밝은 회색 화강석, 수면 위 30cm로 두툼하고 옆면은 젖어 어둡다. 판마다 높이·기울기가 조금씩 다르고 가끔 하나가 내려앉았다.
+        /// 옆 여울엔 막돌이 흩어져 물살이 부서진다. 양 끝은 콘크리트 계단 참. 걷는 받침은 줄과 줄을 잇는 보이지 않는 판.
+        /// (예전: 화강석 지그재그 한 줄 + 너럭돌 → 좌우 반 칸 엇갈림 — 사진을 잘못 읽었다는 사용자 지적, 위성 사진으로 바로잡음)
         /// </summary>
         void SteppingStones()
         {
@@ -1421,29 +1421,31 @@ namespace Fishing.World
             var wet = new Color(0.3f, 0.32f, 0.27f);
             var mossy = new Color(0.55f, 0.58f, 0.48f);
             float z0 = NearZ(x0, 1.2f), z1 = FarZ(x0, 1.2f);
-            float top = Water + 0.34f;
-            // 길 가운데 x: 아주 완만하게 휜다 (최대 ±0.45m)
-            float Mid(float z) => x0 + 0.35f * Mathf.Sin(z * 0.06f + 0.7f) + 0.1f * Mathf.Sin(z * 0.17f + 2.1f);
-            var steps = new List<Vector3>();   // 디딤 자리 (길 가운데, 반 칸마다)
-            // 왼쪽 줄과 오른쪽 줄이 반 칸씩 앞뒤로 엇갈린 지그재그: 판은 가로(길을 가로질러) 1.5m × 세로 0.62m,
-            // 두 줄이 가운데서 40cm쯤 겹친다. 반 칸(0.64m)마다 왼쪽·오른쪽 번갈아 한 장씩
-            const float Half = 0.64f;
-            float z = z0 + 0.4f;
-            int k0 = 0;
-            while (z < z1 - 0.3f)
+            float top = Water + 0.3f;
+            // 길 가운데 x: 완만한 S자로 휜다 (최대 ±1.25m, 위성 사진)
+            float Mid(float z) => x0 + 1.1f * Mathf.Sin(z * 0.075f + 0.7f) + 0.15f * Mathf.Sin(z * 0.17f + 2.1f);
+            var steps = new List<Vector3>();   // 디딤 자리 (줄 가운데)
+            // 두 줄이 나란히 사다리 가로대처럼 (위성 사진 + 실물 사진): 판은 길을 가로질러 길쭉하게 1.3m × 0.78m,
+            // 같은 줄 판 사이 35cm 틈, 두 줄 사이 15cm 틈. 판은 모두 같은 쪽으로 15° 비스듬해 두 줄이 조금 어긋나 보인다
+            const float Pitch = 1.15f, Slant = 15f;
+            float z = z0 + 0.5f;
+            while (z < z1 - 0.4f)
             {
                 float mx = Mid(z);
-                float sg = k0 % 2 == 0 ? -1f : 1f;
-                float w = R(1.42f, 1.58f), d = R(0.56f, 0.62f);
-                var c = new Vector3(mx + sg * R(0.52f, 0.6f), top + R(-0.03f, 0.03f), z + R(-0.03f, 0.03f));
-                if (_rng.NextDouble() < 0.04) c.y -= R(0.05f, 0.1f);   // 가끔 내려앉은 판
-                var tone = Color.Lerp(Color.white, new Color(0.85f, 0.88f, 0.8f), R(0f, 0.5f)) * R(0.88f, 1.06f);
-                tone.a = 1f;
-                bmCut.Block(c + Vector3.down * 0.8f, new Vector3(w, 1.6f, d), R(0.03f, 0.05f),
-                    Quaternion.Euler(R(-1.5f, 1.5f), R(-4.5f, 4.5f), R(-1.5f, 1.5f)), tone, wet);
+                float rowYaw = Slant + Mathf.Atan2(Mid(z + 0.5f) - Mid(z - 0.5f), 1f) * Mathf.Rad2Deg;   // 길이 휘는 만큼 같이 돈다
+                var across = Quaternion.Euler(0f, rowYaw, 0f) * Vector3.right;
+                foreach (float sg in new[] { -1f, 1f })
+                {
+                    float w = R(1.24f, 1.34f), d = R(0.74f, 0.82f);
+                    var c = new Vector3(mx, top + R(-0.03f, 0.03f), z) + across * sg * (w * 0.5f + 0.075f) + new Vector3(R(-0.03f, 0.03f), 0f, R(-0.04f, 0.04f));
+                    if (_rng.NextDouble() < 0.04) c.y -= R(0.05f, 0.1f);   // 가끔 내려앉은 판
+                    var tone = Color.Lerp(Color.white, new Color(0.85f, 0.88f, 0.8f), R(0f, 0.5f)) * R(0.88f, 1.06f);
+                    tone.a = 1f;
+                    bmCut.Block(c + Vector3.down * 0.8f, new Vector3(w, 1.6f, d), R(0.03f, 0.05f),
+                        Quaternion.Euler(R(-1.2f, 1.2f), rowYaw + R(-2f, 2f), R(-1.2f, 1.2f)), tone, wet);
+                }
                 steps.Add(new Vector3(mx, top, z));
-                z += Half * R(0.97f, 1.03f);
-                k0++;
+                z += Pitch * R(0.98f, 1.02f);
             }
             // 줄 밖으로 흩어진 막돌 (물가 쪽은 많이, 가운데는 몇 개만 머리를 내민다)
             for (int k = 0; k < 18; k++)
@@ -1451,7 +1453,7 @@ namespace Fishing.World
                 float zz = R(z0, z1);
                 float edge = Mathf.Min(zz - z0, z1 - zz);
                 if (edge > 8f && _rng.NextDouble() < 0.6) continue;
-                var c = new Vector3(Mid(zz) + R(1.9f, 3.6f) * (_rng.NextDouble() < 0.6 ? 1f : -1f), Water + R(-0.25f, 0.12f), zz);
+                var c = new Vector3(Mid(zz) + R(2.2f, 3.9f) * (_rng.NextDouble() < 0.6 ? 1f : -1f), Water + R(-0.25f, 0.12f), zz);
                 bmField.Block(c + Vector3.down * 0.7f, new Vector3(R(0.6f, 1.2f), 1.4f, R(0.5f, 1f)), 0.25f, Quaternion.Euler(R(-8f, 8f), R(0f, 180f), R(-8f, 8f)), mossy, wet);
             }
             for (int k = 0; k < 70; k++)
@@ -1467,7 +1469,7 @@ namespace Fishing.World
                 var d = b - a;
                 d.y = 0f;
                 if (d.sqrMagnitude < 0.01f) continue;
-                bmWalk.Block((a + b) * 0.5f + Vector3.down * 0.08f, new Vector3(2.4f, 0.1f, d.magnitude + 0.5f), 0f, Quaternion.LookRotation(d.normalized), Color.white, Color.white);
+                bmWalk.Block((a + b) * 0.5f + Vector3.down * 0.08f, new Vector3(2.7f, 0.1f, d.magnitude + 0.5f), 0f, Quaternion.LookRotation(d.normalized), Color.white, Color.white);
             }
             // 양쪽 둑 끝 콘크리트 계단 참 (물가 → 둔치), 줄 끝 자리에 맞춰
             foreach (var (zEnd, dir) in new[] { (z0, -1f), (z1, 1f) })
