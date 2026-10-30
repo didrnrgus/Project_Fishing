@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using Fishing.Angling;
 using Fishing.Core;
@@ -22,6 +23,8 @@ namespace Fishing.Dev
         /// 물체이름이 "#x,z"면 플레이어를 그 자리로 옮겨 플레이어를 찍는다 ("#x,z@splash" = 바다 쪽에 물보라).
         /// </summary>
         public string Inspect;
+        /// <summary>-autoshotVrm 파일이름: VRM 장면(02v·21e)을 목록 첫 VRM 대신 이 VRM으로 찍는다 (예: AvatarSample_G.vrm).</summary>
+        public string Vrm;
     }
 
     /// <summary>
@@ -54,7 +57,17 @@ namespace Fishing.Dev
                 else if (args[i] == "-autoshotStop") result.StopAfter = args[i + 1];
                 else if (args[i] == "-autoshotMaps") result.Maps = args[i + 1];
                 else if (args[i] == "-autoshotInspect") result.Inspect = args[i + 1];
+                else if (args[i] == "-autoshotVrm") result.Vrm = args[i + 1];
             return result;
+        }
+
+        /// <summary>VRM 목록, -autoshotVrm으로 고른 것이 있으면 맨 앞으로.</summary>
+        List<string> ShotVrms()
+        {
+            var vrms = Fishing.Characters.VrmCharacters.List();
+            int i = string.IsNullOrEmpty(_args.Vrm) ? -1 : vrms.FindIndex(v => v.EndsWith("/" + _args.Vrm, StringComparison.OrdinalIgnoreCase));
+            if (i > 0) { var v = vrms[i]; vrms.RemoveAt(i); vrms.Insert(0, v); }
+            return vrms;
         }
 
         public void Init(DevArgs args)
@@ -295,7 +308,7 @@ namespace Fishing.Dev
                     Game.CameraRig.SetFixed(eye, Quaternion.LookRotation(c + pm.forward * 0.25f - eye));
                 }
                 // VRM 캐릭터: 폴더(문서/짭풍명월/Characters)에 .vrm이 있으면 첫 번째로 갈아입고 같은 자세를 찍는다 (세이브는 안 건드린다)
-                var vrms = Fishing.Characters.VrmCharacters.List();
+                var vrms = ShotVrms();
                 if (vrms.Count > 0)
                 {
                     var (prevVrm, prevFemale) = (Game.Profile.Data.vrm, Game.Profile.Data.vrmFemale);
@@ -760,7 +773,7 @@ namespace Fishing.Dev
             Game.UI.Character.Close();
             // 캐릭터 모델 탭: 폴더의 VRM을 골라 입은 모습 (VRM이 없으면 빈 목록 안내)
             {
-                var vrms = Fishing.Characters.VrmCharacters.List();
+                var vrms = ShotVrms();
                 var (prevVrm, prevFemale) = (p.Data.vrm, p.Data.vrmFemale);
                 if (vrms.Count > 0) p.SetCharacterModel(vrms[0], true);
                 Game.UI.Character.ShowModelTab();
