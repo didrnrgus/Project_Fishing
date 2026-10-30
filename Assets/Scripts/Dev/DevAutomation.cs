@@ -25,6 +25,11 @@ namespace Fishing.Dev
         public string Inspect;
         /// <summary>-autoshotVrm 파일이름: VRM 장면(02v·21e)을 목록 첫 VRM 대신 이 VRM으로 찍는다 (예: AvatarSample_G.vrm).</summary>
         public string Vrm;
+        /// <summary>
+        /// -autoshotShowcase pack|builtin|user|all: 그 폴더의 VRM을 하나씩 갈아입히며 서 있기·걷기·달리기·캐스팅·감기·파이팅·고기 들기·반응 동작을 찍고 끝낸다
+        /// (받은 캐릭터를 한눈에 보기, tools/showcase.sh). 창에서 그대로 보이므로 사람이 지켜봐도 된다.
+        /// </summary>
+        public string Showcase;
     }
 
     /// <summary>
@@ -58,6 +63,7 @@ namespace Fishing.Dev
                 else if (args[i] == "-autoshotMaps") result.Maps = args[i + 1];
                 else if (args[i] == "-autoshotInspect") result.Inspect = args[i + 1];
                 else if (args[i] == "-autoshotVrm") result.Vrm = args[i + 1];
+                else if (args[i] == "-autoshotShowcase") result.Showcase = args[i + 1];
             return result;
         }
 
@@ -103,6 +109,13 @@ namespace Fishing.Dev
                 _tourOnly = _args.Maps.Split(',');
                 yield return CoastTour();
                 Debug.Log("[Dev] 자동 스크린샷 완료 (-autoshotMaps " + _args.Maps + ")");
+                Application.Quit();
+                yield break;
+            }
+            if (!string.IsNullOrEmpty(_args.Showcase))
+            {
+                yield return Showcase(_args.Showcase);
+                Debug.Log("[Dev] 자동 스크린샷 완료 (-autoshotShowcase " + _args.Showcase + ")");
                 Application.Quit();
                 yield break;
             }
@@ -460,6 +473,12 @@ namespace Fishing.Dev
             p.UseFocus();
             yield return new WaitForSeconds(0.6f);
             yield return Shot("06d_focus");
+
+            // 파이팅 중 ESC: 그만둘지 묻는 창 (열린 동안 파이팅이 멈춘다) → 계속하기
+            Game.UI.FightQuit.Open();
+            yield return new WaitForSecondsRealtime(0.5f);
+            yield return Shot("06e_fight_quit");
+            Game.UI.FightQuit.Close();
 
             bool countered = false, chanceShot = false;
             fight.Countered += () => countered = true;
@@ -1461,6 +1480,145 @@ namespace Fishing.Dev
         }
 
         /// <summary>환호 컷이 끝나고 결과 창이 뜬 뒤 물고기가 튀어 오를 때까지 기다린다.</summary>
+        /// <summary>
+        /// 캐릭터 쇼케이스 (-autoshotShowcase): VRM을 하나씩 입고 한강 데크에서 동작을 돌려 본다. 장면 이름 sc{번호}_{파일}_{순서}_{동작}.
+        /// 세이브는 건드리지 않는다 (입던 모델로 되돌린다).
+        /// </summary>
+        IEnumerator Showcase(string which)
+        {
+            var ids = Fishing.Characters.VrmCharacters.List().FindAll(v => which == "all" || v.StartsWith(which + "/"));
+            Debug.Log($"[Dev] 쇼케이스 {which}: {ids.Count}명");
+            var p = Game.Profile;
+            p.Data.level = Mathf.Max(p.Data.level, 6);
+            var (prevVrm, prevFemale) = (p.Data.vrm, p.Data.vrmFemale);
+            Game.Clock.Set(1, 10 * 60);
+            Game.UI.EnterField(1);
+            Game.UI.Help.Close();
+            Game.Weather.Force(Weather.Clear);
+            Game.Clock.Set(1, 15 * 60);
+            yield return new WaitForSeconds(2f);
+
+            var deck = new Vector3(25f, 1.1f, -29f); // 밤 캐스팅 장면과 같은 데크 (앞이 강)
+            for (int i = 0; i < ids.Count; i++)
+            {
+                var id = ids[i];
+                string tag = $"sc{i + 1:00}_{Path.GetFileNameWithoutExtension(id)}";
+                Game.Fishing.ForceIdle();
+                Game.CameraRig.ClearFixed();
+                Game.Clock.Set(1, 15 * 60); // 한 명에 30초쯤 걸려 시계가 밤까지 흘렀다 → 캐릭터마다 오후 3시로
+                Game.Player.Teleport(deck, 0f);
+                p.SetCharacterModel(id, true);
+                float until = Time.realtimeSinceStartup + 30f;
+                while (!Fishing.Characters.VrmCharacters.IsReady(id) && Fishing.Characters.VrmCharacters.GetInfo(id)?.Error == null
+                       && Time.realtimeSinceStartup < until) yield return null;
+                var info = Fishing.Characters.VrmCharacters.GetInfo(id);
+                Debug.Log($"[Dev] 쇼케이스 {i + 1}/{ids.Count} {id} \"{info?.Title}\" 준비 {Fishing.Characters.VrmCharacters.IsReady(id)} {info?.Error}"
+                          + $" (메모리 {UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / (1024 * 1024)}MB)");
+                if (!Fishing.Characters.VrmCharacters.IsReady(id)) continue;
+                Game.Toast($"{i + 1}/{ids.Count}  {info.Title}" + (info.Author != null ? $"  ·  {info.Author}" : ""));
+
+                // 1. 정면 서 있기
+                var pm = Game.Player.Model;
+                Vector3 c = Game.Player.transform.position + Vector3.up * 1.0f;
+                Vector3 front = c + pm.forward * 3.0f + pm.right * 0.6f + Vector3.up * 0.2f;
+                Game.CameraRig.SetFixed(front, Quaternion.LookRotation(c - front));
+                yield return new WaitForSeconds(1.5f);
+                yield return Shot($"{tag}_1_front");
+                Game.CameraRig.ClearFixed();
+
+                // 2. 걷기·달리기 (옆에서)
+                Game.Player.Teleport(new Vector3(-75f, 1.1f, -64f), 90f);
+                Game.CameraRig.Yaw = 0f;
+                Game.CameraRig.Pitch = 6f;
+                Game.CameraRig.Distance = 4.5f;
+                Game.Player.DebugMove = new Vector2(1f, 0f);
+                yield return new WaitForSeconds(1.5f);
+                yield return Shot($"{tag}_2_walk");
+                Game.Player.DebugRun = true;
+                yield return new WaitForSeconds(1.5f);
+                yield return Shot($"{tag}_3_run");
+                Game.Player.DebugMove = Vector2.zero;
+                Game.Player.DebugRun = false;
+
+                // 3. 캐스팅: 젖힘 → 휘두름 → 찌 날아감 → 감기
+                Game.Player.Teleport(deck, 0f);
+                Game.CameraRig.Yaw = -20f;
+                Game.CameraRig.Pitch = 14f;
+                Game.CameraRig.Distance = 5.5f;
+                yield return new WaitForSeconds(1.0f);
+                Game.Fishing.DebugAim(0f, 10f);
+                yield return new WaitForSeconds(0.6f);
+                yield return Shot($"{tag}_4_windup");
+                Game.Fishing.DebugResume();
+                Game.Fishing.DebugAim(0.62f, 10f);
+                yield return new WaitForSeconds(0.3f);
+                yield return Shot($"{tag}_5_swing");
+                Game.Fishing.DebugResume();
+                Game.Fishing.DebugCast(15.5f);
+                yield return new WaitForSeconds(0.45f);
+                yield return Shot($"{tag}_6_cast");
+                yield return new WaitForSeconds(2.0f);
+                Game.Fishing.DebugReeling = true;
+                Game.Fishing.UserOrbited = true;
+                Game.CameraRig.Yaw = Game.Player.Yaw + 150f;
+                Game.CameraRig.Pitch = 8f;
+                Game.CameraRig.Distance = 2.4f;
+                yield return new WaitForSeconds(1.5f);
+                yield return Shot($"{tag}_7_reel");
+                Game.Fishing.DebugReeling = false;
+                Game.Fishing.UserOrbited = false;
+
+                // 4. 파이팅 → 붕어를 들어 보인다
+                Game.Fishing.Autoplay = true;
+                Game.Fishing.DebugStartFight("crucian", 30f, 7f);
+                // 게임의 파이팅 화면은 1인칭이라 낚싯대만 보인다 → 캐릭터를 보는 자리이니 앞옆에서 몸을 찍는다
+                pm = Game.Player.Model;
+                c = Game.Player.transform.position + Vector3.up * 1.1f;
+                front = c + pm.forward * 2.6f + pm.right * 1.8f + Vector3.up * 0.3f;
+                Game.CameraRig.SetFixed(front, Quaternion.LookRotation(c - front));
+                yield return new WaitForSeconds(2.0f);
+                yield return Shot($"{tag}_8_fight");
+                Game.CameraRig.ClearFixed(); // 고기 들기는 게임의 결과 카메라(옆모습)로
+                // 붕어도 가끔 1분 넘게 버텨서 다음 캐릭터까지 파이팅 화면에 갇혔다 → 파이팅은 5초만 보여 주고 낚은 것으로
+                yield return new WaitForSeconds(3.0f);
+                if (Game.Fishing.State == FishingState.Fighting) Game.Fishing.Fight?.DebugLand();
+                float timeout = Time.time + 5f;
+                while (Game.Fishing.State == FishingState.Fighting && Time.time < timeout) yield return null;
+                if (Game.Fishing.State == FishingState.Result)
+                {
+                    yield return new WaitForSecondsRealtime(2.1f);
+                    yield return Shot($"{tag}_9_catch");
+                }
+                yield return WaitResult();
+                yield return CloseResult();
+                Game.Fishing.Autoplay = false;
+
+                // 5. 반응 동작 (정면)
+                Game.Fishing.ForceIdle();
+                Game.Player.Teleport(deck, 0f);
+                yield return new WaitForSeconds(0.5f);
+                pm = Game.Player.Model;
+                c = Game.Player.transform.position + Vector3.up * 1.1f;
+                front = c + pm.forward * 3.4f + pm.right * 0.5f;
+                Game.CameraRig.SetFixed(front, Quaternion.LookRotation(c - front));
+                foreach (var (name, play, at) in new (string, Action, float)[]
+                         {
+                             ("cheer", Game.Player.PlayCheer, 1.0f),
+                             ("excited", Game.Player.PlayExcited, 1.25f),
+                             ("scared", Game.Player.PlayScared, 0.3f),
+                         })
+                {
+                    yield return new WaitForSeconds(0.5f);
+                    play();
+                    yield return new WaitForSeconds(at);
+                    yield return Shot($"{tag}_r_{name}");
+                    yield return new WaitForSeconds(1.2f);
+                }
+                Game.CameraRig.ClearFixed();
+            }
+            p.SetCharacterModel(prevVrm, prevFemale);
+        }
+
         IEnumerator WaitResult()
         {
             float until = Time.realtimeSinceStartup + 4f;

@@ -6,7 +6,7 @@ using Random = UnityEngine.Random;
 
 namespace Fishing.Angling
 {
-    public enum FightOutcome { None, Landed, LineBroken, HookOut, LineRunOut }
+    public enum FightOutcome { None, Landed, LineBroken, HookOut, LineRunOut, GaveUp }
 
     /// <summary>
     /// 물고기 기분. Run·Rest·Burst는 모든 어종, 나머지는 어종 패턴(<see cref="FightStyle"/>) 전용:
@@ -118,6 +118,11 @@ namespace Fishing.Angling
         public void DebugSetTension(float value) => Tension = value;
         /// <summary>개발용(자동 스크린샷): 낚싯대 방향을 강제로 정한다.</summary>
         public void DebugSetRodX(float value) => RodX = Mathf.Clamp(value, -1f, 1f);
+        /// <summary>개발용(캐릭터 쇼케이스): 파이팅이 길어지면 바로 낚은 것으로 끝낸다.</summary>
+        public void DebugLand()
+        {
+            if (Outcome == FightOutcome.None) Outcome = FightOutcome.Landed;
+        }
         public bool AtEdge => Mathf.Abs(FishX) >= EdgeForCounter;
 
         public event Action Countered;

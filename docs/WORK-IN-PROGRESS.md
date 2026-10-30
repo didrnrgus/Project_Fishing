@@ -2,6 +2,11 @@
 
 세션이 끊겨도 이 파일만 보고 이어서 작업할 수 있게 남기는 메모. 끝난 일은 로드맵·각 문서에 합쳤다.
 
+## 2026-10-30 (10): 캐릭터 쇼케이스 + 파이팅 중 Esc 그만두기 → [16 문서](16-vrm-characters.md), [02 문서 조작](02-game-design.md)
+- `sh tools/showcase.sh [pack|builtin|user|all]`: VRM을 하나씩 입고 서 있기·걷기·달리기·캐스팅·감기·파이팅(앞옆에서, 5초 뒤 낚은 것으로)·붕어 들기·환호·신남·놀람, 캐릭터마다 오후 3시로. 끝에 `tools/showcase_sheet.py`가 캐릭터별 시트
+  - 첫 돌림에서 시계가 밤까지 흐르고, 붕어가 1분 넘게 버텨 뒤 캐릭터가 1인칭 랜딩 화면에 갇힘 → 고침. "지금은 캐릭터를 보는 거" → 파이팅도 1인칭 대신 몸을 찍음
+- 파이팅 중 Esc: `FightQuitPanel` 확인 창, 열린 동안 파이팅 멈춤, [그만두기] = `FightOutcome.GaveUp`, 자동 촬영 `06e_fight_quit`
+
 ## 2026-10-30 (9): 추가 캐릭터 폴더 + VRoid Hub 여캐 15명 → [16 문서 추가 캐릭터 폴더](16-vrm-characters.md), [가이드 07](guide/07-characters.md)
 - "빌드에 몽땅 넣으면 좀 그러니 빌드 경로 폴더에 정보 있는 캐릭터만 쓰자": 게임 폴더 `Characters`(exe 옆)에 `.vrm` + 같은 이름 `.json` 정보가 있는 것만 쓰는 `CharacterPack`, `pack/` id, 성별 적으면 NPC 후보에 저절로, 캐릭터 창 [열기]·`추가 캐릭터` 표시
 - VRoid Hub(Claude in Chrome): 다운로드·재배포·개조 허락 여캐 64명 → 사용자가 그리드에서 골라 15명(Truffle·Rosi·Ao·FREE 2/3/5/6·水色2·Kai·demon_girl·narang·Nena·女騎士·猫耳ツインテ娘·猫耳女の子) `Builds/Windows/Characters`에 받음 (저장소 밖)
