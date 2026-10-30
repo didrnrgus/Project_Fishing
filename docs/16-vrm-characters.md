@@ -84,6 +84,9 @@ VRoid 프로젝트(pixiv)가 VRoid Studio 알파 시절 샘플로 **CC0** 공개
 - 파일 이름 → id: 문서 폴더에 있으면 `user/`, 없으면 `builtin/`. 그래서 같은 이름의 `.vrm`을 문서 폴더에 넣기만 해도 기본 캐릭터가 바뀐다.
 - NPC는 `npc` 이름 지정 → 성별 목록에서 이름의 FNV 해시로 고르기(실행마다 같다) → 다른 성별 목록 → 기본 캐릭터.
 - JSON이 깨졌거나 적힌 파일이 없으면 `CharacterRoster.Warnings` → 캐릭터 창 맨 위 노란 글씨 + 로그.
+- `brightness`: `[{ "file": "AvatarSample_G.vrm", "value": 0.7 }]` — 모델 밝기 배수(0.2~1.5). 읽을 때 한 번 원본 재질의 MToon `_Color`·`_ShadeColor`·`_EmissionColor`·`_MatcapColor`에 곱한다(`VrmLoader.ScaleBrightness`, 복제·옷 주인이 같은 재질을 쓴다). 문서 폴더 것과 합치고 같은 파일은 문서 폴더가 이긴다. 다시 켜야 바뀐다.
+  - 2026-10-30 "AvatarSample G가 너무 밝다": 흰 머리(바탕 0.95, 머리 발광 0.92 — 다른 샘플은 0.25 안팎)·흰 원피스·흰 스타킹이라 밤 달빛·가로등 아래서도 혼자 하얗게 떠 보였다. 발광만 줄여 보니 거의 그대로(발광 텍스처가 머리 결 줄무늬뿐) → 모델 전체 0.7. Neutral 톤매핑이 밝은 쪽을 눌러서 0.78은 표가 덜 났다.
+  - ![AvatarSample_G 밝기 전·후](images/02v_vrm_brightness_g.png) (왼쪽부터 정면 전·후, 옆 전·후, 한강 밤 21시)
 
 ### 옷 갈아입기 (VrmOutfit · OutfitChanger, 2026-10-21)
 
@@ -124,5 +127,5 @@ VRM 파일에는 만든 사람이 정한 허락이 들어 있다. 캐릭터 창�
 
 ## 6. 확인
 
-- 자동 촬영: 목록 첫 VRM(`builtin/AvatarSample_D.vrm`)으로 갈아입고 `02v_vrm_35`·`_82`·`_155`·`02v_vrm_front`, 캐릭터 창 `21e_character_model`을 찍고 원래대로 돌린다. 나머지 장면의 내 캐릭터는 기본 캐릭터(남자).
+- 자동 촬영: 목록 첫 VRM(`builtin/AvatarSample_D.vrm`)으로 갈아입고 `02v_vrm_35`·`_82`·`_155`·`02v_vrm_front`, 캐릭터 창 `21e_character_model`을 찍고 원래대로 돌린다. 나머지 장면의 내 캐릭터는 기본 캐릭터(남자). `-autoshotVrm AvatarSample_G.vrm`을 붙이면 그 VRM으로 찍는다 (예: `Builds/Windows/ProjectFishing.exe -autoshot <폴더> -autoshotStop 02v_vrm_front -autoshotVrm AvatarSample_G.vrm`).
 - 시험용 모델: VRM 컨소시엄 샘플 [Seed-san](https://github.com/vrm-c/vrm-specification/tree/master/samples/Seed-san) (VRM Public License 1.0)도 문서 폴더에 넣어 시험할 수 있다. **저장소에는 넣지 않았다.**

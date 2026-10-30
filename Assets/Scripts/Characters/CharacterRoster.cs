@@ -24,6 +24,13 @@ namespace Fishing.Characters
         }
 
         [Serializable]
+        public class Brightness
+        {
+            public string file;
+            public float value = 1f;
+        }
+
+        [Serializable]
         public class Config
         {
             public string playerMale;
@@ -36,6 +43,8 @@ namespace Fishing.Characters
             public Assign[] npc;
             /// <summary>[옷 바꾸기]가 받아 올 옷 VRM 주소 (.vrm 또는 .vrm이 든 .zip). 받은 파일은 문서 폴더 Characters/outfits에 남는다.</summary>
             public string[] outfitUrls;
+            /// <summary>모델 밝기 배수 (1 = 그대로, 0.8 = 20% 어둡게). 흰 머리·흰 옷이라 밤에도 떠 보이는 모델을 낮춘다.</summary>
+            public Brightness[] brightness;
         }
 
         static Config _cfg;
@@ -72,6 +81,14 @@ namespace Fishing.Characters
                         foreach (var a in _cfg.npc)
                             if (merged.FindIndex(m => m.name == a.name) < 0) merged.Add(a);
                     _cfg.npc = merged.ToArray();
+                }
+                if (user.brightness != null && user.brightness.Length > 0)
+                {
+                    var merged = new List<Brightness>(user.brightness);
+                    if (_cfg.brightness != null)
+                        foreach (var a in _cfg.brightness)
+                            if (merged.FindIndex(m => m.file == a.file) < 0) merged.Add(a);
+                    _cfg.brightness = merged.ToArray();
                 }
             }
             foreach (var f in AllFiles())
@@ -121,6 +138,16 @@ namespace Fishing.Characters
         }
 
         /// <summary>[옷 바꾸기]가 받아 올 옷 주소들.</summary>
+        /// <summary>그 파일(이름만)의 밝기 배수, 적혀 있지 않으면 1. 이미 읽은 모델은 다시 읽어야 바뀐다.</summary>
+        public static float BrightnessOf(string file)
+        {
+            Ensure();
+            if (_cfg.brightness != null)
+                foreach (var b in _cfg.brightness)
+                    if (string.Equals(b.file, file, StringComparison.OrdinalIgnoreCase)) return Mathf.Clamp(b.value, 0.2f, 1.5f);
+            return 1f;
+        }
+
         public static string[] OutfitUrls { get { Ensure(); return _cfg.outfitUrls ?? System.Array.Empty<string>(); } }
 
         /// <summary>기본 캐릭터가 입을 다른 VRM의 옷 (없으면 null = 제 옷).</summary>

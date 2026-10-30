@@ -181,6 +181,8 @@ namespace Fishing.Characters
                 else b.Encapsulate(r.bounds);
             }
             info.Height = any ? b.max.y - go.transform.position.y : 0f;
+            float bright = CharacterRoster.BrightnessOf(System.IO.Path.GetFileName(info.Path));
+            if (bright != 1f) VrmLoader.ScaleBrightness(go, bright);
             go.SetActive(false);
             go.transform.SetParent(Shelf, false);
             go.name = "VRM_" + info.Title;

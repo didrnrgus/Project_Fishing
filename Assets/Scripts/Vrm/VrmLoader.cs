@@ -67,6 +67,32 @@ namespace Fishing.Vrm
             return (inst.gameObject, meta);
         }
 
+        static readonly int[] LitColors =
+        {
+            Shader.PropertyToID("_Color"), Shader.PropertyToID("_ShadeColor"), Shader.PropertyToID("_EmissionColor"),
+            Shader.PropertyToID("_MatcapColor"),
+        };
+
+        /// <summary>
+        /// 모델 전체 밝기를 곱한다 (MToon 바탕·그림자·발광·매트캡 색, 투명도는 그대로). 흰 머리·흰 옷 모델(AvatarSample_G)은 그대로 두면
+        /// 밤·그늘에서도 혼자 하얗게 떠 보여서 characters.json의 brightness로 낮춘다. 재질은 원본이 가지고 복제·옷 주인이 함께 쓰니 읽을 때 한 번만 부른다.
+        /// </summary>
+        public static void ScaleBrightness(GameObject root, float k)
+        {
+            var done = new System.Collections.Generic.HashSet<Material>();
+            foreach (var r in root.GetComponentsInChildren<Renderer>(true))
+                foreach (var mat in r.sharedMaterials)
+                {
+                    if (mat == null || !done.Add(mat)) continue;
+                    foreach (var id in LitColors)
+                        if (mat.HasProperty(id))
+                        {
+                            var c = mat.GetColor(id);
+                            mat.SetColor(id, new Color(c.r * k, c.g * k, c.b * k, c.a));
+                        }
+                }
+        }
+
         /// <summary>
         /// 꺼진 원본을 복제한 직후(아직 꺼진 채) 부른다. RuntimeGltfInstance를 떼서 UniVRM이 "씬에 놓인 프리팹"처럼 다루게 한다
         /// (초기 자세 = 원본의 T 자세, 텍스처·메쉬는 원본이 가진다). 눈 깜빡임을 붙인다.

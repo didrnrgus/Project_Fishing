@@ -67,6 +67,16 @@ VRM은 [VRoid Studio](https://vroid.com/studio)(무료) 같은 프로그램으�
 - 입은 옷은 저장되어 **게임을 끄고 켜도 그대로**다.
 - 웹에서 받아 입기: `characters.json`에 `"outfitUrls": ["https://…/옷.vrm", "https://…/옷.zip"]`을 적으면 [옷 바꾸기]가 아직 안 받은 주소에서 하나를 받아 입는다. 받은 파일은 `문서\짭풍명월\Characters\outfits`에 남는다. VRoid로 만든 VRM이어야 옷이 바뀐다(옷 조각 이름 `…_CLOTH`).
 
+### 캐릭터가 너무 밝을 때 (`brightness`)
+
+흰 머리·흰 옷 캐릭터는 밤이나 그늘에서도 혼자 하얗게 떠 보일 수 있다. `characters.json`에 밝기 배수를 적으면 낮춘다.
+
+```json
+"brightness": [ { "file": "AvatarSample_G.vrm", "value": 0.7 } ]
+```
+
+1 = 그대로, 0.8 = 20% 어둡게 (0.2~1.5). 기본으로 `AvatarSample_G`가 0.7이다. 내 폴더 `characters.json`에 적으면 게임 폴더 목록과 합쳐지고 같은 파일은 내 것이 이긴다. 게임을 다시 켜면 바뀐다.
+
 ## 3. 언제 바뀌나
 
 | 대상 | 바뀌는 때 |
