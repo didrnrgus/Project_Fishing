@@ -110,8 +110,19 @@ namespace Fishing.EditorTools
                 options = BuildOptions.None,
             };
             var report = BuildPipeline.BuildPlayer(options);
+            if (report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded) CopyGuide("Builds/Windows/ProjectFishing_Data/StreamingAssets/Guide");
             Debug.Log($"[Build] {report.summary.result} · {report.summary.totalSize / (1024 * 1024)}MB · 에러 {report.summary.totalErrors}");
             if (Application.isBatchMode) EditorApplication.Exit(report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded ? 0 : 1);
+        }
+
+        /// <summary>플레이 가이드(docs/guide/*.md)를 빌드의 StreamingAssets/Guide로: 윤슬(Buddy.GameKnowledge)이 읽는다. 저장소에는 한 벌만 둔다.</summary>
+        static void CopyGuide(string dest)
+        {
+            if (Directory.Exists(dest)) Directory.Delete(dest, true);
+            Directory.CreateDirectory(dest);
+            foreach (var f in Directory.GetFiles("docs/guide", "*.md"))
+                File.Copy(f, Path.Combine(dest, Path.GetFileName(f)));
+            Debug.Log($"[Build] 가이드 {Directory.GetFiles(dest).Length}개 → {dest}");
         }
 
         [MenuItem("Fishing/Delete Save")]

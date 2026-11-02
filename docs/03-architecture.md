@@ -63,6 +63,13 @@ Assets/
       VrmCharacters.cs           VRM 폴더 훑기·바로 읽기(LoadNow)·뒤에서 읽기(Request)·원본 선반에서 복제 (16 문서)
       CharacterAnimator.cs       Playables 믹서로 클립 재생 (AnimatorController 없이 SetLoop/PlayOnce). "이름_M/_F" 클립은 성별로 고른다
       NpcAngler.cs               NPC (Angler/Talker/Sitter). NpcId로 대화 종류, 대화 상대 바라보기, 조합 연락관 머리 위 퀘스트 표시(? !)
+    Buddy/                       따라다니는 낚시 친구 윤슬 (가이드 09)
+      BuddyBrain.cs              두뇌: 대화 기록·Ollama 대화(성격·지금 상황·마지막 질문에 다짐), 상황 반응 말(낚음·놓침·레벨 업·퀘스트·새 낚시터), 연결 상태·모델 고르기
+      BuddyBody.cs               몸: 플레이어 오른쪽 조금 뒤를 따라 걷기·뛰기, 멀거나 막히면 옆으로 옮기기, 대기실·배 위에선 숨기, 반응 동작 (VRM은 characters.json npc "윤슬")
+      OllamaChat.cs              BuddyConfig(PlayerPrefs: 주소·모델·MCP) + Ollama /api/chat 스트리밍·도구 호출 반복(최대 4번), 미리 올리기(Warm), <think> 지우기
+      GameKnowledge.cs           게임 지식 도구 7개: game_state·list_guides·read_guide·search_guides(docs/guide, 빌드는 StreamingAssets/Guide)·fish_info·map_info·quest_info
+      BuddyMcpServer.cs          같은 도구를 MCP(Streamable HTTP, JSON-RPC 한 번에 하나)로: 127.0.0.1:8770/mcp, 다른 Origin 거절, 도구는 메인 스레드에서
+      Json.cs                    작은 JSON 읽기·쓰기 (사전·섞인 배열)
     World/
       FieldMap.cs                FieldMapDef(맵 정의: 격자·서식지·물/땅 판정·물때·먼바다·수면 색) + 정적 FieldMap(현재 맵) + Maps.All
       HanRiverMap.cs             한강 반포지구 정의 (A~F × 1~4)
@@ -126,6 +133,7 @@ Assets/
       KeepNetPanel.cs, ShopPanel.cs, InventoryPanel.cs, UpgradePanel.cs, CharacterPanel.cs(내 캐릭터: 장비 칸·최종 능력치 / 의상 탭), ScreenFlash.cs(장면 컷을 가리는 화면 번쩍임), ExchangePanel.cs, AquariumPanel.cs
       InfoPanels.cs              퀘스트 창 (이야기·일일 의뢰·대물 도전·빙고·출석·업적·대회·일지 탭), 도움말
       OptionsPanel.cs            옵션 (O)
+      BuddyChatView.cs           윤슬 대화창(게임을 막지 않음, Enter)·머리 위 말풍선(스트리밍 대답)·"Enter 윤슬과 대화" 알약. 입력칸에 쓰는 동안 Settings.Typing으로 단축키·이동을 막는다
       FishingAreaPanel.cs        낚시터 목록 (거점 탭, 거점 지도, MAP/FISH INFO)
       KoreaMap.cs, RegionMap.cs  거점 지도 텍스처 (한국 / 동남아·지중해·아프리카: 해안선 다각형·강 선)
       AreaMapPanel.cs, DialogPanel.cs, PortraitCamera.cs, UIPanel.cs

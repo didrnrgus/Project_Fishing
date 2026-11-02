@@ -17,7 +17,8 @@
         "Base_Female.vrm"
     ],
     "npc": [
-        { "name": "김선장", "file": "Base_Male.vrm" }
+        { "name": "김선장", "file": "Base_Male.vrm" },
+        { "name": "윤슬", "file": "AvatarSample_F.vrm" }
     ],
     "brightness": [
         { "file": "AvatarSample_G.vrm", "value": 0.7 }
