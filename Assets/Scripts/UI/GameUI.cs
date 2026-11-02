@@ -43,6 +43,8 @@ namespace Fishing.UI
         public DeliveryPanel Delivery { get; private set; }
         /// <summary>F로 쓸 수 있는 가까운 납품소 (NPC보다 가까울 때만).</summary>
         public DeliveryKiosk NearbyKiosk { get; private set; }
+        /// <summary>따라다니는 친구 윤슬과의 대화창·말풍선 (게임을 막지 않는다, Enter).</summary>
+        public BuddyChatView BuddyChat { get; private set; }
 
         UIPanel[] _panels;
 
@@ -113,6 +115,7 @@ namespace Fishing.UI
             _panels = new UIPanel[] { KeepNet, Dex, Shop, Quest, Help, Result, Areas, AreaMap, Dialog, QuestTalk, Upgrade,Inventory, Character, Exchange, Trade, Aquarium, Options, EscMenu, Traps, ItemBag, Delivery, FightQuit };
             LobbyHud.Root.transform.SetAsFirstSibling();
             SysLog = new SystemLogView(canvas);
+            BuddyChat = new BuddyChatView(canvas);
             Loading = new LoadingScreen(canvas);
             // 토스트는 모든 창 위에
             Hud.ToastLayer.SetParent(canvas, false);
@@ -164,6 +167,7 @@ namespace Fishing.UI
             if (lobby) LobbyHud.Update();
             Hud.Update();
             SysLog.Update();
+            BuddyChat.Update();
             Fight.Update();
             if (AreaMap.IsOpen) AreaMap.Tick();
             if (Dex.IsOpen) Dex.Tick();
@@ -304,6 +308,16 @@ namespace Fishing.UI
             if (Result.IsOpen)
             {
                 if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Escape)) Result.ChooseByKey(true);
+                return;
+            }
+
+            // 윤슬과 대화: 입력칸에 쓰는 중이면 Enter는 입력칸이 받는다(보내기), Esc는 대화창만 닫는다
+            if (BuddyChat.IsOpen && Input.GetKeyDown(KeyCode.Escape)) { BuddyChat.Close(); return; }
+            if (Settings.Typing) return;
+            if ((Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) && !BlockingPanelOpen && !Loading.Showing && !BuddyChat.JustSubmitted)
+            {
+                if (BuddyChat.IsOpen) BuddyChat.Focus();
+                else BuddyChat.Open();
                 return;
             }
 

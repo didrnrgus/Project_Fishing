@@ -81,7 +81,12 @@ namespace Fishing.Core
 
             Game.Sound = Game.CameraRig.gameObject.AddComponent<SoundFx>();
             Game.Fishing = gameObject.AddComponent<FishingController>();
+            // 따라다니는 친구 윤슬 (두뇌는 UI보다 먼저: 대화창이 두뇌 이벤트를 받는다). 자동 촬영은 -autoshotBuddy일 때만 (다른 장면을 가리지 않게)
+            bool buddy = !devArgs.Enabled || !string.IsNullOrEmpty(devArgs.Buddy);
+            if (buddy) Fishing.Buddy.BuddyBrain.Ensure(gameObject);
+            Fishing.Buddy.BuddyMcpServer.Ensure(gameObject);
             Game.UI = gameObject.AddComponent<GameUI>();
+            if (buddy) Fishing.Buddy.BuddyBody.Spawn();
             Game.Lobby = LobbyRoom.Build();
 
             Game.Profile.LeveledUp += level =>

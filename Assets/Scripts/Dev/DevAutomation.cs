@@ -30,6 +30,8 @@ namespace Fishing.Dev
         /// (받은 캐릭터를 한눈에 보기, tools/showcase.sh). 창에서 그대로 보이므로 사람이 지켜봐도 된다.
         /// </summary>
         public string Showcase;
+        /// <summary>-autoshotBuddy "질문": 따라다니는 친구 윤슬 장면(따라 걷기·대화창·말풍선)만 찍고 끝낸다. Ollama가 켜져 있으면 그 질문을 묻고 대답을 기다린다 (tools/autoshot.sh --buddy).</summary>
+        public string Buddy;
     }
 
     /// <summary>
@@ -64,6 +66,7 @@ namespace Fishing.Dev
                 else if (args[i] == "-autoshotInspect") result.Inspect = args[i + 1];
                 else if (args[i] == "-autoshotVrm") result.Vrm = args[i + 1];
                 else if (args[i] == "-autoshotShowcase") result.Showcase = args[i + 1];
+                else if (args[i] == "-autoshotBuddy") result.Buddy = args[i + 1];
             return result;
         }
 
@@ -120,6 +123,13 @@ namespace Fishing.Dev
                 yield break;
             }
 
+            if (!string.IsNullOrEmpty(_args.Buddy))
+            {
+                yield return BuddyShots(_args.Buddy);
+                Debug.Log("[Dev] 자동 스크린샷 완료 (-autoshotBuddy)");
+                Application.Quit();
+                yield break;
+            }
             var p = Game.Profile;
             p.Data.level = 6;
             p.Data.gold = 8400;
@@ -1724,6 +1734,63 @@ namespace Fishing.Dev
                 foreach (var g in groups) if (g != null) g.alpha = 1f;
                 Game.CameraRig.enabled = true;
             }
+        }
+
+        /// <summary>윤슬: 낚시터 인사 → 따라 걷기·뛰기 → 대화창에 질문 → (Ollama가 있으면) 대답 → 환호.</summary>
+        IEnumerator BuddyShots(string question)
+        {
+            var brain = Fishing.Buddy.BuddyBrain.Instance;
+            Game.Profile.Data.level = 6;
+            Game.UI.EnterField(1);
+            Game.UI.Help.Close();
+            Game.Weather.Force(Weather.Clear);
+            Game.Clock.Set(1, 15 * 60);
+            Game.CameraRig.Yaw = Game.Player.Yaw + 125f;
+            Game.CameraRig.Pitch = 10f;
+            Game.CameraRig.Distance = 5f;
+            yield return new WaitForSeconds(4f);
+            yield return Shot("30a_buddy_greet");
+
+            // 둔치 길을 옆에서: 걷기 → 뛰기 (00d_walk와 같은 자리)
+            Game.Player.Teleport(new Vector3(-75f, 1.1f, -64f), 90f);
+            Fishing.Buddy.BuddyBody.Instance?.TeleportNearPlayer();
+            Game.CameraRig.Yaw = 0f;
+            Game.CameraRig.Pitch = 8f;
+            Game.CameraRig.Distance = 7f;
+            Game.Player.DebugMove = new Vector2(1f, 0f);
+            yield return new WaitForSeconds(2.5f);
+            yield return Shot("30b_buddy_follow");
+            Game.Player.DebugRun = true;
+            yield return new WaitForSeconds(2f);
+            yield return Shot("30c_buddy_run");
+            Game.Player.DebugMove = Vector2.zero;
+            Game.Player.DebugRun = false;
+            yield return new WaitForSeconds(2f);
+
+            // 대화: 질문을 보내고 대답을 기다린다 (Ollama가 꺼져 있으면 바로 안내 말)
+            Game.CameraRig.Yaw = Game.Player.Yaw + 160f;
+            Game.CameraRig.Distance = 5.5f;
+            brain.CheckOllama();
+            yield return new WaitForSecondsRealtime(1.5f);
+            Debug.Log($"[Dev] 윤슬 연결: {brain.State} ({brain.Model})");
+            Game.UI.BuddyChat.DebugAsk(question);
+            yield return new WaitForSecondsRealtime(1.5f);
+            yield return Shot("30d_buddy_thinking");
+            float until = Time.realtimeSinceStartup + 240f;
+            while (brain.State == Fishing.Buddy.BuddyBrain.Status.Thinking && brain.Partial == null && Time.realtimeSinceStartup < until) yield return null;
+            if (brain.Partial != null)
+            {
+                yield return new WaitForSecondsRealtime(1.5f);
+                if (brain.State == Fishing.Buddy.BuddyBrain.Status.Thinking) yield return Shot("30d2_buddy_streaming");
+            }
+            while (brain.State == Fishing.Buddy.BuddyBrain.Status.Thinking && Time.realtimeSinceStartup < until) yield return null;
+            yield return new WaitForSecondsRealtime(0.5f);
+            Debug.Log($"[Dev] 윤슬 대답: {(brain.Log.Count > 0 ? brain.Log[brain.Log.Count - 1].text : "(없음)")}");
+            yield return Shot("30e_buddy_answer");
+            Game.UI.BuddyChat.Close();
+            brain.Say("와, 붕어 32cm! 처음 잡아 보는 거지? 도감에 새로 올라가겠다!", Fishing.Characters.CharacterAnimator.Cheer);
+            yield return new WaitForSeconds(0.9f);
+            yield return Shot("30f_buddy_cheer");
         }
 
         IEnumerator Shot(string name)

@@ -62,8 +62,11 @@ namespace Fishing.Core
         public static int Version { get; private set; }
 
         public static KeyCode Key(KeyAction a) => Bindings.TryGetValue(a, out var k) ? k : Defaults[a];
-        public static bool Down(KeyAction a) => Input.GetKeyDown(Key(a));
-        public static bool Held(KeyAction a) => Input.GetKey(Key(a));
+        public static bool Down(KeyAction a) => !Typing && Input.GetKeyDown(Key(a));
+        public static bool Held(KeyAction a) => !Typing && Input.GetKey(Key(a));
+
+        /// <summary>대화 입력칸에 글을 쓰는 중 (UI.BuddyChatView가 매 프레임 정한다): 단축키·이동을 받지 않는다.</summary>
+        public static bool Typing;
 
         /// <summary>메뉴·안내문에 쓰는 키 이름 (LeftShift → Shift, Alpha1 → 1).</summary>
         public static string KeyName(KeyAction a) => KeyName(Key(a));
