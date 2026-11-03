@@ -166,7 +166,7 @@ namespace Fishing.UI
             if (BuddyBrain.Instance != null)
             {
                 BuddyBrain.Instance.Changed += () => _dirty = true;
-                BuddyBrain.Instance.Said += (text, _) => _bubble.Show(text, BubbleSeconds);
+                BuddyBrain.Instance.Said += (text, _) => _bubble.Show(BuddyBrain.Short(text, 4), BubbleSeconds);
                 BuddyBrain.Instance.Heard += text => _myBubble.Show(text, MyBubbleSeconds);
             }
         }
@@ -289,7 +289,7 @@ namespace Fishing.UI
             // 대화창이 열려 있으면 창 오른쪽으로 비켜 선다 (창 뒤에 가리지 않게)
             float minX = IsOpen ? _window.anchoredPosition.x + _window.sizeDelta.x + 10f : 10f;
 
-            string line = brain != null && brain.State == BuddyBrain.Status.Thinking ? brain.Partial ?? brain.Working ?? "…" : _bubble.Line;
+            string line = brain != null && brain.State == BuddyBrain.Status.Thinking ? (brain.Partial != null ? BuddyBrain.Short(brain.Partial, 4) : brain.Working ?? "…") : _bubble.Line;
             bool buddy = _bubble.Place(show ? line : null, BuddyBody.Instance != null ? BuddyBody.Instance.BubbleAnchor : null, cam, minX);
             var player = Game.Player != null ? Game.Player.transform.position + Vector3.up * 2.05f : (Vector3?)null;
             bool mine = _myBubble.Place(show ? _myBubble.Line : null, player, cam, minX);

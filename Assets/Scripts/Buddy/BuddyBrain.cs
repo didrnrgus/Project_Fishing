@@ -137,6 +137,10 @@ namespace Fishing.Buddy
             if (string.IsNullOrEmpty(question) || State == Status.Thinking) return;
             Log.Add((true, question));
             Heard?.Invoke(question);
+            _history.Add(Message("user", question));
+            // 길 안내는 AI 없이 게임 데이터로 바로 (Ollama가 꺼져 있어도, 이름·위치를 지어내지 않게)
+            if (TryGuide(question)) return;
+            _history.RemoveAt(_history.Count - 1);
             if (State != Status.Ready)
             {
                 Reply(State == Status.Offline
@@ -162,7 +166,7 @@ namespace Fishing.Buddy
             Debug.Log($"[Buddy] 미리 찾은 자료 {facts?.Length ?? 0}자\n{facts}");
             messages[messages.Count - 1] = Message("user", question +
                 (facts != null ? $"\n\n[참고 자료 — 게임에서 찾아 둔 사실. 숫자·장소는 이것만 믿어]\n{facts}" : "") +
-                "\n\n(윤슬은 반말로 2~3문장만. 모자라면 도구로 더 찾고, 자료·도구에 없는 건 지어내지 않기.)");
+                "\n\n(윤슬은 반말로 짧게. 게임 사실은 자료·도구에 있는 것만, 게임 밖 질문은 아는 대로 성실하게.)");
             string answer = null, error = null;
             bool offline = false;
             float started = Time.realtimeSinceStartup;
@@ -205,16 +209,16 @@ namespace Fishing.Buddy
                 yield break;
             }
             if (string.IsNullOrWhiteSpace(answer)) answer = "음… 뭐라고 해야 할지 모르겠어. 다르게 물어봐 줄래?";
-            Reply(Short(Banmal(answer)), null, true);
+            Reply(Short(Banmal(answer), 8), null, true);
         }
 
-        // 말풍선에 들어가게 4문장까지 (작은 모델은 "2~3문장"을 자주 넘긴다). 줄바꿈 문단도 한 줄로 잇는다
+        // 문장 수 자르기 (작은 모델은 "짧게"를 자주 넘긴다): 대화창은 8문장, 말풍선은 4문장(UI.BuddyChatView). 줄바꿈 문단도 한 줄로 잇는다
         static readonly System.Text.RegularExpressions.Regex SentenceEnd = new System.Text.RegularExpressions.Regex(@"(?<=[.!?~])\s+");
 
-        static string Short(string s)
+        public static string Short(string s, int sentences)
         {
-            var sentences = SentenceEnd.Split(s.Replace("\r", "")).Select(x => x.Replace("\n", " ").Trim()).Where(x => x.Length > 0).ToList();
-            return string.Join(" ", sentences.Take(4));
+            var list = SentenceEnd.Split(s.Replace("\r", "")).Select(x => x.Replace("\n", " ").Trim()).Where(x => x.Length > 0).ToList();
+            return list.Count <= sentences ? string.Join(" ", list) : string.Join(" ", list.Take(sentences)) + " …";
         }
 
         // 작은 모델이 가끔 섞는 존댓말 끝("살아요", "좋아요", "이에요")을 반말로. "필요"·"중요"처럼 낱말 속 "요"는 앞 글자를 보고 건드리지 않는다
@@ -260,16 +264,211 @@ namespace Fishing.Buddy
             return
 $@"너는 낚시 게임 「짭풍명월」에서 플레이어 곁을 따라다니는 낚시 친구 '{BuddyName}'이야. 플레이어 이름은 {player}.
 말투: 오래된 친구처럼 반말로만, 밝고 다정하게 (-요, -습니다 같은 존댓말과 '젠장' 같은 거친 말은 쓰지 마). 한국어로만 말해.
-길이: 말풍선에 들어가게 2~4문장. 목록이 꼭 필요하면 3줄까지만. 마크다운 기호(#, *, |)는 쓰지 마.
+길이: 보통은 2~4문장. 설명이 필요한 질문(개발·기술·사양)은 6문장까지. 마크다운 기호(#, *, |)는 쓰지 마.
+무엇이든 물어봐도 대답해: 게임 얘기든, 이 PC 사양이든, 이 게임을 어떻게 만들었는지(코드·셰이더·AI·구조)든, 일상·공부·개발 질문이든. 낚시 얘기로 억지로 돌리지 마.
+- 이 PC 사양·버전은 system_info, 이 게임의 구현·기술은 search_dev_docs/read_dev_doc, 일반 상식·개발 질문은 아는 대로 성실하게. 모르면 모른다고 해.
 게임 질문(조작, 물고기, 낚시터, 장비, 미끼, 퀘스트, 레벨, 배, 대회)에는 먼저 도구로 확인하고 대답해:
 - '어떻게 해?', '왜 안 돼?', 요령·조작·장비 고르기·문제(줄이 끊김, 입질이 없음, 바늘이 빠짐)는 search_guides로 핵심 낱말 한두 개를 찾아. 필요하면 read_guide로 그 장을 읽어.
 - 물고기 하나는 fish_info, 낚시터는 map_info, 퀘스트는 quest_info, 플레이어 레벨·장비·있는 곳은 game_state.
 - 숫자(레벨·길이·가격·시간)는 도구 결과에 있는 것만 써. 도구에도 없으면 지어내지 말고 '그건 나도 잘 모르겠어'라고 해.
 질문 끝에 [참고 자료]가 붙어 있으면 그중 질문에 딱 맞는 한두 가지만 골라 쉬운 말로 풀어 대답해. 자료를 그대로 옮기거나 파일 이름을 말하지는 마.
 말투 예시: (미끼는 뭐가 좋아?) → 붕어 노릴 거면 떡밥이 제일 무난해! 지렁이도 잘 먹으니까 둘 다 챙겨 가자. / (오늘 힘들다) → 그럴 땐 찌만 멍하니 봐도 좋잖아. 한 마리만 낚고 쉬자!
-게임 밖 이야기도 가볍게 받아 주되, 자연스럽게 낚시 이야기로 돌아와.
 지금 상황: {where}, Lv.{p?.Data.level ?? 1}, {(Game.Clock != null ? $"{Game.Clock.TimeText} {Names.Of(Game.Clock.Band)}" : "")}, 날씨 {(Game.Weather != null ? Names.Of(Game.Weather.Current) : "?")}, 미끼 {p?.Bait.Name}{(q != null ? $", 이야기 퀘스트 「{q.Title}」({q.GoalText})" : "")}.";
         }
+
+        // ───────────── 길 안내 ─────────────
+        // "데려다줘", "누구한테 가야 해?", "퀘스트 알고 싶어"면 윤슬이 그 NPC에게 앞장서 걸어간다 (BuddyBody.Lead).
+        // 갈 NPC: 질문에 이름·낚시점·조합이 나오면 그 사람, 아니면 이 낚시터에서 퀘스트 표시가 가장 급한 사람(보고 > 이야기 퀘스트 > 받을 퀘스트 > 진행 중).
+        // 이 낚시터에 없으면(대기실·다른 낚시터) 어디로 가야 하는지 말로만.
+
+        static readonly string[] GuideWords = { "안내", "데려", "데리고", "따라갈", "따라가", "길알려", "어디로가", "어디가야", "어딨", "어디있", "어디에있", "누구한테", "누구에게", "찾아가" };
+        static readonly string[] QuestAsk = { "알고", "알려", "뭐해", "뭘해", "받", "할거", "할게", "어디", "누구", "있어?", "있나" };
+
+        bool TryGuide(string question)
+        {
+            if (Game.Mode != GameMode.Field || Game.Quests == null) return false;
+            string q = question.Replace(" ", "");
+            bool guide = GuideWords.Any(q.Contains);
+            bool quest = q.Contains("퀘스트") || q.Contains("임무") || q.Contains("의뢰");
+            var named = NamedNpc(q);
+            // "너가 먼저 안내해 봐"처럼 퀘스트라는 말이 없어도, 바로 앞 질문이 퀘스트 얘기였으면 퀘스트 안내로 본다
+            bool context = _lastWasQuest;
+            _lastWasQuest = quest;
+            // 낚시 포인트: "붕어 어디서 잡아?", "참돔 포인트 데려가 줘"
+            var fish = FishDatabase.All.Where(f => !f.IsJunk && GameKnowledge.Mentions(question, f.Name)).OrderByDescending(f => f.Name.Length).FirstOrDefault();
+            if (fish != null && !quest && (guide || q.Contains("어디") || q.Contains("포인트") || q.Contains("자리")) && GuideToFish(fish)) return true;
+            if (!(guide && (quest || named != null || context)) && !(quest && QuestAsk.Any(q.Contains))) return false;
+            _lastWasQuest = true;
+
+            var body = BuddyBody.Instance;
+            if (named != null && (!quest || Game.Quests.MarkFor(KeyOf(named)) != QuestSystem.Mark.None))
+            {
+                Reply($"{named.Look.Name}{Honor(named.Look.Name)}? 저쪽이야. 따라와!", Fishing.Characters.CharacterAnimator.Wave, true);
+                body?.Lead(NpcGoal(named));
+                return true;
+            }
+
+            // 이 낚시터에서 퀘스트 표시가 가장 급한 NPC (같으면 가까운 쪽)
+            Fishing.Characters.NpcAngler best = null;
+            var bestMark = QuestSystem.Mark.None;
+            float bestD = float.MaxValue;
+            foreach (var n in Fishing.Characters.NpcAngler.Talkable)
+            {
+                if (n == null) continue;
+                var mark = Game.Quests.MarkFor(KeyOf(n));
+                if (mark == QuestSystem.Mark.None) continue;
+                float d = (n.transform.position - Game.Player.transform.position).sqrMagnitude;
+                if (Rank(mark) > Rank(bestMark) || (mark == bestMark && d < bestD)) { best = n; bestMark = mark; bestD = d; }
+            }
+            if (best != null)
+            {
+                string key = KeyOf(best), who = best.Look.Name + Honor(best.Look.Name);
+                var ready = Game.Quests.Active().FirstOrDefault(x => (x.Reporter ?? x.Giver) == key && Game.Quests.IsReady(x));
+                var avail = Game.Quests.AvailableAt(key);
+                var working = Game.Quests.InProgressAt(key).FirstOrDefault();
+                string line = bestMark switch
+                {
+                    QuestSystem.Mark.Ready when ready != null => $"「{ready.Title}」 다 했네! {who}한테 보고하러 가자. 따라와!",
+                    QuestSystem.Mark.Ready => $"{who}한테 가 보자. 기다리고 있을 거야. 따라와!",
+                    QuestSystem.Mark.AvailableStory or QuestSystem.Mark.Available when avail.Count > 0 =>
+                        $"{who}한테 받을 퀘스트가 있어. 「{avail[0].Title}」{(avail.Count > 1 ? $" 말고도 {avail.Count - 1}개 더" : "")}! 내가 데려다줄게, 따라와!",
+                    _ when working != null => $"「{working.Title}」은 {who} 일이야. 지금 목표는 {Game.Quests.ObjectiveLine(working)}. 같이 가 보자, 따라와!",
+                    _ => $"{who}한테 가 보자. 따라와!",
+                };
+                Reply(line, Fishing.Characters.CharacterAnimator.Wave, true);
+                if (body == null || !body.Lead(NpcGoal(best))) Reply($"{who}{QuestNpcs.Josa(best.Look.Name, "은", "는")} {FieldMap.AreaName(best.transform.position)} 쪽에 있어. 머리 위 표시를 찾아봐!", null, true);
+                return true;
+            }
+
+            // 이 낚시터에는 없다: 이야기 퀘스트를 받을·보고할 사람이 어디 있는지 말로
+            var s = Game.Quests.Current;
+            if (s != null)
+            {
+                bool accepted = Game.Quests.IsActive(s);
+                var npc = QuestNpcs.Get(!accepted ? s.Giver : Game.Quests.IsReady(s) ? s.Reporter ?? s.Giver : null);
+                if (npc != null)
+                {
+                    string who = npc.Name + Honor(npc.Name);
+                    Reply(npc.InLobby
+                        ? $"「{s.Title}」은 대기실 조합의 {who}한테 가야 해. 오른쪽 위 ◀ 조합으로 돌아가서 [퀘스트]를 눌러 봐!"
+                        : $"「{s.Title}」은 {npc.Place}의 {who}한테 가야 해. 대기실에서 {npc.Place}로 가자!", null, true);
+                    return true;
+                }
+                if (accepted)
+                {
+                    Reply($"지금은 찾아갈 사람이 없어. 「{s.Title}」 목표부터 채우자: {Game.Quests.ObjectiveLine(s)}. 다 하면 같이 보고하러 가자!", null, true);
+                    return true;
+                }
+            }
+            if (!guide) return false; // 퀘스트 질문인데 갈 데가 없으면 AI가 대답
+            Reply("지금은 받을 퀘스트가 없어. 레벨을 올리거나 다른 낚시터에 가 보자!", null, true);
+            return true;
+        }
+
+        bool _lastWasQuest;
+
+        static int Rank(QuestSystem.Mark m) => m switch
+        {
+            QuestSystem.Mark.Ready => 4,
+            QuestSystem.Mark.AvailableStory => 3,
+            QuestSystem.Mark.Available => 2,
+            QuestSystem.Mark.Working => 1,
+            _ => 0,
+        };
+
+        static string KeyOf(Fishing.Characters.NpcAngler n) => QuestNpcs.KeyFor(n.NpcId, FieldMap.Id);
+
+        /// <summary>"박주임"·"정계장"(이름 끝 낱말)·"낚시점"·"조합"·"어부"로 이 낚시터의 NPC를 찾는다.</summary>
+        static Fishing.Characters.NpcAngler NamedNpc(string q)
+        {
+            foreach (var n in Fishing.Characters.NpcAngler.Talkable)
+            {
+                if (n == null || n.Look == null || string.IsNullOrEmpty(n.Look.Name)) continue;
+                string name = n.Look.Name.Replace(" ", "");
+                string last = n.Look.Name.Split(' ').Last();
+                if (q.Contains(name) || (last.Length >= 2 && q.Contains(last))) return n;
+            }
+            string id = q.Contains("낚시점") || q.Contains("상점") || q.Contains("가게") ? "shop"
+                : q.Contains("조합") || q.Contains("연락관") || q.Contains("지부") ? "union"
+                : q.Contains("어부") || q.Contains("통발") ? "fisher" : null;
+            return id == null ? null : Fishing.Characters.NpcAngler.Talkable.FirstOrDefault(n => n != null && n.NpcId == id);
+        }
+
+        /// <summary>"박주임" → "님" ("이장님"처럼 이미 님이면 붙이지 않는다).</summary>
+        static string Honor(string name) => name != null && name.EndsWith("님") ? "" : "님";
+
+        BuddyBody.Goal NpcGoal(Fishing.Characters.NpcAngler npc)
+        {
+            string who = npc.Look.Name + Honor(npc.Look.Name);
+            return new BuddyBody.Goal
+            {
+                Target = npc.transform,
+                Name = who,
+                Arrived = () => Say($"여기야! {who}한테 {Settings.KeyName(KeyAction.Talk)} 눌러서 말 걸어 봐.", Fishing.Characters.CharacterAnimator.Wave),
+            };
+        }
+
+        /// <summary>그 고기가 사는 이 낚시터 포인트로 데려간다. 다른 낚시터 고기면 false (AI가 자료로 대답).</summary>
+        bool GuideToFish(FishSpecies s)
+        {
+            var body = BuddyBody.Instance;
+            if (body == null || (s.Maps != null && !s.Maps.Contains(FieldMap.Id))) return false;
+            var p = Game.Profile;
+            float reach = (p.Rod.CastRange + p.Costume.Cast) * 0.85f;
+            bool onBoat = Game.Player.OnBoat;
+            bool canBoat = onBoat || !string.IsNullOrEmpty(p.Data.boatId);
+            var spot = BuddySpots.Find(s, Game.Player.transform.position, reach, canBoat);
+            string name = s.Name + QuestNpcs.Josa(s.Name, "은", "는");
+            if (!spot.HasValue)
+            {
+                if (!canBoat && BuddySpots.Find(s, Game.Player.transform.position, reach, true).HasValue)
+                {
+                    Reply($"{name} 여기선 배를 타야 닿는 데 살아. 낚시점에서 배부터 마련하자!", null, true);
+                    return true;
+                }
+                return false;
+            }
+            var sp = spot.Value;
+            string where = $"{sp.Cell} {sp.Habitat}";
+            string boatKey = Settings.KeyName(KeyAction.Boat);
+            var goal = new BuddyBody.Goal { Spot = sp.Shore, PointAt = sp.Water, Boat = sp.Boat || onBoat, Name = where };
+            if (onBoat)
+            {
+                Reply($"{name} {where} 쪽이야. 저기! 내가 가리키는 쪽으로 몰아 줘.", null, true);
+                goal.Reached = () => Say($"여기야, {where}! 여기서 던져 봐.", Fishing.Characters.CharacterAnimator.Excited);
+            }
+            else if (sp.Boat)
+            {
+                Reply($"{name} {where}에 있는데, 거긴 배를 타야 해. 배 띄울 물가로 데려갈게, 따라와!", Fishing.Characters.CharacterAnimator.Wave, true);
+                goal.Arrived = () => Say($"여기서 배를 타야 해! {boatKey} 눌러서 배 꺼내. 포인트는 저기, {sp.Cell}이야. 나도 같이 탈게!", Fishing.Characters.CharacterAnimator.Wave);
+                goal.Reached = () => Say($"여기야, {where}! 여기서 던져 봐.", Fishing.Characters.CharacterAnimator.Excited);
+            }
+            else
+            {
+                Reply($"{name} {where} 쪽이 좋아! 저기야, 따라와.", Fishing.Characters.CharacterAnimator.Wave, true);
+                goal.Arrived = () => Say($"여기야! 저쪽 {sp.Habitat}{Euro(sp.Habitat)} 던져 봐.", Fishing.Characters.CharacterAnimator.Wave);
+            }
+            body.Lead(goal);
+            return true;
+        }
+
+        /// <summary>"여울" → "로", "수초" → "로", "암초 지대" → "로", "갯바위" → "로", "깊은 곳" → "으로" (받침이 없거나 ㄹ이면 로).</summary>
+        static string Euro(string word)
+        {
+            if (string.IsNullOrEmpty(word)) return "로";
+            char c = word[word.Length - 1];
+            if (c < '가' || c > '힣') return "로";
+            int final = (c - '가') % 28;
+            return final == 0 || final == 8 ? "로" : "으로";
+        }
+
+        /// <summary>안내하는데 플레이어가 처졌다 (BuddyBody).</summary>
+        public void CallPlayer(string where) =>
+            Say(Pick("이쪽이야! 따라와~", $"여기야 여기! {where} 가는 길이야.", "천천히 와도 돼, 기다릴게!"), Fishing.Characters.CharacterAnimator.Wave);
+
+        /// <summary>안내하는데 플레이어가 반대로 간다 (BuddyBody: 손으로 가리키며).</summary>
+        public void WrongWay(string where) =>
+            Say(Pick("아니야, 저기야!", $"거기 아니야~ {where}는 저쪽!", "어디 가? 이쪽이야!"));
 
         // ───────────── 반응 ─────────────
 
