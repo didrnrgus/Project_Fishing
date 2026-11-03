@@ -64,10 +64,12 @@ Assets/
       CharacterAnimator.cs       Playables 믹서로 클립 재생 (AnimatorController 없이 SetLoop/PlayOnce). "이름_M/_F" 클립은 성별로 고른다
       NpcAngler.cs               NPC (Angler/Talker/Sitter). NpcId로 대화 종류, 대화 상대 바라보기, 조합 연락관 머리 위 퀘스트 표시(? !)
     Buddy/                       따라다니는 낚시 친구 윤슬 (가이드 09)
-      BuddyBrain.cs              두뇌: 대화 기록·Ollama 대화(성격·지금 상황·마지막 질문에 다짐), 상황 반응 말(낚음·놓침·레벨 업·퀘스트·새 낚시터), 연결 상태·모델 고르기
-      BuddyBody.cs               몸: 플레이어 오른쪽 조금 뒤를 따라 걷기·뛰기, 멀거나 막히면 옆으로 옮기기, 대기실·배 위에선 숨기, 반응 동작 (VRM은 characters.json npc "윤슬")
+      BuddyBrain.cs              두뇌: 대화 기록·Ollama 대화(성격·지금 상황·미리 찾은 자료·마지막 질문에 다짐), 길 안내 판단(TryGuide: 퀘스트 NPC·이름·낚시 포인트, AI 없이 데이터로), 상황 반응 말, 반말 고치기·문장 자르기
+      BuddyBody.cs               몸: 따라 걷기·뛰기, 길 안내(Goal: NPC·물가·배 띄울 곳, 처지면 기다리며 부르기, 반대로 가면 "아니야 저기야"), 배 같이 타기(뱃머리/운전석), 오른팔 가리키기 IK, 반응 동작
+      BuddyPath.cs               길 찾기: 1m 칸 A*(칸은 닿을 때만 검사: 땅 높이·물·캡슐·턱 0.7m), 곧게 갈 수 있는 점까지 건너뛰기
+      BuddySpots.cs              낚시 포인트 고르기: 그 고기 서식지 칸의 물 → 가장 가까운 물가, 낚싯대가 안 닿으면 배
       OllamaChat.cs              BuddyConfig(PlayerPrefs: 주소·모델·MCP) + Ollama /api/chat 스트리밍·도구 호출 반복(최대 4번), 미리 올리기(Warm), <think> 지우기
-      GameKnowledge.cs           게임 지식 도구 7개: game_state·list_guides·read_guide·search_guides(docs/guide, 빌드는 StreamingAssets/Guide)·fish_info·map_info·quest_info
+      GameKnowledge.cs           게임 지식 도구 10개: game_state·list_guides·read_guide·search_guides(docs/guide)·fish_info·map_info·quest_info·system_info(이 PC)·search_dev_docs·read_dev_doc(docs/*.md·docs/tech, 빌드는 StreamingAssets/DevDocs) + 질문 전 미리 찾기(Prefetch)
       BuddyMcpServer.cs          같은 도구를 MCP(Streamable HTTP, JSON-RPC 한 번에 하나)로: 127.0.0.1:8770/mcp, 다른 Origin 거절, 도구는 메인 스레드에서
       Json.cs                    작은 JSON 읽기·쓰기 (사전·섞인 배열)
     World/

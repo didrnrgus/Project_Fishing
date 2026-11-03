@@ -72,6 +72,24 @@ namespace Fishing.Buddy
                 Description = "진행 중인 퀘스트(이야기·일반·일일)와 목표·진행도·보상, 누구에게 받는지.",
                 Schema = Schema(),
             },
+            new Tool
+            {
+                Name = "system_info",
+                Description = "이 PC의 사양(운영체제·CPU·RAM·그래픽카드·화면·FPS)과 게임·Unity·AI 모델 버전.",
+                Schema = Schema(),
+            },
+            new Tool
+            {
+                Name = "search_dev_docs",
+                Description = "개발 문서(설계·코드 구조·기술: 셰이더·물리·애니메이션·성능·빌드·밸런스)에서 낱말을 찾는다. 이 게임이 어떻게 만들어졌는지 물으면 쓴다.",
+                Schema = Schema(("query", "찾을 낱말 (띄어 쓰면 여러 낱말)", true)),
+            },
+            new Tool
+            {
+                Name = "read_dev_doc",
+                Description = "개발 문서를 읽는다. file은 파일 이름 일부(예: architecture, tech/07-shaders), section은 장 제목 일부.",
+                Schema = Schema(("file", "문서 파일 이름 일부", true), ("section", "읽을 장 제목 일부 (없으면 문서 앞부분)", false)),
+            },
         };
 
         static Dictionary<string, object> Schema(params (string name, string desc, bool required)[] props)
@@ -103,6 +121,9 @@ namespace Fishing.Buddy
                     "fish_info" => FishInfo(Arg("name")),
                     "map_info" => MapInfo(Arg("name")),
                     "quest_info" => QuestInfo(),
+                    "system_info" => SystemSpec(),
+                    "search_dev_docs" => SearchDocs(DevDocs, Arg("query")),
+                    "read_dev_doc" => ReadGuide(Arg("file"), Arg("section"), true),
                     _ => $"'{name}' 도구는 없습니다. 쓸 수 있는 도구: {string.Join(", ", Tools.Select(t => t.Name))}",
                 };
             }
@@ -125,9 +146,9 @@ namespace Fishing.Buddy
             try
             {
                 string q = question.Replace(" ", "");
-                foreach (var s in FishDatabase.All.Where(s => !s.IsJunk && q.Contains(s.Name.Replace(" ", ""))).OrderByDescending(s => s.Name.Length).Take(2))
+                foreach (var s in FishDatabase.All.Where(s => !s.IsJunk && Mentions(question, s.Name)).OrderByDescending(s => s.Name.Length).Take(2))
                     parts.Add(FishInfo(s.Name).TrimEnd());
-                var area = FishingAreas.All.FirstOrDefault(a => a.Open && q.Contains(a.Name.Replace(" ", "")));
+                var area = FishingAreas.All.FirstOrDefault(a => a.Open && Mentions(question, a.Name));
                 if (area != null) parts.Add(MapInfo(area.Name).TrimEnd());
                 bool levelQuestion = Has(q, "낚시터", "레벨", "열려", "열리", "어디가", "갈수있");
                 if (area == null && levelQuestion) parts.Add(MapInfo(null).TrimEnd());
@@ -139,7 +160,22 @@ namespace Fishing.Buddy
                 var words = question.Split(new[] { ' ', ',', '?', '!', '.', '~' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(StripJosa).Where(w => w.Length >= 2 && !StopWords.Contains(w))
                     .SelectMany(w => new[] { w, w.Substring(0, w.Length - 1) }).Distinct().ToList();
-                if (words.Count > 0)
+                // 게임 밖 질문: 이 PC 사양, 이 게임을 어떻게 만들었는지(개발 문서)
+                bool spec = Has(q.ToLowerInvariant(), "사양", "스펙", "컴퓨터", "그래픽", "gpu", "cpu", "램", "메모리", "pc", "피씨", "프레임", "fps", "버전", "운영체제", "윈도우");
+                if (spec) parts.Add(SystemSpec().TrimEnd());
+                bool dev = Has(q.ToLowerInvariant(), "구현", "코드", "개발", "만들었", "만든거", "스크립트", "구조", "클래스", "셰이더", "쉐이더", "유니티", "unity",
+                    "알고리즘", "물리", "렌더", "최적화", "빌드", "원리", "어떻게만들", "기술", "엔진", "ai는", "모델");
+                // 사양 질문에 가이드 줄을 붙이면 작은 모델이 장비 얘기를 섞는다 (개발 질문이면 개발 문서는 찾는다)
+                if (dev)
+                {
+                    // 개발 문서는 "게임·만들었" 같은 낱말이 어디에나 있어서 빼고, 쉬운 말을 문서 낱말로 넓힌다 (물 → 수면·물결·Water)
+                    var devWords = words.Where(w => !DevStopWords.Contains(w)).SelectMany(w => DevSynonyms.TryGetValue(w, out var more) ? more.Prepend(w) : new[] { w }).Distinct().ToList();
+                    string found = devWords.Count > 0 ? SearchDocs(DevDocs, string.Join(" ", devWords)) : "";
+                    var lines = found.Split('\n').Where(l => l.StartsWith("[")).Take(6).ToList();
+                    if (lines.Count > 0)
+                        parts.Add("[이 게임 「짭풍명월」의 개발 문서에서 찾은 내용 — 플레이어는 이 게임이 어떻게 만들어졌는지 묻고 있어. 이걸 바탕으로 쉽게 설명해]\n" + string.Join("\n", lines));
+                }
+                else if (words.Count > 0 && !spec)
                 {
                     string found = SearchGuides(string.Join(" ", words));
                     // 윤슬 안내 장(09-buddy)은 예시 질문이 그대로 적혀 있어 늘 맨 위로 올라오니 뺀다. 작은 모델은 자료가 많으면 엉뚱한 줄을 고르니 5줄만
@@ -152,6 +188,37 @@ namespace Fishing.Buddy
         }
 
         static bool Has(string q, params string[] words) => words.Any(q.Contains);
+
+        /// <summary>
+        /// 질문에 그 이름(물고기·낚시터)이 낱말 첫머리로 나오는지. 띄어쓰기를 지운 글에서 그냥 찾으면
+        /// "이 게임 물은 어떻게"가 "물은어떻게"가 되어 "은어"로 잡힌다.
+        /// </summary>
+        public static bool Mentions(string question, string name)
+        {
+            if (string.IsNullOrEmpty(question) || string.IsNullOrEmpty(name)) return false;
+            string n = name.Replace(" ", "");
+            for (int i = 0; i < question.Length; i++)
+            {
+                if (i > 0 && char.IsLetterOrDigit(question[i - 1])) continue;
+                if (string.CompareOrdinal(question, i, n, 0, 1) != 0) continue;
+                // 여기서부터 띄어쓰기를 빼고 이름만큼
+                var sb = new StringBuilder();
+                for (int j = i; j < question.Length && sb.Length < n.Length; j++)
+                    if (question[j] != ' ') sb.Append(question[j]);
+                if (sb.ToString() == n) return true;
+            }
+            return false;
+        }
+
+        static readonly HashSet<string> DevStopWords = new HashSet<string> { "게임", "게임은", "만들었", "만들었어", "만들어", "만든", "만든거", "구현", "구현했", "개발", "어떻게", "이거", "이게임" };
+
+        static readonly Dictionary<string, string[]> DevSynonyms = new Dictionary<string, string[]>
+        {
+            { "물", new[] { "수면", "물결", "Water" } }, { "물은", new[] { "수면", "물결", "Water" } },
+            { "하늘", new[] { "Sky", "구름" } }, { "캐릭터", new[] { "VRM", "CharacterAnimator" } }, { "물고기", new[] { "어종", "Fish" } },
+            { "파이팅", new[] { "Fight", "장력" } }, { "날씨", new[] { "Weather", "비" } }, { "윤슬", new[] { "Buddy", "Ollama" } }, { "ai", new[] { "Ollama", "Buddy" } },
+            { "셰이더", new[] { "shader", "Shader" } }, { "쉐이더", new[] { "셰이더", "Shader" } }, { "애니메이션", new[] { "IK", "Animator" } },
+        };
 
         static readonly HashSet<string> StopWords = new HashSet<string>
         {
@@ -190,6 +257,44 @@ namespace Fishing.Buddy
             }
         }
 
+        // ───────────── 개발 문서 · 이 PC ─────────────
+        // 게임 밖 질문(이 게임은 어떻게 만들었어? 이 PC 사양은? 셰이더는?)에도 대답하게: 설계·구조·기술 문서(docs/*.md, docs/tech/*.md)와 SystemInfo.
+        // 빌드는 StreamingAssets/DevDocs에 복사해 둔다 (ProjectTools.BuildWindows).
+
+        public static string DevFolder =>
+            Application.isEditor ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "docs")) : Path.Combine(Application.streamingAssetsPath, "DevDocs");
+
+        static List<(string file, string text)> _devDocs;
+
+        static List<(string file, string text)> DevDocs
+        {
+            get
+            {
+                if (_devDocs != null) return _devDocs;
+                _devDocs = new List<(string, string)>();
+                foreach (var sub in new[] { "", "tech" })
+                {
+                    var dir = Path.Combine(DevFolder, sub);
+                    if (!Directory.Exists(dir)) continue;
+                    foreach (var path in Directory.GetFiles(dir, "*.md").OrderBy(p => p, StringComparer.Ordinal))
+                        _devDocs.Add(((sub.Length > 0 ? sub + "/" : "") + Path.GetFileName(path), Clean(File.ReadAllText(path))));
+                }
+                return _devDocs;
+            }
+        }
+
+        static string SystemSpec()
+        {
+            var sb = new StringBuilder();
+            sb.Append($"운영체제: {SystemInfo.operatingSystem}\n");
+            sb.Append($"CPU: {SystemInfo.processorType} ({SystemInfo.processorCount}스레드, {SystemInfo.processorFrequency}MHz)\n");
+            sb.Append($"메모리(RAM): {SystemInfo.systemMemorySize / 1024f:0.#}GB\n");
+            sb.Append($"그래픽카드: {SystemInfo.graphicsDeviceName} (그래픽 메모리 {SystemInfo.graphicsMemorySize / 1024f:0.#}GB, {SystemInfo.graphicsDeviceVersion})\n");
+            sb.Append($"화면: {Screen.width}×{Screen.height}, 지금 {1f / Mathf.Max(Time.smoothDeltaTime, 1e-4f):0} FPS\n");
+            sb.Append($"게임: 짭풍명월 v{Application.version}, Unity {Application.unityVersion}, 윤슬의 AI 모델 {BuddyConfig.Model} (이 PC의 Ollama)\n");
+            return sb.ToString();
+        }
+
         /// <summary>그림 줄은 빼고, 링크는 글자만 남긴다 (모델이 읽을 글자 수를 줄인다).</summary>
         static string Clean(string md)
         {
@@ -223,19 +328,19 @@ namespace Fishing.Buddy
             return sb.ToString();
         }
 
-        static (string file, string text)? FindGuide(string query)
+        static (string file, string text)? FindGuide(string query, List<(string file, string text)> docs = null)
         {
             if (string.IsNullOrEmpty(query)) return null;
             var q = query.ToLowerInvariant().Replace(".md", "");
-            foreach (var g in Guides)
+            foreach (var g in docs ?? Guides)
                 if (g.file.ToLowerInvariant().Contains(q) || TitleOf(g.text).ToLowerInvariant().Contains(q)) return g;
             return null;
         }
 
-        static string ReadGuide(string file, string section)
+        static string ReadGuide(string file, string section, bool dev = false)
         {
-            var g = FindGuide(file);
-            if (g == null) return $"'{file}' 문서가 없습니다. 목록:\n{ListGuides()}";
+            var g = FindGuide(file, dev ? DevDocs : Guides);
+            if (g == null) return dev ? $"'{file}' 개발 문서가 없습니다. 있는 문서: {string.Join(", ", DevDocs.Select(d => d.file))}" : $"'{file}' 문서가 없습니다. 목록:\n{ListGuides()}";
             var (name, text) = g.Value;
             if (!string.IsNullOrEmpty(section))
             {
@@ -262,12 +367,14 @@ namespace Fishing.Buddy
             return start >= 0 ? string.Join("\n", lines, start, lines.Length - start) : null;
         }
 
-        static string SearchGuides(string query)
+        static string SearchGuides(string query) => SearchDocs(Guides, query);
+
+        static string SearchDocs(List<(string file, string text)> docs, string query)
         {
             if (string.IsNullOrEmpty(query)) return "query가 비었습니다.";
             var words = query.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
             var hits = new List<(int score, string text)>();
-            foreach (var (file, text) in Guides)
+            foreach (var (file, text) in docs)
             {
                 string heading = TitleOf(text);
                 var lines = text.Split('\n');
@@ -277,6 +384,8 @@ namespace Fishing.Buddy
                     if (line.StartsWith("#")) heading = line.TrimStart('#', ' ');
                     int score = words.Count(w => line.IndexOf(w, StringComparison.OrdinalIgnoreCase) >= 0);
                     if (score == 0 || line.Trim().Length < 4) continue;
+                    // 그 장 제목에도 낱말이 있으면 위로 ("## 물 셰이더" 아래 줄이 "물"이 지나가듯 나온 줄보다 먼저)
+                    if (words.Any(w => heading.IndexOf(w, StringComparison.OrdinalIgnoreCase) >= 0)) score += 2;
                     hits.Add((score, $"[{file} › {heading}] {line.Trim()}"));
                 }
             }

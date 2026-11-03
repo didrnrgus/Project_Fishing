@@ -72,6 +72,9 @@ namespace Fishing.PlayerSystems
         Transform _boat, _seat, _bow, _stern;
         /// <summary>떠 있는 배 몸체 (없으면 null). 캐스팅 장애물 검사에서 뺀다.</summary>
         public Transform Hull => _boat;
+        /// <summary>뱃머리 서는 자리와 운전석 (윤슬이 같이 탈 때: 플레이어가 앉아 몰면 뱃머리, 뱃머리에 서면 운전석에).</summary>
+        public Transform BowPoint => _bow;
+        public Transform SeatPoint => _seat;
         float _halfLen, _halfWidth;
         float _yaw;
         Vector3 _pos;

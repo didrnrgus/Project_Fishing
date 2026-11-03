@@ -110,7 +110,11 @@ namespace Fishing.EditorTools
                 options = BuildOptions.None,
             };
             var report = BuildPipeline.BuildPlayer(options);
-            if (report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded) CopyGuide("Builds/Windows/ProjectFishing_Data/StreamingAssets/Guide");
+            if (report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded)
+            {
+                CopyGuide("Builds/Windows/ProjectFishing_Data/StreamingAssets/Guide");
+                CopyDevDocs("Builds/Windows/ProjectFishing_Data/StreamingAssets/DevDocs");
+            }
             Debug.Log($"[Build] {report.summary.result} · {report.summary.totalSize / (1024 * 1024)}MB · 에러 {report.summary.totalErrors}");
             if (Application.isBatchMode) EditorApplication.Exit(report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded ? 0 : 1);
         }
@@ -123,6 +127,17 @@ namespace Fishing.EditorTools
             foreach (var f in Directory.GetFiles("docs/guide", "*.md"))
                 File.Copy(f, Path.Combine(dest, Path.GetFileName(f)));
             Debug.Log($"[Build] 가이드 {Directory.GetFiles(dest).Length}개 → {dest}");
+        }
+
+        /// <summary>개발 문서(docs/*.md, docs/tech/*.md)를 StreamingAssets/DevDocs로: 윤슬이 "이 게임은 어떻게 만들었어?"에 대답할 때 읽는다.</summary>
+        static void CopyDevDocs(string dest)
+        {
+            if (Directory.Exists(dest)) Directory.Delete(dest, true);
+            Directory.CreateDirectory(Path.Combine(dest, "tech"));
+            int n = 0;
+            foreach (var f in Directory.GetFiles("docs", "*.md")) { File.Copy(f, Path.Combine(dest, Path.GetFileName(f))); n++; }
+            foreach (var f in Directory.GetFiles("docs/tech", "*.md")) { File.Copy(f, Path.Combine(dest, "tech", Path.GetFileName(f))); n++; }
+            Debug.Log($"[Build] 개발 문서 {n}개 → {dest}");
         }
 
         [MenuItem("Fishing/Delete Save")]

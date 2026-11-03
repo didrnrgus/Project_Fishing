@@ -1787,10 +1787,77 @@ namespace Fishing.Dev
             yield return new WaitForSecondsRealtime(0.5f);
             Debug.Log($"[Dev] 윤슬 대답: {(brain.Log.Count > 0 ? brain.Log[brain.Log.Count - 1].text : "(없음)")}");
             yield return Shot("30e_buddy_answer");
+
+            // 길 안내: "퀘스트 받을 사람한테 데려다줘" → 윤슬이 앞장서고, 플레이어는 윤슬 쪽으로 걸어 따라간다 (카메라는 플레이어 뒤에서 윤슬 쪽)
+            yield return FollowBuddy("퀘스트 받을 사람한테 데려다줘", "30g_buddy_lead", "30h_buddy_arrive");
+            // 낚시 포인트: "붕어 어디서 잡아?" → 물가로 데려가 던질 물을 손으로 가리킨다
+            yield return FollowBuddy("붕어 어디서 잡아?", null, "30i_buddy_point");
+            // 배: 물가에서 배를 띄우면 윤슬도 같이 타고 포인트를 가리킨다
+            var p = Game.Profile;
+            if (string.IsNullOrEmpty(p.Data.boatId)) p.Equip(GearDatabase.GetGear("boat_rubber"));
+            Game.Boat.InstantLaunch = true;
+            Game.Boat.Toggle();
+            yield return new WaitForSeconds(1.5f);
+            Game.UI.BuddyChat.DebugAsk("붕어 어디서 잡아?");
+            Game.UI.BuddyChat.Close();
+            Game.CameraRig.Pitch = 18f;
+            Game.CameraRig.Distance = 6f;
+            Game.CameraRig.Yaw = Game.Player.Yaw + 150f;
+            yield return new WaitForSeconds(1.2f);
+            Debug.Log($"[Dev] 윤슬 배: 플레이어 배 {Game.Player.OnBoat}, 안내 {Fishing.Buddy.BuddyBody.Instance?.Leading}");
+            yield return Shot("30j_buddy_boat");
+            Game.Boat.StowToLand();
+            yield return new WaitForSeconds(1f);
             Game.UI.BuddyChat.Close();
             brain.Say("와, 붕어 32cm! 처음 잡아 보는 거지? 도감에 새로 올라가겠다!", Fishing.Characters.CharacterAnimator.Cheer);
             yield return new WaitForSeconds(0.9f);
             yield return Shot("30f_buddy_cheer");
+        }
+
+        /// <summary>윤슬에게 길 안내를 부탁하고 플레이어가 윤슬 쪽으로 걸어 따라간다. midShot: 3.5초 뒤, arriveShot: 닿은 뒤 비스듬히 위에서.</summary>
+        IEnumerator FollowBuddy(string question, string midShot, string arriveShot)
+        {
+            Game.UI.BuddyChat.DebugAsk(question);
+            Game.UI.BuddyChat.Close();
+            var body = Fishing.Buddy.BuddyBody.Instance;
+            float start = Time.realtimeSinceStartup;
+            bool mid = midShot == null, arrived = false;
+            Game.CameraRig.Pitch = 10f;
+            Game.CameraRig.Distance = 5.5f;
+            while (body != null && body.Leading && Time.realtimeSinceStartup - start < 90f)
+            {
+                var d = body.transform.position - Game.Player.transform.position;
+                d.y = 0f;
+                if (!arrived && d.magnitude > 2.5f) { Game.CameraRig.Yaw = Quaternion.LookRotation(d).eulerAngles.y; Game.Player.DebugMove = new Vector2(0f, 1f); }
+                else Game.Player.DebugMove = Vector2.zero;
+                if (!mid && Time.realtimeSinceStartup - start > 3.5f) { mid = true; yield return Shot(midShot); }
+                if (!arrived && body.LeadArrived)
+                {
+                    arrived = true;
+                    Game.Player.DebugMove = Vector2.zero;
+                    // 나무에 가리지 않게 비스듬히 위에서
+                    Game.CameraRig.Yaw += 40f;
+                    Game.CameraRig.Pitch = 28f;
+                    Game.CameraRig.Distance = 6.5f;
+                    yield return new WaitForSeconds(1f);
+                    yield return Shot(arriveShot);
+                    // 닿은 뒤 플레이어가 그곳으로 (안내가 끝나게)
+                    float until = Time.realtimeSinceStartup + 6f;
+                    while (body.Leading && Time.realtimeSinceStartup < until)
+                    {
+                        var g = body.transform.position - Game.Player.transform.position;
+                        g.y = 0f;
+                        Game.Player.DebugMove = g.magnitude > 1.2f ? new Vector2(0f, 1f) : Vector2.zero;
+                        if (g.sqrMagnitude > 0.01f) Game.CameraRig.Yaw = Quaternion.LookRotation(g).eulerAngles.y;
+                        yield return null;
+                    }
+                    break;
+                }
+                yield return null;
+            }
+            Game.Player.DebugMove = Vector2.zero;
+            Debug.Log($"[Dev] 윤슬 길 안내 \"{question}\" {(arrived ? "도착" : "못 닿음")} ({Time.realtimeSinceStartup - start:0.0}초)");
+            body?.StopLead();
         }
 
         IEnumerator Shot(string name)
