@@ -9,21 +9,104 @@ using UnityEngine.UI;
 namespace Fishing.UI
 {
     /// <summary>
-    /// 윤슬과의 대화: 왼쪽 가운데(시스템 줄 위) 대화창 + 윤슬 머리 위 말풍선 + 닫혀 있을 때 "Enter 윤슬과 대화" 알약.
+    /// 윤슬과의 대화: 왼쪽 가운데(시스템 줄 위) 대화창 + 머리 위 말풍선(윤슬의 대답, 내가 보낸 말) + 닫혀 있을 때 "Enter 윤슬과 대화" 알약.
     /// 다른 창과 달리 게임을 막지 않는다 (열어 둔 채 걷고 낚시한다). 입력칸에 글을 쓰는 동안만 단축키·이동을 막는다(<see cref="Settings.Typing"/>).
     /// Enter: 열고 입력칸으로 → 쓰고 Enter로 보내기. Esc: 닫기.
     /// </summary>
     public class BuddyChatView
     {
-        const float BubbleSeconds = 7f;
-        const float BubbleWidth = 420f;
+        const float BubbleSeconds = 7f, MyBubbleSeconds = 5f;
 
-        readonly RectTransform _window, _hint, _bubble;
-        readonly TMP_Text _log, _status, _bubbleText, _hintText;
+        /// <summary>머리 위 말풍선 하나 (화면 공간, 말한 사람 머리를 따라간다).</summary>
+        sealed class Bubble
+        {
+            public readonly RectTransform Root;
+            readonly RectTransform _tail;
+            readonly TMP_Text _text;
+            readonly float _maxWidth;
+            float _until;
+            string _line;
+            Vector2 _head; // 말한 사람 머리 (캔버스 좌표)
+
+            public Bubble(Transform root, string name, Color textColor, float maxWidth)
+            {
+                _maxWidth = maxWidth;
+                Root = UIFactory.Panel(root, name, 14f, 0.8f).rectTransform;
+                Root.pivot = new Vector2(0.5f, 0f);
+                Root.anchorMin = Root.anchorMax = Vector2.zero;
+                Root.GetComponent<Graphic>().raycastTarget = false;
+                _text = UIFactory.Text(Root, "", 18, textColor, TextAnchor.MiddleLeft);
+                _text.rectTransform.Fill(14, 14, 8, 8);
+                // 꼬리: 말한 사람 쪽을 가리키는 아래 세모 (45° 돌린 네모의 아래 반쪽만 보이게 자른다). 말풍선이 둘일 때 누구 말인지 알게
+                _tail = UIFactory.Node("Tail", Root);
+                _tail.anchorMin = _tail.anchorMax = Vector2.zero;
+                _tail.pivot = new Vector2(0.5f, 1f);
+                _tail.sizeDelta = new Vector2(24f, 10f);
+                _tail.gameObject.AddComponent<RectMask2D>();
+                var tip = UIFactory.Image(_tail, new Color(UIFactory.HudTint.r, UIFactory.HudTint.g, UIFactory.HudTint.b, 0.8f), null, "Tip");
+                tip.raycastTarget = false;
+                tip.rectTransform.anchorMin = tip.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+                tip.rectTransform.sizeDelta = new Vector2(14f, 14f);
+                tip.rectTransform.anchoredPosition = Vector2.zero;
+                tip.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+                Root.gameObject.SetActive(false);
+            }
+
+            public void Show(string text, float seconds)
+            {
+                _line = text;
+                _until = Time.unscaledTime + seconds + text.Length * 0.04f;
+            }
+
+            /// <summary>지금 띄울 글 (시간이 지났으면 null).</summary>
+            public string Line => Time.unscaledTime < _until ? _line : null;
+
+            public void Hide() => Root.gameObject.SetActive(false);
+
+            /// <summary>머리 위 화면 자리에 놓는다. minX: 이보다 왼쪽으로는 가지 않는다 (대화창을 가리지 않게).</summary>
+            public bool Place(string line, Vector3? anchor, Camera cam, float minX)
+            {
+                if (line == null || !anchor.HasValue || cam == null) { Hide(); return false; }
+                var sp = cam.WorldToScreenPoint(anchor.Value);
+                // 화면 밖·카메라 바로 앞(1인칭 파이팅에서 내 머리)이면 숨긴다 (가장자리에 붙이면 누가 말하는지 모른다)
+                if (sp.z < 1.2f || sp.x <= 0f || sp.x >= Screen.width) { Hide(); return false; }
+                Root.gameObject.SetActive(true);
+                if (_text.text != line.Replace("<", "&lt;"))
+                {
+                    _text.text = line.Replace("<", "&lt;");
+                    var size = _text.GetPreferredValues(_text.text, _maxWidth - 28f, 0f);
+                    Root.sizeDelta = new Vector2(Mathf.Min(_maxWidth, size.x + 30f), size.y + 18f);
+                }
+                // 화면 좌표 → 캔버스 좌표 (캔버스는 1920×1080 기준으로 늘어난다)
+                var canvas = (RectTransform)Root.parent;
+                float scale = canvas.rect.width > 0f ? canvas.rect.width / Screen.width : 1f;
+                _head = new Vector2(sp.x * scale, sp.y * scale);
+                Root.anchoredPosition = _head + new Vector2(0f, 18f);
+                Clamp(minX);
+                return true;
+            }
+
+            public void Clamp(float minX)
+            {
+                var canvas = (RectTransform)Root.parent;
+                var pos = Root.anchoredPosition;
+                float half = Root.sizeDelta.x * 0.5f;
+                pos.x = Mathf.Clamp(pos.x, minX + half, canvas.rect.width - half - 10f);
+                pos.y = Mathf.Clamp(pos.y, 10f, canvas.rect.height - Root.sizeDelta.y - 140f);
+                Root.anchoredPosition = pos;
+                // 꼬리는 머리 바로 위 (말풍선 밖이면 가까운 끝). 다른 말풍선 위로 올라갔으면 가리킬 수 없으니 숨긴다
+                _tail.gameObject.SetActive(pos.y - _head.y < 60f);
+                _tail.anchoredPosition = new Vector2(Mathf.Clamp(_head.x - (pos.x - half), 18f, Root.sizeDelta.x - 18f), 0f);
+            }
+
+            public Rect Box => new Rect(Root.anchoredPosition.x - Root.sizeDelta.x * 0.5f, Root.anchoredPosition.y, Root.sizeDelta.x, Root.sizeDelta.y);
+        }
+
+        readonly RectTransform _window, _hint;
+        readonly Bubble _bubble, _myBubble;
+        readonly TMP_Text _log, _status, _hintText;
         readonly TMP_InputField _input;
         readonly Button _modelButton;
-        float _bubbleUntil;
-        string _bubbleLine;
         bool _dirty = true;
 
         public bool IsOpen => _window.gameObject.activeSelf;
@@ -35,14 +118,9 @@ namespace Fishing.UI
         {
             var root = UIFactory.Node("BuddyChat", canvas).Fill();
 
-            // 말풍선 (화면 공간, 윤슬 머리 위를 따라간다)
-            _bubble = UIFactory.Panel(root, "Bubble", 14f, 0.8f).rectTransform;
-            _bubble.pivot = new Vector2(0.5f, 0f);
-            _bubble.anchorMin = _bubble.anchorMax = Vector2.zero;
-            _bubble.GetComponent<Graphic>().raycastTarget = false;
-            _bubbleText = UIFactory.Text(_bubble, "", 18, UIFactory.TextMain, TextAnchor.MiddleLeft);
-            _bubbleText.rectTransform.Fill(14, 14, 8, 8);
-            _bubble.gameObject.SetActive(false);
+            // 말풍선: 윤슬 머리 위 (대답) · 내 머리 위 (보낸 말, 대화창의 "나"와 같은 노란 글)
+            _bubble = new Bubble(root, "Bubble", UIFactory.TextMain, 420f);
+            _myBubble = new Bubble(root, "MyBubble", new Color(1f, 0.9f, 0.55f), 360f);
 
             // 닫혀 있을 때의 알약
             _hint = UIFactory.Panel(root, "Hint", UIFactory.Pill, 0.6f).rectTransform;
@@ -88,7 +166,8 @@ namespace Fishing.UI
             if (BuddyBrain.Instance != null)
             {
                 BuddyBrain.Instance.Changed += () => _dirty = true;
-                BuddyBrain.Instance.Said += (text, _) => ShowBubble(text);
+                BuddyBrain.Instance.Said += (text, _) => _bubble.Show(text, BubbleSeconds);
+                BuddyBrain.Instance.Heard += text => _myBubble.Show(text, MyBubbleSeconds);
             }
         }
 
@@ -158,12 +237,6 @@ namespace Fishing.UI
             Focus();
         }
 
-        void ShowBubble(string text)
-        {
-            _bubbleLine = text;
-            _bubbleUntil = Time.unscaledTime + BubbleSeconds + text.Length * 0.04f;
-        }
-
         public void Update()
         {
             var brain = BuddyBrain.Instance;
@@ -177,7 +250,7 @@ namespace Fishing.UI
                                  (brain.State == BuddyBrain.Status.Thinking ? " …" : "");
 
             if (_dirty && brain != null) { _dirty = false; Redraw(brain); }
-            UpdateBubble(brain, field);
+            UpdateBubbles(brain, field);
         }
 
         void Redraw(BuddyBrain brain)
@@ -209,37 +282,25 @@ namespace Fishing.UI
             _log.text = sb.ToString();
         }
 
-        void UpdateBubble(BuddyBrain brain, bool field)
+        void UpdateBubbles(BuddyBrain brain, bool field)
         {
-            var anchor = BuddyBody.Instance != null ? BuddyBody.Instance.BubbleAnchor : null;
-            string line = brain != null && brain.State == BuddyBrain.Status.Thinking ? brain.Partial ?? brain.Working ?? "…"
-                : Time.unscaledTime < _bubbleUntil ? _bubbleLine : null;
             var cam = Game.CameraRig != null ? Game.CameraRig.Cam : null;
-            bool show = field && line != null && anchor.HasValue && cam != null && !(Game.UI != null && Game.UI.BlockingPanelOpen);
-            Vector3 sp = default;
-            if (show)
-            {
-                sp = cam.WorldToScreenPoint(anchor.Value);
-                show = sp.z > 0.5f && sp.x > 0f && sp.x < Screen.width; // 화면 밖이면 (가장자리에 붙이면 누가 말하는지 모른다) 숨긴다
-            }
-            _bubble.gameObject.SetActive(show);
-            if (!show) return;
-            if (_bubbleText.text != line)
-            {
-                _bubbleText.text = line.Replace("<", "&lt;");
-                var size = _bubbleText.GetPreferredValues(_bubbleText.text, BubbleWidth - 28f, 0f);
-                _bubble.sizeDelta = new Vector2(Mathf.Min(BubbleWidth, size.x + 30f), size.y + 18f);
-            }
-            // 화면 좌표 → 캔버스 좌표 (캔버스는 1920×1080 기준으로 늘어난다)
-            var canvas = (RectTransform)_bubble.parent;
-            float scale = canvas.rect.width > 0f ? canvas.rect.width / Screen.width : 1f;
-            var pos = new Vector2(sp.x * scale, sp.y * scale + 8f);
-            float half = _bubble.sizeDelta.x * 0.5f;
+            bool show = field && !(Game.UI != null && Game.UI.BlockingPanelOpen);
             // 대화창이 열려 있으면 창 오른쪽으로 비켜 선다 (창 뒤에 가리지 않게)
             float minX = IsOpen ? _window.anchoredPosition.x + _window.sizeDelta.x + 10f : 10f;
-            pos.x = Mathf.Clamp(pos.x, minX + half, canvas.rect.width - half - 10f);
-            pos.y = Mathf.Clamp(pos.y, 10f, canvas.rect.height - _bubble.sizeDelta.y - 140f);
-            _bubble.anchoredPosition = pos;
+
+            string line = brain != null && brain.State == BuddyBrain.Status.Thinking ? brain.Partial ?? brain.Working ?? "…" : _bubble.Line;
+            bool buddy = _bubble.Place(show ? line : null, BuddyBody.Instance != null ? BuddyBody.Instance.BubbleAnchor : null, cam, minX);
+            var player = Game.Player != null ? Game.Player.transform.position + Vector3.up * 2.05f : (Vector3?)null;
+            bool mine = _myBubble.Place(show ? _myBubble.Line : null, player, cam, minX);
+            if (!buddy || !mine) return;
+
+            // 둘이 겹치면 내 말풍선을 윤슬 말풍선 위로 쌓는다: 위에서 아래로 묻고 → 대답하는 차례로 읽힌다
+            // (옆으로 비키면 둘이 붙어 서 있을 때 내 말풍선이 내 머리에서 멀어져 누구 말인지 헷갈린다)
+            var b = _bubble.Box;
+            if (!_myBubble.Box.Overlaps(b)) return;
+            _myBubble.Root.anchoredPosition = new Vector2(_myBubble.Root.anchoredPosition.x, b.yMax + 8f);
+            _myBubble.Clamp(minX);
         }
     }
 }

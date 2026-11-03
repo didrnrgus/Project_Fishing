@@ -626,14 +626,13 @@ def title_assets():
     title = gradient_text(m, hexc("#fffaf0"), hexc("#d7dfe6"))
     title = pad_img(title, 60)
     glow = blur_glow(title, 28, 1.6, hexc("#bcd2e2"))
-    sealimg = seal("짭", 300, 811, "SongMyung-Regular.ttf", grid=["짭"])
     en = render_text("CHEONGPUNG  MYEONGWOL", font("Cinzel.ttf", 64, "Bold"), pad=20, spacing=14)
     en_img = gradient_text(en, hexc("#e9d9a8"), hexc("#b99a5a"))
     tag = render_text("바람 맑고 달 밝은 밤, 낚싯대 하나", font("SongMyung-Regular.ttf", 64), pad=20, spacing=4)
     tag_img = gradient_text(tag, IVORY, IVORY * 0.85)
     copy = render_text("© 2026 JETHRO'S GAME COMPANY", font("Cinzel.ttf", 34, "Regular"), pad=12, spacing=5)
     copy_img = gradient_text(copy, hexc("#9aa7b3"), hexc("#7b8894"))
-    return {"title": title, "title_glow": glow, "title_seal": sealimg, "title_en": en_img, "title_tag": tag_img, "copyright": copy_img}
+    return {"title": title, "title_glow": glow, "title_en": en_img, "title_tag": tag_img, "copyright": copy_img}
 
 
 def result_logo():
@@ -821,7 +820,6 @@ def compose_preview(o, folder):
     g = o["title_glow"].resize(t2.size, Image.LANCZOS)
     tx, ty = int(cw * 0.30 - tw / 2), int(ch * 0.36 - t2.size[1] / 2)
     canvas.alpha_composite(g, (tx, ty)); canvas.alpha_composite(t2, (tx, ty))
-    se = o["title_seal"].resize((110, 110)); canvas.alpha_composite(se, (tx + tw - 70, ty + t2.size[1] - 150))
     en = o["title_en"]; en2 = en.resize((int(en.size[0] * 0.62), int(en.size[1] * 0.62)))
     canvas.alpha_composite(en2, (int(cw * 0.30 - en2.size[0] / 2), ty + t2.size[1] - 40))
     tg = o["title_tag"]; tg2 = tg.resize((int(tg.size[0] * 0.5), int(tg.size[1] * 0.5)))

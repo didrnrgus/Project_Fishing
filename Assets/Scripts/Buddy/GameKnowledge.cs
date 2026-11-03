@@ -113,6 +113,62 @@ namespace Fishing.Buddy
             }
         }
 
+        /// <summary>
+        /// 질문을 보내기 전에 미리 찾아 두는 자료: 질문에 나온 물고기·낚시터 정보, 퀘스트·레벨 질문이면 그 표, 가이드에서 질문 낱말이 든 줄.
+        /// 작은 모델(4b)은 1초 안에 대답하지만 도구를 안 부르고 지어내기 쉬워서, 부르기 전에 사실을 붙여 준다 (도구를 부르는 왕복도 줄어 큰 모델도 빨라진다).
+        /// 찾은 게 없으면 null.
+        /// </summary>
+        public static string Prefetch(string question)
+        {
+            if (string.IsNullOrWhiteSpace(question)) return null;
+            var parts = new List<string>();
+            try
+            {
+                string q = question.Replace(" ", "");
+                foreach (var s in FishDatabase.All.Where(s => !s.IsJunk && q.Contains(s.Name.Replace(" ", ""))).OrderByDescending(s => s.Name.Length).Take(2))
+                    parts.Add(FishInfo(s.Name).TrimEnd());
+                var area = FishingAreas.All.FirstOrDefault(a => a.Open && q.Contains(a.Name.Replace(" ", "")));
+                if (area != null) parts.Add(MapInfo(area.Name).TrimEnd());
+                bool levelQuestion = Has(q, "낚시터", "레벨", "열려", "열리", "어디가", "갈수있");
+                if (area == null && levelQuestion) parts.Add(MapInfo(null).TrimEnd());
+                if (Has(q, "퀘스트", "임무", "할일", "뭐해야", "뭘해야")) parts.Add(QuestInfo().TrimEnd());
+                // 내 상태에는 "다음에 열리는 낚시터"가 한 줄로 있어서, 작은 모델이 목록을 보고 레벨을 셈하다 틀리는 것보다 낫다
+                if (levelQuestion || Has(q, "골드", "돈", "장비", "낚싯대", "릴", "내가", "나지금")) parts.Add(GameState().TrimEnd());
+
+                // 낱말 + 끝 글자를 뗀 줄기 ("끊겨" → "끊": 가이드의 "끊긴다"·"끊어진다"도 찾게). 여러 낱말이 맞는 줄이 위로 온다
+                var words = question.Split(new[] { ' ', ',', '?', '!', '.', '~' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(StripJosa).Where(w => w.Length >= 2 && !StopWords.Contains(w))
+                    .SelectMany(w => new[] { w, w.Substring(0, w.Length - 1) }).Distinct().ToList();
+                if (words.Count > 0)
+                {
+                    string found = SearchGuides(string.Join(" ", words));
+                    // 윤슬 안내 장(09-buddy)은 예시 질문이 그대로 적혀 있어 늘 맨 위로 올라오니 뺀다. 작은 모델은 자료가 많으면 엉뚱한 줄을 고르니 5줄만
+                    var lines = found.Split('\n').Where(l => !l.Contains("buddy.md")).Take(5).ToList();
+                    if (!found.StartsWith("가이드에서") && lines.Count > 0) parts.Add(string.Join("\n", lines));
+                }
+            }
+            catch (Exception e) { Debug.LogWarning($"[Buddy] 미리 찾기 실패: {e}"); }
+            return parts.Count > 0 ? string.Join("\n\n", parts) : null;
+        }
+
+        static bool Has(string q, params string[] words) => words.Any(q.Contains);
+
+        static readonly HashSet<string> StopWords = new HashSet<string>
+        {
+            "어떻게", "어떡해", "왜", "뭐", "뭐야", "뭐가", "어디", "어디서", "언제", "그럼", "근데", "그리고", "진짜", "너무", "자꾸", "계속",
+            "좀", "해", "해야", "하면", "하는", "있어", "없어", "알려줘", "알려", "줘", "나", "너", "윤슬", "오늘", "지금", "이거", "그거",
+        };
+
+        static readonly string[] Josa = { "에서는", "에서", "으로", "에게", "한테", "까지", "부터", "이랑", "랑", "하고", "은", "는", "이", "가", "을", "를", "에", "로", "도", "만", "의", "와", "과", "야" };
+
+        /// <summary>"붕어는" → "붕어": 가이드 줄에서 낱말을 찾을 수 있게 끝의 조사를 뗀다 (두 글자는 남긴다).</summary>
+        static string StripJosa(string w)
+        {
+            foreach (var j in Josa)
+                if (w.Length - j.Length >= 2 && w.EndsWith(j, StringComparison.Ordinal)) return w.Substring(0, w.Length - j.Length);
+            return w;
+        }
+
         // ───────────── 가이드 문서 ─────────────
 
         /// <summary>가이드 폴더: 에디터는 저장소의 docs/guide, 빌드는 StreamingAssets/Guide (빌드할 때 복사, ProjectTools.BuildWindows).</summary>

@@ -52,7 +52,7 @@ namespace Fishing.UI
 
         // 타이틀 화면
         RawImage _sky, _moon, _wisps, _far, _water, _pathA, _pathB, _mistA, _mistB, _near, _boat, _boatRefl, _reeds;
-        RawImage _titleImg, _titleGlow, _titleSeal, _titleEn, _titleTag, _copyright;
+        RawImage _titleImg, _titleGlow, _titleEn, _titleTag, _copyright;
         Image _vignette;
         TextMeshProUGUI _prompt;
         Petal[] _petals;
@@ -238,7 +238,6 @@ namespace Fishing.UI
             _titleImg = Layer(_front, "title", P(576, 389), new Vector2(900, 430), Mat(false, 0f));
             _titleImg.material.SetFloat("_Soft", 0.06f);
             _titleImg.material.SetFloat("_Ragged", 0.05f);
-            _titleSeal = Layer(_front, "title_seal", P(1006, 506), new Vector2(104, 104), Mat());
             _titleEn = Layer(_front, "title_en", P(576, 595), new Vector2(705, 61), Mat());
             _titleTag = Layer(_front, "title_tag", P(576, 650), new Vector2(473, 51));
             _copyright = Layer(_front, "copyright", new Vector2(0, -505), new Vector2(370, 29));
@@ -561,16 +560,8 @@ namespace Fishing.UI
             _titleImg.rectTransform.localScale = Vector3.one * Mathf.Lerp(1.015f, 1f, Smooth(1.6f, 4f, t));
             SetShine(_titleImg, Mathf.Lerp(-0.4f, 1.4f, Mathf.Repeat((t - 6.5f) / 9f, 1f) * 4.5f - 1.75f));
 
-            const float SealStart = 3.5f, SealHit = 3.72f;
-            float sp = Mathf.Clamp01((t - SealStart) / (SealHit - SealStart));
-            float after = t - SealHit;
-            float ss = after > 0f ? 1f - 0.06f * Mathf.Exp(-after * 9f) * Mathf.Cos(after * 30f) : Mathf.Lerp(2.4f, 1f, sp * sp);
-            _titleSeal.rectTransform.localScale = Vector3.one * ss;
-            _titleSeal.rectTransform.localEulerAngles = new Vector3(0, 0, Mathf.Lerp(-14f, -4f, sp));
-            Alpha(_titleSeal, Mathf.Clamp01(sp * 1.6f));
-            if (after >= 0f) Fire("gong", _gong, 0.9f);
-            float punch = after > 0f ? Mathf.Exp(-after * 10f) * 5f : 0f;
-            _title.anchoredPosition = new Vector2(Mathf.Sin(time * 83f) * punch, Mathf.Cos(time * 71f) * punch);
+            // 붓글씨를 다 쓰면 징 (예전엔 여기서 "짭" 낙관을 찍었다 — 사용자 요청으로 뺌)
+            if (t >= 3.72f) Fire("gong", _gong, 0.9f);
 
             float en = Smooth(3.9f, 4.8f, t);
             Alpha(_titleEn, en);
