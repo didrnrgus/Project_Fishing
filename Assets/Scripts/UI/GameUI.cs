@@ -368,10 +368,20 @@ namespace Fishing.UI
             if (Settings.Down(KeyAction.KeepNet)) OpenExclusive(KeepNet);
             if (Settings.Down(KeyAction.Shop)) OpenShop();
             if (Settings.Down(KeyAction.Save)) SaveNow();
+            if (Settings.Down(KeyAction.DayNight) && !BlockingPanelOpen) ToggleDayNight();
 
             if (idle && !BlockingPanelOpen)
                 for (int i = 0; i < HudView.MaxBaitSlots; i++)
                     if (Input.GetKeyDown(KeyCode.Alpha1 + i)) Hud.SelectBait(i);
+        }
+
+        /// <summary>낮/밤 바꾸기 (사용자 요청: 드론쇼를 바로 보고 싶다): 밤이면 오전 10시, 낮이면 밤 9시로 시계를 옮긴다.</summary>
+        void ToggleDayNight()
+        {
+            var c = Game.Clock;
+            bool night = c.Band == Fishing.Data.TimeBand.Night;
+            c.Set(c.Day, night ? 10 * 60 : 21 * 60);
+            Game.Toast(night ? "낮이 되었습니다 (오전 10:00)" : "밤이 되었습니다 (밤 9:00)");
         }
 
         /// <summary>가까운 납품소. NPC(조합 연락관·통발 어부)와 둘 다 가까우면 더 가까운 쪽만 남긴다.</summary>

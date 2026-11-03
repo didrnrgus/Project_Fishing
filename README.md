@@ -165,6 +165,7 @@ cd tools/fightsim && dotnet run -- report   # Unity 없이 파이팅 밸런스 (
 | WASD / Shift / Space | 이동 / 달리기 / 점프 |
 | B | 물가에서 배 부르기·내리기 (배 위에서 W/S/A/D 운전) |
 | Y | 배 엔진 START / STOP (꺼야 낚시) |
+| N | 낮/밤 바꾸기 (밤이면 오전 10시, 낮이면 밤 9시 — 탄천 드론쇼를 바로 볼 때) |
 | 놓친 뒤 클릭 / Enter | 재도전 (놓친 그 고기가 다시 온다) |
 | F | NPC와 대화 (상점·강화·퀘스트 보고·대회 신청·조황) |
 | Enter | 따라다니는 낚시 친구 **윤슬**과 대화 (쓰고 Enter로 보내기, 빈칸 Enter·Esc로 닫기) |

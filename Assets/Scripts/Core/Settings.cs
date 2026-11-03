@@ -10,7 +10,7 @@ namespace Fishing.Core
         MoveForward, MoveBack, MoveLeft, MoveRight, Run, Jump,
         Talk, Boat, Retrieve,
         Quest, Dex, KeepNet, Inventory, Costume, AreaMap, Shop, Tips, Help, Save, Options,
-        Focus, Engine,
+        Focus, Engine, DayNight,
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ namespace Fishing.Core
             { KeyAction.Quest, KeyCode.L }, { KeyAction.Dex, KeyCode.P }, { KeyAction.KeepNet, KeyCode.Z }, { KeyAction.Inventory, KeyCode.I },
             { KeyAction.Costume, KeyCode.C }, { KeyAction.AreaMap, KeyCode.M }, { KeyAction.Shop, KeyCode.F12 }, { KeyAction.Tips, KeyCode.U },
             { KeyAction.Help, KeyCode.F1 }, { KeyAction.Save, KeyCode.F5 }, { KeyAction.Options, KeyCode.O },
-            { KeyAction.Focus, KeyCode.Q }, { KeyAction.Engine, KeyCode.Y },
+            { KeyAction.Focus, KeyCode.Q }, { KeyAction.Engine, KeyCode.Y }, { KeyAction.DayNight, KeyCode.N },
         };
 
         static readonly Dictionary<KeyAction, KeyCode> Bindings = new Dictionary<KeyAction, KeyCode>(Defaults);
@@ -55,7 +55,7 @@ namespace Fishing.Core
             (KeyAction.Retrieve, "찌 회수"), (KeyAction.Quest, "퀘스트"), (KeyAction.Dex, "도감"), (KeyAction.KeepNet, "살림망"),
             (KeyAction.Inventory, "가방"), (KeyAction.Costume, "내 캐릭터"), (KeyAction.AreaMap, "지역 지도"), (KeyAction.Shop, "상점"),
             (KeyAction.Tips, "설명 켜기/끄기"), (KeyAction.Help, "도움말"), (KeyAction.Save, "저장"), (KeyAction.Options, "옵션"),
-            (KeyAction.Focus, "포커싱 (파이팅)"), (KeyAction.Engine, "배 엔진 시동/끄기"),
+            (KeyAction.Focus, "포커싱 (파이팅)"), (KeyAction.Engine, "배 엔진 시동/끄기"), (KeyAction.DayNight, "낮/밤 바꾸기"),
         };
 
         /// <summary>바뀔 때마다 오른다 (메뉴 독 글자 갱신용).</summary>
