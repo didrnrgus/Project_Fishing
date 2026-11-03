@@ -34,6 +34,8 @@ namespace Fishing.Buddy
         public event Action Changed;
         /// <summary>윤슬이 말했다 (말풍선). 두 번째 값: 반응 동작 (CharacterAnimator 클립 이름, 없으면 null).</summary>
         public event Action<string, string> Said;
+        /// <summary>플레이어가 윤슬에게 말했다 (플레이어 머리 위 말풍선).</summary>
+        public event Action<string> Heard;
         /// <summary>대답을 기다리는 동안 말풍선에 띄울 글 ("가이드 읽는 중…"). null이면 없음.</summary>
         public string Working { get; private set; }
         /// <summary>흘러나오는 중인 대답 (스트리밍). 다 나오면 null.</summary>
@@ -134,6 +136,7 @@ namespace Fishing.Buddy
             question = question?.Trim();
             if (string.IsNullOrEmpty(question) || State == Status.Thinking) return;
             Log.Add((true, question));
+            Heard?.Invoke(question);
             if (State != Status.Ready)
             {
                 Reply(State == Status.Offline
@@ -152,9 +155,14 @@ namespace Fishing.Buddy
             Changed?.Invoke();
             var messages = new List<Dictionary<string, object>> { Message("system", SystemPrompt()) };
             messages.AddRange(_history);
-            // 마지막 질문 끝에만 짧은 다짐을 붙인다 (모델은 맨 앞 시스템 글보다 최근 말을 잘 따른다). 기록·대화창에는 원래 질문만 남는다
+            // 마지막 질문 끝에만 미리 찾은 자료와 짧은 다짐을 붙인다 (모델은 맨 앞 시스템 글보다 최근 말을 잘 따른다). 기록·대화창에는 원래 질문만 남는다
             var last = messages[messages.Count - 1];
-            messages[messages.Count - 1] = Message("user", $"{last["content"]}\n\n(윤슬은 반말로만 대답. 게임 질문이면 도구로 먼저 확인하고, 도구에 없는 건 지어내지 않기.)");
+            string question = (string)last["content"];
+            string facts = GameKnowledge.Prefetch(question);
+            Debug.Log($"[Buddy] 미리 찾은 자료 {facts?.Length ?? 0}자\n{facts}");
+            messages[messages.Count - 1] = Message("user", question +
+                (facts != null ? $"\n\n[참고 자료 — 게임에서 찾아 둔 사실. 숫자·장소는 이것만 믿어]\n{facts}" : "") +
+                "\n\n(윤슬은 반말로 2~3문장만. 모자라면 도구로 더 찾고, 자료·도구에 없는 건 지어내지 않기.)");
             string answer = null, error = null;
             bool offline = false;
             float started = Time.realtimeSinceStartup;
@@ -176,7 +184,7 @@ namespace Fishing.Buddy
                 partial =>
                 {
                     if (partial.Length == 0) return;
-                    Partial = partial;
+                    Partial = Banmal(partial);
                     Changed?.Invoke();
                 });
             Working = null;
@@ -197,8 +205,30 @@ namespace Fishing.Buddy
                 yield break;
             }
             if (string.IsNullOrWhiteSpace(answer)) answer = "음… 뭐라고 해야 할지 모르겠어. 다르게 물어봐 줄래?";
-            Reply(answer, null, true);
+            Reply(Short(Banmal(answer)), null, true);
         }
+
+        // 말풍선에 들어가게 4문장까지 (작은 모델은 "2~3문장"을 자주 넘긴다). 줄바꿈 문단도 한 줄로 잇는다
+        static readonly System.Text.RegularExpressions.Regex SentenceEnd = new System.Text.RegularExpressions.Regex(@"(?<=[.!?~])\s+");
+
+        static string Short(string s)
+        {
+            var sentences = SentenceEnd.Split(s.Replace("\r", "")).Select(x => x.Replace("\n", " ").Trim()).Where(x => x.Length > 0).ToList();
+            return string.Join(" ", sentences.Take(4));
+        }
+
+        // 작은 모델이 가끔 섞는 존댓말 끝("살아요", "좋아요", "이에요")을 반말로. "필요"·"중요"처럼 낱말 속 "요"는 앞 글자를 보고 건드리지 않는다
+        static readonly System.Text.RegularExpressions.Regex PoliteEnd =
+            new System.Text.RegularExpressions.Regex(@"(이에요|예요|에요|주세요|세요|([아어해여지네래게걸데군나까라봐줘워와돼가서자죠])요)(?=[\s.,!?~…)]|$)");
+
+        static string Banmal(string s) => PoliteEnd.Replace(s, m => m.Value switch
+        {
+            "이에요" => "이야",
+            "예요" or "에요" => "야",
+            "주세요" => "줘",
+            "세요" => "",
+            _ => m.Groups[2].Value == "죠" ? "지" : m.Groups[2].Value,
+        });
 
         /// <summary>정해진 반응 말. 대화 기록에도 남겨서, 뒤에 물어보면 AI가 앞뒤를 안다.</summary>
         public void Say(string line, string motion = null) => Reply(line, motion, true);
@@ -229,12 +259,14 @@ namespace Fishing.Buddy
             var q = Game.Quests?.Current;
             return
 $@"너는 낚시 게임 「짭풍명월」에서 플레이어 곁을 따라다니는 낚시 친구 '{BuddyName}'이야. 플레이어 이름은 {player}.
-말투: 오래된 친구처럼 반말로만, 밝고 다정하게 (-요, -습니다 같은 존댓말은 절대 쓰지 마). 한국어로만 말해.
+말투: 오래된 친구처럼 반말로만, 밝고 다정하게 (-요, -습니다 같은 존댓말과 '젠장' 같은 거친 말은 쓰지 마). 한국어로만 말해.
 길이: 말풍선에 들어가게 2~4문장. 목록이 꼭 필요하면 3줄까지만. 마크다운 기호(#, *, |)는 쓰지 마.
 게임 질문(조작, 물고기, 낚시터, 장비, 미끼, 퀘스트, 레벨, 배, 대회)에는 먼저 도구로 확인하고 대답해:
 - '어떻게 해?', '왜 안 돼?', 요령·조작·장비 고르기·문제(줄이 끊김, 입질이 없음, 바늘이 빠짐)는 search_guides로 핵심 낱말 한두 개를 찾아. 필요하면 read_guide로 그 장을 읽어.
 - 물고기 하나는 fish_info, 낚시터는 map_info, 퀘스트는 quest_info, 플레이어 레벨·장비·있는 곳은 game_state.
 - 숫자(레벨·길이·가격·시간)는 도구 결과에 있는 것만 써. 도구에도 없으면 지어내지 말고 '그건 나도 잘 모르겠어'라고 해.
+질문 끝에 [참고 자료]가 붙어 있으면 그중 질문에 딱 맞는 한두 가지만 골라 쉬운 말로 풀어 대답해. 자료를 그대로 옮기거나 파일 이름을 말하지는 마.
+말투 예시: (미끼는 뭐가 좋아?) → 붕어 노릴 거면 떡밥이 제일 무난해! 지렁이도 잘 먹으니까 둘 다 챙겨 가자. / (오늘 힘들다) → 그럴 땐 찌만 멍하니 봐도 좋잖아. 한 마리만 낚고 쉬자!
 게임 밖 이야기도 가볍게 받아 주되, 자연스럽게 낚시 이야기로 돌아와.
 지금 상황: {where}, Lv.{p?.Data.level ?? 1}, {(Game.Clock != null ? $"{Game.Clock.TimeText} {Names.Of(Game.Clock.Band)}" : "")}, 날씨 {(Game.Weather != null ? Names.Of(Game.Weather.Current) : "?")}, 미끼 {p?.Bait.Name}{(q != null ? $", 이야기 퀘스트 「{q.Title}」({q.GoalText})" : "")}.";
         }

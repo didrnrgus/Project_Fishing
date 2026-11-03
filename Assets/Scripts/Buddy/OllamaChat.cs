@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -13,7 +14,10 @@ namespace Fishing.Buddy
     /// </summary>
     public static class BuddyConfig
     {
-        public const string DefaultModel = "qwen3:8b";
+        // gemma3:4b: 8GB 그래픽카드를 게임과 나눠 써도 1초 안팎에 대답하고, 같은 크기 중 한국어(반말·자료 읽기)가 가장 자연스럽다
+        // (qwen3:8b는 그래픽 메모리가 넘쳐 20~60초, qwen3:4b-instruct는 빠르지만 "덜 끊긴다"를 "끊기 쉽다"로 읽는 식으로 자주 틀린다).
+        // 도구를 못 쓰는 모델이라 사실은 질문 전에 붙이는 자료(GameKnowledge.Prefetch)로 준다
+        public const string DefaultModel = "gemma3:4b";
         public const string DownloadUrl = "https://ollama.com/download";
 
         public static string OllamaUrl
@@ -24,8 +28,9 @@ namespace Fishing.Buddy
 
         public static string Model
         {
-            get => PlayerPrefs.GetString("buddy.model", DefaultModel);
-            set => PlayerPrefs.SetString("buddy.model", value);
+            // 키 "buddy.model2": 기본이 8b였을 때 저장된 고른 모델을 넘겨받지 않게 (느린 8b에 머물지 않게)
+            get => PlayerPrefs.GetString("buddy.model2", DefaultModel);
+            set => PlayerPrefs.SetString("buddy.model2", value);
         }
 
         /// <summary>MCP 서버 (바깥 AI가 게임 지식 도구를 쓰게). 기본은 에디터에서만 켜고, 빌드는 실행 옵션 -mcp로 켠다.</summary>
@@ -51,6 +56,7 @@ namespace Fishing.Buddy
     {
         const int MaxToolRounds = 4;
         const int TimeoutSeconds = 180;
+        static readonly HashSet<string> NoTools = new HashSet<string>();
 
         /// <summary>Ollama가 켜져 있으면 깔린 모델 이름 목록, 꺼져 있으면 null.</summary>
         public static IEnumerator ListModels(Action<List<string>> done)
@@ -65,7 +71,7 @@ namespace Fishing.Buddy
 
         /// <summary>
         /// 모델을 그래픽카드에 미리 올린다 (빈 요청). 처음 올리는 데 30초쯤 걸려서, 대화창을 열 때 불러 두면 질문을 쓰는 동안 끝난다.
-        /// 게임을 켤 때 올리지 않는 건 대화하지 않는 사람의 그래픽 메모리(8b ≈ 6GB)를 뺏지 않으려고.
+        /// 게임을 켤 때 올리지 않는 건 대화하지 않는 사람의 그래픽 메모리(4b ≈ 3GB, 8b ≈ 6GB)를 뺏지 않으려고.
         /// </summary>
         public static IEnumerator Warm(string model)
         {
@@ -93,6 +99,7 @@ namespace Fishing.Buddy
                 { "function", new Dictionary<string, object> { { "name", t.Name }, { "description", t.Description }, { "parameters", t.Schema } } },
             }).ToList();
             bool think = true; // think:false를 모르는 모델이면 빼고 다시 보낸다
+            bool useTools = !NoTools.Contains(model); // 도구를 못 쓰는 모델(gemma3)은 빼고 다시 보낸다: 질문에 붙인 미리 찾은 자료로만 대답한다
             for (int round = 0; round <= MaxToolRounds; round++)
             {
                 var body = new Dictionary<string, object>
@@ -104,7 +111,7 @@ namespace Fishing.Buddy
                     // 문맥 6144: 8192면 8GB 그래픽카드에서 8b 모델이 넘쳐 몇 배 느려진다 (게임과 나눠 쓴다)
                     { "options", new Dictionary<string, object> { { "num_ctx", 6144 }, { "temperature", 0.3 } } },
                 };
-                if (round < MaxToolRounds) body["tools"] = tools;
+                if (round < MaxToolRounds && useTools) body["tools"] = tools;
                 if (think) body["think"] = false;
 
                 var stream = new StreamHandler(onPartial);
@@ -119,6 +126,8 @@ namespace Fishing.Buddy
                 {
                     string err = stream.Error ?? stream.Raw;
                     if (think && err != null && err.Contains("think")) { think = false; round--; continue; }
+                    // 400 본문("does not support tools")은 스트림 받개에 안 들어올 때가 있어서, 본문이 없는 400도 도구를 빼고 한 번 더 보낸다
+                    if (useTools && req.responseCode == 400 && (err == null || err.Contains("tools"))) { useTools = false; NoTools.Add(model); round--; continue; }
                     fail(req.result == UnityWebRequest.Result.ConnectionError ? null : $"{req.responseCode} {Json.Str(Json.Obj(SafeParse(err)), "error") ?? err ?? req.error}");
                     yield break;
                 }
@@ -163,7 +172,13 @@ namespace Fishing.Buddy
             s = s.Trim();
             foreach (var prefix in new[] { BuddyBrain.BuddyName + ":", BuddyBrain.BuddyName + " :", BuddyBrain.BuddyName + "：" })
                 if (s.StartsWith(prefix, StringComparison.Ordinal)) s = s.Substring(prefix.Length).TrimStart();
-            return s;
+            // 작은 모델이 붙이는 것들: 붙여 준 자료를 되읊기([참고 자료] 뒤는 버린다), 출처 "[README.md › 파이팅]", 굵게 **, 그림 문자(글꼴에 없어 네모로 보인다)
+            int echo = s.IndexOf("[참고", StringComparison.Ordinal);
+            if (echo > 0) s = s.Substring(0, echo);
+            s = Regex.Replace(s, @"\[[^\]\n]*\.md[^\]\n]*\]\s*(에|에서|에도)?\s*", "");
+            s = s.Replace("**", "");
+            s = Regex.Replace(s, @"[\uD800-\uDFFF☀-➿️]", "");
+            return Regex.Replace(s, @"[ \t]{2,}", " ").Trim();
         }
 
         /// <summary>

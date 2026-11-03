@@ -7,7 +7,7 @@ namespace Fishing.Audio
     ///  - Stamp: 낙관을 찍는 묵직한 "쿵" + 종이 소리
     ///  - Chime: 맑은 종 (사업자 영어 이름이 뜰 때, 게임 시작)
     ///  - Brush: 붓이 종이를 스치는 "사아악" (타이틀 글씨가 써질 때)
-    ///  - Gong: 징 (타이틀 낙관)
+    ///  - Gong: 징 (타이틀 붓글씨를 다 쓸 때)
     ///  - Theme: 가야금 같은 뜯는 소리(Karplus-Strong)로 평조(솔·라·도·레·미) 선율 + 낮은 울림 + 바람·물결. 36초, 반복 재생.
     /// 샘플 계산(특히 Theme)은 수십 ms가 걸려서 <see cref="BuildAsync"/>가 작업 스레드에서 하고, AudioClip은 메인 스레드에서 만든다.
     /// </summary>
