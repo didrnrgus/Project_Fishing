@@ -192,7 +192,7 @@ namespace Fishing.Core
         public static Material VertexAO(Material src)
         {
             if (src == null || !src.HasProperty("_VertexAO")) return src;
-            string key = "vao" + src.GetInstanceID();
+            string key = "vao" + src.GetEntityId();
             if (Cache.TryGetValue(key, out var m)) return m;
             m = new Material(src) { name = src.name + "_VAO" };
             m.SetFloat("_VertexAO", 1f);

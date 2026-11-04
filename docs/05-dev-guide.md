@@ -2,7 +2,7 @@
 
 ## 환경
 
-- **Unity 6000.3.17f1** (Unity Hub 기본 경로 `C:\Program Files\Unity\Hub\Editor\6000.3.17f1`)
+- **Unity 6000.6.8f1** (Unity Hub 기본 경로 `C:\Program Files\Unity\Hub\Editor\6000.6.8f1`)
 - Windows Build Support 모듈
 - 패키지: `com.unity.ugui 2.0.0`, `com.unity.burst`, `com.unity.collections`(Translucent Image가 씀), `com.unity.postprocessing 3.4.0`(후처리), `com.unity.inputsystem 1.14.2`(패드 진동만), `com.unity.test-framework 1.5.1` + 기본 모듈
 - 외부 에셋
@@ -20,7 +20,7 @@
 
 ## 처음 열기
 
-1. Unity Hub → Add → `Project_Fishing` 폴더를 추가한다 (버전 6000.3.17f1).
+1. Unity Hub → Add → `Project_Fishing` 폴더를 추가한다 (버전 6000.6.8f1).
 2. `Assets/Scenes/HanRiver.unity`를 열고 Play를 누른다.
    - 다른 씬에서 Play해도 `GameBootstrap`이 자동으로 생성된다.
 3. 씬이나 빌드 설정이 깨졌다면 메뉴 **Fishing > Setup Project**를 실행한다.
@@ -99,7 +99,7 @@ bpyenv/Scripts/pip install bpy pillow numpy
 - 물고기를 전부 다시 만들면 바뀌지 않은 어종도 FBX·PNG가 바이트 단위로 달라진다 → 새로 만든 것만 커밋하고 나머지는 `git checkout --`.
 - 만든 뒤 Unity에서 `Fishing > Reimport Fish Assets`(또는 배치모드 빌드가 자동 임포트).
 
-Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.3.17f1/Editor/Unity.exe" sh tools/build.sh`처럼 덮어쓴다.
+Unity가 다른 경로에 있으면 `UNITY="/d/Unity/6000.6.8f1/Editor/Unity.exe" sh tools/build.sh`처럼 덮어쓴다.
 에디터에 같은 프로젝트가 열려 있으면 배치모드가 실패하니 먼저 닫는다.
 
 ## 자동 스크린샷 (`-autoshot`)

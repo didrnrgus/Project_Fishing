@@ -1718,7 +1718,7 @@ namespace Fishing.Dev
                 Game.CameraRig.enabled = false;
                 // HUD 숨기기: CanvasGroup 알파로 감춘다 (예전 Translucent Image는 캔버스를 끄면 다시 켤 때 예외를 냈다)
                 var groups = new System.Collections.Generic.List<CanvasGroup>();
-                foreach (var c in UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None))
+                foreach (var c in UnityEngine.Object.FindObjectsByType<Canvas>())
                 {
                     if (!c.isRootCanvas) continue;
                     var g = c.GetComponent<CanvasGroup>() ?? c.gameObject.AddComponent<CanvasGroup>();
