@@ -2,6 +2,12 @@
 
 세션이 끊겨도 이 파일만 보고 이어서 작업할 수 있게 남기는 메모. 끝난 일은 로드맵·각 문서에 합쳤다.
 
+## 2026-11-04 (1): Unity 6000.6.8f1로 올림 → [05 개발 가이드](05-dev-guide.md)
+- `tools/unity.sh` 기본 경로·README·05·08 문서의 버전을 6000.3.17f1 → **6000.6.8f1**로
+- 고친 API: `Object.GetInstanceID()`가 에러(CS0619)로 바뀜 → `Mats.VertexAO` 캐시 키를 `GetEntityId()`로. 경고(CS0618)도 정리: `FindFirstObjectByType` → `FindAnyObjectByType`(`GameBootstrap`·`GameUI`), `FindObjectsByType(FindObjectsSortMode.None)` → 인자 없는 `FindObjectsByType<Canvas>()`(`DevAutomation`)
+- Unity가 같이 바꾼 것: 패키지(burst 2.0.0, collections 6.6.0, inputsystem 1.20.1, postprocessing 3.5.4, ugui 2.6.0, test-framework 1.8.0, multiplayer.center 2.1.0, 모듈 physicscore2d·tetgen·timelinefoundation 추가·vr 빠짐), fbx·텍스처 meta·LOD 프리팹 형식 다시 저장(내용은 그대로), 새 ProjectSettings 2개. 최소 버전보다 오래된 meta 3개(Overcast.png·EmojiOne.png·LiberationSans.ttf)는 `ForceReserializeAssets`로 다시 저장
+- 빌드 에러 0, 자동 촬영 `06_fight`까지 50장 Exception 0·60 FPS, 화면은 전과 같음
+
 ## 2026-11-03 (3): 낮/밤 바꾸기 N 키 → [가이드 08](guide/08-drone-show.md)
 - "드론쇼 빨리 보고 싶어, 낮과 밤 바꾸는 기능도": `KeyAction.DayNight`(기본 N, 옵션에서 바꿀 수 있음) → `GameUI.ToggleDayNight`: 밤이면 오전 10시, 아니면 밤 9시로 `GameClock.Set` + 알림. 낚시터에서만(파이팅·창 열림 중엔 안 됨), 빌드 에러 0
 - 사용자 그림(캐릭터 포스터)을 `tools/drone/scene.py`로 점 파일로 만들어 내 문서 DroneShow 폴더에만 넣음 (남의 그림이라 저장소엔 안 넣음)

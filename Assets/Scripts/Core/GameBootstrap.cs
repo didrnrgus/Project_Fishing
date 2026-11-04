@@ -21,7 +21,7 @@ namespace Fishing.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void EnsureBootstrap()
         {
-            if (FindFirstObjectByType<GameBootstrap>() == null)
+            if (FindAnyObjectByType<GameBootstrap>() == null)
                 new GameObject("Game").AddComponent<GameBootstrap>();
         }
 
