@@ -5,7 +5,7 @@
 
 | 같이 뛰기 | 대답 | 낚으면 환호 |
 |---|---|---|
-| ![같이 뛰기](../images/30c_buddy_run.png) | ![대답](../images/30e_buddy_answer.png) | ![환호](../images/30f_buddy_cheer.png) |
+| ![같이 뛰기](../images/30c_buddy_run.jpg) | ![대답](../images/30e_buddy_answer.jpg) | ![환호](../images/30f_buddy_cheer.jpg) |
 
 ## 길 안내
 
@@ -13,7 +13,7 @@
 
 | 퀘스트 NPC에게 | 도착 | 낚시 포인트 | 배 같이 타기 |
 |---|---|---|---|
-| ![앞장서기](../images/30g_buddy_lead.png) | ![도착](../images/30h_buddy_arrive.png) | ![포인트](../images/30i_buddy_point.png) | ![배](../images/30j_buddy_boat.png) |
+| ![앞장서기](../images/30g_buddy_lead.jpg) | ![도착](../images/30h_buddy_arrive.jpg) | ![포인트](../images/30i_buddy_point.jpg) | ![배](../images/30j_buddy_boat.jpg) |
 
 - **퀘스트**: "내 퀘스트 좀 알고 싶어", "누구한테 가야 해? 데려다줘" → 이 낚시터에서 가장 급한 NPC(보고할 사람 > 이야기 퀘스트 > 받을 퀘스트 > 진행 중)에게 "따라와!" 하고 걸어간다. 닿으면 "여기야! F 눌러서 말 걸어 봐". 그 사람이 대기실·다른 낚시터에 있으면 어디로 가야 하는지 말해 준다.
 - **사람·가게**: "박주임 어디 있어?", "낚시점 데려가 줘" → 그 사람에게.

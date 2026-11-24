@@ -15,7 +15,7 @@
 
 저장소를 공개하려고 Mixamo 동작을 모두 걷어냈다(6장). 쓰던 Mixamo 동작은 7개뿐이었고, 그중 낚시 동작(`Fishing_Idle_Loop`·`Fishing_Sequence` 등)은 팔 IK로 대신하고, 나머지 5개는 UAL1 뼈대 위에 직접 만들었다.
 
-![반응 동작 앞모습 (위부터 환호·박수·펄쩍·손짓·움찔)](images/reactions_sheet.png)
+![반응 동작 앞모습 (위부터 환호·박수·펄쩍·손짓·움찔)](images/reactions_sheet.jpg)
 
 | 클립 | 길이 | 반복 | 언제 | 코드 |
 |---|---|---|---|---|
@@ -108,7 +108,7 @@ NPC 낚시꾼도 같은 방식이다(10장): 평소 40°, 20~45초마다 다시 
 
 | 걷기 키 (Run_N ×0.85) | 달리기 (Run_N ×1.25) | 점프 |
 |---|---|---|
-| ![걷기](images/00d_walk.png) | ![달리기](images/00e_run.png) | ![점프](images/00e2_jump.png) |
+| ![걷기](images/00d_walk.jpg) | ![달리기](images/00e_run.jpg) | ![점프](images/00e2_jump.jpg) |
 
 ### 직접 만든 기본 동작 `Basic_*` (Starter Assets가 없을 때, 말하기·제자리 돌기는 지금도)
 

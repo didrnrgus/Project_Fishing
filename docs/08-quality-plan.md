@@ -15,9 +15,9 @@
 지금 캐릭터는 Quaternius 무료판에 들어 있는 **Superhero(보디빌더) 몸**에 셔츠·바지를 셰이더로 "칠한" 것이라 쫄쫄이 차림의 근육맨으로 보인다.
 원작 「청풍명월」의 '청'·'명'은 보통 체형의 젊은 남녀가 **진짜 옷**(낚시조끼, 모자, 바지, 장화)을 입고 의상 아이템으로 꾸미는 3D 캐릭터였다.
 
-| 게임 안 (docs/images/00_character.png) | Blender 미리보기 (`build_characters.py --preview`) |
+| 게임 안 (docs/images/00_character.jpg) | Blender 미리보기 (`build_characters.py --preview`) |
 |---|---|
-| ![game](images/00_character.png) | ![preview](images/30_angler_outfits_preview.png) |
+| ![game](images/00_character.jpg) | ![preview](images/30_angler_outfits_preview.jpg) |
 
 미리보기(위→아래): 남자, 여자. 각 줄은 기본(반팔·낚시조끼·카고·운동화·벙거지·반장갑) / 프로(체크 남방(깃·단추)·조끼·청바지·장화·야구모자·선글라스) / 바다(래시가드·구명조끼·웨이더·장화·밀짚모자).
 (처음엔 근육질 Superhero 몸에 옷을 셰이더로 칠한 쫄쫄이 차림이었다 — 지금은 위처럼 보통 체형 + 진짜 옷 메쉬.)
@@ -77,7 +77,7 @@ Unity로 열면 Angler FBX 두 개가 임포트된다(휴머노이드, AssetImpo
    - 장화를 신으면 바지 아랫단이 장화 속으로 사라진다 (Garment `_ClipBelow`)
 4. **의상(C)**: 부위별로 바꿔 입기 → 모양까지 바뀐다(반팔↔긴팔↔래시가드, 조끼↔구명조끼, 카고↔청바지↔웨이더, 운동화↔장화, 모자 3종, 선글라스). 체크 남방·청바지 무늬.
 5. 초상화(왼쪽 위), 1인칭 파이팅(낚싯대·릴), 배 운전·뱃머리 자세, 대기실 수족관 화면, NPC들
-6. `sh tools/build.sh` → `sh tools/autoshot.sh` → `Screenshots/`에서 캐릭터가 나오는 장면 확인, 괜찮으면 `docs/images/00_character.png`, `21c_costume.png` 등 교체
+6. `sh tools/build.sh` → `sh tools/autoshot.sh` → `Screenshots/`에서 캐릭터가 나오는 장면 확인, 괜찮으면 `docs/images/00_character.jpg`, `21c_costume.png` 등 교체
 
 ### 문제 해결
 | 증상 | 원인/대처 |

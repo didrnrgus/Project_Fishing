@@ -4,7 +4,7 @@
 > 사용자가 도감 자료를 주기 전에 진행해 달라고 해서, 웹 자료(부록 출처)를 바탕으로 만들었다. 잉어 시제품 확인 단계는 건너뛰었다.
 > 순서: 3장(물고기) → 4장(아이템 이미지). 2026-10-20: **8장 맵 모델·텍스처 디테일** (풍화 셰이더, 정자·석상·봉우리·테트라포드 등 사진 대조).
 
-![어종 모음](images/32_fish_models.png)
+![어종 모음](images/32_fish_models.jpg)
 
 ## 0. 왜 하나
 
@@ -256,7 +256,7 @@
 ```bash
 bpyenv/Scripts/python -I tools/blender/build_fish.py                       # 77종 FBX · 텍스처 · 아이콘
 bpyenv/Scripts/python -I tools/blender/build_fish.py --only carp --preview --anim   # 옆·위·비스듬히 + 클립별 4프레임
-bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.png
+bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.jpg
 ```
 - 임포트 규칙을 바꿨으면 메뉴 **Fishing > Reimport Fish Assets**.
 - 남은 개선: 입 벌리기(턱 뼈), 비늘 하나하나의 굴곡을 더 진하게, 메기·장어 지느러미 반투명, 고등어 토막지느러미(finlet).
@@ -265,7 +265,7 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish
 
 새 낚시터 8곳(02 문서 9-8)에 맞춰 같은 파이프라인으로 13종을 더했다. 몸 틀은 그대로 쓰고 수치·무늬만 어종에 맞췄다.
 
-![새 어종](images/52_dex_coast.png)
+![새 어종](images/52_dex_coast.jpg)
 
 | 어종 | 틀 | 특징 (모델에 넣은 것) |
 |---|---|---|
@@ -381,7 +381,7 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --only carp --preview   # �
 | 비늘 | 크기 같은 격자 | 옆구리 가운데가 가장 크고 등·배(최대 −42%)·꼬리자루(−30%)·머리 쪽(−20%)으로 작아진다(비늘 좌표를 크기 비율로 적분), 자리 흐트러짐 0.12 → 0.16, 테두리 대비 낮추고 비늘마다 밝기 차이 키움. 잔 비늘(수가 많은 어종)은 테두리 대비를 (40/비늘 수)^0.8로 낮춘다 (감성돔이 그물·자처럼 보였다) |
 | 무늬 | 고등어 물결 = 자로 그린 사인파, 띠 가장자리 매끈 | 물결은 노이즈로 휘고 굵기가 들쭉날쭉하고 군데군데 끊긴다, 띠 가장자리도 노이즈. 감성돔 가로줄 대비를 낮춤 |
 
-- 미리보기·아이콘 재질도 지느러미를 알파 그대로 반투명하게 (게임과 같게). 모음 시트 `docs/images/32_fish_models.png` 다시 만듦.
+- 미리보기·아이콘 재질도 지느러미를 알파 그대로 반투명하게 (게임과 같게). 모음 시트 `docs/images/32_fish_models.jpg` 다시 만듦.
 - 다음에 더 할 수 있는 것: 아래턱이 따로 있는 입(입 벌리기), 콧구멍, 비늘 줄을 비스듬히(근절 방향), 메기·장어 지느러미를 더 얇게.
 
 ### 3-17. 장어형 다시 만들기 · 결과 화면 자세 (2026-10-16)
@@ -399,14 +399,14 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --only carp --preview   # �
 
 | 뱀장어 RESULT | 운동화 RESULT |
 |---|---|
-| ![eel](images/10c_result_eel.png) | ![shoe](images/10d_result_shoe.png) |
+| ![eel](images/10c_result_eel.jpg) | ![shoe](images/10d_result_shoe.jpg) |
 
 **잡동사니** (`build_icons.py`):
 - **낡은 운동화**: 예전에는 밑창이 거의 안 보이고 끈이 갑피에 묻혀 파란 민달팽이 같았고, 앞코는 열린 관이라 구멍이 보였다. 이제 앞코가 들린 흰 밑창(가운데 남색 줄, 바닥 고무) + 발 모양 윤곽(앞볼 넓고 장심 잘록)의 닫힌 갑피 + 윗면을 파낸 발목 구멍과 짙은 안감 + 둥근 혀 + X자로 엇갈린 끈·구멍·매듭과 늘어진 끈 + 표면을 따라가는 옆 줄무늬 두 줄(면 색칠은 계단처럼 보였다) + 앞코 고무 + 이끼 몇 점. 공통 로프트 도구 `_loft(단면 함수, 고리 수, 둘레 수, 재질들, 면 재질 함수)`.
   - 2026-10-21 "앞코가 이상해서 운동화답지 않다": 끝에서 폭만 줄고 높이는 그대로라 앞코가 세운 판처럼 뭉툭하게 잘리고(위에서 봐도 잘린 끝), 앞코가 2cm나 들려 주걱 같았으며, 앞코 고무는 옆면 면 색칠이라 회색 조각처럼 보였다. → `_shoe_round(t)`로 앞코(길이 20%)·뒤꿈치(12%) 끝의 폭과 높이를 함께 사분원으로 오므려 위·옆 모두 둥근 코, 토박스는 낮고 밑창 윗면 쪽으로 내려와 닫힘, 토 스프링 1.1cm, 밑창은 갑피보다 앞뒤로 5mm 더 나오고 끝에서 바닥이 말려 올라 감싼다. 앞코 고무 캡·뒤꿈치 보강은 갑피 위에 덧댄 얇은 껍질(`overlay`, 밑창 윗면에서 잰 높이까지 덮음 — 앞코는 1.3cm 띠로 고르게 감싸고 앞 윗면은 통째로, 색은 밑창과 같은 흰 고무)이라 경계가 매끈하다.
 - **통발**: 반투명 깔때기 막이 FBX에서 불투명해져 회색 원뿔 덩어리로 보였다 → 그물 원뿔(살 10개 + 고리 2개). 그물을 밝은 물 바랜 초록으로, 조금 굵게(밤 결과 화면에서 배경에 묻혔다).
 - 결과 화면: 잡동사니를 물고기처럼 옆으로 눕혀 들면 위에서 내려다본 모양이 됐다 → 비스듬히(20°) 내려다보며 천천히 돈다, 화면 길이 1.05(물고기 1.6).
-- 남은 것: 도감 모음 시트 `docs/images/32_fish_models.png`는 장어형 4종이 예전 모양이다 (`--sheet`로 77종을 다시 렌더해야 함).
+- 남은 것: 도감 모음 시트 `docs/images/32_fish_models.jpg`는 장어형 4종이 예전 모양이다 (`--sheet`로 77종을 다시 렌더해야 함).
 
 ### 3-18. 원작 전체 맵 어종 88종 (2026-10-19 ~ 10-20)
 
@@ -451,10 +451,10 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --only carp --preview   # �
 
 | 결과 화면 | 도감 |
 |---|---|
-| ![result](images/10_result.png) | ![dex](images/11b_dex_detail.png) |
+| ![result](images/10_result.jpg) | ![dex](images/11b_dex_detail.jpg) |
 
 ```bash
-bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.png   # 172종 + 모음 시트 (약 45분)
+bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.jpg   # 172종 + 모음 시트 (약 45분)
 bpyenv/Scripts/python -I tools/blender/build_fish.py --only carp --preview --anim              # 미리보기 + 클립별 위에서 본 4프레임
 ```
 
@@ -492,11 +492,11 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --only carp --preview --ani
 
 | 오징어·문어 (주꾸미·대문어·오징어·갑오징어·무늬오징어 — 옆 · 3/4 · 위) | 실사 느낌 (잉어·농어·참돔 옆 · 머리) |
 |---|---|
-| ![ceph](images/32b_cephalopods.png) | ![real](images/32c_fish_realism.png) |
+| ![ceph](images/32b_cephalopods.jpg) | ![real](images/32c_fish_realism.jpg) |
 
 | 결과 화면 (젖은 몸 하이라이트) | 도감 |
 |---|---|
-| ![result](images/10_result.png) | ![dex](images/11b_dex_detail.png) |
+| ![result](images/10_result.jpg) | ![dex](images/11b_dex_detail.jpg) |
 
 **새 어종 52종** — 에이전트 셋이 지역별로 조사(위 자료)·설계·미리보기 대조. 새 파일만 만들고 정적 생성자 등록은 따로.
 
@@ -515,8 +515,8 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --only carp --preview --ani
 - 아이콘은 두 배(512×256)로 렌더해 줄이고 디노이즈, 미리보기 재질에 점액 막(Coat), 하늘빛 그러데이션 환경 (반사가 밋밋했다). 지느러미가 모래알처럼 자글거리던 것이 사라졌다.
 
 ```bash
-bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.png                # 224종 + 모음 시트 (약 1시간)
-bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.png --sheet-only   # 렌더해 둔 그림으로 시트만
+bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.jpg                # 224종 + 모음 시트 (약 1시간)
+bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.jpg --sheet-only   # 렌더해 둔 그림으로 시트만
 ```
 
 - 남은 것: 지느러미 색을 지느러미마다 따로 못 줌, 날치 아래 꼬리가 길지 않음. 기존 `tigerfish`는 나일에 실제로 사는 종(Hydrocynus forskahlii)이 아니라 H. vittatus다. (상어 머리·아귀·홍어 눈은 3-21장)
@@ -525,7 +525,7 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish
 
 "상어 입이 앞, 아귀가 소시지, 홍어 눈이 한쪽, 잉어·메기 수염은?" — 실물 사진(아래 이미지 검색)과 나란히 놓고 고쳤다.
 
-![전후](images/32d_shark_ray_angler.png)
+![전후](images/32d_shark_ray_angler.jpg)
 
 | 어종 | 예전 | 지금 (설계 값) |
 |---|---|---|
@@ -547,7 +547,7 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish
 
 "눈, 주둥이 등 디테일이 실물이랑 다르다": 어종마다 머리 근접 사진(학명 + "head close up")을 찾아 머리 미리보기와 다시 견줬다 (사진 대조 2차, 에이전트 셋이 설계 파일을 나눠 214종). 공통으로 틀린 것은 생성기에서 고쳤다.
 
-![머리 전후](images/32e_fish_heads.png)
+![머리 전후](images/32e_fish_heads.jpg)
 
 | 부분 | 예전 | 지금 |
 |---|---|---|
@@ -565,7 +565,7 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish
 
 "꼬리지느러미가 옆에서 보면 세로 1자로 딱 끊긴다": 몸이 꼬리자루 끝(s = 1)에서 세로로 잘리고, 그 높이 그대로 네모난 지느러미 판이 꽂혀 있었다.
 
-![꼬리 전후](images/32f_fish_tail.png)
+![꼬리 전후](images/32f_fish_tail.jpg)
 
 - 비늘 덮인 살(`tail_lobe`, 몸 길이의 0.04): 꼬리자루 끝 가운데가 뒤로 볼록하게 나와 지느러미 밑동을 초승달로 덮는다 (위아래 가장자리는 그대로). 끝으로 갈수록 얇아지지만 지느러미 판 두께보다는 두껍게 (더 얇으면 판이 살을 뚫고 나와 가운데 검은 줄)
 - 전류조(`procurrent`, 0.075): 꼬리지느러미 위아래 바깥 줄기가 꼬리자루 등·배 가장자리를 따라 앞에서부터 짧게 붙기 시작해, 윤곽이 꼬리자루에서 매끈하게 벌어진다
@@ -575,12 +575,12 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish
 
 ## 4-7. 만든 결과 (2026-10-14)
 
-![아이템 아이콘](images/33_item_icons.png)
+![아이템 아이콘](images/33_item_icons.jpg)
 
 | 항목 | 결과 |
 |---|---|
 | 스크립트 | `tools/blender/build_icons.py`: 아이템 Id마다 모델 함수 하나 (`model_rod`, `model_reel`, `model_worm` …), 공통 3/4 시점 정사영 카메라 + 왼쪽 위 주광 + 테두리 빛, 물체 크기에 맞춰 자동으로 칸을 채운다 |
-| 아이콘 | `Resources/Icons/Items/<Id>.png` 37종 (낚싯대 6 · 릴 4 · 줄 3 · 배 4 · 미끼 11 · 해체 미끼 5 · 김밥 · 재료 3), 대회 보상 장비(거거 낚시대·나팔고둥 릴)·플라이대·에기·플라이·돛단배·크루저 포함. 2026-10-23 마을 장비 29종(색은 `GearDatabase.cs`의 `Trade(...)` 줄을 읽어 C#과 한곳에서 관리)과 교환 재화 2종(나팔고동: 길쭉한 나선 고둥, 황금거거: 금빛 대왕조개 + 청록 외투막) — 시트 `docs/images/72_village_trade_icons.png` |
+| 아이콘 | `Resources/Icons/Items/<Id>.png` 37종 (낚싯대 6 · 릴 4 · 줄 3 · 배 4 · 미끼 11 · 해체 미끼 5 · 김밥 · 재료 3), 대회 보상 장비(거거 낚시대·나팔고둥 릴)·플라이대·에기·플라이·돛단배·크루저 포함. 2026-10-23 마을 장비 29종(색은 `GearDatabase.cs`의 `Trade(...)` 줄을 읽어 C#과 한곳에서 관리)과 교환 재화 2종(나팔고동: 길쭉한 나선 고둥, 황금거거: 금빛 대왕조개 + 청록 외투막) — 시트 `docs/images/72_village_trade_icons.jpg` |
 | 잡동사니 | `Resources/Icons/Junk/<Id>.png` + `Resources/Junk/<Id>.fbx` 6종 (빈 깡통, 통발, 나무 상자, 생선 캔, 로봇 물고기, 낡은 운동화). 길이 1m 기준 정적 모델, 색은 FBX 머티리얼 그대로. 파이팅·RESULT에 3D로 나온다 |
 | 코드 | `ItemIcons.Get(id)`, `ItemIcons.Place(row, id, x, size)` (그림이 없으면 0을 돌려줘 글자만) |
 | 넣은 곳 | 상점(장비·미끼·김밥), 가방(아이템·배), HUD 미끼 바, 장비 강화(장비 + 비늘·별모래 보유), 소라고동 교환소, RESULT(잡동사니 그림·동그라미 엠블럼 안 어종 아이콘), 도감(물고기 아이콘) |
@@ -589,16 +589,16 @@ bpyenv/Scripts/python -I tools/blender/build_fish.py --sheet docs/images/32_fish
 ```bash
 bpyenv/Scripts/python -I tools/blender/build_icons.py                         # 모든 아이콘 + 잡동사니 FBX
 bpyenv/Scripts/python -I tools/blender/build_icons.py --only rod_basic,bait_worm
-bpyenv/Scripts/python -I tools/blender/build_icons.py --sheet docs/images/33_item_icons.png
+bpyenv/Scripts/python -I tools/blender/build_icons.py --sheet docs/images/33_item_icons.jpg
 ```
 - 함정: 여러 물체를 합치면(join) 첫 물체의 회전을 이어받는다. 합친 뒤 회전·크기를 굳혀야(`transform_apply`) 나중에 돌려도 모양이 안 바뀐다.
 - 남은 개선: 의상 아이콘(의상 창에는 3D 미리보기가 있어 생략), 수족관 장식 아이콘.
 
 ## 4-8. 아이템 아이콘 실물 사진 대조 (2026-10-30)
 
-"아이템 이미지도 이미지 검색해서 업데이트": 물고기 때처럼 image-search MCP로 실물 사진을 찾아 같은 각도의 아이콘과 견주고 모델을 고쳤다(사진은 참고만, 저장소에 넣지 않음). 아이템 83종 모두 다시 렌더 — 시트 [33_item_icons](images/33_item_icons.png) · [72_village_trade_icons](images/72_village_trade_icons.png). 잡동사니(FBX도 같이 바뀌는 것)는 그대로.
+"아이템 이미지도 이미지 검색해서 업데이트": 물고기 때처럼 image-search MCP로 실물 사진을 찾아 같은 각도의 아이콘과 견주고 모델을 고쳤다(사진은 참고만, 저장소에 넣지 않음). 아이템 83종 모두 다시 렌더 — 시트 [33_item_icons](images/33_item_icons.jpg) · [72_village_trade_icons](images/72_village_trade_icons.jpg). 잡동사니(FBX도 같이 바뀌는 것)는 그대로.
 
-![아이템 아이콘](images/33_item_icons.png)
+![아이템 아이콘](images/33_item_icons.jpg)
 
 | 아이템 | 사진에서 본 것 → 고친 것 |
 |---|---|
@@ -1044,11 +1044,11 @@ sh tools/inspect.sh "seocheon:Pavilion:200:12:1.3;sentosa:merlion:210:5:1.0"    
 | 버드나무 (`Willows`) | 사진처럼 짧고 굵은 줄기(2~2.6m)가 V자로 갈라지고, 수관은 몽글몽글한 덩어리 넷~다섯(가운데 높은 덩어리 + 둘레 낮은 덩어리). 가지 판은 다른 덩어리 속에 묻히지 않은 겉면에서만, 위쪽은 짧게 겉면을 덮고 옆·아래 가장자리만 땅 위 1~2m까지 길게 → 위가 둥글고 아래로 퍼지는 분수 모양. 예전엔 반구 하나 가장자리에서 땅까지 곧게 떨어져 원기둥·빗자루처럼 보였다 |
 | 벚나무 (`Trees`) | 예전엔 초록 활엽수에 꽃 조각을 박아 초록 나무에 보랏빛 점이 붙은 듯 보였다. `Fishing/Foliage`에 `_Blossom`·`_BlossomColor`를 넣어 잎 그림의 밝기 결만 남기고 꽃 색으로 칠한다 (`KenneyProps.SpawnBlossomTree`) → 봄엔 수관 전체가 연분홍 |
 
-![징검다리](images/72x_tancheon_stones_photo.png) ![징검다리 밤](images/72w_tancheon_stones_night.png) ![징검다리 위에서](images/72x2_tancheon_stones_top.png)
-![보행교 옆](images/72y_tancheon_footbridge_side.png) ![보행교 밤](images/72v_tancheon_footbridge_night.png)
-![사송교 밤](images/72s_tancheon_bridge_night.png) ![사송교 낮](images/72u_tancheon_bridge_day.png)
-![사송교 밑](images/72t_tancheon_bridge_under.png) ![벽화 벽](images/72z_tancheon_mural.png)
-![버드나무](images/72k2_tancheon_willow_close.png) ![벚나무](images/72d2_tancheon_cherry.png)
+![징검다리](images/72x_tancheon_stones_photo.jpg) ![징검다리 밤](images/72w_tancheon_stones_night.jpg) ![징검다리 위에서](images/72x2_tancheon_stones_top.jpg)
+![보행교 옆](images/72y_tancheon_footbridge_side.jpg) ![보행교 밤](images/72v_tancheon_footbridge_night.jpg)
+![사송교 밤](images/72s_tancheon_bridge_night.jpg) ![사송교 낮](images/72u_tancheon_bridge_day.jpg)
+![사송교 밑](images/72t_tancheon_bridge_under.jpg) ![벽화 벽](images/72z_tancheon_mural.jpg)
+![버드나무](images/72k2_tancheon_willow_close.jpg) ![벚나무](images/72d2_tancheon_cherry.jpg)
 
 ### 8-22. 탄천 낮 사진 대조 — 차도교 거더·보행교 난간·물가 사석·길·그물망 (2026-10-30)
 
@@ -1067,10 +1067,10 @@ sh tools/inspect.sh "seocheon:Pavilion:200:12:1.3;sentosa:merlion:210:5:1.0"    
 | 촬영 | 하류 장면 `72b`는 커진 버드나무에 가려 카메라를 둔치 안쪽으로 |
 | 보행교 끝 (사용자 지적: 다리 입구가 길을 침범) | 9m 경사로를 없애고 양 끝을 둔치 물가 길 가장자리에서 끝내 길에 T자로 닿게(길 높이), 상판은 가운데 수면 위 2.75m로 완만하게 솟는 아치 — 오르막·내리막. 둑 위 끝 경간 아치는 땅에 묻힘. 다리 입구 앞을 막던 벤치는 치우고 이쪽 벤치는 물가 길 안쪽 잔디로 |
 
-![사송교 낮](images/72s2_tancheon_bridge_day_side.png) ![사송교 밤](images/72s_tancheon_bridge_night.png)
-![보행교 낮](images/72y2_tancheon_footbridge_day.png) ![징검다리 낮](images/72x3_tancheon_stones_day.png)
-![물가 길·사석](images/72aa_tancheon_path_riprap.png) ![그물망](images/72ab_tancheon_tall_net.png)
-![보행교 끝 T자](images/72y4_tancheon_footbridge_t.png) ![보행교 건너편 끝](images/72y3_tancheon_footbridge_end.png)
+![사송교 낮](images/72s2_tancheon_bridge_day_side.jpg) ![사송교 밤](images/72s_tancheon_bridge_night.jpg)
+![보행교 낮](images/72y2_tancheon_footbridge_day.jpg) ![징검다리 낮](images/72x3_tancheon_stones_day.jpg)
+![물가 길·사석](images/72aa_tancheon_path_riprap.jpg) ![그물망](images/72ab_tancheon_tall_net.jpg)
+![보행교 끝 T자](images/72y4_tancheon_footbridge_t.jpg) ![보행교 건너편 끝](images/72y3_tancheon_footbridge_end.jpg)
 
 ## 부록: 어종별 설계 시트 (조사 기록)
 

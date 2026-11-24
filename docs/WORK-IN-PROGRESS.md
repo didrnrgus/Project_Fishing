@@ -2,6 +2,13 @@
 
 세션이 끊겨도 이 파일만 보고 이어서 작업할 수 있게 남기는 메모. 끝난 일은 로드맵·각 문서에 합쳤다.
 
+## 2026-11-25 (5): docs/images 정리 — 안 쓰는 사진 지우고 JPG로 → [05 개발 가이드](05-dev-guide.md)
+- "docs/images에서 안 쓰는 사진 제거, 사진을 .jpg로 바꾸는 게 — 용량이 심하다" → 291장 **508MB → 180장 47MB**
+  - 저장소 텍스트 파일(md·cs·py·sh·json·txt)에 `이름.png`로 한 번도 안 나오는 111장 지움. 포트폴리오 그림 원본(`tools/portfolio_images.py`의 이름, 확장자 없이 적힘) 4장은 남김
+  - 나머지 180장 PNG → JPG(품질 88, 해상도 그대로, 투명 영역 있는 그림 없음). 문서·도구의 `images/이름.png` 249곳을 `.jpg`로 (README 95·02 81·09 44 …), 깨진 그림 링크 0
+  - Blender 모음 그림 명령 예시(`build_fish.py`·`build_icons.py --sheet docs/images/….jpg`)도 jpg로 — 둘 다 RGB로 저장해서 확장자만 바꾸면 된다
+  - 저장소 기록(LFS)에는 예전 PNG가 남아 있어서 원격 저장소 크기는 줄지 않는다. 받는 작업 폴더만 줄어든다
+
 ## 2026-11-25 (4): 윤슬·해상도 문서 반영 + 포트폴리오 사진 정리(FHD 다시 찍음) → [portfolio/](portfolio/README.md)
 - "AI쪽이랑 해상도쪽 추가 작업했는데 그거 문서 업데이트한 다음에 포폴" → README(윤슬: 게임이 Ollama를 켜고 모델도 게임 안에서 받음 / 옵션: 해상도 최대 FHD), 03 `ResolutionGuard`, 06 로드맵 두 줄, [tech 08 성능 5장 그리는 크기 FHD 상한](tech/08-performance.md), 이 파일 "지금 상태"
 - 포트폴리오: 윤슬을 "부가 실험"에서 정식 피처(2-14)로 — OllamaSetup(창 없이 켜기·게임 안 모델 받기·진행률 뒤로 안 가게), 성능 절에 FHD 상한
@@ -102,7 +109,7 @@
 
 ## 2026-10-30 (6): AvatarSample G 밝기 → [16 문서 characters.json](16-vrm-characters.md)
 - "이 캐릭터는 너무 밝은 거 같다": 흰 머리(머리 발광 0.92, 다른 샘플 0.25 안팎)·흰 원피스라 밤에도 혼자 하얗게 떠 보임. `characters.json`에 모델 밝기 배수 `brightness`를 새로 두고 G를 0.7 (MToon 바탕·그림자·발광·매트캡 색에 곱함, 사용자 VRM에도 쓸 수 있다)
-- 자동 촬영 `-autoshotVrm <파일>`: VRM 장면을 그 모델로 찍는다 → ![G 전·후](images/02v_vrm_brightness_g.png)
+- 자동 촬영 `-autoshotVrm <파일>`: VRM 장면을 그 모델로 찍는다 → ![G 전·후](images/02v_vrm_brightness_g.jpg)
 
 ## 2026-10-30 (5): 아이템 아이콘 실물 사진 대조 → [09 문서 4-8장](09-art-plan.md)
 - "아이템 이미지도 이미지 검색 MCP로 업데이트": 릴·원줄·낚싯대·배·미끼·해체 미끼·음식·장갑·비늘을 실물 사진과 견줘 `build_icons.py` 모델을 고치고 83종 다시 렌더 (시트 33·72)
@@ -121,7 +128,7 @@
 - 대기실 조합 직원 4명(오실장·서대표·문박사·한서윤)이 이름 첫 글자 원뿐이라, 사용자 요청대로 이미지 검색 MCP로 서브컬처풍 그림을 골라 얼굴 둘레로 잘라 `Resources/Portraits/lobby_<desk|chief|doctor|manager>.png` (대화창 머리·직원 카드, 카드 얼굴 72 → 84px)
 - `TranslucentAvatar.Set(name, color, key)`: `Portraits/<키의 :·@를 _로>`가 있으면 동그란 얼굴, 없으면 글자 — 낚시터 연락관도 `union_<맵>.png`만 넣으면 된다
 - **자유 라이선스 아님** (원작자 그림·AI 생성 사이트 그림): 출처는 `Resources/Portraits/SOURCES.md`, THIRD_PARTY_NOTICES에 "배포 전 교체 필요"로 적음
-- 자동 촬영 `00a1_lobby_quest` (`sh tools/autoshot.sh 00a1_lobby_quest`) → ![대기실 퀘스트](images/13t_lobby_quest_portraits.png)
+- 자동 촬영 `00a1_lobby_quest` (`sh tools/autoshot.sh 00a1_lobby_quest`) → ![대기실 퀘스트](images/13t_lobby_quest_portraits.jpg)
 
 ## 2026-10-30: 새 어종 도감·퀘스트·미끼 연동 → [02 문서 13-12장](02-game-design.md)
 - "물고기가 추가·변경됐으니 도감·도감 퀘스트, 맵 내 퀘스트, 물고기로 만드는 미끼 등 다 업데이트": 224종 전부를 오래된 어종과 같은 방식으로 이었는지 점검

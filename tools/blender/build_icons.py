@@ -3,7 +3,7 @@
 
   python -I tools/blender/build_icons.py                  # 모든 아이콘 + 잡동사니 FBX
   python -I tools/blender/build_icons.py --only rod_basic,bait_worm
-  python -I tools/blender/build_icons.py --sheet docs/images/33_item_icons.png
+  python -I tools/blender/build_icons.py --sheet docs/images/33_item_icons.jpg
 
 결과 (Unity):
   Assets/Resources/Icons/Items/<아이템 Id>.png   256×256, 투명 배경. 모두 같은 각도(비스듬히 3/4)·조명(왼쪽 위 주광 + 테두리 빛)

@@ -61,9 +61,10 @@ EXTRA = [sys.argv[i + 1] for i, a in enumerate(sys.argv[:-1]) if a == "--from"]
 
 def find(name):
     for d in EXTRA + [os.path.join(ROOT, "Screenshots"), os.path.join(ROOT, "docs", "images")]:
-        p = os.path.join(d, name + ".png")
-        if os.path.exists(p):
-            return p
+        for ext in (".png", ".jpg"):  # 새로 찍은 건 .png, docs/images는 .jpg (2026-11-25 용량 줄이려고 바꿈)
+            p = os.path.join(d, name + ext)
+            if os.path.exists(p):
+                return p
     return None
 
 

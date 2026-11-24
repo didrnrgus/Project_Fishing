@@ -11,7 +11,7 @@
 
 | 실제 낚시 화면 (VRM, 젖힘) | 캐릭터 창 [캐릭터 모델] 탭 |
 |---|---|
-| ![vrm](images/02v_vrm_155.png) | ![panel](images/21e_character_model.png) |
+| ![vrm](images/02v_vrm_155.jpg) | ![panel](images/21e_character_model.jpg) |
 
 ## 1. 쓰는 법 (플레이어)
 
@@ -90,13 +90,13 @@ VRoid 프로젝트(pixiv)가 VRoid Studio 알파 시절 샘플로 **CC0** 공개
 - `파일.vrm` + 같은 이름 `파일.json`(`name`·`gender`·`author`·`url`·`license`·`credit`·`brightness`)이 둘 다 있어야 쓴다. 정보 없는 `.vrm`은 `CharacterPack.Warnings` → 캐릭터 창 노란 글씨.
 - `gender`가 `female`/`male`이면 그 성별 NPC 후보에 더한다. 이름·만든 사람은 정보 파일이 VRM 메타를 이긴다(메타는 일본어라 글꼴에 없는 글자가 많다).
 - 캐릭터 창: `추가 캐릭터` 표시, 목록 위 [열기](폴더가 없으면 만든다), [새로고침]이 폴더를 다시 훑는다. 목록은 정보 파일로 이름·만든 사람을 보여 주고 VRM은 **고를 때만** 읽는다 (처음엔 탭을 열 때 15개를 한꺼번에 읽어 멈춘 듯했다).
-  - ![추가 캐릭터 로지를 고른 캐릭터 창](images/21e_character_pack.png)
+  - ![추가 캐릭터 로지를 고른 캐릭터 창](images/21e_character_pack.jpg)
 - 첫 묶음: VRoid Hub에서 다운로드·재배포·개조 허락, 연령 제한 없는 여캐 15명(사용자가 썸네일 그리드에서 고름). Claude in Chrome으로 검색 API(`/api/search/character_models`, `X-Api-Version: 11`)를 읽어 이용 조건을 거르고 모델 페이지에서 받았다.
 - 쇼케이스 `sh tools/showcase.sh [pack|builtin|user|all]`: 게임 창에서 VRM을 하나씩 갈아입히며 서 있기·걷기·달리기·캐스팅 젖힘·휘두르기·던짐·감기·파이팅·붕어 들기·환호·신남·놀람을 돌리고 찍는다(`-autoshotShowcase`, 한 명 30초쯤). 끝나면 `tools/showcase_sheet.py`가 캐릭터마다 한 장(`Screenshots/showcase/sheet_*.png`)과 정면 모음(`sheet_all.png`)을 만든다.
 - JSON이 깨졌거나 적힌 파일이 없으면 `CharacterRoster.Warnings` → 캐릭터 창 맨 위 노란 글씨 + 로그.
 - `brightness`: `[{ "file": "AvatarSample_G.vrm", "value": 0.7 }]` — 모델 밝기 배수(0.2~1.5). 읽을 때 한 번 원본 재질의 MToon `_Color`·`_ShadeColor`·`_EmissionColor`·`_MatcapColor`에 곱한다(`VrmLoader.ScaleBrightness`, 복제·옷 주인이 같은 재질을 쓴다). 문서 폴더 것과 합치고 같은 파일은 문서 폴더가 이긴다. 다시 켜야 바뀐다.
   - 2026-10-30 "AvatarSample G가 너무 밝다": 흰 머리(바탕 0.95, 머리 발광 0.92 — 다른 샘플은 0.25 안팎)·흰 원피스·흰 스타킹이라 밤 달빛·가로등 아래서도 혼자 하얗게 떠 보였다. 발광만 줄여 보니 거의 그대로(발광 텍스처가 머리 결 줄무늬뿐) → 모델 전체 0.7. Neutral 톤매핑이 밝은 쪽을 눌러서 0.78은 표가 덜 났다.
-  - ![AvatarSample_G 밝기 전·후](images/02v_vrm_brightness_g.png) (왼쪽부터 정면 전·후, 옆 전·후, 한강 밤 21시)
+  - ![AvatarSample_G 밝기 전·후](images/02v_vrm_brightness_g.jpg) (왼쪽부터 정면 전·후, 옆 전·후, 한강 밤 21시)
 
 ### 옷 갈아입기 (VrmOutfit · OutfitChanger, 2026-10-21)
 

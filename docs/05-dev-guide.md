@@ -180,7 +180,7 @@ UI나 연출을 바꾼 뒤 `build.sh` → `autoshot.sh`로 실제 화면을 확�
 ## Git
 
 - `.gitignore`는 Unity 표준에 `Builds/`, `Screenshots/`, `Logs/`, `UserSettings/`, `bpyenv/`를 더 뺀다.
-- 문서용 스크린샷은 `docs/images/`에 복사해서 커밋한다.
+- 문서용 스크린샷은 `docs/images/`에 **JPG(품질 88)로 바꿔** 커밋한다 — PNG로 넣던 291장이 508MB였다(2026-11-25 문서에 안 쓰는 111장을 지우고 나머지를 JPG로 바꿔 47MB). 변환: `python -c "from PIL import Image; Image.open('Screenshots/X.png').convert('RGB').save('docs/images/X.jpg', quality=88, optimize=True)"`. 문서에서 쓰지 않게 된 사진은 지운다(예전 것은 git 기록에 남는다).
 - **커밋 메시지 형식** — 제목 한 줄 + 빈 줄 + 세부작업 줄 목록. 쉼표·세미콜론으로 한 줄에 몰아 쓰지 않는다 (빈 줄이 없으면 `git log --oneline`에 목록까지 한 줄로 붙는다).
 
   ```

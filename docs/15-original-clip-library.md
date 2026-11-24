@@ -30,11 +30,11 @@
 | UI 아트 (docs 04 §4, `07_인벤토리_UI_팝업` 프레임): 짙은 남색 반투명 판 + 청록·파랑 빛 테두리, 모서리 거의 각짐, 파란 탭·버튼 | `UIStyle` 팔레트 전체: 유리 바탕 `(0.02, 0.045, 0.08)`, 테두리 파란 빛 `FrameBlue (0.16, 0.58, 1)` 안쪽 1.2 + 바깥 번짐 1.6, 모서리 반지름 22/16/12/10 → 8/6/5/5, 주 버튼·켜진 탭 파랑 `(0.09, 0.36, 0.68)`, 꺼진 탭 짙은 파랑, 강조색 하늘색. 모든 창·HUD가 같이 바뀐다 | △ (붓글씨 로고·나무 액자 그림은 쓰지 않음) |
 | 시스템 줄 색: 남의 조과·EXP 초록, 내 조과·놓침 노랑 | 같은 색 | ✔ |
 
-![RESULT 토스트·BONUS·이벤트 도장](images/10f_result_rewards.png)
-![WARNING 카드와 재도전 말풍선](images/10g_warning_retry.png)
-![X2 재도전 배지](images/10h_retry_badge.png)
-![배 소환](images/18a_boat_summon.png)
-![엔진 START/STOP](images/18b_boat_engine.png)
+![RESULT 토스트·BONUS·이벤트 도장](images/10f_result_rewards.jpg)
+![WARNING 카드와 재도전 말풍선](images/10g_warning_retry.jpg)
+![X2 재도전 배지](images/10h_retry_badge.jpg)
+![배 소환](images/18a_boat_summon.jpg)
+![엔진 START/STOP](images/18b_boat_engine.jpg)
 
 ## 2. 이미 있던 것 (12·13 문서 등) — 클립으로 다시 확인
 

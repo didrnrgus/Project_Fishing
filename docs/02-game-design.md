@@ -3,7 +3,7 @@
 솔로 플레이용 청풍명월 리메이크. 이번 버전의 맵은 **한강(반포지구) 한 곳**이다. 해외 맵은 범위 밖이다.
 조작과 화면 구성은 원작 플레이 영상(2012년 한강 CH.4, 잉어 44.35cm)과 스크린샷을 프레임 단위로 보고 맞췄다. 자세한 비교는 [01-original-research.md](01-original-research.md#플레이-영상-분석)에 있다.
 
-![필드](images/01_field_morning.png)
+![필드](images/01_field_morning.jpg)
 
 ## 1. 핵심 루프
 
@@ -57,7 +57,7 @@
 
 ## 3. 캐스팅
 
-![캐스팅](images/02_casting.png)
+![캐스팅](images/02_casting.jpg)
 
 원작 흐름: 돌아다닐 때는 낚싯대를 들고 있지 않다. **던지고 싶은 물을 좌클릭** → 그쪽을 보고 낚싯대를 꺼내 든다 → 좌클릭을 누른 채 **아래로 내리면** 낚싯대가 어깨 너머로 올라가고 → 그대로 **위로 쭉 올리면** 낚싯대가 내려오며 던진다 (2026-10-20).
 
@@ -95,7 +95,7 @@
 - **길이**: `Lerp(min, max, rand^2.2)`. 대부분은 작고 가끔 크다. 어군 어종이면 지수가 큰 어군 1.7, 작은 어군 2.0이라 큰 고기가 더 잘 나온다.
 
 ### 찌 클로즈업 게이지
-![챔질 게이지](images/04_bite_gauge.png)
+![챔질 게이지](images/04_bite_gauge.jpg)
 
 원작 안내문: *"왼쪽 버튼을 누른 상태로 좌우로 흔들어 챔질하세요. 물에 완전히 잠겼을 때 흔들면 퍼펙트"*
 
@@ -134,7 +134,7 @@
 - **두근두근**: 대물(대물 기준 길이 이상)이거나 ★4 이상이면 하트가 뛰고 심장 소리가 난다.
 - 챔질에 성공하면 1인칭으로 컷: 크롬 `HIT`가 크게 찍혀 0.45초 만에 작아지며 사라지고, 그 자리에 등급(`PERFECT!!!` 등)이 주황 빛무리와 함께 터진다.
 
-![PERFECT](images/05_hook_perfect.png)
+![PERFECT](images/05_hook_perfect.jpg)
 
 ## 4-1. 낚시법: 루어 · 플라이 · 트롤링
 
@@ -150,11 +150,11 @@
 - 루어 대기 중에는 찌 게이지가 없고, 입질이 오면 평소처럼 좌우로 흔들어 챔질한다.
 - 루어를 무는 어종: 쏘가리·배스·농어·광어·고등어·참돔 … (`FishSpecies.Baits`에 Lure), 에기는 주꾸미·갑오징어, 플라이는 피라미·끄리·강준치·블루길.
 
-![루어 액션](images/05c_lure_action.png)
+![루어 액션](images/05c_lure_action.jpg)
 
 ## 5. 파이팅 (`FishFight`)
 
-![파이팅](images/06_fight.png)
+![파이팅](images/06_fight.jpg)
 
 원작 HUD 배치를 따른다.
 - 왼쪽 위: 파이팅 레벨 링. 가운데 릴 손잡이는 감을 때 돈다. 위험할 때와 카운터 찬스에는 빨갛게 바뀐다.
@@ -251,7 +251,7 @@ dmg/s = 8 × 낚싯대 힘 × 구간 배율 × (0.6 + 0.8 × opposition) × 체�
 **하이텐션(주황 구간)을 유지하는 게 핵심**이다. 빨강 구간은 데미지가 가장 크지만 곧 끊어진다.
 
 ### 카운터
-![카운터 찬스](images/07_counter_chance.png)
+![카운터 찬스](images/07_counter_chance.jpg)
 
 원작 안내문: *"화살표 방향으로 낚시대를 빠르게 당겨주세요! 카운터로 질주하는 물고기를 멈출 수 있어요."*
 
@@ -261,7 +261,7 @@ dmg/s = 8 × 낚싯대 힘 × 구간 배율 × (0.6 + 0.8 × opposition) × 체�
 - 효과: `MaxHP × (0.07 + 0.02 × Combo) × 낚싯대 힘` 데미지, Combo +1(최대 5), 물고기 1.3초 휴식, 방향 반전, 장력 ×0.6
 - 연출 (원작 0:46.3~0:47.3): 집중선이 번쩍이고 화면을 덮는 **먹색 `COUNTER`**가 0.2초 만에 쪼그라들며 흰색 → 금색으로 바뀌어 1초쯤 머문다(콤보면 작게 `xN`). 카메라 흔들림, 큰 물보라, 큰 주황 데미지 숫자, 효과음
 
-![카운터](images/08_counter.png)
+![카운터](images/08_counter.jpg)
 
 ### 포커싱 (Q) — 원작 파이팅 스킬
 원작(게임메카 빙고·포커싱 기사): *일정 시간 텐션 이동 속도 감소 + 물고기에게 주는 데미지 증가, 접속 유지 20분마다 1회.*
@@ -283,14 +283,14 @@ dmg/s = 8 × 낚싯대 힘 × 구간 배율 × (0.6 + 0.8 × opposition) × 체�
 | 줄 다 풀림 | Distance > 감긴 줄 (릴 권사량 − 끊겨 잃은 줄) |
 
 ### 실패 페널티와 재도전 (원작 WARNING · 복수혈전, 15 문서)
-![경고와 재도전](images/10g_warning_retry.png)
+![경고와 재도전](images/10g_warning_retry.jpg)
 
 - 놓치면 화면 위쪽에 원작 경고 카드(흰 종이, 빨강·검정 빗금 띠, 빨간 삼각 WARNING): `낚싯대 내구도 감소 : 1.00 %  릴 내구도 감소 : 2.00 %  줄 길이 감소 : 7.00m`. 줄 길이는 줄이 끊겼을 때만 준다(감긴 줄은 권사량의 40% 아래로는 안 준다). 시스템 줄 `○○을 놓쳤습니다.`
 - 릴 내구도 0이면 릴 속도 −20%, 낚싯대 내구도 0이면 데미지 절반. 수리(상점·가방)는 1%당 8골드 ×2(낚싯대·릴) + 잃은 줄 1m당 12골드.
 - 이어서 오른쪽 아래 **`재도전 하시겠습니까?`** 말풍선(10초). 누르면 오른쪽 위 `★ X2 재도전` 배지가 붙고, 그 낚시터에서 다음 입질은 **놓친 그 고기**(같은 어종·같은 길이, 기다림 ×0.5). 다시 낚으면 RESULT에 `복수혈전` 토스트와 EXP ×2. 재도전 중인 고기를 또 놓치면 X3 → X5.
 
 ### 랜딩 찬스
-![랜딩](images/09_landing.png)
+![랜딩](images/09_landing.jpg)
 
 원작 안내문: *"랜딩 찬스! SPACE BAR를 빠르게 누르거나, 마우스 왼쪽 버튼을 빠르게 클릭하세요."*
 
@@ -302,10 +302,10 @@ dmg/s = 8 × 낚싯대 힘 × 구간 배율 × (0.6 + 0.8 × opposition) × 체�
 - 0m에 닿으면 성공. 5.5m 밖으로 밀려나면 다시 파이팅으로 돌아간다.
 - **성공 연출** (`FishingController.LandedSequence`, 원작 1:53~1:56): ① 하얀 물보라가 터지고 1인칭 그대로 낚싯대를 세워 들며 시선이 위로 따라간다(1.3초) ② 하얗게 번쩍인 뒤 3인칭 옆모습: 치켜든 낚싯대 줄 끝에 고기가 대롱대롱, 0.55초에 왼손으로 잡는다 ③ RESULT.
 
-![들어 올리기](images/09c_lift.png) ![줄 끝의 고기](images/09d_catch.png)
+![들어 올리기](images/09c_lift.jpg) ![줄 끝의 고기](images/09d_catch.jpg)
 
 ### RESULT
-![결과](images/10_result.png)
+![결과](images/10_result.jpg)
 
 - 원작처럼 화면을 어둡게 덮지 않는다 (아래쪽만 옅은 그늘). 파이팅 기록 차트는 원작에 없어 뺐다.
 - **55cm 이하 고기**(`FishingController.HoldableCatch`): 정면 가까이(`CameraRig.ShotKind.Show`)에서 캐릭터가 오른손엔 낚싯대, **왼손으로 고기를 들어 보인다** (`PlayerController.HoldFish`, 왼팔 2관절 IK).
@@ -314,7 +314,7 @@ dmg/s = 8 × 낚싯대 힘 × 구간 배율 × (0.6 + 0.8 × opposition) × 체�
 - 비스듬한 흰 `RESULT` 제목, 개인 신기록 표시. 처음 낚은 어종이면 원작처럼 **`★ FIRST GET!`**
 - 오른쪽 아래: 어종 이름(초록), `EXP`, `cm`, `kg`, 희귀도 색 엠블럼. 대물이면 오른쪽에 **동그란 구릿빛 도장** `대물 / EXP+100%`이 굴러 들어와 찍힌다
 
-![손에 든 고기](images/10b_result_held.png)
+![손에 든 고기](images/10b_result_held.jpg)
 - `[살림망에 넣기 (판매가)]` `[방생하기 (EXP+30%)]`
 - **원작 RESULT 보강** (`Core/CatchRewards.cs`, 15 문서): 무게 아래 `파이팅 시간 1분 7초`, 어종 이름은 등급 색(초급 초록 · 중급 파랑 · 고급 보라)과 등급 칩.
   - 오른쪽 위 말풍선 토스트(최대 3개, 차례로 미끄러져 들어온다). 노랑 보상형: 복수혈전 · 첫 월척 물고기 · N가지 물고기 · 첫 고급 물고기(오늘) · 중급 물고기 10마리(오늘) · [업적] 조준 업적 단계. 하늘색 기록형: 연속 색깔 맞추기 · 연속 공격!(카운터 최다) · 최고 기록.
@@ -322,7 +322,7 @@ dmg/s = 8 × 낚싯대 힘 × 구간 배율 × (0.6 + 0.8 × opposition) × 체�
   - **오늘의 이벤트 어종**: 낚시터마다 게임 하루 한 종(희귀도 1~3, 보스 제외)이 EXP ×3, 파란 `이벤트 EXP+200%` 도장.
   - 시스템 줄: `[잉어] 72.40 cm, 5.31 kg 을 잡았습니다.` `1,011 EXP 를 획득했습니다.` + 보상 토스트마다 EXP·GOLD 줄.
 
-![RESULT 토스트](images/10f_result_rewards.png)
+![RESULT 토스트](images/10f_result_rewards.jpg)
 
 ## 6. 캐릭터 체력
 
@@ -458,10 +458,10 @@ dmg/s = 8 × 낚싯대 힘 × 구간 배율 × (0.6 + 0.8 × opposition) × 체�
   - **미니맵**(원작에는 없다): 그 어종 아이콘을 검게 칠한 실루엣이 헤엄치는 쪽을 보고 움직이고, 둘레에 숨 쉬듯 빛나는 고리 — 퀘스트 고기면 금빛 고리 + `!`, 아니면 물빛 고리 + `?`. 지역 지도(M)에도 실제 자리와 남은 시간(나타났을 때만 목록에 적는다).
   - **입질**: 찌가 실루엣 둘레(반지름 3.9m) 안에 떨어지면 그 어군으로 친다(칸이 아니라 실루엣 둘레). 그 고기는 희귀도·서식지와 상관없이 무게 3(흔한 고기 셋만큼, `BiteSelector.ShadowWeight`) — 맞는 미끼·시간이면 입질의 절반쯤, 미끼가 안 맞으면 ×0.15. 대기 ×0.45, 큰 고기가 잘 나온다(길이 지수 1.2). 걸리면 파이팅 동안 실루엣이 사라지고, 놓치면 반대쪽으로 다시 어슬렁거린다, 낚으면 사라진다. (`FishSchoolManager.TryShadow`·`SwimShadow`, `FishShadowFx`, `HudView.UpdateShadowMark`)
 
-![물속 그림자](images/01c_fish_shadow.png)
+![물속 그림자](images/01c_fish_shadow.jpg)
 - **지역 지도 (M)**: 원작의 지역 지도(홍현 앞바다 A~H/1~8 격자)처럼 A~F/1~4 칸을 서식지 색으로 칠하고, 칸 이름·서식지, 동작대교·낚시 데크·낚시점, 어군(큰/작은, 남은 마릿수, 다시 모이기까지 남은 시간), 내 위치(▲)와 찌(●), 찌가 있는 칸을 보여 준다. (`AreaMapPanel`)
 
-![지역 지도](images/17_area_map.png)
+![지역 지도](images/17_area_map.jpg)
 
 ## 9-4. NPC와 퀘스트 보고
 
@@ -490,7 +490,7 @@ NPC에게 다가가면 `[F] ○○과/와 대화` 안내가 뜬다. 대화하는
 - 실패: 보통은 재료만 잃고, **+7 이상에서 실패하면 10% 확률로 한 단계 떨어진다**.
 - 강화한 장비는 상점·강화 창에 `+N`으로 표시된다.
 
-![강화](images/21_rod_upgrade.png)
+![강화](images/21_rod_upgrade.jpg)
 
 ## 9-2. 배
 
@@ -515,7 +515,7 @@ NPC에게 다가가면 `[F] ○○과/와 대화` 안내가 뜬다. 대화하는
   - **소환 연출** (원작 클립 `03_배_소환_탑승_출항`): 그 자리에서 바다 쪽 10~26m에 배가 나타나 물보라를 끌며 2.4초 만에 달려오고, 마지막에 속도를 줄이며 180° 돌아 바다 쪽을 보고 선다. 그동안 캐릭터는 물가에서 기다리다 뱃머리로 탄다. 달려올 물길이 없으면 바로 띄운다.
 - **엔진 (Y)**: 타면 시동이 꺼져 있다. Y로 START → 달릴 수 있고, 다시 Y로 STOP(1.5m/s 아래에서만) → 뱃머리에서 낚시. 시동이 걸린 채로는 던질 수 없다. 계기판 왼쪽 둥근 `ENGINE START/STOP [Y]` 버튼(마우스로도 누른다). 돛단배는 엔진이 없고, 연료가 떨어지면 노로 간다.
 
-![배 소환](images/18a_boat_summon.png) ![엔진 버튼](images/18b_boat_engine.png)
+![배 소환](images/18a_boat_summon.jpg) ![엔진 버튼](images/18b_boat_engine.jpg)
 - **운전**: W 가속, S 감속·후진(최고 속도의 40%), A/D 방향(빠를수록 잘 돈다). 몸통이 둑·교각·데크에 걸리면 부딪혀서 튕긴다(물보라, 카메라 흔들림). 달리면 운전석에 앉고(Driving 애니메이션), 카메라가 배 뒤로 천천히 돈다.
 - **연료**: 엔진으로 달린 거리만큼 `연비`에 따라 준다. 다 떨어지면 노를 저어 1.2m/s로만 간다. 낚시점 "배 연료 채우기"로 L당 30골드.
 - **낚시**: 엔진을 끄고 멈추면 뱃머리에 서서 평소처럼 캐스팅한다. 낚시 중에는 배가 움직이지 않는다. W/S/A/D를 누르면 찌를 거두고 다시 운전한다.
@@ -523,9 +523,9 @@ NPC에게 다가가면 `[F] ○○과/와 대화` 안내가 뜬다. 대화하는
 - **내리기 (B)**: 속도를 1.5m/s 아래로 줄이고 물가에 대면, 배 둘레 6m 안에서 가장 가까운 둔치·데크로 내린다. 대기실로 나가면 배를 띄웠던 둔치로 돌아간다. 배 위에서 저장하면 위치는 배를 띄운 둔치로 저장된다.
 - **연출**: 파도에 따라 오르내리고 기울며, 빠를수록 뱃머리가 들린다. 뒤로 하얀 물보라 꼬리(TrailRenderer)와 파문, 빠를 때 뱃머리 물보라, 엔진 소리(속도에 따라 높아짐). HUD 오른쪽 아래에 SPEED(km/h)·FUEL(L) 원형 계기판.
 
-![배](images/18_boat_drive.png)
-![돛단배](images/39_seocheon_sail.png)
-![크루저](images/40_seocheon_cruiser.png)
+![배](images/18_boat_drive.jpg)
+![돛단배](images/39_seocheon_sail.jpg)
+![크루저](images/40_seocheon_cruiser.jpg)
 
 ## 9-3. 초상화
 
@@ -537,19 +537,19 @@ HUD 왼쪽 위 초상화는 그림이 아니라 **내 캐릭터를 비추는 두
 - 화면(`LobbyView`): 가운데 위 판 없는 흰 글씨 `한국 낚시 조합`, 오른쪽 위 검은 판 `대기실  한국 낚시 조합` + 시계, 그 밑 양피지·놋쇠 판 `연속출석 N일` 도장 7칸 + `일일 도전과제` 3칸.
 - 오른쪽 아래 버튼 (원작 남색 금속 버튼 300×56, `UIFactory.ClassicButton`): **낚시터 선택하기** / 퀘스트 / **납품**(납품 창, 13-10) / 거점 이동하기(해외 거점은 아직 없음 안내). 그 위에 솔로판에 더한 반 폭 두 칸 **수족관** · **옷 바꾸기**(다른 VRM 옷을 무작위로, `OutfitChanger`, 받는 동안 `받는 중…`).
 - **ESC 메뉴** (`EscMenuPanel`, 원작 2:50): 뒤 화면이 흐려지고, 가운데 폭 256px 검은 세로 띠(양옆 가는 선) 안에 228×48 금속 버튼 `게임으로 돌아가기 RESUME GAME` — 한 칸 띄우고 — `옵션 OPTION` / `시작 위치로 가기 STARTING POINT` / `낚시터 나가기 EXIT FISHING AREA`, 그 아래 옅은 칭호·이름 두 줄, 맨 아래 주황 `게임 종료 EXIT GAME`. 원작의 `서버선택`은 뺐다. 대기실에서는 시작 위치·낚시터 나가기가 흐리게 꺼진다. 열린 창이 있으면 Esc는 창만 닫는다.
-- **파이팅 중 Esc** (`FightQuitPanel`, 2026-10-30 사용자 요청): ESC 메뉴 대신 흐린 화면 위 가로 띠에 `파이팅을 그만두시겠습니까?` + `계속하기 CONTINUE` / 주황 `그만두기 GIVE UP`. 열린 동안 `FishingController.FightPaused`로 파이팅을 멈추고 마우스 잠금을 풀었다가 계속하면 되돌린다. 그만두기는 `FightOutcome.GaveUp` → 다른 실패와 같은 WARNING 카드("파이팅을 그만두었습니다"). ![파이팅 그만두기 창](images/06e_fight_quit.png)
+- **파이팅 중 Esc** (`FightQuitPanel`, 2026-10-30 사용자 요청): ESC 메뉴 대신 흐린 화면 위 가로 띠에 `파이팅을 그만두시겠습니까?` + `계속하기 CONTINUE` / 주황 `그만두기 GIVE UP`. 열린 동안 `FishingController.FightPaused`로 파이팅을 멈추고 마우스 잠금을 풀었다가 계속하면 되돌린다. 그만두기는 `FightOutcome.GaveUp` → 다른 실패와 같은 WARNING 카드("파이팅을 그만두었습니다"). ![파이팅 그만두기 창](images/06e_fight_quit.jpg)
 - **낚시터 목록** (원작 화면 그대로): 왼쪽에 KOREA 지명 목록과 한국 지도 마커, 아래 방 목록(No.001~005, CH.1~5), 오른쪽에 MAP INFO(그 낚시터 어종 중 도감에 기록한 비율), FISH INFO(어종 아이콘 넘기기 — 못 낚은 어종은 검은 실루엣, 개인 기록), 버튼 빠른입장·방만들기(비활성)·입장하기·나가기. **11곳 모두 열려 있고** 입장 레벨로 막는다(아직 못 가는 곳은 이름 옆 `Lv.N`). (`FishingAreaPanel`, `KoreaMap`, `FishingAreas`)
 
-![낚시터 목록](images/53_area_list_all.png)
+![낚시터 목록](images/53_area_list_all.jpg)
 - 필드 HUD 시계 패널의 `↩ 조합` 버튼으로 대기실로 돌아온다. 파이팅·결과 중에는 나갈 수 없고, 던져 둔 찌는 거둔다.
 
-![대기실](images/00a_lobby.png)
+![대기실](images/00a_lobby.jpg)
 
 ## 9-7. 홍현 앞바다 (남해, Lv.5) — `HonghyeonMap.cs`, `SeaTerrain.cs`
 
 | 낮 | 다랭이 마을 | 갯바위 섬 |
 |---|---|---|
-| ![홍현](images/22_honghyeon_day.png) | ![마을](images/22b_honghyeon_village.png) | ![섬](images/22c_honghyeon_island.png) |
+| ![홍현](images/22_honghyeon_day.jpg) | ![마을](images/22b_honghyeon_village.jpg) | ![섬](images/22c_honghyeon_island.jpg) |
 
 - 원작 지역 지도처럼 **A~H열 × 1~8행** 격자. Lv.5가 되면 고무보트를 받고 입장할 수 있다.
 - 남쪽 해안: 다랭이논 계단 비탈 아래 어촌·포구·낚시점(최사장), 갯바위 해안(Unity Terrain, Poly Haven CC0 텍스처).
@@ -558,7 +558,7 @@ HUD 왼쪽 위 초상화는 그림이 아니라 **내 캐릭터를 비추는 두
 - **자이언트 그루퍼**(자바리) 어군: 저녁 C4, 아침 E3 (원작 공략 그대로). 바다 이야기 퀘스트 5개.
 - 원작 잡동사니: 통발·나무 상자·생선 캔·로봇 물고기.
 
-![홍현 지도](images/24_honghyeon_map.png)
+![홍현 지도](images/24_honghyeon_map.jpg)
 
 ## 9-6. 서천 앞바다 (서해, Lv.6) — `SeocheonMap.cs`
 
@@ -582,11 +582,11 @@ HUD 왼쪽 위 초상화는 그림이 아니라 **내 캐릭터를 비추는 두
 - **대회**: 한강 → 서천 → 홍현 순서, 사이사이 해안 낚시터 지역 대회 (13-1).
 - NPC: 어촌계 이계장(조합 연락관), 서천 낚시점 박사장, 주꾸미 아줌마, 갑오징어 헌터, 동백정 할아버지.
 
-![홍원항](images/34_seocheon_harbor.png)
-![썰물 갯벌](images/35_seocheon_lowtide.png)
-![동백정](images/36_seocheon_pavilion.png)
-![서해 노을](images/36b_seocheon_sunset.png)
-![주꾸미](images/38_seocheon_result.png)
+![홍원항](images/34_seocheon_harbor.jpg)
+![썰물 갯벌](images/35_seocheon_lowtide.jpg)
+![동백정](images/36_seocheon_pavilion.jpg)
+![서해 노을](images/36b_seocheon_sunset.jpg)
+![주꾸미](images/38_seocheon_result.jpg)
 
 ## 9-8. 해안 낚시터 9곳 — `World/CoastMap.cs`, `World/KoreaCoasts.cs`
 
@@ -614,17 +614,17 @@ HUD 왼쪽 위 초상화는 그림이 아니라 **내 캐릭터를 비추는 두
 
 | 영흥도 목섬과 영흥대교 (새벽 해무) | 태안 할미·할아비바위 |
 |---|---|
-| ![영흥도](images/43b_yeongheung_fog.png) | ![태안](images/44b_taean_noon.png) |
+| ![영흥도](images/43b_yeongheung_fog.jpg) | ![태안](images/44b_taean_noon.jpg) |
 | **삼척 밤바다 오징어배 집어등** | **동해 등대섬** |
-| ![삼척](images/45b_samcheok_night.png) | ![등대섬](images/46_deungdae_lighthouse.png) |
+| ![삼척](images/45b_samcheok_night.jpg) | ![등대섬](images/46_deungdae_lighthouse.jpg) |
 | **헌화로 절벽과 진달래** | **욕지도 가두리 낚시터** |
-| ![헌화로](images/47_heonhwa_road.png) | ![욕지도](images/48_yokji_farm.png) |
+| ![헌화로](images/47_heonhwa_road.jpg) | ![욕지도](images/48_yokji_farm.jpg) |
 | **청진포구 명태 덕장** | **거문도 등대** |
-| ![청진](images/49b_cheongjin_racks.png) | ![거문도](images/50_geomun_lighthouse.png) |
+| ![청진](images/49b_cheongjin_racks.jpg) | ![거문도](images/50_geomun_lighthouse.jpg) |
 | **제주 서귀포항 (돌하르방·한라산)** | **제주 주상절리·외돌개** |
-| ![제주](images/54_jeju_harbor.png) | ![주상절리](images/54b_jeju_oedolgae.png) |
+| ![제주](images/54_jeju_harbor.jpg) | ![주상절리](images/54b_jeju_oedolgae.jpg) |
 
-![방어 결과](images/51b_coast_result.png)
+![방어 결과](images/51b_coast_result.jpg)
 
 ## 9-9. 해외 거점 — `World/OverseasCoasts.cs`, `World/CoastWorldOverseas.cs`, `World/Maps/*.cs`
 
@@ -663,31 +663,31 @@ HUD 왼쪽 위 초상화는 그림이 아니라 **내 캐릭터를 비추는 두
 
 | 하롱베이 | 하롱베이 석회암 봉우리 |
 |---|---|
-| ![하롱베이](images/55_halong_bay.png) | ![봉우리](images/55b_halong_karst.png) |
+| ![하롱베이](images/55_halong_bay.jpg) | ![봉우리](images/55b_halong_karst.jpg) |
 | **산토리니 이아 절벽** | **산토리니 칼데라 노을** |
-| ![산토리니](images/56_santorini_cliff.png) | ![칼데라](images/56b_santorini_caldera.png) |
+| ![산토리니](images/56_santorini_cliff.jpg) | ![칼데라](images/56b_santorini_caldera.jpg) |
 | **나일강 강변** | **나일강 노을** |
-| ![나일강](images/57_nile_bank.png) | ![나일강 노을](images/57b_nile_sunset.png) |
+| ![나일강](images/57_nile_bank.jpg) | ![나일강 노을](images/57b_nile_sunset.jpg) |
 | **앙코르와트 해자** | **앙코르와트 노을** |
-| ![앙코르와트](images/58_angkor_moat.png) | ![앙코르 노을](images/58b_angkor_lotus.png) |
+| ![앙코르와트](images/58_angkor_moat.jpg) | ![앙코르 노을](images/58b_angkor_lotus.jpg) |
 | **빈펄 바다 위 정자·케이블카** | **돈콘 수상 마을** |
-| ![빈펄](images/59b_vinpearl_gazebo.png) | ![돈콘](images/60_donkhone_village.png) |
+| ![빈펄](images/59b_vinpearl_gazebo.jpg) | ![돈콘](images/60_donkhone_village.jpg) |
 | **푸켓 팡아만** | **푸켓 하얀 대불** |
-| ![푸켓](images/61_phuket_bay.png) | ![대불](images/61b_phuket_buddha.png) |
+| ![푸켓](images/61_phuket_bay.jpg) | ![대불](images/61b_phuket_buddha.jpg) |
 | **방콕 왓 아룬 새벽** | **방콕 밤** |
-| ![왓 아룬](images/62_bangkok_watarun.png) | ![방콕 밤](images/62b_bangkok_night.png) |
+| ![왓 아룬](images/62_bangkok_watarun.jpg) | ![방콕 밤](images/62b_bangkok_night.jpg) |
 | **코사무이 황금 대불** | **랑카위 독수리 광장** |
-| ![코사무이](images/63_kohsamui_buddha.png) | ![랑카위](images/64_langkawi_eagle.png) |
+| ![코사무이](images/63_kohsamui_buddha.jpg) | ![랑카위](images/64_langkawi_eagle.jpg) |
 | **랑카위 맹그로브** | **센토사 머라이언** |
-| ![맹그로브](images/64c_langkawi_mangrove.png) | ![머라이언](images/65_sentosa_merlion.png) |
+| ![맹그로브](images/64c_langkawi_mangrove.jpg) | ![머라이언](images/65_sentosa_merlion.jpg) |
 | **센토사 마리나 야경** | **텔록 바텍 노을** |
-| ![마리나](images/65b_sentosa_skyline.png) | ![텔록 바텍](images/66_telokbatek_village.png) |
+| ![마리나](images/65b_sentosa_skyline.jpg) | ![텔록 바텍](images/66_telokbatek_village.jpg) |
 | **티오만 리조트** | **탱글 바다 별장** |
-| ![티오만](images/67b_tioman_beach.png) | ![탱글](images/68_tenggol_deck.png) |
+| ![티오만](images/67b_tioman_beach.jpg) | ![탱글](images/68_tenggol_deck.jpg) |
 | **크레타 하니아 항구** | **크레타 하얀 산** |
-| ![하니아](images/69_crete_harbor.png) | ![레프카 오리](images/69b_crete_mountains.png) |
+| ![하니아](images/69_crete_harbor.jpg) | ![레프카 오리](images/69b_crete_mountains.jpg) |
 | **자킨토스 나바지오** | **듀덴 폭포** |
-| ![나바지오](images/70_zakynthos_navagio.png) | ![듀덴](images/71_duden_falls.png) |
+| ![나바지오](images/70_zakynthos_navagio.jpg) | ![듀덴](images/71_duden_falls.jpg) |
 
 ## 10. 시간과 날씨
 
@@ -712,7 +712,7 @@ HUD 왼쪽 위 초상화는 그림이 아니라 **내 캐릭터를 비추는 두
 - **겨울 한강**: 남쪽 둔치 앞 강물 35m가 얼고(`SeasonFx.HanIce`), 둔치에 눈이 덮인다. 얼음 위로 걸어 들어가 **좌클릭하면 낚싯대를 꺼내 들고, 누른 채 살짝 내리면 발 앞에 구멍을 뚫고 채비를 내린다**(휘두르는 캐스팅·5m 실패 판정 없음, 2026-10-20 — 예전엔 클릭 즉시 내렸다). 얼음 구멍에서는 빙어가 주인공(8배), 다른 고기는 0.2배. 감을 줄이 없어 누르고 좌우로 흔들면 바로 챔질. 배는 얼음으로 못 나간다.
 - 업적 「얼음 위의 겨울」(빙어).
 
-![겨울 얼음낚시](images/41_winter_ice.png)
+![겨울 얼음낚시](images/41_winter_ice.jpg)
 
 ## 11. 어종 (224종 + 잡동사니 6종)
 
@@ -950,7 +950,7 @@ HUD 왼쪽 위 초상화는 그림이 아니라 **내 캐릭터를 비추는 두
 
 ## 12. 도감
 
-![도감](images/11_dex.png)
+![도감](images/11_dex.jpg)
 
 - 1마리: 이름, 학명, 성질, 낚은 수, 최대 기록, 길이 범위, **찌 패턴·파이팅 패턴과 요령**
 - 3마리: 선호 미끼 공개
@@ -1027,7 +1027,7 @@ HUD 왼쪽 위 초상화는 그림이 아니라 **내 캐릭터를 비추는 두
 
 ## 13-2. 일일 의뢰 · 대물 도전 · 업적 · 소라고동 (`QuestSystem`, `AchievementDatabase`)
 
-![일일 의뢰](images/13b_daily.png)
+![일일 의뢰](images/13b_daily.jpg)
 
 - **일일 의뢰(일일반복)**: 게임 하루가 바뀌면 가 본 낚시터에서 3개를 새로 만든다 — ① 어종 2~3마리 ② 서식지에서 3마리 ③ 어종 일정 길이 이상 1마리. 보상 골드 1,200~ · 경험치 80~ (희귀도·종류에 따라) + 소라고동 1 + 그 낚시터 지역 교환 재화 1(한국 나팔고동 · 해외 황금거거, 13-11). 원작처럼 그 낚시터 조합 연락관에게 수락하고, 채우면 다시 가서 완료한다(13장). 퀘스트 창(L) `이야기·의뢰` 탭에 오늘 것.
 - **대물 도전**: 어종마다 대물 기준을 처음 넘기면 경험치 ×2와 소라고동 3개, 그 낚시터 지역 교환 재화 2개(나팔고동·황금거거).
@@ -1095,7 +1095,7 @@ HUD 왼쪽 위 초상화는 그림이 아니라 **내 캐릭터를 비추는 두
 
 ## 13-6. 빙고 (퀘스트 창 [빙고·출석], `Core/Bingo.cs`)
 
-![빙고](images/13e_bingo.png)
+![빙고](images/13e_bingo.jpg)
 
 원작(게임메카): 퀘스트로 빙고판을 받고, 25개 미션(랜딩으로 낚기·수족관 먹이·방생 …)을 채워 **3줄 이상**이면 나팔고둥·황금거거로 바꾸는 보상.
 - 5×5 판. 가운데 FREE, 어종 17칸(지금 레벨로 갈 수 있는 낚시터의 희귀도 1~3 어종, 칸에 아이콘과 사는 곳), 나머지는 **방생하기 · 콤보 3 이상으로 낚기 · 수족관에 먹이 주기**(Lv.5부터) · 아무 고기 Ncm 이상 · 아무 대물.
@@ -1108,11 +1108,11 @@ HUD 왼쪽 위 초상화는 그림이 아니라 **내 캐릭터를 비추는 두
 - **출석 체크** (원작: 요일별 미끼·액세서리·음식, 7일이면 추첨으로 특수 배 「블랙스피어」): **실제 날짜**로 하루에 한 번, 게임을 켜면 도장. 건너뛴 날이 있어도 모은 칸은 그대로. 1일 김밥 3 · 2일 지렁이 30 · 3일 보온병 믹스커피 2 · 4일 반짝이는 비늘 10 · 5일 바다 도시락 2 · 6일 별모래 1 · **7일 블랙스피어**(속도 15, 연료 45L, 검은 고속정 — 이미 있으면 15,000골드). 그다음은 다시 1일부터.
 - **낚시 일지** (원작 파이널 CBT의 "일지"): 처음 만난 어종 · 대물 · 희귀도 4 이상 · 괴물 어종 · 레벨 업 · 이야기 퀘스트 · 대회 결과 · 출석 · 빙고를 게임 날짜·시각과 함께 적는다. 최근 300줄, 날짜별로 묶어 최신 순.
 
-![일지](images/13f_journal.png)
+![일지](images/13f_journal.jpg)
 
 ## 13-8. 히든·포식자 어군·물속 그림자 (지역 지도)
 
-![히든·포식자 어군·물속 그림자](images/17b_hidden_predator.png)
+![히든·포식자 어군·물속 그림자](images/17b_hidden_predator.jpg)
 
 ## 13-3. 내 캐릭터 창과 의상 (C, `CharacterPanel`, `CostumeDatabase`)
 
@@ -1129,7 +1129,7 @@ HUD 왼쪽 위 초상화는 그림이 아니라 **내 캐릭터를 비추는 두
 
 ### 의상
 
-![의상](images/21c_costume.png)
+![의상](images/21c_costume.jpg)
 
 - 원작은 의상 100~200종, 일부에 능력치(선글라스 HP 조금 등). 솔로판은 **6부위**(모자·안경·상의·조끼·하의·신발) **25벌**(+ 벗기 3), 부위마다 능력치: 최대 체력 +, 대물 확률 +%, 파이팅 데미지 +%, 카운터 데미지 +%, 비거리 +m, 체력 소모 -%.
 - 옷은 진짜 메쉬(`tools/blender` → Angler FBX): 반팔·긴팔·체크 남방(깃·단추)·래시가드, 낚시조끼·구명조끼, 카고·청바지·웨이더, 운동화·장화, 벙거지·야구모자·밀짚모자, 선글라스. 내 캐릭터는 원작 1인칭처럼 검정 반장갑(주황 손목띠). 무늬: 무지·체크·데님·줄무늬.
@@ -1137,7 +1137,7 @@ HUD 왼쪽 위 초상화는 그림이 아니라 **내 캐릭터를 비추는 두
 
 ## 13-4. 수족관 (대기실, `Aquarium`)
 
-![수족관](images/28_aquarium.png)
+![수족관](images/28_aquarium.jpg)
 
 - 원작처럼 낚은 물고기를 대기실 수조에 넣으면(최대 6마리) 실제로 헤엄친다. 산호·해초 장식 8개까지.
 - 게임 시간 8시간이면 배가 다 고파진다. 가방의 미끼 1개로 한 마리를 배불리면 경험치를 조금 얻는다.
@@ -1175,7 +1175,7 @@ HUD 왼쪽 위 초상화는 그림이 아니라 **내 캐릭터를 비추는 두
 - 모양: 장비마다 마을 색(데이터 `LookMain`·`LookAccent`)으로 낚싯대 블랭크·링, 릴 몸통·테를 칠한다(`TelescopicRod` 기본 갈래, 아이콘은 `build_icons.py`가 같은 줄을 읽는다). 나팔고동 릴·황금거거 낚싯대는 예전 모양 그대로.
 - 전체 표·레벨 곡선·밸런스 검토: [18-gear-table.md](18-gear-table.md).
 
-![마을 장비 아이콘](images/72_village_trade_icons.png)
+![마을 장비 아이콘](images/72_village_trade_icons.jpg)
 
 ## 13-10. 납품소 · 납품 게이지 · 생태조사 (`Core/Delivery.cs`, `Core/EcoSurvey.cs`, `UI/DeliveryPanel.cs`, `World/DeliveryKiosk.cs`)
 

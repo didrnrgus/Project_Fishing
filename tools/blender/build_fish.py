@@ -4,8 +4,8 @@
   python -I tools/blender/build_fish.py                    # 32종 모두 FBX·텍스처·아이콘
   python -I tools/blender/build_fish.py --only carp        # 하나만 (쉼표로 여러 개)
   python -I tools/blender/build_fish.py --preview --only carp --out Screenshots/fish   # 미리보기 렌더 (옆·위·비스듬히)
-  python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.png         # 전체 어종 한 장 (도감용 확인)
-  python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.png --sheet-only   # 다시 만들지 않고 렌더해 둔 그림(Screenshots/fish/sheet)으로 시트만
+  python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.jpg         # 전체 어종 한 장 (도감용 확인)
+  python -I tools/blender/build_fish.py --sheet docs/images/32_fish_models.jpg --sheet-only   # 다시 만들지 않고 렌더해 둔 그림(Screenshots/fish/sheet)으로 시트만
   python -I tools/blender/build_fish.py --no-icons         # 아이콘 렌더 건너뛰기
 
 결과 (Unity):

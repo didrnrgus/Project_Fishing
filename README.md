@@ -10,105 +10,105 @@
 
 | 인트로: 제쓰로네 게임공방 | 타이틀: 짭풍명월 |
 |---|---|
-| ![company](docs/images/00_intro_company.png) | ![title](docs/images/00_intro_title.png) |
+| ![company](docs/images/00_intro_company.jpg) | ![title](docs/images/00_intro_title.jpg) |
 | **대기실 (한국 낚시 조합, 원작 방 그대로)** | **낚시터 목록** |
-| ![lobby](docs/images/00a_lobby.png) | ![areas](docs/images/00b_area_list.png) |
+| ![lobby](docs/images/00a_lobby.jpg) | ![areas](docs/images/00b_area_list.jpg) |
 | **캐릭터 (VRM, 기본 주인공 여자)** | **의상 (능력치만 — 몸에 보이는 장비는 낚싯대뿐)** |
-| ![character](docs/images/00_character.png) | ![costume](docs/images/21c_costume.png) |
+| ![character](docs/images/00_character.jpg) | ![costume](docs/images/21c_costume.jpg) |
 | **달리기 (Unity Starter Assets 동작)** | **점프** |
-| ![run](docs/images/00e_run.png) | ![jump](docs/images/00e2_jump.png) |
+| ![run](docs/images/00e_run.jpg) | ![jump](docs/images/00e2_jump.jpg) |
 | **다른 VRM으로 갈아입고 낚시 (기본 제공 11명 + 내가 만든 .vrm, 빌드 없이)** | **캐릭터 모델 고르기 (VRoid 등 .vrm, characters.json)** |
-| ![vrm](docs/images/02v_vrm_155.png) | ![vrm_panel](docs/images/21e_character_model.png) |
+| ![vrm](docs/images/02v_vrm_155.jpg) | ![vrm_panel](docs/images/21e_character_model.jpg) |
 | **홍현 앞바다 (남해)** | **서천 앞바다 (서해, 물때·갯벌)** |
-| ![honghyeon](docs/images/22_honghyeon_day.png) | ![seocheon](docs/images/35_seocheon_lowtide.png) |
+| ![honghyeon](docs/images/22_honghyeon_day.jpg) | ![seocheon](docs/images/35_seocheon_lowtide.jpg) |
 | **겨울 한강 얼음낚시** | **낚시 크루저 (먼바다)** |
-| ![winter](docs/images/41_winter_ice.png) | ![cruiser](docs/images/40_seocheon_cruiser.png) |
+| ![winter](docs/images/41_winter_ice.jpg) | ![cruiser](docs/images/40_seocheon_cruiser.jpg) |
 | **삼척 밤바다 (오징어배 집어등)** | **욕지도 가두리 낚시터** |
-| ![samcheok](docs/images/45b_samcheok_night.png) | ![yokji](docs/images/48_yokji_farm.png) |
+| ![samcheok](docs/images/45b_samcheok_night.jpg) | ![yokji](docs/images/48_yokji_farm.jpg) |
 | **동해 등대섬** | **청진포구 명태 덕장** |
-| ![deungdae](docs/images/46_deungdae_lighthouse.png) | ![cheongjin](docs/images/49b_cheongjin_racks.png) |
+| ![deungdae](docs/images/46_deungdae_lighthouse.jpg) | ![cheongjin](docs/images/49b_cheongjin_racks.jpg) |
 | **제주 서귀포 (돌하르방·한라산)** | **제주 주상절리·외돌개** |
-| ![jeju](docs/images/54_jeju_harbor.png) | ![columnar](docs/images/54b_jeju_oedolgae.png) |
+| ![jeju](docs/images/54_jeju_harbor.jpg) | ![columnar](docs/images/54b_jeju_oedolgae.jpg) |
 | **낚시터 목록 (한국·동남아·지중해·아프리카 거점 탭)** | **하롱베이 (석회암 봉우리·수상 마을)** |
-| ![areas_world](docs/images/53_area_list_all.png) | ![halong](docs/images/55_halong_bay.png) |
+| ![areas_world](docs/images/53_area_list_all.jpg) | ![halong](docs/images/55_halong_bay.jpg) |
 | **산토리니 (칼데라·방파제 테트라포드)** | **나일강 하류 (피라미드 노을)** |
-| ![santorini](docs/images/56b_santorini_caldera.png) | ![nile](docs/images/57b_nile_sunset.png) |
+| ![santorini](docs/images/56b_santorini_caldera.jpg) | ![nile](docs/images/57b_nile_sunset.jpg) |
 | **앙코르와트 (해자 건너 연꽃 봉오리 탑·사자상)** | **방콕 (강 건너 새벽 사원 왓 아룬)** |
-| ![angkor](docs/images/58b_angkor_lotus.png) | ![bangkok](docs/images/62_bangkok_watarun.png) |
+| ![angkor](docs/images/58b_angkor_lotus.jpg) | ![bangkok](docs/images/62_bangkok_watarun.jpg) |
 | **빈펄 (바다 위 초가 정자·케이블카)** | **푸켓 (팡아만 석회암 섬·하얀 대불)** |
-| ![vinpearl](docs/images/59b_vinpearl_gazebo.png) | ![phuket](docs/images/61b_phuket_buddha.png) |
+| ![vinpearl](docs/images/59b_vinpearl_gazebo.jpg) | ![phuket](docs/images/61b_phuket_buddha.jpg) |
 | **랑카위 (독수리 광장)** | **센토사 (마리나 야경·열기구)** |
-| ![langkawi](docs/images/64_langkawi_eagle.png) | ![sentosa](docs/images/65b_sentosa_skyline.png) |
+| ![langkawi](docs/images/64_langkawi_eagle.jpg) | ![sentosa](docs/images/65b_sentosa_skyline.jpg) |
 | **크레타 하니아 (베네치아 항구·하얀 산)** | **듀덴 폭포 (바다로 떨어지는 폭포)** |
-| ![crete](docs/images/69b_crete_mountains.png) | ![duden](docs/images/71_duden_falls.png) |
+| ![crete](docs/images/69b_crete_mountains.jpg) | ![duden](docs/images/71_duden_falls.jpg) |
 | **탄천 (보행교·탄천종합운동장·롯데월드타워)** | **탄천 밤 (등 축제·다리 LED)** |
-| ![tancheon](docs/images/72h_tancheon_footbridge.png) | ![tancheon_festival](docs/images/72g_tancheon_festival.png) |
+| ![tancheon](docs/images/72h_tancheon_footbridge.jpg) | ![tancheon_festival](docs/images/72g_tancheon_festival.jpg) |
 | **탄천 징검다리** | **탄천 야경** |
-| ![tancheon_stones](docs/images/72c_tancheon_stones.png) | ![tancheon_night](docs/images/72e_tancheon_night.png) |
+| ![tancheon_stones](docs/images/72c_tancheon_stones.jpg) | ![tancheon_night](docs/images/72e_tancheon_night.jpg) |
 | **코사무이 (바다 위 섬의 황금 대불)** | **자킨토스 (나바지오 난파선 해변)** |
-| ![kohsamui](docs/images/63_kohsamui_buddha.png) | ![zakynthos](docs/images/70_zakynthos_navagio.png) |
+| ![kohsamui](docs/images/63_kohsamui_buddha.jpg) | ![zakynthos](docs/images/70_zakynthos_navagio.jpg) |
 | **플라우 티오만 (곡선 리조트 호텔·보라 파라솔)** | **플라우 탱글 (바다 위 데크 별장)** |
-| ![tioman](docs/images/67b_tioman_beach.png) | ![tenggol](docs/images/68_tenggol_deck.png) |
+| ![tioman](docs/images/67b_tioman_beach.jpg) | ![tenggol](docs/images/68_tenggol_deck.jpg) |
 | **대기실 [옷 바꾸기] (다른 VRM의 옷을 무작위로, 웹에서 받아 입기도)** | **NPC도 VRM (사람마다 머리·옷 색이 다르다)** |
-| ![outfit](docs/images/00a2_outfit_random.png) | ![npc](docs/images/20_npc_dialog.png) |
+| ![outfit](docs/images/00a2_outfit_random.jpg) | ![npc](docs/images/20_npc_dialog.jpg) |
 | **한강 둔치 공원 (실사 활엽수·소나무·풀)** | **삼척 바닷가 (실사 바위·풀)** |
-| ![park](docs/images/00g_park_trees.png) | ![samcheok](docs/images/45_samcheok_chuam.png) |
+| ![park](docs/images/00g_park_trees.jpg) | ![samcheok](docs/images/45_samcheok_chuam.jpg) |
 | **거문도 등대** | **홍현 갯바위 섬 (반복 없는 지형 텍스처·실사 바위)** |
-| ![geomun](docs/images/50_geomun_lighthouse.png) | ![islet](docs/images/22c_honghyeon_island.png) |
+| ![geomun](docs/images/50_geomun_lighthouse.jpg) | ![islet](docs/images/22c_honghyeon_island.jpg) |
 | **방파제 (10m 타설 블록·1.3m 파라펫·계선주·사다리·물웅덩이)** | **홍현 방파제 (고래 벽화·타이어 방충재)** |
-| ![breakwater](docs/images/43c_yeongheung_breakwater.png) | ![honghyeon_bw](docs/images/22h_honghyeon_breakwater.png) |
+| ![breakwater](docs/images/43c_yeongheung_breakwater.jpg) | ![honghyeon_bw](docs/images/22h_honghyeon_breakwater.jpg) |
 | **바닷가 마을 (칼라강판·기와 지붕, 벽에 들어간 창, 블록 담장, 전봇대)** | **베네치아풍 집 (깊은 아치 문, 비늘살 덧창, 반원 기와)** |
-| ![village](docs/images/43e_yeongheung_village.png) | ![venetian](docs/images/69d_house_venetian.png) |
+| ![village](docs/images/43e_yeongheung_village.jpg) | ![venetian](docs/images/69d_house_venetian.jpg) |
 | **낚시점 (통유리 가게·간판·철골 캐노피·크릴 냉동고·깃발 배너)** | **삼척 밤 야광충 (벽을 따라 겹겹이 밀려오는 빛, 실물 크기 테트라포드)** |
-| ![shop](docs/images/43g_shop_yeongheung.png) | ![bio](docs/images/45d_samcheok_corner_night.png) |
+| ![shop](docs/images/43g_shop_yeongheung.jpg) | ![bio](docs/images/45d_samcheok_corner_night.jpg) |
 
 | 캐스팅 (당겼다 밀기) | 챔질 (찌 게이지) |
 |---|---|
-| ![casting](docs/images/02_casting.png) | ![bite](docs/images/04_bite_gauge.png) |
+| ![casting](docs/images/02_casting.jpg) | ![bite](docs/images/04_bite_gauge.jpg) |
 | **1인칭 파이팅 (휘는 낚싯대·릴, 카운터 방향 표시)** | **카운터 찬스** |
-| ![fight](docs/images/06_fight.png) | ![counter](docs/images/07_counter_chance.png) |
+| ![fight](docs/images/06_fight.jpg) | ![counter](docs/images/07_counter_chance.jpg) |
 | **RESULT (3D 물고기, 파이팅 기록 차트)** | **도감 (어종별 3D 모델)** |
-| ![result](docs/images/10_result.png) | ![dex](docs/images/11b_dex_detail.png) |
+| ![result](docs/images/10_result.jpg) | ![dex](docs/images/11b_dex_detail.jpg) |
 | **RESULT 말풍선 토스트 · BONUS 보상 · 이벤트 어종 EXP+200%** | **놓치면 WARNING(내구도·줄 길이) + 재도전 말풍선** |
-| ![rewards](docs/images/10f_result_rewards.png) | ![warning](docs/images/10g_warning_retry.png) |
+| ![rewards](docs/images/10f_result_rewards.jpg) | ![warning](docs/images/10g_warning_retry.jpg) |
 | **배 소환 (바다 쪽에서 달려와 선다)** | **엔진 START/STOP [Y] — 꺼야 낚시** |
-| ![summon](docs/images/18a_boat_summon.png) | ![engine](docs/images/18b_boat_engine.png) |
+| ![summon](docs/images/18a_boat_summon.jpg) | ![engine](docs/images/18b_boat_engine.jpg) |
 | **조합 낚시 대회** | **수족관** |
-| ![tournament](docs/images/30_tournament_hud.png) | ![aquarium](docs/images/28_aquarium.png) |
+| ![tournament](docs/images/30_tournament_hud.jpg) | ![aquarium](docs/images/28_aquarium.jpg) |
 | **나일농어 158cm 파이팅** | **조합 퀘스트 (이야기 45개, 스크롤)** |
-| ![nile_fight](docs/images/58_nile_fight.png) | ![quest](docs/images/13_quest.png) |
+| ![nile_fight](docs/images/58_nile_fight.jpg) | ![quest](docs/images/13_quest.jpg) |
 | **NPC 퀘스트 완료 카드** | **납품 (게이지가 차면 다음 납품 두 배)** |
-| ![quest_complete](docs/images/13u_quest_complete_card.png) | ![delivery](docs/images/12b_delivery.png) |
+| ![quest_complete](docs/images/13u_quest_complete_card.jpg) | ![delivery](docs/images/12b_delivery.jpg) |
 | **통발 설치·수거** | **내 캐릭터 (장비 6칸 · 최종 능력치)** |
-| ![trap](docs/images/22f_trap_harvest.png) | ![gear](docs/images/21d_character_gear.png) |
+| ![trap](docs/images/22f_trap_harvest.jpg) | ![gear](docs/images/21d_character_gear.jpg) |
 | **낚시터 로딩 화면** | **ESC 메뉴 (원작처럼 흐린 화면 위 검은 띠 + 남색 금속 버튼)** |
-| ![loading](docs/images/21z_loading.png) | ![esc](docs/images/22a_esc_menu.png) |
+| ![loading](docs/images/21z_loading.jpg) | ![esc](docs/images/22a_esc_menu.jpg) |
 | **한강에서 본 남산서울타워·롯데월드타워** | **밤 스카이라인 (창 불빛·별)** |
-| ![skyline](docs/images/00q_skyline_namsan_lotte.png) | ![skyline_night](docs/images/00s_skyline_night.png) |
+| ![skyline](docs/images/00q_skyline_namsan_lotte.jpg) | ![skyline_night](docs/images/00s_skyline_night.jpg) |
 | **63빌딩과 동작대교** | **한강공원 CU 편의점** |
-| ![63](docs/images/00r_skyline_63.png) | ![cu](docs/images/00t_cu_store.png) |
+| ![63](docs/images/00r_skyline_63.jpg) | ![cu](docs/images/00t_cu_store.jpg) |
 | **동작대교 야경 (황금빛 아치·교각 투광등·가로등)** | **강 건너에서 본 다리 야경** |
-| ![bridge_night](docs/images/00w_bridge_night.png) | ![bridge_far](docs/images/00w2_bridge_night_far.png) |
+| ![bridge_night](docs/images/00w_bridge_night.jpg) | ![bridge_far](docs/images/00w2_bridge_night_far.jpg) |
 | **63빌딩 (위로 좁아지는 금빛 유리 탑)** | **제주 주상절리대 (현무암 기둥 벽·너럭 단·전망 데크)** |
-| ![63_close](docs/images/00r2_63_close.png) | ![columnar](docs/images/54c_jeju_columnar.png) |
+| ![63_close](docs/images/00r2_63_close.jpg) | ![columnar](docs/images/54c_jeju_columnar.jpg) |
 | **제주 성산일출봉** | **제주 용두암 (검은 용암 너럭바위, 바위 줄기 끝 용머리)** |
-| ![seongsan](docs/images/54e_jeju_seongsan.png) | ![yongduam](docs/images/54g_jeju_yongduam_rocks.png) |
+| ![seongsan](docs/images/54e_jeju_seongsan.jpg) | ![yongduam](docs/images/54g_jeju_yongduam_rocks.jpg) |
 | **주상절리 곶과 외돌개** | **홍현 갯바위 둔덕 (퇴적층 턱·틈)** |
-| ![columnar_sea](docs/images/54d_jeju_columnar_sea.png) | ![outcrop](docs/images/22g_honghyeon_outcrop.png) |
+| ![columnar_sea](docs/images/54d_jeju_columnar_sea.jpg) | ![outcrop](docs/images/22g_honghyeon_outcrop.jpg) |
 | **산토리니 비탈 마을과 파란 돔 정자** | **산토리니 포석 산책로·파란 아치문** |
-| ![santorini_pavilion](docs/images/56c_santorini_pavilion.png) | ![santorini_promenade](docs/images/56d_santorini_promenade.png) |
+| ![santorini_pavilion](docs/images/56c_santorini_pavilion.jpg) | ![santorini_promenade](docs/images/56d_santorini_promenade.jpg) |
 | **삼척 방파제 (실물 크기 테트라포드·끝 둥근 더미)** | **삼척 밤 항구 안 야광충** |
-| ![samcheok_bw](docs/images/45c_samcheok_corner.png) | ![bio_harbor](docs/images/45b_samcheok_night.png) |
+| ![samcheok_bw](docs/images/45c_samcheok_corner.jpg) | ![bio_harbor](docs/images/45b_samcheok_night.jpg) |
 | **크레타 방파제 테트라포드** | **듀덴 폭포 트래버틴 절벽** |
-| ![tetrapods](docs/images/69c_crete_tetrapods.png) | ![duden_cliff](docs/images/71b_duden_cliff.png) |
+| ![tetrapods](docs/images/69c_crete_tetrapods.jpg) | ![duden_cliff](docs/images/71b_duden_cliff.jpg) |
 | **하롱베이 석회암 봉우리 (실사 석회암·빗물 얼룩·덤불)** | **청진포구 덕장 (코를 엮어 건 명태)** |
-| ![karst](docs/images/55d_halong_karst_close.png) | ![pollock](docs/images/49e_cheongjin_pollock_close.png) |
+| ![karst](docs/images/55d_halong_karst_close.jpg) | ![pollock](docs/images/49e_cheongjin_pollock_close.jpg) |
 | **낚싯대를 눕히면 줄이 처진다** | **세우면 팽팽하다** |
-| ![slack](docs/images/03d_rod_low_slack.png) | ![taut](docs/images/03e_rod_high_taut.png) |
+| ![slack](docs/images/03d_rod_low_slack.jpg) | ![taut](docs/images/03e_rod_high_taut.jpg) |
 
 **물고기 224종** (Blender 스크립트로 만든 어종별 모델·텍스처 — 기와처럼 겹친 비늘, 젖은 점액 막 반사, 반투명 지느러미, 빨판 달린 오징어·문어)
 
-![fish](docs/images/32_fish_models.png)
+![fish](docs/images/32_fish_models.jpg)
 
 ## 특징
 
