@@ -36,6 +36,11 @@ Assets/
       Settings.cs                옵션(소리·감도·화면·진동)과 키 설정 (PlayerPrefs)
       Rumble.cs                  게임패드 진동 (새 Input System의 Gamepad만, 조작은 Input Manager)
       Mats.cs                    런타임 머티리얼 캐시, 프리미티브·텍스처 상자 헬퍼, 절차적 텍스처
+      Delivery.cs                납품소 (살림망 고기 → GOLD, 납품 게이지가 차면 다음 납품 두 배)
+      EcoSurvey.cs               GOLD 보상 업적 (생태조사·납품·방생 마릿수, 원작 기록 책)
+      FishTraps.cs               통발 (바닷가 마을 어부에게 맡기면 20시간 뒤 10마리, 맵마다 두 곳)
+      TestMode.cs                시험 모드 (레벨 제한 풀기 + 최고 장비, 직접 해 보며 확인용)
+      DayOnly.cs                 낮에만 보이는 것 (센토사 열기구: 전역 _FishingNight > 0.5면 렌더러 끔)
     Data/                        정적 데이터 테이블 (순수 C#)
       Enums.cs                   Habitat, TimeBand, Weather, BaitKind + 한글 이름
       FishDatabase.cs            어종 77종(한국·첫 해외 거점) + 잡동사니 6종 (맵·제철·어군 전용·먼바다 전용·괴물 어종 BossCoins). 바다 묶음 SouthSea·WestSea·EastSea·AllSeas, 미끼 판매 SeaMaps·FreshMaps.
@@ -56,19 +61,26 @@ Assets/
       RodUpgrade.cs              장비 강화 규칙 (+1~+15, 확률·비용·재료·성능)
       Seasons.cs                 계절 (한 달 = 게임 7일, 1일째 = 4월), 제철 입질 배율
       TournamentRules.cs         대회 규칙 (미션 점수, 엠블럼, 대회 맵 순서 — 6일 주기, 해안 낚시터 지역 대회)
-      FishingAreas.cs            낚시터 목록 (한국 12곳 + 해외 17곳), 거점 4개(Hubs), 경위도, 입장 레벨, 맵 id
+      FishingAreas.cs            낚시터 목록 (한국 13곳(탄천 포함) + 해외 17곳 = 30곳), 거점 4개(Hubs), 경위도, 입장 레벨, 맵 id
     Characters/
       CharacterFactory.cs        CharacterLook(이름·칭호·성별·VRM id) → VRM 복제 + 동작, 못 읽으면 마네킹, 이름표
       CharacterRoster.cs         characters.json: 기본 캐릭터 남/녀, NPC 모델 고르기(이름 지정 → 성별 목록), 문서 폴더가 게임 폴더를 덮음
       VrmCharacters.cs           VRM 폴더 훑기·바로 읽기(LoadNow)·뒤에서 읽기(Request)·원본 선반에서 복제 (16 문서)
       CharacterAnimator.cs       Playables 믹서로 클립 재생 (AnimatorController 없이 SetLoop/PlayOnce). "이름_M/_F" 클립은 성별로 고른다
       NpcAngler.cs               NPC (Angler/Talker/Sitter). NpcId로 대화 종류, 대화 상대 바라보기, 조합 연락관 머리 위 퀘스트 표시(? !)
+      NpcLooks.cs                NPC 머리·상의·하의 색·키를 이름 해시로 (밝기 보존 재채색, Resources/Shaders/Recolor) — tech 12
+      VrmOutfit.cs, OutfitChanger.cs  다른 VRM의 옷 입히기 (_CLOTH 서브메쉬를 떼어 뼈 이름으로 다시 스키닝) / 대기실 [옷 바꾸기]
+      CharacterPack.cs           추가 캐릭터 폴더 (exe 옆 Characters, .vrm + 정보 .json 둘 다 있어야)
+      ArmIK.cs, RodArm.cs, RodGrip.cs  팔 2관절 IK / 낚싯대 각도별 오른손 자리 표 / 손가락으로 낚싯대 쥐기
+      SitSeat.cs                 앉은 동작 밑 아이스박스 의자
+    Vrm/VrmLoader.cs             UniVRM을 감싼 얇은 어셈블리(Fishing.Vrm): 동기·비동기 읽기, 메타, 눈 깜빡임, 밝기 배수
     Buddy/                       따라다니는 낚시 친구 윤슬 (가이드 09)
       BuddyBrain.cs              두뇌: 대화 기록·Ollama 대화(성격·지금 상황·미리 찾은 자료·마지막 질문에 다짐), 길 안내 판단(TryGuide: 퀘스트 NPC·이름·낚시 포인트, AI 없이 데이터로), 상황 반응 말, 반말 고치기·문장 자르기
       BuddyBody.cs               몸: 따라 걷기·뛰기, 길 안내(Goal: NPC·물가·배 띄울 곳, 처지면 기다리며 부르기, 반대로 가면 "아니야 저기야"), 배 같이 타기(뱃머리/운전석), 오른팔 가리키기 IK, 반응 동작
       BuddyPath.cs               길 찾기: 1m 칸 A*(칸은 닿을 때만 검사: 땅 높이·물·캡슐·턱 0.7m), 곧게 갈 수 있는 점까지 건너뛰기
       BuddySpots.cs              낚시 포인트 고르기: 그 고기 서식지 칸의 물 → 가장 가까운 물가, 낚싯대가 안 닿으면 배
       OllamaChat.cs              BuddyConfig(PlayerPrefs: 주소·모델·MCP) + Ollama /api/chat 스트리밍·도구 호출 반복(최대 4번), 미리 올리기(Warm), <think> 지우기
+      OllamaSetup.cs             깔린 Ollama 찾아 창 없이 켜기(ollama serve, 게임이 켠 것만 끌 때 같이 끔) + 게임 안 모델 받기(/api/pull 진행률)
       GameKnowledge.cs           게임 지식 도구 10개: game_state·list_guides·read_guide·search_guides(docs/guide)·fish_info·map_info·quest_info·system_info(이 PC)·search_dev_docs·read_dev_doc(docs/*.md·docs/tech, 빌드는 StreamingAssets/DevDocs) + 질문 전 미리 찾기(Prefetch)
       BuddyMcpServer.cs          같은 도구를 MCP(Streamable HTTP, JSON-RPC 한 번에 하나)로: 127.0.0.1:8770/mcp, 다른 Origin 거절, 도구는 메인 스레드에서
       Json.cs                    작은 JSON 읽기·쓰기 (사전·섞인 배열)
@@ -82,6 +94,7 @@ Assets/
       OverseasCoasts.cs          해외 거점 3곳 사양 (하롱베이·산토리니·나일강 하류) + 해외 맵 공용 도우미(School·Special·Local·Union·Npc)
       CoastWorldApi.cs           CoastSpec.Extra(맵 고유 풍경)가 쓰는 CoastWorldBuilder 공개 도우미(Root·Height·Rand·PlaceHouse·PlaceTree·PlaceBoats·AddLamp·KarstPeak·Gable·Sign)
                                  + 새 집 양식 4가지 (고상 가옥·리조트 빌라·타이 겹지붕 집·베네치아풍 회벽 집)
+      Maps/Tancheon.cs           탄천 (원작에 없는 도심 하천, 성남 야탑 Lv.3): 둔치·제방·차도교·돌 아치 보행교·징검다리·운동장·등 축제·드론쇼
       Maps/<이름>.cs             새 해외 맵 14곳 — 파일 하나에 사양(OverseasCoasts.<이름>()) · 랜드마크(<이름>Extra) · 이야기(QuestDatabase.<이름>Chapter())
       Maps/MapKit.cs             랜드마크 공용 도구: 회전체 Lathe(톱니 단면 프랑), 관 묶음 Tubes, 원판 묶음 Discs, 눈 덮인 산 Mountain, 폭포 FallSheet·WaterfallMat·물보라 Splash·FallDrift, 들보 Beam, Blender 소품 Prop
       CoastWorldOverseas.cs      CoastWorldBuilder의 해외 부분(partial): 지역 양식 집(키클라데스·이집트·베트남)·나무(야자수·열대·지중해), 강 맞은편 둑·사막 판, 석회암 봉우리·정크선·수상 마을·칼데라·풍차·펠루카·피라미드
@@ -102,6 +115,12 @@ Assets/
       Aquarium.cs                대기실 수족관 (헤엄치는 물고기, 장식, 배고픔)
       WaterSurface.cs            격자 수면 메쉬 + Fishing/Water 머티리얼 (맵마다 색), 해저 높이 텍스처 굽기(SetSeabed → 물가 거품)
       WaterGlints.cs             밤 물 위에 길게 비치는 불빛 (가로등·다리·도시)
+      DroneShow.cs               탄천 밤하늘 드론 3,000대 (파티클 하나, 점 파일 장면, 탐욕 최근접 배정, droneshow.json) — tech 13, 가이드 08
+      KayakFleet.cs              탄천 카약 (물 위를 저어 다니는 카약)
+      BioluminescenceFx.cs       서천·삼척 밤바다 야광충 (벽을 따라 겹겹이 밀려오는 빛)
+      FarLand.cs                 먼 섬·산 (실루엣 + Fishing/Forest, 안개 = 수평선 색)
+      TackleShopKit.cs           낚시점 (통유리 가게·간판·철골 캐노피·크릴 냉동고)
+      DeliveryKiosk.cs           납품소 키오스크
       WorldBatcher.cs            맵을 지은 뒤 움직이지 않는 Standard·월드 좌표 셰이더 소품을 정적 배칭으로 묶기 (아래 "정적 배칭")
       SkyDecor.cs                해 원판(번지는 빛)·달·별(번지는 사각형 2,200개, 은하수 띠, 반짝임)·구름 돔 (카메라를 따라다님). 해·달 길은 DayNightCycle(고도 최대 30°, 물 쪽)
       KenneyProps.cs             Kenney CC0 모델 배치 헬퍼
@@ -176,8 +195,9 @@ Assets/
     FontSetup.cs                 Jalnan2 TMP 폰트 에셋 생성
     NatureKitBake.cs             Tree Creator 나무 → 일반 메쉬 프리팹 굽기 (빌드 전 자동, 메뉴 Fishing > Bake Nature Kit Trees)
     BalanceSim.cs                파이팅 밸런스 시뮬레이션 → docs/balance-report.md
-    Tests/GameRulesTests.cs      EditMode 단위 테스트 26개 (sh tools/test.sh)
+    Tests/GameRulesTests.cs      EditMode 단위 테스트 36개 — FishFight·BiteSelector·대회·강화·찌/파이팅 패턴·마을 교환·프로필·계절·키 설정·퀘스트 (sh tools/test.sh, 전체 49개)
     Tests/SpeciesWiringTests.cs  어종 연동 검사 6개 (도감 낚시터·찌/파이팅 패턴·퀘스트 어종/길이/시간대·낚시터마다 도감·어종 퀘스트·미끼 규칙·거점 도감 업적)
+    Tests/LocomotionClipTests.cs Starter Assets 이동 클립 검사 2개
     Tests/CoastMapTests.cs       낚시터 정의 검사 5개 (+ GameRulesTests의 대회 지역 순환) (물때마다 걸을 수 있는 곳, 어종이 사는 곳에서 낚이는지, 가두리 통로, 모래톱, 강 맵 맞은편 둑)
 tools/
   build.sh, autoshot.sh, test.sh, balance.sh    배치모드 빌드 / 자동 스크린샷 / 테스트 / 밸런스

@@ -58,3 +58,6 @@ __pycache__/
 
 # ez-tree 도구 패키지 (tools/eztree: npm ci)
 node_modules/
+
+# 포트폴리오 노션 가져오기 묶음 (python tools/portfolio_images.py --zip 으로 다시 만든다)
+/docs/portfolio/notion_import.zip

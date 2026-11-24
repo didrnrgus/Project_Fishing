@@ -1,7 +1,7 @@
 # 서드파티 구성 요소와 라이선스
 
 이 저장소에서 직접 만든 것은 [LICENSE](LICENSE)(CC BY-NC-SA 4.0)를 따릅니다. 아래 구성 요소는 각자의 라이선스를 따르며, 라이선스 사본은 표의 위치에 있습니다.
-에셋 스토어·Mixamo처럼 원본 재배포가 금지된 에셋은 2026-10-21에 모두 걷어내고 직접 만든 것이나 아래 CC0·MIT·OFL 자료로 바꿨습니다(예전 커밋 기록에는 남아 있어서 공개 저장소는 기록을 새로 시작했습니다).
+에셋 스토어·Mixamo처럼 원본 재배포가 금지된 에셋은 2026-10-21에 모두 걷어내고 직접 만든 것이나 아래 CC0·MIT·OFL 자료로 바꿨습니다. 2026-10-22부터 소스는 비공개(릴리즈 빌드만 배포)로 바꿔 UI 유리 판에 유료 에셋 Translucent Image + Paraform을 다시 넣었습니다 — 소스를 공개하려면 이 둘을 빼야 합니다(17 문서 3장).
 
 | 구성 요소 | 쓰는 곳 | 라이선스 | 사본·출처 |
 |---|---|---|---|
@@ -17,6 +17,7 @@
 | Cinzel, East Sea Dokdo, Song Myung, Jeju Hallasan | 인트로·RESULT·도감 그림 만들기 (`tools/intro`) | SIL OFL 1.1 | `tools/intro/fonts/OFL-*.txt` |
 | [Unity Starter Assets – Third Person](https://assetstore.unity.com/packages/essentials/starter-assets-thirdperson-updates-in-new-charactercontroller-pa-196526) (Unity Technologies) | 대기·걷기·뛰기·점프 동작 (원본 FBX `Assets/ThirdParty/StarterAssets`, 180° 돌려 구운 클립 `Resources/Animations/StarterAssets`) | [Unity Companion License](https://unity.com/legal/licenses/unity-companion-license) | [Assets/ThirdParty/StarterAssets/SOURCES.md](Assets/ThirdParty/StarterAssets/SOURCES.md) |
 | 대기실 퀘스트 NPC 초상화 4장 (이미지 검색에서 고른 서브컬처풍 그림, 일부 AI 생성) | 조합 직원 얼굴 (`Resources/Portraits`) | **자유 라이선스 아님** — 원작자 권리, 배포 전 교체 필요 | [Assets/Resources/Portraits/SOURCES.md](Assets/Resources/Portraits/SOURCES.md) |
+| Translucent Image · Paraform (Le Tai, Unity Asset Store) | UI 유리 판·뒤 화면 흐림·둥근 도형 (`Assets/Le Tai's Asset`, `UI/UIStyle.cs`) | Unity Asset Store EULA (빌드 포함 OK, **소스 재배포 금지**) | Asset Store |
 | TextMesh Pro 기본 리소스 (Unity) | `Assets/TextMesh Pro` | Unity Companion License | Unity 패키지 |
 
 ## 원작에 대해

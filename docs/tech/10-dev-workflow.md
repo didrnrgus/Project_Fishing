@@ -57,7 +57,7 @@ yield return Shot("00a_lobby");
 - 스크린샷을 이전 것과 나란히 보면 **"뭔가 깨졌다"를 사람이 1분 안에 찾는다**. 문서 그림(`docs/images/`)도 여기서 복사한다.
 - 클라우드 세션처럼 GPU가 없는 곳에서는 못 돈다. 그래서 규칙 검증은 시뮬레이터·테스트로, 화면 검증은 PC에서 자동 촬영으로 나눴다.
 
-## 4. 단위 테스트 (EditMode, 32개)
+## 4. 단위 테스트 (EditMode, 49개)
 
 ```bash
 sh tools/test.sh    # Logs/test-results.xml

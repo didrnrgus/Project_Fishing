@@ -124,7 +124,7 @@
   - 조준 중 업적 3줄(월척급·랜딩·카운터), 별 파티클 궤적. 채팅 줄에 같은 채널 다른 낚시꾼의 조과·잡담이 흐른다.
   - **체력**: 20% 아래면 지치고(힘·릴 감기 약해짐) 5% 아래면 탈진. 음식 5종으로 회복.
 - **낚시법**: 찌낚시, **루어**(감기 속도·저킹 액션), **플라이**(털바늘·플라이대), **트롤링**(배를 몰며), 겨울 한강 **얼음 구멍 낚시**(빙어).
-- **맵 29곳**
+- **맵 30곳**
   - **한강**: 동작대교·낚시 데크·수초 만, 밤이면 다리가 실사 사진처럼 황금빛 투광등(아치·거더)·교각 올림 조명·상판 가로등으로 빛나고 물에 길게 비친다. 강 건너 **남산서울타워·롯데월드타워·63빌딩**과 먼 시가지(밤엔 집마다 띄엄띄엄, 가끔 층 통째로 켜진 창 불빛 — 롯데타워도 123층 전체가 되풀이 없이 불규칙하게), 둔치의 **CU 편의점**(한강라면 조리기, 파라솔 탁자).
   - **홍현 앞바다**(남해): 방파제·빨간 등대·테트라포드·갯바위 섬·다랭이 마을, 자이언트 그루퍼 어군, 먼바다의 전설 다금바리·돗돔.
   - **서천 앞바다**(서해): **물때**(밀물·썰물에 갯벌이 드러남), 홍원항 흰/빨간 등대, 동백정, 주꾸미·갑오징어(에기)·민어. 원작 대회 장소.
@@ -154,7 +154,7 @@
 ```bash
 sh tools/build.sh      # Builds/Windows/ProjectFishing.exe
 sh tools/autoshot.sh   # 빌드를 자동 연출해 Screenshots/ 에 약 150장 + 맵별 FPS
-sh tools/test.sh       # 단위 테스트 35개
+sh tools/test.sh       # 단위 테스트 49개
 cd tools/fightsim && dotnet run -- report   # Unity 없이 파이팅 밸런스 (.NET 8)
 ```
 
@@ -189,7 +189,7 @@ cd tools/fightsim && dotnet run -- report   # Unity 없이 파이팅 밸런스 (
 | 문서 | 내용 |
 |---|---|
 | [01-original-research.md](docs/01-original-research.md) | 원작 조사: 서비스 이력, 원작 시스템, **플레이 영상 분석**, 반영 현황, 출처 |
-| [02-game-design.md](docs/02-game-design.md) | 게임 디자인: 루프, 입질, 낚시법, 파이팅 공식, 성장, 장비, 맵 29곳(해외 17곳 포함), 배, 계절, 어종표, 퀘스트·대회·업적·의상·수족관·빙고·출석 |
+| [02-game-design.md](docs/02-game-design.md) | 게임 디자인: 루프, 입질, 낚시법, 파이팅 공식, 성장, 장비, 맵 30곳(해외 17곳·탄천 포함), 배, 계절, 어종표, 퀘스트·대회·업적·의상·수족관·빙고·출석 |
 | [03-architecture.md](docs/03-architecture.md) | 코드 구조, 실행 흐름, 정적 배칭, 상태 머신, 확장 방법(어종/장비/맵/아트) |
 | [04-balance.md](docs/04-balance.md) | 밸런스 시뮬레이션 방법(Unity 없이 `tools/fightsim`), 결과 요약, 해외·괴물 어종, 체력 페널티, 조정 이력 |
 | [balance-report.md](docs/balance-report.md) | 시뮬레이터가 생성한 전체 결과표 |
@@ -232,7 +232,7 @@ tools/        build·autoshot·test·balance 스크립트, fightsim/(Unity 없�
 ```
 
 씬에는 `GameBootstrap` 하나만 있고, 나머지는 모두 코드로 만듭니다.
-에셋 스토어·Mixamo처럼 원본 재배포가 금지된 에셋은 쓰지 않습니다(2026-10-21에 모두 걷어내고 직접 만든 것과 CC0·MIT 자료로 바꿈 → [17 문서](docs/17-open-source.md)). 사람은 실행 중에 읽는 VRM(UniVRM), 물고기·아이콘은 `tools/blender`로 만든 모델, 건물·가로등·나무·배는 Kenney CC0 모델, 땅·물·다리·하늘은 프리미티브와 절차적 텍스처·셰이더(일부 바닥·지형은 Poly Haven CC0 텍스처)입니다. 낚시 소리는 절차적으로 만들고 UI·발소리만 Kenney CC0 녹음을 씁니다. 낚싯대를 든 두 팔(들기·던지기·챔질·릴 감기)은 낚싯대 각도를 따라가는 IK이고, 대기·걷기·뛰기·점프는 Unity가 무료로 내는 Starter Assets – Third Person(Unity Companion License) 동작, 말하기·제자리 돌기·낚시꾼 자세와 반응 동작(환호·박수·펄쩍 기뻐하기·손짓·움찔)은 `tools/blender/build_motions.py`로 Quaternius UAL(CC0) 뼈대 위에 직접 만들었습니다([10 문서](docs/10-animation.md)). 하늘 돔은 Poly Haven 하늘 사진(`tools/sky/build_sky.py`), 나무·덤불·바위·풀은 `tools/blender/build_vegetation.py`(ez-tree·Poly Haven)입니다. 실물 사진·다른 게임 그림은 참고만 하고 저장소에 넣지 않습니다.
+2026-10-21에 Mixamo·에셋 스토어 캐릭터·식생 등 재배포 금지 에셋을 모두 걷어내고 직접 만든 것과 CC0·MIT 자료로 바꿨습니다([17 문서](docs/17-open-source.md)). 2026-10-22부터 소스는 비공개·릴리즈 빌드만 배포로 바꿔, UI 유리 판만 유료 에셋 **Translucent Image + Paraform**(Le Tai)을 씁니다. 사람은 실행 중에 읽는 VRM(UniVRM), 물고기·아이콘은 `tools/blender`로 만든 모델, 건물·가로등·나무·배는 Kenney CC0 모델, 땅·물·다리·하늘은 프리미티브와 절차적 텍스처·셰이더(일부 바닥·지형은 Poly Haven CC0 텍스처)입니다. 낚시 소리는 절차적으로 만들고 UI·발소리만 Kenney CC0 녹음을 씁니다. 낚싯대를 든 두 팔(들기·던지기·챔질·릴 감기)은 낚싯대 각도를 따라가는 IK이고, 대기·걷기·뛰기·점프는 Unity가 무료로 내는 Starter Assets – Third Person(Unity Companion License) 동작, 말하기·제자리 돌기·낚시꾼 자세와 반응 동작(환호·박수·펄쩍 기뻐하기·손짓·움찔)은 `tools/blender/build_motions.py`로 Quaternius UAL(CC0) 뼈대 위에 직접 만들었습니다([10 문서](docs/10-animation.md)). 하늘 돔은 Poly Haven 하늘 사진(`tools/sky/build_sky.py`), 나무·덤불·바위·풀은 `tools/blender/build_vegetation.py`(ez-tree·Poly Haven)입니다. 실물 사진·다른 게임 그림은 참고만 하고 저장소에 넣지 않습니다.
 
 ## 크레딧
 
@@ -245,7 +245,7 @@ tools/        build·autoshot·test·balance 스크립트, fightsim/(Unity 없�
 - 배경·배 모델: [Kenney](https://kenney.nl) — City Kit Commercial, City Kit Roads, Nature Kit, Watercraft Kit (모두 CC0). 라이선스 사본은 `Assets/ThirdParty/Kenney/`.
 - 텍스처: [Poly Haven](https://polyhaven.com) (CC0) — 모래·풀·바위·해안·나무 데크·콘크리트·아스팔트(갯벌 진흙·눈은 모래를 바꿔 만듦), 2026-10-20 추가: 거친 콘크리트·벽 콘크리트·회벽·점토 기와·회색 기와·사암·암벽·초가·판재·현무암·흰 사암 벽돌·돌담·녹슨 철·대리석 → `Assets/Resources/Terrain/SOURCES.md`
 - 소리: [Kenney](https://kenney.nl) Interface Sounds · Impact Sounds (CC0, UI 클릭·경고·발소리) → `Assets/Resources/Audio/Kenney/SOURCES.md`
-- UI: 직접 만든 도형·흐림 셰이더와 차트, TextMesh Pro, 글꼴 여기어때 잘난체2(Jalnan2, ㈜여기어때컴퍼니 — 라이선스 사본 `Assets/TextMesh Pro/Fonts/Jalnan2-LICENSE.txt`).
+- UI: 유리 판·흐림은 Translucent Image + Paraform (Le Tai, Unity Asset Store — 저장소 비공개), 직접 그리는 차트, TextMesh Pro, 글꼴 여기어때 잘난체2(Jalnan2, ㈜여기어때컴퍼니 — 라이선스 사본 `Assets/TextMesh Pro/Fonts/Jalnan2-LICENSE.txt`).
 
 ## 라이선스
 

@@ -50,6 +50,12 @@ bpyenv/Scripts/python -I tools/blender/build_props.py --only merlion --preview3 
 sh tools/balance.sh               # 밸런스 리포트 (전체)
 sh tools/balance.sh -simSummary   # 밸런스 리포트 (대물급만)
 sh tools/test.sh                  # 게임 규칙 단위 테스트 (EditMode, Logs/test-results.xml)
+sh tools/autoshot.sh --maps angkor,vinpearl   # 낚시터 둘러보기에서 그 맵 장면만 (새 맵 확인)
+sh tools/autoshot.sh --buddy "붕어는 어디서 잡아?"   # 동료 AI 윤슬 장면만 (Ollama가 깔려 있으면 켜고 대답까지, tech 11)
+sh tools/autoshot.sh --buddy "질문" --pull   # 기본 모델이 없으면 게임 안 [모델 받기]로 받는 것까지 (3.4GB)
+sh tools/showcase.sh [pack|builtin|user|all]   # VRM을 하나씩 갈아입히며 동작을 찍고 캐릭터마다 시트 한 장 (tech 12)
+sh tools/compilecheck.sh          # Unity 없이 컴파일만 확인
+python tools/drone/scene.py 그림.png [--cutout]   # 그림 → 드론쇼 점 파일 (가이드 08, tech 13)
 ```
 
 Unity 없이 (.NET 8 SDK만 있으면, 클라우드 세션에서도):
@@ -73,9 +79,14 @@ dotnet run -- bites hangang                  # 미끼마다 잡동사니 확률 
 | `PlayerProfileTests` | 레벨업, 아이템, 판매가, 도감 최고 기록 |
 | `SettingsTests` | 키를 겹치게 바꾸면 맞바꾼다, 바꿀 수 없는 키(Esc·숫자 1~8·마우스) |
 | `SeasonTests` | 달력·계절, 빙어는 겨울 얼음 구멍에서만, 제철 배율, 다금바리·돗돔은 먼바다에서만 |
+| `FishPatternTests` | 어느 어종·입질이든 뱉기 전에 PERFECT 순간이 있다, 찌올림 입질은 찌가 가장 높을 때 정점, 어종별 패턴, 패턴 어종은 파이팅 중에 자기 기술(처박기·바늘털이·점프·바닥 붙기)을 실제로 쓴다 |
+| `VillageTradeTests` | 맵마다 그 지역 재화로 사는 마을 장비가 있다, 마을 장비는 같은 레벨 상점 장비보다 좋다 |
+| `QuestTests` | 예전 세이브의 이야기 퀘스트 순서·수락 상태를 지킨다, 새 세이브는 대기실 데스크에서 첫 이야기를 받는다 |
+| `SpeciesWiringTests` | 224종 모두 열린 낚시터에 살고 찌·파이팅 패턴이 있다, 낚시터마다 도감·어종 퀘스트, 퀘스트 어종이 실제로 그곳에 산다, 모든 어종이 해체 미끼가 된다, 거점 도감 업적이 모든 거점을 덮는다 |
+| `LocomotionClipTests` | Starter Assets 이동 클립은 점프 빼고 반복, VRM에서 무릎·발끝이 앞을 본다 |
 | `CoastMapTests` | 해안 맵마다 물때(간조·평균·만조) 어느 때나 시작점·낚시점·조합 연락관 자리를 걷는다, 사양이 다 찼다(8×8 격자·연락관·어군·바다 칸), **모든 어종이 사는 낚시터에서 낚인다**(격자에 서식지·어군 전용은 어군, 그곳에서 파는 미끼), 가두리 통로/그물 칸, 목섬 모래톱은 간조에만 |
 
-에디터에서는 Window > General > Test Runner > EditMode. 지금 35개 (2026-10-19 `sh tools/test.sh` 35/35 통과, 퀘스트 `QuestTests` 3개 추가).
+에디터에서는 Window > General > Test Runner > EditMode. 지금 49개 (2026-11-25 `sh tools/test.sh` 49/49 통과 — `GameRulesTests` 36 · `SpeciesWiringTests` 6 · `CoastMapTests` 5 · `LocomotionClipTests` 2).
 
 어종 표: `python tools/fish_table.py --write`가 `FishDatabase.cs`를 읽어 02 문서 11장 표와 맵별 어종 수를 다시 쓴다.
 
