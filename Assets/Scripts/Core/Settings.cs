@@ -153,22 +153,38 @@ namespace Fishing.Core
             Changed?.Invoke();
         }
 
-        /// <summary>고를 수 있는 해상도 (같은 크기는 하나만, 작은 것부터).</summary>
+        /// <summary>그리는 해상도 상한 (FHD). 큰 모니터에서 창을 키우거나 전체 화면으로 해도 이보다 크게 그리지 않는다 (그래픽카드 부담).</summary>
+        public const int MaxWidth = 1920, MaxHeight = 1080;
+
+        /// <summary>고를 수 있는 해상도 (같은 크기는 하나만, 작은 것부터, FHD까지).</summary>
         public static List<Resolution> Resolutions()
         {
             var list = new List<Resolution>();
             foreach (var r in Screen.resolutions)
-                if (r.width >= 1280 && !list.Exists(x => x.width == r.width && x.height == r.height)) list.Add(r);
-            if (list.Count == 0) list.Add(new Resolution { width = Screen.width, height = Screen.height });
+                if (r.width >= 1280 && r.width <= MaxWidth && r.height <= MaxHeight
+                    && !list.Exists(x => x.width == r.width && x.height == r.height)) list.Add(r);
+            if (!list.Exists(x => x.width == MaxWidth && x.height == MaxHeight))
+                list.Add(new Resolution { width = MaxWidth, height = MaxHeight });
+            list.Sort((a, b) => (a.width * a.height).CompareTo(b.width * b.height));
             return list;
         }
 
+        /// <summary>
+        /// 해상도를 반영한다. 전체 화면은 FullScreenWindow로 고른 해상도(기본 FHD)에 그려서 모니터에 맞게 늘린다.
+        /// 창 모드는 모니터보다 작은 크기까지만 (창 제목줄이 화면 밖으로 나가지 않게).
+        /// </summary>
         public static void ApplyResolution()
         {
             var list = Resolutions();
-            if (ResolutionIndex < 0 || ResolutionIndex >= list.Count) { Screen.fullScreen = Fullscreen; return; }
-            var r = list[ResolutionIndex];
+            int i = ResolutionIndex >= 0 && ResolutionIndex < list.Count ? ResolutionIndex : list.Count - 1; // 기본 = FHD
+            var desk = Screen.currentResolution;
+            if (!Fullscreen)
+                while (i > 0 && (list[i].width >= desk.width || list[i].height >= desk.height)) i--;
+            var r = list[i];
             Screen.SetResolution(r.width, r.height, Fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed);
         }
+
+        /// <summary>지금 그리는 크기가 FHD를 넘는다 (Alt+Enter, 창 최대화 등으로 커졌을 때).</summary>
+        public static bool OverMax => Screen.width > MaxWidth || Screen.height > MaxHeight;
     }
 }

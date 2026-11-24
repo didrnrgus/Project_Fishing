@@ -42,7 +42,9 @@ namespace Fishing.EditorTools
             PlayerSettings.defaultScreenWidth = 1600;
             PlayerSettings.defaultScreenHeight = 900;
             PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
-            PlayerSettings.resizableWindow = true;
+            // 창 크기를 끌어서 키우면 그만큼 높은 해상도로 그려 그래픽카드에 무리 → 고정 (해상도는 옵션 창에서, 최대 FHD)
+            PlayerSettings.resizableWindow = false;
+            PlayerSettings.defaultIsNativeResolution = false;
             PlayerSettings.runInBackground = true;
             // Unity 스플래시: 검은 바탕에 흰 로고 → 이어지는 사업자 인트로(IntroSequence)도 검은 화면에서 시작한다
             PlayerSettings.SplashScreen.show = true;

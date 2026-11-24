@@ -2,6 +2,13 @@
 
 세션이 끊겨도 이 파일만 보고 이어서 작업할 수 있게 남기는 메모. 끝난 일은 로드맵·각 문서에 합쳤다.
 
+## 2026-11-25 (2): 해상도 FHD로 고정 → [02 게임 디자인 옵션](02-game-design.md)
+- "창을 키우면 해상도가 그대로 올라가서 그래픽카드에 무리" → 그리는 크기를 최대 1920×1080으로
+  - 플레이어 설정 `resizableWindow` 0(창 끌어서 키우기·최대화 막음), `defaultIsNativeResolution` 0 (`ProjectTools.Setup`도 같이)
+  - `Settings.Resolutions()`는 FHD 이하만, 고른 적 없으면 FHD. 전체 화면은 `FullScreenWindow`로 고른 해상도에 그려 모니터에 맞게 늘림, 창 모드는 모니터보다 작은 크기까지만
+  - 새 `ResolutionGuard`(GameBootstrap에 붙음): 시작할 때 저장된 해상도 반영 + 0.5초마다 FHD를 넘었는지(Alt+Enter 등) 보고 되돌림. 에디터 Game 뷰는 안 건드림
+- `tools/compilecheck.sh` compile OK. 실제 빌드로 4K 모니터 확인은 아직
+
 ## 2026-11-04 (1): Unity 6000.6.8f1로 올림 → [05 개발 가이드](05-dev-guide.md)
 - `tools/unity.sh` 기본 경로·README·05·08 문서의 버전을 6000.3.17f1 → **6000.6.8f1**로
 - 고친 API: `Object.GetInstanceID()`가 에러(CS0619)로 바뀜 → `Mats.VertexAO` 캐시 키를 `GetEntityId()`로. 경고(CS0618)도 정리: `FindFirstObjectByType` → `FindAnyObjectByType`(`GameBootstrap`·`GameUI`), `FindObjectsByType(FindObjectsSortMode.None)` → 인자 없는 `FindObjectsByType<Canvas>()`(`DevAutomation`)

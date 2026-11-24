@@ -30,6 +30,7 @@ namespace Fishing.Core
             Application.targetFrameRate = 60;
             QualitySettings.shadowDistance = 90f;
             Settings.Load();   // 기기 설정 (음량·감도·화면·키 배치)
+            gameObject.AddComponent<ResolutionGuard>();   // 해상도 FHD 이하로 고정
             Rumble.Ensure();
 
             var devArgs = DevAutomation.Parse();
