@@ -21,7 +21,7 @@ namespace Fishing.Buddy
         public const string BuddyName = "윤슬";
         const int MaxHistory = 16;
 
-        public enum Status { Checking, Offline, NoModel, Ready, Thinking }
+        public enum Status { Checking, Starting, Offline, NoModel, Ready, Thinking }
 
         public static BuddyBrain Instance { get; private set; }
         public Status State { get; private set; } = Status.Checking;
@@ -40,6 +40,16 @@ namespace Fishing.Buddy
         public string Working { get; private set; }
         /// <summary>흘러나오는 중인 대답 (스트리밍). 다 나오면 null.</summary>
         public string Partial { get; private set; }
+
+        /// <summary>이 PC에 Ollama가 깔려 있나 (꺼져 있어도 게임이 켜 줄 수 있다). 연결을 확인할 때마다 다시 본다.</summary>
+        public bool Installed { get; private set; }
+        /// <summary>기본 모델을 게임 안에서 받는 중인가 (<see cref="PullDefault"/>).</summary>
+        public bool Pulling { get; private set; }
+        /// <summary>받는 중 글 ("받는 중 1.2/3.3GB")과 진행률 0~1 (모르면 -1).</summary>
+        public string PullText { get; private set; }
+        public float PullFraction { get; private set; } = -1f;
+        /// <summary>Ollama는 켜져 있는데 기본 모델이 없다 → [모델 받기]를 보인다.</summary>
+        public bool NeedsDefaultModel => (State == Status.NoModel || State == Status.Ready || State == Status.Thinking) && !Models.Contains(BuddyConfig.DefaultModel);
 
         readonly List<Dictionary<string, object>> _history = new List<Dictionary<string, object>>();
         string _mapId;
@@ -96,15 +106,21 @@ namespace Fishing.Buddy
 
         // ───────────── Ollama 연결 ─────────────
 
-        /// <summary>Ollama가 켜져 있는지, 모델이 깔려 있는지 확인한다 (대화창을 열 때마다). warm이면 쓸 모델을 미리 그래픽카드에 올린다.</summary>
-        public void CheckOllama(bool warm = false)
+        /// <summary>
+        /// Ollama가 켜져 있는지, 모델이 깔려 있는지 확인한다 (대화창을 열 때마다). warm이면 쓸 모델을 미리 그래픽카드에 올린다.
+        /// launch면 깔려 있는데 꺼진 Ollama를 켜고 뜰 때까지 기다린다 (대화창을 열거나 [Ollama 켜기]를 누를 때만:
+        /// 게임을 켜자마자 켜면 대화하지 않는 사람의 메모리를 쓴다).
+        /// </summary>
+        public void CheckOllama(bool warm = false, bool launch = false)
         {
-            if (State == Status.Thinking) return;
+            if (State == Status.Thinking || State == Status.Starting) return;
+            Installed = OllamaSetup.Installed;
             StartCoroutine(OllamaChat.ListModels(models =>
             {
                 Models = models ?? new List<string>();
                 // 확인하는 사이에 질문을 보냈으면 대답을 기다리는 상태를 덮어쓰지 않는다
                 if (State == Status.Thinking) { Changed?.Invoke(); return; }
+                if (models == null && launch && Installed && OllamaSetup.Launch()) { StartCoroutine(WaitStarted(warm)); return; }
                 if (models == null) { State = Status.Offline; Model = null; }
                 else if (models.Count == 0) { State = Status.NoModel; Model = null; }
                 else
@@ -116,6 +132,62 @@ namespace Fishing.Buddy
                 }
                 Changed?.Invoke();
             }));
+        }
+
+        /// <summary>게임이 켠 Ollama가 대답할 때까지 1초마다 본다 (보통 2~5초, 처음엔 더). 25초 넘으면 꺼진 걸로.</summary>
+        IEnumerator WaitStarted(bool warm)
+        {
+            State = Status.Starting;
+            Changed?.Invoke();
+            for (int i = 0; i < 25; i++)
+            {
+                yield return new WaitForSecondsRealtime(1f);
+                List<string> models = null;
+                yield return OllamaChat.ListModels(m => models = m);
+                if (models != null) break;
+            }
+            State = Status.Checking;
+            CheckOllama(warm);
+        }
+
+        /// <summary>
+        /// 기본 모델을 게임 안에서 받는다 (대화창 [모델 받기]). 명령 창에 'ollama pull'을 치지 않아도 되게.
+        /// 받는 동안에도 낚시·대화창은 그대로 쓴다. 다 받으면 그 모델로 바꾸고 그래픽카드에 올린다.
+        /// </summary>
+        public void PullDefault()
+        {
+            if (Pulling || !NeedsDefaultModel) return;
+            Pulling = true;
+            PullText = "받기 시작…";
+            PullFraction = -1f;
+            Changed?.Invoke();
+            int lastPercent = -1;
+            StartCoroutine(OllamaSetup.Pull(BuddyConfig.DefaultModel, BuddyConfig.DefaultModelBytes,
+                (text, fraction) =>
+                {
+                    // 줄이 1초에 수십 개 오니 글자가 바뀔 때만 다시 그린다
+                    int percent = fraction < 0f ? -1 : Mathf.FloorToInt(fraction * 100f);
+                    if (text == PullText && percent == lastPercent) return;
+                    PullText = text;
+                    PullFraction = fraction;
+                    lastPercent = percent;
+                    Changed?.Invoke();
+                },
+                error =>
+                {
+                    Pulling = false;
+                    PullText = null;
+                    PullFraction = -1f;
+                    if (error == null)
+                    {
+                        BuddyConfig.Model = BuddyConfig.DefaultModel;
+                        Say("다 받았다! 이제 머리가 잘 돌아가. 뭐든 물어봐!");
+                    }
+                    else Reply($"모델을 받다가 멈췄어… ({error}) [모델 받기]를 다시 누르면 받던 데서 이어 받을게.", null, false);
+                    Debug.Log($"[Buddy] 모델 받기 {(error == null ? "끝" : "실패: " + error)}");
+                    if (State != Status.Thinking) State = Status.Checking;
+                    CheckOllama(warm: true);
+                }));
         }
 
         /// <summary>깔린 모델 중 다음 것으로 바꾼다 (대화창 [모델] 버튼).</summary>
@@ -143,9 +215,14 @@ namespace Fishing.Buddy
             _history.RemoveAt(_history.Count - 1);
             if (State != Status.Ready)
             {
-                Reply(State == Status.Offline
-                    ? "앗, 지금은 머리가 안 돌아가… Ollama가 꺼져 있나 봐. 아래 [설치 안내]를 보고 Ollama를 켜 주면 뭐든 대답해 줄게!"
-                    : $"Ollama는 켜져 있는데 모델이 없어. 명령 창에서 'ollama pull {BuddyConfig.DefaultModel}'를 한 번 해 줘!", null, false);
+                Reply(State switch
+                {
+                    Status.Starting => "잠깐만, Ollama를 켜는 중이야. 몇 초면 돼!",
+                    Status.Offline when Installed => "앗, Ollama가 꺼져 있어. 아래 [Ollama 켜기]를 누르면 내가 켜 볼게!",
+                    Status.Offline => "앗, 지금은 머리가 안 돌아가… 이 PC에 Ollama가 없나 봐. 아래 [설치 안내]를 보고 깔아 주면 뭐든 대답해 줄게!",
+                    _ when Pulling => $"지금 내 머리를 받는 중이야 ({PullText}). 다 받으면 바로 대답할게!",
+                    _ => "Ollama는 켜져 있는데 모델이 없어. 아래 [모델 받기]를 눌러 줘! 3GB쯤이라 몇 분 걸려.",
+                }, null, false);
                 return;
             }
             _history.Add(Message("user", question));

@@ -1770,9 +1770,34 @@ namespace Fishing.Dev
             // 대화: 질문을 보내고 대답을 기다린다 (Ollama가 꺼져 있으면 바로 안내 말)
             Game.CameraRig.Yaw = Game.Player.Yaw + 160f;
             Game.CameraRig.Distance = 5.5f;
-            brain.CheckOllama();
-            yield return new WaitForSecondsRealtime(1.5f);
-            Debug.Log($"[Dev] 윤슬 연결: {brain.State} ({brain.Model})");
+            // 대화창을 열면 꺼진 Ollama를 켠다 (깔려 있으면). 켜지는 걸 기다린다
+            Game.UI.BuddyChat.Open();
+            yield return new WaitForSecondsRealtime(0.5f);
+            if (brain.State == Fishing.Buddy.BuddyBrain.Status.Starting) yield return Shot("30d0_buddy_starting");
+            float ready = Time.realtimeSinceStartup + 30f;
+            while ((brain.State == Fishing.Buddy.BuddyBrain.Status.Checking || brain.State == Fishing.Buddy.BuddyBrain.Status.Starting) && Time.realtimeSinceStartup < ready) yield return null;
+            Debug.Log($"[Dev] 윤슬 연결: {brain.State} ({brain.Model}), 깔림 {brain.Installed}, 기본 모델 필요 {brain.NeedsDefaultModel}");
+            if (brain.NeedsDefaultModel)
+            {
+                yield return Shot("30d1_buddy_nomodel");
+                // -autoshotPull: 기본 모델을 게임 안에서 받는 것까지 (3GB라 기본은 안 한다)
+                if (Array.IndexOf(Environment.GetCommandLineArgs(), "-autoshotPull") >= 0)
+                {
+                    brain.PullDefault();
+                    float pullUntil = Time.realtimeSinceStartup + 1800f, nextLog = 0f;
+                    bool shot = false;
+                    while (brain.Pulling && Time.realtimeSinceStartup < pullUntil)
+                    {
+                        if (!shot && brain.PullFraction > 0.05f) { shot = true; yield return Shot("30d1b_buddy_pulling"); }
+                        if (Time.realtimeSinceStartup > nextLog) { nextLog = Time.realtimeSinceStartup + 15f; Debug.Log($"[Dev] 윤슬 모델 받기: {brain.PullText} {brain.PullFraction:P0}"); }
+                        yield return null;
+                    }
+                    ready = Time.realtimeSinceStartup + 60f;
+                    while (brain.State != Fishing.Buddy.BuddyBrain.Status.Ready && Time.realtimeSinceStartup < ready) yield return null;
+                    Debug.Log($"[Dev] 윤슬 모델 받기 끝: {brain.State} ({brain.Model}), 모델 {string.Join(", ", brain.Models)}");
+                    yield return new WaitForSecondsRealtime(2f);
+                }
+            }
             Game.UI.BuddyChat.DebugAsk(question);
             yield return new WaitForSecondsRealtime(1.5f);
             yield return Shot("30d_buddy_thinking");

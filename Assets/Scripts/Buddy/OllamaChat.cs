@@ -18,6 +18,9 @@ namespace Fishing.Buddy
         // (qwen3:8b는 그래픽 메모리가 넘쳐 20~60초, qwen3:4b-instruct는 빠르지만 "덜 끊긴다"를 "끊기 쉽다"로 읽는 식으로 자주 틀린다).
         // 도구를 못 쓰는 모델이라 사실은 질문 전에 붙이는 자료(GameKnowledge.Prefetch)로 준다
         public const string DefaultModel = "gemma3:4b";
+        /// <summary>[모델 받기] 버튼에 보이는 받을 크기와 실제 바이트 (/api/tags의 size, 진행률 분모).</summary>
+        public const string DefaultModelSize = "3.4GB";
+        public const long DefaultModelBytes = 3_350_272_403;
         public const string DownloadUrl = "https://ollama.com/download";
 
         public static string OllamaUrl

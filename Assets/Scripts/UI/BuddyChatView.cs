@@ -106,7 +106,7 @@ namespace Fishing.UI
         readonly Bubble _bubble, _myBubble;
         readonly TMP_Text _log, _status, _hintText;
         readonly TMP_InputField _input;
-        readonly Button _modelButton;
+        readonly Button _modelButton, _setupButton, _retryButton;
         bool _dirty = true;
 
         public bool IsOpen => _window.gameObject.activeSelf;
@@ -154,13 +154,13 @@ namespace Fishing.UI
             var send = UIFactory.Button(_window, "보내기", () => Send(_input.text), null, 17);
             ((RectTransform)send.transform).At(new Vector2(1, 0), new Vector2(-16, 50), new Vector2(84, 38), new Vector2(1, 0));
 
-            // 아래 줄: 모델 바꾸기 · 설치 안내 · 다시 확인
+            // 아래 줄: 모델 바꾸기 · 설치 안내/모델 받기 · 다시 연결/Ollama 켜기
             _modelButton = UIFactory.Button(_window, "모델", () => BuddyBrain.Instance?.NextModel(), null, 14);
             ((RectTransform)_modelButton.transform).At(new Vector2(0, 0), new Vector2(16, 12), new Vector2(200, 30), Vector2.zero);
-            var guide = UIFactory.Button(_window, "설치 안내 (브라우저)", () => Application.OpenURL(BuddyConfig.DownloadUrl), null, 14);
-            ((RectTransform)guide.transform).At(new Vector2(0, 0), new Vector2(224, 12), new Vector2(180, 30), Vector2.zero);
-            var retry = UIFactory.Button(_window, "다시 연결", () => BuddyBrain.Instance?.CheckOllama(), null, 14);
-            ((RectTransform)retry.transform).At(new Vector2(0, 0), new Vector2(412, 12), new Vector2(110, 30), Vector2.zero);
+            _setupButton = UIFactory.Button(_window, "설치 안내 (브라우저)", Setup, null, 14);
+            ((RectTransform)_setupButton.transform).At(new Vector2(0, 0), new Vector2(224, 12), new Vector2(180, 30), Vector2.zero);
+            _retryButton = UIFactory.Button(_window, "다시 연결", () => BuddyBrain.Instance?.CheckOllama(warm: true, launch: true), null, 14);
+            ((RectTransform)_retryButton.transform).At(new Vector2(0, 0), new Vector2(412, 12), new Vector2(110, 30), Vector2.zero);
 
             _window.gameObject.SetActive(false);
             if (BuddyBrain.Instance != null)
@@ -169,6 +169,14 @@ namespace Fishing.UI
                 BuddyBrain.Instance.Said += (text, _) => _bubble.Show(BuddyBrain.Short(text, 4), BubbleSeconds);
                 BuddyBrain.Instance.Heard += text => _myBubble.Show(text, MyBubbleSeconds);
             }
+        }
+
+        /// <summary>가운데 버튼: 기본 모델이 없으면 게임 안에서 받고, 아니면 설치 안내 페이지를 연다.</summary>
+        static void Setup()
+        {
+            var brain = BuddyBrain.Instance;
+            if (brain != null && brain.NeedsDefaultModel) brain.PullDefault();
+            else Application.OpenURL(BuddyConfig.DownloadUrl);
         }
 
         static TMP_InputField CreateInput(Transform parent)
@@ -203,7 +211,7 @@ namespace Fishing.UI
         {
             _window.gameObject.SetActive(true);
             _window.SetAsLastSibling();
-            BuddyBrain.Instance?.CheckOllama(warm: true);
+            BuddyBrain.Instance?.CheckOllama(warm: true, launch: true);
             Focus();
             _dirty = true;
         }
@@ -255,16 +263,24 @@ namespace Fishing.UI
 
         void Redraw(BuddyBrain brain)
         {
+            string pull = brain.PullFraction >= 0f ? $"{brain.PullText} ({brain.PullFraction * 100f:0}%)" : brain.PullText;
             _status.text = brain.State switch
             {
                 BuddyBrain.Status.Checking => "연결 확인 중…",
-                BuddyBrain.Status.Offline => "<color=#ff7a6a>●</color> Ollama 꺼짐 — 정해진 말만 해요",
-                BuddyBrain.Status.NoModel => $"<color=#ffb050>●</color> 모델 없음 (ollama pull {BuddyConfig.DefaultModel})",
+                BuddyBrain.Status.Starting => "<color=#7fd0ff>●</color> Ollama 켜는 중…",
+                BuddyBrain.Status.Offline => brain.Installed ? "<color=#ff7a6a>●</color> Ollama 꺼짐 — [Ollama 켜기]" : "<color=#ff7a6a>●</color> Ollama 없음 — 정해진 말만 해요",
+                _ when brain.Pulling && brain.State != BuddyBrain.Status.Thinking => $"<color=#7fd0ff>●</color> 모델 {pull}",
+                BuddyBrain.Status.NoModel => "<color=#ffb050>●</color> 모델 없음 — [모델 받기]를 눌러요",
                 BuddyBrain.Status.Thinking => $"<color=#7fd0ff>●</color> {(brain.Partial != null ? "말하는 중…" : brain.Working ?? "생각 중…")}",
                 _ => $"<color=#7fe07f>●</color> 이 PC의 AI 연결됨",
             };
             _modelButton.GetComponentInChildren<TMP_Text>().text = brain.Model != null ? $"모델: {brain.Model}" : "모델: 없음";
             _modelButton.interactable = brain.Models.Count > 1 && brain.State != BuddyBrain.Status.Thinking;
+            _setupButton.GetComponentInChildren<TMP_Text>().text = brain.Pulling ? (brain.PullFraction >= 0f ? $"받는 중 {brain.PullFraction * 100f:0}%" : "받는 중…")
+                : brain.NeedsDefaultModel ? $"모델 받기 ({BuddyConfig.DefaultModelSize})" : "설치 안내 (브라우저)";
+            _setupButton.interactable = !brain.Pulling;
+            _retryButton.GetComponentInChildren<TMP_Text>().text = brain.State == BuddyBrain.Status.Offline && brain.Installed ? "Ollama 켜기" : "다시 연결";
+            _retryButton.interactable = brain.State != BuddyBrain.Status.Starting && brain.State != BuddyBrain.Status.Checking;
 
             var sb = new StringBuilder();
             int from = Mathf.Max(0, brain.Log.Count - 14);
