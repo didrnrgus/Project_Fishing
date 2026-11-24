@@ -170,6 +170,27 @@ UI나 연출을 바꾼 뒤 `build.sh` → `autoshot.sh`로 실제 화면을 확�
 
 - `.gitignore`는 Unity 표준에 `Builds/`, `Screenshots/`, `Logs/`, `UserSettings/`, `bpyenv/`를 더 뺀다.
 - 문서용 스크린샷은 `docs/images/`에 복사해서 커밋한다.
+- **커밋 메시지 형식** — 제목 한 줄 + 빈 줄 + 세부작업 줄 목록. 쉼표·세미콜론으로 한 줄에 몰아 쓰지 않는다 (빈 줄이 없으면 `git log --oneline`에 목록까지 한 줄로 붙는다).
+
+  ```
+  작업 - [메인 피처]
+
+  - 세부작업1
+  - 세부작업2
+  - 세부작업3
+  ```
+
+  예:
+
+  ```
+  작업 - 어종별 찌 패턴(찌올림·톡톡·오르내림·확·끌고 감)과 파이팅 패턴(처박기·바늘털이·점프·바닥 붙기 등)
+
+  - FishPatterns: 찌 6종 + 파이팅 8종, 171종을 도감 성질 글 기준으로 배정 (목록 밖은 성질로)
+  - 챔질 등급은 패턴 점수로 (찌올림은 솟은 꼭대기가 PERFECT), 찌 게이지도 솟음 표시
+  - 파이팅 기술: 진동·물보라·초릿대·물 위로 솟는 점프 물고기, 경고·안내문, 도감에 요령
+  - 밸런스: 장비 단계별 평균 성공률 변화 1.5%p 이하 (balance-report 다시 뽑음), 테스트 FishPatternTests
+  ```
+
 - 원격: `https://github.com/didrnrgus/Project_Fishing.git`
 - 바이너리(이미지·모델·소리·글꼴)는 Git LFS(`.gitattributes`). 처음 받을 때 `git lfs install` 후 clone/pull.
 - 라이선스: 직접 만든 것은 CC BY-NC-SA 4.0(`LICENSE`), 서드파티는 `THIRD_PARTY_NOTICES.md`. **에셋 스토어·Mixamo 원본은 넣지 않는다**(원본 재배포 금지). 새 에셋은 CC0·MIT·OFL처럼 재배포 가능한 것만 쓰고 출처를 그 폴더 SOURCES.md에 적는다 → [17 문서](17-open-source.md).
