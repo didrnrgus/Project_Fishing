@@ -33,7 +33,8 @@ Assets/
       AnglerChatter.cs           같은 채널 다른 낚시꾼의 조과·잡담 시스템 줄 (솔로판 분위기용, 규칙 영향 없음)
       Bingo.cs                   빙고 5×5 (칸 만들기·채우기·줄 보상, BingoSave)
       Attendance.cs              출석 체크 (실제 날짜, 7일째 블랙스피어)
-      Settings.cs                옵션(소리·감도·화면·진동)과 키 설정 (PlayerPrefs)
+      Settings.cs                옵션(소리·감도·화면·진동)과 키 설정 (PlayerPrefs). 해상도는 FHD 이하만, 고른 적 없으면 1920×1080
+      ResolutionGuard.cs         시작할 때 저장된 해상도 반영 + 0.5초마다 FHD를 넘었는지(Alt+Enter 등) 보고 되돌림 (GameBootstrap에 붙음)
       Rumble.cs                  게임패드 진동 (새 Input System의 Gamepad만, 조작은 Input Manager)
       Mats.cs                    런타임 머티리얼 캐시, 프리미티브·텍스처 상자 헬퍼, 절차적 텍스처
       Delivery.cs                납품소 (살림망 고기 → GOLD, 납품 게이지가 차면 다음 납품 두 배)

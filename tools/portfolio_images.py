@@ -26,43 +26,29 @@ PICKS = {
     "07_counter": "07_counter_chance",
     "08_result": "10_result",
     "09_rod_slack": "03d_rod_low_slack",
-    "10_rod_taut": "03e_rod_high_taut",
     "11_tension_danger": "06b_tension_danger",
     "12_landing": "09_landing",
     "13_fish_school": "01b_fish_school",
     "14_fish_shadow": "01c_fish_shadow",
     "15_rod_arms": "02v_vrm_155",
-    "16_rod_extend": "00c_rod_extend",
-    "17_seocheon_lowtide": "35_seocheon_lowtide",
-    "18_halong": "55_halong_bay",
-    "19_santorini": "56b_santorini_caldera",
-    "20_jeju_columnar": "54c_jeju_columnar",
-    "21_breakwater": "43c_yeongheung_breakwater",
-    "22_tancheon": "72h_tancheon_footbridge",
-    "23_bioluminescence": "45d_samcheok_corner_night",
-    "24_bridge_night": "00w_bridge_night",
-    "25_duden_falls": "71_duden_falls",
-    "26_islet": "22c_honghyeon_island",
+    # 낚시터: 맵마다 가장 멋진 한 장만 (경치·모델링 자랑 사진은 넣지 않는다 — 2026-11-25 사용자)
+    "17_seocheon": "36b_seocheon_sunset",
+    "18_halong": "55f_halong_quay",
+    "19_santorini": "56_santorini_cliff",
+    "20_jeju": "54f_jeju_yongduam",
+    "23_samcheok": "45d_samcheok_corner_night",
     "27_fish_models": "32_fish_models",
-    "28_fish_realism": "32c_fish_realism",
     "29_cephalopods": "32b_cephalopods",
-    "30_dex": "11b_dex_detail",
     "31_item_icons": "33_item_icons",
-    "32_intro_company": "00_intro_company",
-    "33_vrm_fishing": "02v_vrm_82",
     "34_character_model": "21e_character_model",
     "35_outfit": "00a2_outfit_random",
-    "36_npc": "20_npc_dialog",
     "37_buddy_answer": "30e_buddy_answer",
     "38_buddy_lead": "30g_buddy_lead",
     "39_buddy_point": "30i_buddy_point",
-    "40_buddy_boat": "30j_buddy_boat",
     "41_drone_show": "72l_tancheon_drones",
     "42_drone_transition": "72n_drone_transition",
     "43_esc_menu": "22a_esc_menu",
     "44_result_rewards": "10f_result_rewards",
-    "45_character_gear": "21d_character_gear",
-    "46_quest": "13_quest",
     "47_warning_retry": "10g_warning_retry",
     "48_boat_summon": "18a_boat_summon",
     "49_winter_ice": "41_winter_ice",
@@ -83,6 +69,9 @@ def find(name):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
+    for n in os.listdir(OUT):
+        if n.endswith(".jpg") and n[:-4] not in PICKS:
+            os.remove(os.path.join(OUT, n))
     missing = []
     for out, src in PICKS.items():
         p = find(src)

@@ -13,7 +13,7 @@
 | 05 | [스프링·IK·애니메이션](05-springs-ik-animation.md) | 감쇠 스프링(반암시적 오일러), 마디별 휨 분배, 2관절 IK(코사인 법칙), Playables 크로스페이드 |
 | 06 | [절차적 지형과 맵 판정](06-procedural-terrain.md) | 높이 함수 합성, smoothstep·Perlin, 데이터 주도 맵 틀, 물때 사인파, 공간 탐색(배 띄우기), 포물선 레이캐스트 |
 | 07 | [셰이더 기법](07-shaders.md) | 해저 높이 텍스처로 물가 거품, 중앙 차분 경사, 타일 반복 깨기, 값 노이즈 |
-| 08 | [성능](08-performance.md) | 정적 배칭 대상 고르기, 풀 칸 메쉬·거리 컬링, z-fighting 규칙 |
+| 08 | [성능](08-performance.md) | 정적 배칭 대상 고르기, 풀 칸 메쉬·거리 컬링, z-fighting 규칙, 그리는 크기 FHD 상한 |
 | 09 | [절차적 콘텐츠](09-procedural-content.md) | 회전체(lathe) 메쉬, headless Blender 파이프라인, Karplus-Strong 현 소리, 시간 함수 연출 |
 | 10 | [개발 흐름](10-dev-workflow.md) | 코드로 만드는 씬, 데이터 테이블, 자동 촬영 회귀, 단위 테스트, 세이브 호환 |
 | 11 | [로컬 LLM 동료 AI](11-local-llm-buddy.md) | Ollama 스트리밍·VRAM 예산, 질문 전 미리 찾기(경량 RAG), 도구 호출 루프, MCP 서버(JSON-RPC), 대답 다듬기, 게으른 격자 A*·줄 당기기 |
